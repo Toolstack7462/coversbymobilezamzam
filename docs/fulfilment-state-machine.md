@@ -8,20 +8,20 @@ paid, and a shipped order can be paid weeks earlier.
 
 ## States
 
-| State | Meaning |
-|---|---|
-| `pending` | Nothing prepared. |
-| `awaiting_stock` | Something is short; a decision is needed. |
-| `picking` | Being gathered in the shop. |
-| `packed` | Ready to hand over or ship. |
-| `ready_for_pickup` | Waiting in store, customer notified. |
-| `handed_to_carrier` | Given to the courier. |
-| `in_transit` | With the carrier. |
-| `delivered` | Received by the customer. |
-| `collected` | Picked up in store. |
-| `not_collected` | Pickup window elapsed. |
-| `cancelled` | Fulfilment abandoned. |
-| `returned_to_sender` | Delivery failed. |
+| State                | Meaning                                   |
+| -------------------- | ----------------------------------------- |
+| `pending`            | Nothing prepared.                         |
+| `awaiting_stock`     | Something is short; a decision is needed. |
+| `picking`            | Being gathered in the shop.               |
+| `packed`             | Ready to hand over or ship.               |
+| `ready_for_pickup`   | Waiting in store, customer notified.      |
+| `handed_to_carrier`  | Given to the courier.                     |
+| `in_transit`         | With the carrier.                         |
+| `delivered`          | Received by the customer.                 |
+| `collected`          | Picked up in store.                       |
+| `not_collected`      | Pickup window elapsed.                    |
+| `cancelled`          | Fulfilment abandoned.                     |
+| `returned_to_sender` | Delivery failed.                          |
 
 ---
 

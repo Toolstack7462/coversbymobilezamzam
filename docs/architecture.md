@@ -50,15 +50,15 @@ assert an order number. Injecting them makes time and identity deterministic.
 
 ## Runtime
 
-| Concern | Choice |
-|---|---|
-| Compute | Cloudflare Workers |
-| Framework | React Router v8, framework mode, SSR |
-| Database | D1 (SQLite) — source of truth |
-| Object storage | R2 — two buckets, see below |
-| Auth | Better Auth over D1 |
-| Validation | Zod at every boundary |
-| Scheduled work | Cron Triggers (UTC) |
+| Concern        | Choice                               |
+| -------------- | ------------------------------------ |
+| Compute        | Cloudflare Workers                   |
+| Framework      | React Router v8, framework mode, SSR |
+| Database       | D1 (SQLite) — source of truth        |
+| Object storage | R2 — two buckets, see below          |
+| Auth           | Better Auth over D1                  |
+| Validation     | Zod at every boundary                |
+| Scheduled work | Cron Triggers (UTC)                  |
 
 ### Why SSR
 
@@ -71,7 +71,7 @@ this audience actually browses on. A client-rendered catalogue fails both.
 `MEDIA` is world-readable product imagery served from a public base URL.
 `PRIVATE_FILES` holds payment proofs and exports.
 
-They are separate buckets so that "public" is a property of the *bucket*, not of
+They are separate buckets so that "public" is a property of the _bucket_, not of
 a path convention someone can get wrong. A private object in a public bucket is
 one bad key away from disclosure; here the private bucket has no public URL at
 all, and every read goes through an authenticated, logged route.
@@ -116,12 +116,12 @@ from both acting on the same order.
 
 ## Content strategy
 
-| Content | Where |
-|---|---|
-| Interface strings | `app/locales/it.json`, `en.json` |
+| Content                  | Where                               |
+| ------------------------ | ----------------------------------- |
+| Interface strings        | `app/locales/it.json`, `en.json`    |
 | Product and page content | D1, editable in admin, translatable |
-| Merchant settings | `store_settings`, admin-edited |
-| Legal documents | D1, versioned |
+| Merchant settings        | `store_settings`, admin-edited      |
+| Legal documents          | D1, versioned                       |
 
 No user-visible string is hardcoded in a component.
 

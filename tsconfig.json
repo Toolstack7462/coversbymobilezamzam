@@ -1,14 +1,9 @@
 {
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    ".react-router/types/**/*",
-    "worker-configuration.d.ts"
-  ],
+  "include": ["**/*.ts", "**/*.tsx", ".react-router/types/**/*", "worker-configuration.d.ts"],
   "exclude": ["node_modules", "build", "dist"],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2023"],
-    "types": ["node", "vite/client"],
+    "types": ["node", "vite/client", "@cloudflare/vitest-pool-workers/types"],
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",

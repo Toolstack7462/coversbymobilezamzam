@@ -44,7 +44,7 @@ a staff member verified moments earlier.
 
 ## Display
 
-Exact expiry time: *Prodotti riservati fino al 30 agosto 2026, ore 18:30.*
+Exact expiry time: _Prodotti riservati fino al 30 agosto 2026, ore 18:30._
 Never a ticking countdown. The deadline is information, not a pressure device.
 
 ## Reconciliation

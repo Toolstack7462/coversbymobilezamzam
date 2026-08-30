@@ -38,7 +38,10 @@ export default tseslint.config(
       // of bug that is invisible until a customer is charged the wrong amount.
       "no-restricted-globals": [
         "error",
-        { name: "parseFloat", message: "Money is integer minor units. See docs/invariants.md INVARIANT 1." },
+        {
+          name: "parseFloat",
+          message: "Money is integer minor units. See docs/invariants.md INVARIANT 1.",
+        },
       ],
       // Dates must be constructed through the Clock port so tests can freeze
       // time and so reservation expiry is deterministic.
@@ -62,7 +65,17 @@ export default tseslint.config(
     rules: { "no-restricted-syntax": "off" },
   },
   {
-    files: ["scripts/**/*.mjs", "*.config.{js,ts}"],
+    // Node scripts and hooks: plain Node globals, not the Workers runtime.
+    files: ["scripts/**/*.mjs", ".claude/hooks/**/*.mjs", "*.config.{js,ts}"],
+    languageOptions: {
+      globals: {
+        process: "readonly",
+        console: "readonly",
+        URL: "readonly",
+        Buffer: "readonly",
+        __dirname: "readonly",
+      },
+    },
     rules: { "@typescript-eslint/no-explicit-any": "off" },
   },
 );

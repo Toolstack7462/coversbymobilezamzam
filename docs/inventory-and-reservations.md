@@ -7,13 +7,13 @@ the shop never sells the same unit twice.
 
 ## Locations
 
-| Location | Role |
-|---|---|
-| Sulmona Physical Shop | The shop floor and back room |
-| Online Fulfilment | Optional, only if online stock is held separately |
-| Returns | Received returns pending inspection |
-| Damaged / Quarantine | Not sellable |
-| Incoming | Ordered from suppliers, not arrived |
+| Location              | Role                                              |
+| --------------------- | ------------------------------------------------- |
+| Sulmona Physical Shop | The shop floor and back room                      |
+| Online Fulfilment     | Optional, only if online stock is held separately |
+| Returns               | Received returns pending inspection               |
+| Damaged / Quarantine  | Not sellable                                      |
+| Incoming              | Ordered from suppliers, not arrived               |
 
 ### One stock or two — the merchant's choice
 
@@ -31,14 +31,14 @@ Most small shops should use one shared location. The admin says so.
 
 ## Levels
 
-| Field | Meaning |
-|---|---|
-| `on_hand` | Physically present |
-| `reserved` | Committed to unpaid orders |
-| `available` | `on_hand − reserved` — the only number a customer's purchase is checked against |
-| `incoming` | Expected from suppliers |
-| `reorder_threshold` | Low-stock alert point |
-| `allow_backorder` | Whether to sell beyond available |
+| Field               | Meaning                                                                         |
+| ------------------- | ------------------------------------------------------------------------------- |
+| `on_hand`           | Physically present                                                              |
+| `reserved`          | Committed to unpaid orders                                                      |
+| `available`         | `on_hand − reserved` — the only number a customer's purchase is checked against |
+| `incoming`          | Expected from suppliers                                                         |
+| `reorder_threshold` | Low-stock alert point                                                           |
+| `allow_backorder`   | Whether to sell beyond available                                                |
 
 ---
 
@@ -110,7 +110,7 @@ A Cron Trigger runs every five minutes, in UTC.
 
 **Steps 2 and 3 are the whole design.** The conditional claim means two
 overlapping cron runs cannot both release the same reservation. The payment
-re-check *after* claiming closes the race where a customer pays at minute 119 and
+re-check _after_ claiming closes the race where a customer pays at minute 119 and
 staff verify at minute 121 — without it, the sweeper would release stock from
 under an order that is now paid.
 

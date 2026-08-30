@@ -41,8 +41,7 @@ popular item.
 in the caller and it fails on contention rather than resolving it. The
 conditional write puts the decision in the database and needs no retry.
 
-**Durable Object per variant.** Strong serialisation. Rejected for now — see ADR
-0003. The condition for revisiting is measured contention, not anticipated scale.
+**Durable Object per variant.** Strong serialisation. Rejected for now — see ADR 0003. The condition for revisiting is measured contention, not anticipated scale.
 
 **Reserve only after payment.** Rejected: with manual payment that is up to 24
 hours later. The customer would be told at verification time that the item they

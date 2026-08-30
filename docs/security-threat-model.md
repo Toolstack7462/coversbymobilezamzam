@@ -32,14 +32,14 @@ scenario where validation matters most.
 
 ### Payment redirection — the crown jewels
 
-| Control | Where |
-|---|---|
-| IBAN encrypted at rest (AES-GCM, key in Cloudflare secret) | `infrastructure/encryption` |
+| Control                                                          | Where                       |
+| ---------------------------------------------------------------- | --------------------------- |
+| IBAN encrypted at rest (AES-GCM, key in Cloudflare secret)       | `infrastructure/encryption` |
 | Step-up auth to change IBAN, beneficiary or merchant identifiers | `payment.settings` use case |
-| Every change audited with before/after | `audit_logs` |
-| Full IBAN never logged, never in an error, never in an export | Logger redaction list |
-| Masked form stored separately so ordinary screens never decrypt | `payment_methods` |
-| Separate permission from ordinary admin | RBAC |
+| Every change audited with before/after                           | `audit_logs`                |
+| Full IBAN never logged, never in an error, never in an export    | Logger redaction list       |
+| Masked form stored separately so ordinary screens never decrypt  | `payment_methods`           |
+| Separate permission from ordinary admin                          | RBAC                        |
 
 ### Payment status manipulation
 
@@ -184,9 +184,9 @@ scenario at the top of this document.
 
 ## Accepted risks in Phase 1
 
-| Risk | Why accepted |
-|---|---|
-| No automated payment reconciliation | No gateway. Human verification is the control, and it is enforced. |
-| WhatsApp content is outside the system | Click-to-Chat by design. Nothing sensitive is put in the message. |
+| Risk                                           | Why accepted                                                                       |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------- |
+| No automated payment reconciliation            | No gateway. Human verification is the control, and it is enforced.                 |
+| WhatsApp content is outside the system         | Click-to-Chat by design. Nothing sensitive is put in the message.                  |
 | Customer email is unverified at guest checkout | Guest checkout is required. Orders are identified by number plus token, not email. |
-| Rate limiting is per-Worker-instance | Adequate at this traffic. Revisit with a durable counter if abuse appears. |
+| Rate limiting is per-Worker-instance           | Adequate at this traffic. Revisit with a durable counter if abuse appears.         |

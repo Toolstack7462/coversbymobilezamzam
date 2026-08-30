@@ -63,14 +63,14 @@ repeat themselves.
 
 ### Deliberately excluded
 
-| Excluded | Why |
-|---|---|
-| Full delivery address | Not needed to identify an order, and it is personal data in a channel outside the system's control. |
-| Internal notes | Written for staff, not customers. |
-| Internal database ids | Leaks structure; the order number is the public handle. |
-| Payment proof | Belongs in the private bucket. |
-| Any token or tracking secret | A URL in a chat is forwarded, screenshotted and backed up to a cloud the shop does not control. |
-| Password or account data | Never. |
+| Excluded                     | Why                                                                                                 |
+| ---------------------------- | --------------------------------------------------------------------------------------------------- |
+| Full delivery address        | Not needed to identify an order, and it is personal data in a channel outside the system's control. |
+| Internal notes               | Written for staff, not customers.                                                                   |
+| Internal database ids        | Leaks structure; the order number is the public handle.                                             |
+| Payment proof                | Belongs in the private bucket.                                                                      |
+| Any token or tracking secret | A URL in a chat is forwarded, screenshotted and backed up to a cloud the shop does not control.     |
+| Password or account data     | Never.                                                                                              |
 
 The message is composed on the server so no client code decides what goes into
 it — this exclusion list is testable, and it is tested.
@@ -79,8 +79,8 @@ it — this exclusion list is testable, and it is tested.
 
 ## Encoding
 
-`encodeURIComponent` over the whole body. Newlines, accented characters (*è*,
-*à*, *ò*), `€` and `×` all survive. Italian product names break naive encoding
+`encodeURIComponent` over the whole body. Newlines, accented characters (_è_,
+_à_, _ò_), `€` and `×` all survive. Italian product names break naive encoding
 routinely, so `tests/unit/whatsapp-message.test.ts` asserts a round trip with
 accents, a euro amount and a multiplication sign.
 
@@ -88,13 +88,13 @@ accents, a euro amount and a multiplication sign.
 
 ## Confirmation page
 
-| Action | Behaviour |
-|---|---|
-| **Continua su WhatsApp** | Opens the pre-filled chat. Only if configured. |
-| **Copia numero ordine** | Copies `ITA-…`. |
-| **Copia importo** | Copies the exact amount. |
+| Action                    | Behaviour                                                  |
+| ------------------------- | ---------------------------------------------------------- |
+| **Continua su WhatsApp**  | Opens the pre-filled chat. Only if configured.             |
+| **Copia numero ordine**   | Copies `ITA-…`.                                            |
+| **Copia importo**         | Copies the exact amount.                                   |
 | **Visualizza istruzioni** | Full payment instructions, on the page — not only in chat. |
-| **Traccia ordine** | The tracking link with its random token. |
+| **Traccia ordine**        | The tracking link with its random token.                   |
 
 Instructions always appear on the page as well as in the chat. A customer who
 never opens WhatsApp must still be able to pay.

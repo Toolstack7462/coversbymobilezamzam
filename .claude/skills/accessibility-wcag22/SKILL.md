@@ -16,7 +16,7 @@ wherever the colour carries text.
 
 ## Target size (2.5.8)
 
-**44x44px minimum.** For a label-wrapped checkbox or radio, the *label* is the
+**44x44px minimum.** For a label-wrapped checkbox or radio, the _label_ is the
 target — measure the label, not the box. A 36px chip is a failure, and it is
 easy to reintroduce by duplicating a CSS rule.
 

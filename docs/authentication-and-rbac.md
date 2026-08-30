@@ -47,15 +47,15 @@ Roles are **data**, not code. `roles`, `permissions`, `role_permissions` and
 `user_roles` are tables, so the merchant can create a role without a deployment.
 The seven below ship as defaults.
 
-| Role | Can | Cannot |
-|---|---|---|
-| **Super admin** | Everything authorised | — |
-| **Catalogue manager** | Products, variants, descriptions, categories, media, compatibility, SEO | Verify payments · change payment identifiers · change roles · read secrets |
-| **Price manager** | Prices, promotions, price lists | Verify payments · inventory · roles |
-| **Inventory manager** | Stock, receipts, transfers, corrections, thresholds | Prices · payments · roles |
-| **Order manager** | Orders, fulfilment, pickup, returns, customer communication | Verify payments · payment identifiers · roles |
-| **Payment verifier** | Review claims, verify, reject, record partial/over payment | Edit product cost · change payment account identifiers |
-| **Store staff** | Shop inventory, prepare pickup, record collection, counter-sale movements, necessary customer details | Full banking configuration · system settings · roles |
+| Role                  | Can                                                                                                   | Cannot                                                                     |
+| --------------------- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| **Super admin**       | Everything authorised                                                                                 | —                                                                          |
+| **Catalogue manager** | Products, variants, descriptions, categories, media, compatibility, SEO                               | Verify payments · change payment identifiers · change roles · read secrets |
+| **Price manager**     | Prices, promotions, price lists                                                                       | Verify payments · inventory · roles                                        |
+| **Inventory manager** | Stock, receipts, transfers, corrections, thresholds                                                   | Prices · payments · roles                                                  |
+| **Order manager**     | Orders, fulfilment, pickup, returns, customer communication                                           | Verify payments · payment identifiers · roles                              |
+| **Payment verifier**  | Review claims, verify, reject, record partial/over payment                                            | Edit product cost · change payment account identifiers                     |
+| **Store staff**       | Shop inventory, prepare pickup, record collection, counter-sale movements, necessary customer details | Full banking configuration · system settings · roles                       |
 
 ### Separations that are deliberate
 

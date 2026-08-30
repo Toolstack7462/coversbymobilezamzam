@@ -40,12 +40,12 @@ cannot be unit-tested in plain Node, it is in the wrong place.
 The application layer defines **ports** (interfaces). Infrastructure implements
 them. Routes call the application layer, never a repository directly.
 
-| Never | Instead |
-|---|---|
-| A React component querying D1 | A loader calling a use case |
-| A business rule inside a component | The domain layer |
+| Never                                 | Instead                          |
+| ------------------------------------- | -------------------------------- |
+| A React component querying D1         | A loader calling a use case      |
+| A business rule inside a component    | The domain layer                 |
 | The same rule in admin and storefront | One implementation, both call it |
-| A route importing a Drizzle table | A repository behind a port |
+| A route importing a Drizzle table     | A repository behind a port       |
 
 **One authoritative implementation per rule.** A price rule that exists in both
 the cart and the order builder will diverge, and the version the customer saw
@@ -65,7 +65,7 @@ preferences; each is enforced by a test.
    server-side. The browser is an input, never a source.
 3. **Compatibility** comes from structured records only — never inferred from a
    title, tag, category, URL, brand or collection. `universal` never resolves to
-   exact fit. A missing record means *unknown*, not compatible.
+   exact fit. A missing record means _unknown_, not compatible.
 4. **Inventory** changes only through a movement or reservation record. No silent
    stock writes; every manual adjustment carries a reason and a user.
 5. **Order items snapshot** name, SKU, variant, unit price, quantity, discount,
@@ -195,13 +195,13 @@ as amended by (EU) 2019/2161 several are unlawful.
 A change is **not done** until its companions are done. Full policy:
 `docs/change-management.md`.
 
-| Change | Also required |
-|---|---|
-| Schema | migration · schema types · data dictionary · indexes reviewed · integration test |
-| API | request/response schema · validation · tests · client compatibility |
-| Status machine | transition map · invalid-transition tests · admin UI · docs |
-| Price or inventory rule | domain tests · order-snapshot check · audit-log check |
-| Design system | tokens · affected screens reviewed · contrast · mobile |
+| Change                  | Also required                                                                    |
+| ----------------------- | -------------------------------------------------------------------------------- |
+| Schema                  | migration · schema types · data dictionary · indexes reviewed · integration test |
+| API                     | request/response schema · validation · tests · client compatibility              |
+| Status machine          | transition map · invalid-transition tests · admin UI · docs                      |
+| Price or inventory rule | domain tests · order-snapshot check · audit-log check                            |
+| Design system           | tokens · affected screens reviewed · contrast · mobile                           |
 
 Prefer additive migrations, feature flags, deprecation and backfills over
 breaking changes.

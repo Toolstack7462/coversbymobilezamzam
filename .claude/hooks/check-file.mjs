@@ -23,7 +23,7 @@ try {
 
 if (!filePath) process.exit(0);
 if (![".ts", ".tsx", ".js", ".mjs", ".css", ".json"].includes(extname(filePath))) process.exit(0);
-if (/node_modules|\.react-router|db[\/]migrations|package-lock/.test(filePath)) process.exit(0);
+if (/node_modules|\.react-router|db[\\/]migrations|package-lock/.test(filePath)) process.exit(0);
 
 try {
   execFileSync("npx", ["prettier", "--check", filePath], {
@@ -31,7 +31,9 @@ try {
     shell: process.platform === "win32",
   });
 } catch {
-  console.error(`[format] ${filePath} is not Prettier-clean. Run: npx prettier --write "${filePath}"`);
+  console.error(
+    `[format] ${filePath} is not Prettier-clean. Run: npx prettier --write "${filePath}"`,
+  );
 }
 
 process.exit(0);

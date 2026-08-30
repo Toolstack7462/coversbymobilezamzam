@@ -7,7 +7,7 @@
 
   "observability": {
     "enabled": true,
-    "head_sampling_rate": 1
+    "head_sampling_rate": 1,
   },
 
   // ── D1: the relational source of truth ────────────────────────────────────
@@ -19,8 +19,8 @@
       "binding": "DB",
       "database_name": "ita-commerce",
       "database_id": "REPLACE_WITH_D1_DATABASE_ID",
-      "migrations_dir": "db/migrations"
-    }
+      "migrations_dir": "db/migrations",
+    },
   ],
 
   // ── R2: two buckets, deliberately ─────────────────────────────────────────
@@ -30,7 +30,7 @@
   // authenticated route that checks staff permission and logs the access.
   "r2_buckets": [
     { "binding": "MEDIA", "bucket_name": "ita-commerce-media" },
-    { "binding": "PRIVATE_FILES", "bucket_name": "ita-commerce-private" }
+    { "binding": "PRIVATE_FILES", "bucket_name": "ita-commerce-private" },
   ],
 
   // ── Scheduled work ────────────────────────────────────────────────────────
@@ -39,7 +39,7 @@
   // more often than strictly needed. Every five minutes keeps the worst-case
   // over-hold to five minutes without hammering D1.
   "triggers": {
-    "crons": ["*/5 * * * *"]
+    "crons": ["*/5 * * * *"],
   },
 
   "vars": {
@@ -49,7 +49,7 @@
     "DEFAULT_LOCALE": "it",
     "SUPPORTED_LOCALES": "it,en",
     "DEFAULT_CURRENCY": "EUR",
-    "STORE_TIMEZONE": "Europe/Rome"
+    "STORE_TIMEZONE": "Europe/Rome",
   },
 
   "env": {
@@ -61,14 +61,14 @@
           "binding": "DB",
           "database_name": "ita-commerce-staging",
           "database_id": "REPLACE_WITH_STAGING_D1_DATABASE_ID",
-          "migrations_dir": "db/migrations"
-        }
+          "migrations_dir": "db/migrations",
+        },
       ],
       "r2_buckets": [
         { "binding": "MEDIA", "bucket_name": "ita-commerce-media-staging" },
-        { "binding": "PRIVATE_FILES", "bucket_name": "ita-commerce-private-staging" }
+        { "binding": "PRIVATE_FILES", "bucket_name": "ita-commerce-private-staging" },
       ],
-      "triggers": { "crons": ["*/5 * * * *"] }
+      "triggers": { "crons": ["*/5 * * * *"] },
     },
     "production": {
       "name": "ita-commerce-production",
@@ -78,14 +78,14 @@
           "binding": "DB",
           "database_name": "ita-commerce-production",
           "database_id": "REPLACE_WITH_PRODUCTION_D1_DATABASE_ID",
-          "migrations_dir": "db/migrations"
-        }
+          "migrations_dir": "db/migrations",
+        },
       ],
       "r2_buckets": [
         { "binding": "MEDIA", "bucket_name": "ita-commerce-media-production" },
-        { "binding": "PRIVATE_FILES", "bucket_name": "ita-commerce-private-production" }
+        { "binding": "PRIVATE_FILES", "bucket_name": "ita-commerce-private-production" },
       ],
-      "triggers": { "crons": ["*/5 * * * *"] }
-    }
-  }
+      "triggers": { "crons": ["*/5 * * * *"] },
+    },
+  },
 }

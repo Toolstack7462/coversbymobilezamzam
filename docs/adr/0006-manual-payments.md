@@ -31,7 +31,7 @@ the single most important rule in the payment subsystem.
 
 **Amount-matching against a bank feed.** Rejected: no bank API is in scope, and
 amount matching alone is unreliable — customers round, combine orders, or omit
-the *causale*.
+the _causale_.
 
 **Cash on delivery via courier.** Rejected: no courier integration in Phase 1.
 
@@ -48,7 +48,7 @@ somebody's job, every day.
 
 **Mitigations.** A purpose-built verification queue with everything needed on one
 screen. Configurable reservation windows per method. An idempotent expiry sweeper
-that returns stock automatically. A mandatory order-number *causale* so transfers
+that returns stock automatically. A mandatory order-number _causale_ so transfers
 can be matched. Duplicate references flagged for review rather than auto-rejected.
 
 ## Rollback / forward path

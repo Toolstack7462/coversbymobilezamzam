@@ -9,19 +9,19 @@ a human has or has not confirmed against the real bank account or merchant app.
 
 ## States
 
-| State | Meaning |
-|---|---|
-| `awaiting_customer_contact` | Order placed; instructions not yet delivered. |
-| `awaiting_payment` | Instructions delivered; nothing received. |
-| `proof_received` | Customer supplied a screenshot or reference. **Proves nothing on its own.** |
-| `under_verification` | A staff member is actively checking the real account. |
-| `verified` | An authorised human confirmed the money is in the account. |
-| `partially_paid` | Less than the total arrived. |
-| `overpaid` | More than the total arrived. |
-| `rejected` | Checked and not found, or the claim was wrong. |
-| `expired` | Payment window elapsed. |
-| `refunded` | Money returned. |
-| `cancelled` | Payment abandoned with the order. |
+| State                       | Meaning                                                                     |
+| --------------------------- | --------------------------------------------------------------------------- |
+| `awaiting_customer_contact` | Order placed; instructions not yet delivered.                               |
+| `awaiting_payment`          | Instructions delivered; nothing received.                                   |
+| `proof_received`            | Customer supplied a screenshot or reference. **Proves nothing on its own.** |
+| `under_verification`        | A staff member is actively checking the real account.                       |
+| `verified`                  | An authorised human confirmed the money is in the account.                  |
+| `partially_paid`            | Less than the total arrived.                                                |
+| `overpaid`                  | More than the total arrived.                                                |
+| `rejected`                  | Checked and not found, or the claim was wrong.                              |
+| `expired`                   | Payment window elapsed.                                                     |
+| `refunded`                  | Money returned.                                                             |
+| `cancelled`                 | Payment abandoned with the order.                                           |
 
 ---
 
@@ -102,16 +102,16 @@ human decides.
 
 Configurable per payment method. Defaults:
 
-| Method | Minutes | Reasoning |
-|---|---|---|
-| Satispay | 120 | Instant; a customer who means to pay does so quickly. |
-| Instant SEPA | 120 | Arrives in seconds. |
-| BANCOMAT Pay | 120 | Instant. |
-| Ordinary SEPA transfer | 1440 | Genuinely takes a working day. |
-| Pay at pickup | 1440–2880 | The customer must physically travel. |
+| Method                 | Minutes   | Reasoning                                             |
+| ---------------------- | --------- | ----------------------------------------------------- |
+| Satispay               | 120       | Instant; a customer who means to pay does so quickly. |
+| Instant SEPA           | 120       | Arrives in seconds.                                   |
+| BANCOMAT Pay           | 120       | Instant.                                              |
+| Ordinary SEPA transfer | 1440      | Genuinely takes a working day.                        |
+| Pay at pickup          | 1440–2880 | The customer must physically travel.                  |
 
-Displayed as an exact local time — *"Prodotti riservati fino al 30 agosto 2026,
-ore 18:30."* — never as a ticking countdown. The deadline is real information;
+Displayed as an exact local time — _"Prodotti riservati fino al 30 agosto 2026,
+ore 18:30."_ — never as a ticking countdown. The deadline is real information;
 a countdown is a pressure device.
 
 ---

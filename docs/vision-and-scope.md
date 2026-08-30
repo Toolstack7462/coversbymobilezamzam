@@ -38,7 +38,7 @@ honestly, and gives staff the tools to verify and fulfil.
 Deliberate, not a shortcut. Card acceptance in Italy means merchant onboarding,
 PSD2/SCA handling, chargeback exposure, fiscal-receipt obligations and per-
 transaction cost. None of that is a prerequisite for selling, and all of it is a
-prerequisite for doing card payments *properly*.
+prerequisite for doing card payments _properly_.
 
 Meanwhile SEPA transfer, instant transfer, Satispay and pay-at-pickup are how a
 great many small Italian retailers already get paid, and they cost nothing.
@@ -66,16 +66,16 @@ admin with RBAC · import/export · audit log · backup/restore.
 
 ## Explicitly out of scope for Phase 1
 
-| Not building | Why |
-|---|---|
-| Card payments, any gateway or SDK | See above. |
-| WhatsApp Business Platform API | Click-to-Chat only. No programmatic reading of messages, and no claim of automatic payment confirmation. |
-| Courier integration | Configurable flat rates and thresholds instead. |
-| Fiscal receipts / telematic corrispettivi | A legal and accounting matter, not a web feature. The admin manages inventory and order state; it does **not** replace the fiscal POS. Flagged for the *commercialista*. |
-| Analytics, marketing pixels, A/B tools | None. Also means no consent banner is needed for tracking that does not exist. |
-| Multi-currency, multi-country tax | EUR and Italy. The money type carries a currency code so this is additive later. |
-| Loyalty, subscriptions, marketplace sellers | Not the business. |
-| Mobile app | The site is responsive. |
+| Not building                                | Why                                                                                                                                                                      |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Card payments, any gateway or SDK           | See above.                                                                                                                                                               |
+| WhatsApp Business Platform API              | Click-to-Chat only. No programmatic reading of messages, and no claim of automatic payment confirmation.                                                                 |
+| Courier integration                         | Configurable flat rates and thresholds instead.                                                                                                                          |
+| Fiscal receipts / telematic corrispettivi   | A legal and accounting matter, not a web feature. The admin manages inventory and order state; it does **not** replace the fiscal POS. Flagged for the _commercialista_. |
+| Analytics, marketing pixels, A/B tools      | None. Also means no consent banner is needed for tracking that does not exist.                                                                                           |
+| Multi-currency, multi-country tax           | EUR and Italy. The money type carries a currency code so this is additive later.                                                                                         |
+| Loyalty, subscriptions, marketplace sellers | Not the business.                                                                                                                                                        |
+| Mobile app                                  | The site is responsive.                                                                                                                                                  |
 
 ## Definition of done for Phase 1
 
@@ -85,7 +85,7 @@ ones no amount of code can satisfy are:
 - The merchant has supplied brand name, legal name, P.IVA, REA, WhatsApp number
   and at least one working payment method.
 - An Italian lawyer has reviewed the consumer-facing legal content.
-- A *commercialista* has ruled on invoicing and fiscal obligations.
+- A _commercialista_ has ruled on invoicing and fiscal obligations.
 - A test restore from backup has actually been performed.
 
 Until those hold, the status is **READY FOR MERCHANT REVIEW**, never "ready to

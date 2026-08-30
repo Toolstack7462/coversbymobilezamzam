@@ -7,16 +7,16 @@ D1 (SQLite). Drizzle definitions in `db/schema/`, forward-only SQL in
 
 ## Conventions
 
-| Convention | Rule |
-|---|---|
+| Convention   | Rule                                                                                                                       |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------- |
 | Primary keys | Text ULID-style, generated through the `IdGenerator` port. Monotonic, so index locality is good, without exposing a count. |
-| Money | `integer` minor units, always beside a `currency` column. |
-| Timestamps | `integer` epoch milliseconds, UTC. |
-| Booleans | `integer` 0/1 — SQLite has no boolean. |
-| Soft delete | `archived_at`, null when active. |
-| Foreign keys | Enforced. `ON DELETE RESTRICT` wherever history depends on the row. |
-| Naming | `snake_case` tables and columns, plural table names. |
-| Translations | A sibling `*_translations` table keyed by `(parent_id, locale)`. |
+| Money        | `integer` minor units, always beside a `currency` column.                                                                  |
+| Timestamps   | `integer` epoch milliseconds, UTC.                                                                                         |
+| Booleans     | `integer` 0/1 — SQLite has no boolean.                                                                                     |
+| Soft delete  | `archived_at`, null when active.                                                                                           |
+| Foreign keys | Enforced. `ON DELETE RESTRICT` wherever history depends on the row.                                                        |
+| Naming       | `snake_case` tables and columns, plural table names.                                                                       |
+| Translations | A sibling `*_translations` table keyed by `(parent_id, locale)`.                                                           |
 
 ### Why sequential integer ids are not used
 
@@ -174,7 +174,7 @@ Created for the queries that actually run, not speculatively:
 - `order_payments(order_id)`, `order_payments(transaction_reference)` for
   duplicate detection
 - `audit_logs(entity_type, entity_id, created_at)`
-- `idempotency_keys(key)` unique — the constraint *is* the mechanism
+- `idempotency_keys(key)` unique — the constraint _is_ the mechanism
 
 Important queries are checked with `EXPLAIN QUERY PLAN` and the output recorded
 in `docs/performance-budget.md`. An index nobody verified is a guess.

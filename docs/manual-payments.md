@@ -7,7 +7,7 @@ hands the customer to a human to settle payment outside the site.
 
 ## What the customer is told
 
-The final action is **"Conferma l'ordine"** — never *"Paga ora"*, because nothing
+The final action is **"Conferma l'ordine"** — never _"Paga ora"_, because nothing
 is being paid on the site and the button must not imply otherwise.
 
 Before confirming, prominently:
@@ -23,14 +23,14 @@ All are records in `payment_methods`, all admin-configurable, and **all ship
 disabled** because none can be configured without merchant data that does not
 exist yet.
 
-| Method | Enabled when |
-|---|---|
-| SEPA bank transfer | Business IBAN and beneficiary are set |
-| Instant SEPA transfer | Business IBAN and beneficiary are set |
-| Satispay Business | Merchant identifier and instructions are set |
-| BANCOMAT Pay | **Real merchant activation** is confirmed — see below |
-| Pay at pickup | Store details, pickup rules and a reservation window exist |
-| Generic manual method | Merchant defines it entirely |
+| Method                | Enabled when                                               |
+| --------------------- | ---------------------------------------------------------- |
+| SEPA bank transfer    | Business IBAN and beneficiary are set                      |
+| Instant SEPA transfer | Business IBAN and beneficiary are set                      |
+| Satispay Business     | Merchant identifier and instructions are set               |
+| BANCOMAT Pay          | **Real merchant activation** is confirmed — see below      |
+| Pay at pickup         | Store details, pickup rules and a reservation window exist |
+| Generic manual method | Merchant defines it entirely                               |
 
 **A method that is not fully configured is never advertised.** Half-configured
 payment instructions are worse than none: the customer sends money somewhere
@@ -55,7 +55,7 @@ Shown after order creation, once configured:
 - **Causale: `ITA-20260830-AB12CD`** — mandatory, the order number
 - Instructions
 
-The *causale* is what makes reconciliation possible. Without it, staff are
+The _causale_ is what makes reconciliation possible. Without it, staff are
 matching an amount and a surname against a bank statement.
 
 **Never requested:** banking password, PIN, OTP, card number, CVV. A site asking
@@ -83,7 +83,7 @@ verified. There is no other path.
 **Disabled by default, and it stays disabled until real merchant activation
 exists.**
 
-The trap: BANCOMAT Pay supports person-to-person transfers, so it *looks* usable
+The trap: BANCOMAT Pay supports person-to-person transfers, so it _looks_ usable
 without any merchant relationship. Person-to-person capability is not merchant
 acceptance. Using it that way misrepresents the transaction and creates the same
 personal-account problems as above.
@@ -94,7 +94,7 @@ Branding is not displayed until a legitimate configured merchant method exists.
 
 ## Pay at pickup
 
-*"Pagamento al ritiro"* — available only when store pickup is configured, store
+_"Pagamento al ritiro"_ — available only when store pickup is configured, store
 information is complete, pickup stock exists and a reservation window is set.
 
 Pay-at-pickup orders **still reserve stock**. Staff record collection and payment
@@ -103,11 +103,11 @@ receipt together in one authorised action.
 ### The fiscal boundary — read this
 
 This system manages inventory and internal order state. It **does not** replace
-Italy's required fiscal process: *registratore telematico*, *documento
-commerciale*, and the daily transmission of *corrispettivi*.
+Italy's required fiscal process: _registratore telematico_, _documento
+commerciale_, and the daily transmission of _corrispettivi_.
 
 Nothing here should be read as making the shop's counter compliant. That is a
-matter for the *commercialista*, and it is on the launch checklist as a blocker.
+matter for the _commercialista_, and it is on the launch checklist as a blocker.
 
 ---
 

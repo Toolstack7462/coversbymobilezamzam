@@ -6,7 +6,7 @@ repository's configuration. All rights reserved.
 This software was commissioned by, and is owned by, that merchant.
 
 **No open-source licence has been granted.** An open-source licence has
-deliberately *not* been chosen, because that is the owner's decision to make and
+deliberately _not_ been chosen, because that is the owner's decision to make and
 it has not yet been made. Until the owner says otherwise:
 
 - The source code may not be copied, redistributed, published, sublicensed or

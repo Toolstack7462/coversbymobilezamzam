@@ -14,14 +14,14 @@ than working around them.
 
 ## Where code goes
 
-| Adding | Goes in |
-|---|---|
-| A calculation over plain data | `app/domain/<area>/` |
-| Orchestration that touches storage | `app/application/commands/` or `queries/` |
-| An interface onto the outside world | `app/application/ports/` |
-| A D1 / R2 / email implementation | `app/infrastructure/` |
-| A route | `app/routes/` |
-| Markup | `app/components/` |
+| Adding                              | Goes in                                   |
+| ----------------------------------- | ----------------------------------------- |
+| A calculation over plain data       | `app/domain/<area>/`                      |
+| Orchestration that touches storage  | `app/application/commands/` or `queries/` |
+| An interface onto the outside world | `app/application/ports/`                  |
+| A D1 / R2 / email implementation    | `app/infrastructure/`                     |
+| A route                             | `app/routes/`                             |
+| Markup                              | `app/components/`                         |
 
 **If a domain test needs a Cloudflare binding, the code is in the wrong layer.**
 

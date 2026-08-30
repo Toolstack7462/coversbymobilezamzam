@@ -33,14 +33,14 @@ and are the difference between "no results" and a sale.
 
 ## Compatibility levels
 
-| Level | Customer sees (IT) |
-|---|---|
-| `exact_fit` | *Compatibilità esatta con iPhone 16 Pro* |
-| `compatible` | *Compatibile con iPhone 16 Pro* |
-| `universal` | *Accessorio universale — controlla connettore e potenza* |
-| `adapter_required` | *Compatibile tramite adattatore* |
-| `incompatible` | *Questo prodotto non risulta compatibile con il dispositivo selezionato* |
-| `unverified` | *Compatibilità non verificata* |
+| Level              | Customer sees (IT)                                                       |
+| ------------------ | ------------------------------------------------------------------------ |
+| `exact_fit`        | _Compatibilità esatta con iPhone 16 Pro_                                 |
+| `compatible`       | _Compatibile con iPhone 16 Pro_                                          |
+| `universal`        | _Accessorio universale — controlla connettore e potenza_                 |
+| `adapter_required` | _Compatibile tramite adattatore_                                         |
+| `incompatible`     | _Questo prodotto non risulta compatibile con il dispositivo selezionato_ |
+| `unverified`       | _Compatibilità non verificata_                                           |
 
 ---
 
@@ -53,7 +53,7 @@ compatibility records and the selected device. Output: one state.
    model is variant-level.
 2. **Explicit `incompatible` wins** over any broader compatibility.
 3. **`universal` never becomes exact fit.** A 20W USB-C charger works with an
-   iPhone 16 Pro, but it is not *made for* it, and saying so would be a false
+   iPhone 16 Pro, but it is not _made for_ it, and saying so would be a false
    precision that erodes trust in every other badge.
 4. **`unverified` surfaces as unverified.** Never silently upgraded.
 5. **No record means unknown**, never compatible. Absence of evidence is not
@@ -95,7 +95,7 @@ changes are audited (invariant 8).
 
 ## The device finder
 
-*"Trova accessori per il tuo dispositivo"* — brand → family → model → category.
+_"Trova accessori per il tuo dispositivo"_ — brand → family → model → category.
 
 Search with aliases · popular devices · recently selected · persistent selection ·
 change device · remove device · no-results recovery · full keyboard operation ·

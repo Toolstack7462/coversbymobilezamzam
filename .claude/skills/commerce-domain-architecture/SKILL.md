@@ -11,14 +11,14 @@ description: Layer boundaries for this codebase. Use when adding a business rule
 
 ## Where things go
 
-| Adding | Goes in |
-|---|---|
-| A calculation over plain data | `app/domain/<area>/` |
-| An orchestration that touches storage | `app/application/commands/` or `queries/` |
-| An interface the app needs from outside | `app/application/ports/` |
-| A D1 / R2 / email implementation | `app/infrastructure/` |
-| A loader, action or route | `app/routes/` |
-| Markup and styling | `app/components/` |
+| Adding                                  | Goes in                                   |
+| --------------------------------------- | ----------------------------------------- |
+| A calculation over plain data           | `app/domain/<area>/`                      |
+| An orchestration that touches storage   | `app/application/commands/` or `queries/` |
+| An interface the app needs from outside | `app/application/ports/`                  |
+| A D1 / R2 / email implementation        | `app/infrastructure/`                     |
+| A loader, action or route               | `app/routes/`                             |
+| Markup and styling                      | `app/components/`                         |
 
 ## Domain layer rules
 

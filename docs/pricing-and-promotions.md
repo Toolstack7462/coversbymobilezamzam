@@ -12,15 +12,15 @@ use tabular numerals so a column of them aligns.
 
 ## Price layers
 
-| Layer | Purpose |
-|---|---|
-| Base price | The catalogue price |
-| Online price | Overrides base for web sales |
-| In-store price | Overrides base at the counter |
-| Promotion price | Time-bounded, scheduled |
-| Customer-group price | Structure exists; unused in Phase 1 |
+| Layer                 | Purpose                                |
+| --------------------- | -------------------------------------- |
+| Base price            | The catalogue price                    |
+| Online price          | Overrides base for web sales           |
+| In-store price        | Overrides base at the counter          |
+| Promotion price       | Time-bounded, scheduled                |
+| Customer-group price  | Structure exists; unused in Phase 1    |
 | Prior reference price | The genuine 30-day low, for compliance |
-| Cost price | Restricted to authorised staff |
+| Cost price            | Restricted to authorised staff         |
 
 Online and in-store prices can legitimately differ — different overheads. The
 system records which channel a price applies to rather than pretending there is
@@ -64,10 +64,10 @@ This exists for three reasons, and only one is operational:
 
 ## Discount display — the rule that will feel restrictive
 
-| Data present | Customer sees |
-|---|---|
-| Current price only | The price |
-| Current + previous reference price | Strikethrough. **No percentage.** |
+| Data present                             | Customer sees                                                        |
+| ---------------------------------------- | -------------------------------------------------------------------- |
+| Current price only                       | The price                                                            |
+| Current + previous reference price       | Strikethrough. **No percentage.**                                    |
 | Current + previous + recorded 30-day low | Strikethrough, percentage, **and the 30-day reference price stated** |
 
 **A percentage never renders without a recorded prior price.** Not "computed from
@@ -118,7 +118,7 @@ produced without recomputing from a rate that may have changed.
 **The rate is configuration, not a constant.** Rates change; a hardcoded `0.22`
 would silently be wrong afterwards.
 
-Invoicing and fiscal obligations are a *commercialista* matter — see
+Invoicing and fiscal obligations are a _commercialista_ matter — see
 `docs/legal-review-checklist.md`.
 
 ---

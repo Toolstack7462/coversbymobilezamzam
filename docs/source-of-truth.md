@@ -16,21 +16,21 @@ without loss.
 
 ## Authority table
 
-| Data | Authoritative | Derived / copies | Rebuild |
-|---|---|---|---|
-| Products, variants, translations | D1 | FTS index, search results | `npm run search:reindex` |
-| Prices | D1 `variant_prices` | Rendered price, order snapshot | Snapshot is history — never rebuilt |
-| Price history | D1 `price_history` | Prior-price display | Append-only, never recomputed |
-| Stock on hand | D1 `inventory_levels` | Availability badges | Recomputed per request from ledger |
-| Reservations | D1 `stock_reservations` | `reserved` counter | Reconciliation script compares them |
-| Compatibility | D1 `product_compatibility` | Badges, filters | Rendered live |
-| Orders | D1 `orders` + `order_items` | WhatsApp message, emails | Regenerated from the order |
-| Payment status | **The merchant's bank / Satispay account** | D1 `order_payments` | See below |
-| Product media | R2 `MEDIA` | `product_images` metadata | Inventory script cross-checks |
-| Payment proofs | R2 `PRIVATE_FILES` | `payment_proofs` metadata | Never public |
-| Sessions | D1 (Better Auth) | Cookie | Revocable server-side |
-| Interface strings | Repo `app/locales/` | — | Not merchant-editable by design |
-| Merchant settings | D1 `store_settings` | Storefront rendering | — |
+| Data                             | Authoritative                              | Derived / copies               | Rebuild                             |
+| -------------------------------- | ------------------------------------------ | ------------------------------ | ----------------------------------- |
+| Products, variants, translations | D1                                         | FTS index, search results      | `npm run search:reindex`            |
+| Prices                           | D1 `variant_prices`                        | Rendered price, order snapshot | Snapshot is history — never rebuilt |
+| Price history                    | D1 `price_history`                         | Prior-price display            | Append-only, never recomputed       |
+| Stock on hand                    | D1 `inventory_levels`                      | Availability badges            | Recomputed per request from ledger  |
+| Reservations                     | D1 `stock_reservations`                    | `reserved` counter             | Reconciliation script compares them |
+| Compatibility                    | D1 `product_compatibility`                 | Badges, filters                | Rendered live                       |
+| Orders                           | D1 `orders` + `order_items`                | WhatsApp message, emails       | Regenerated from the order          |
+| Payment status                   | **The merchant's bank / Satispay account** | D1 `order_payments`            | See below                           |
+| Product media                    | R2 `MEDIA`                                 | `product_images` metadata      | Inventory script cross-checks       |
+| Payment proofs                   | R2 `PRIVATE_FILES`                         | `payment_proofs` metadata      | Never public                        |
+| Sessions                         | D1 (Better Auth)                           | Cookie                         | Revocable server-side               |
+| Interface strings                | Repo `app/locales/`                        | —                              | Not merchant-editable by design     |
+| Merchant settings                | D1 `store_settings`                        | Storefront rendering           | —                                   |
 
 ---
 
@@ -39,7 +39,7 @@ without loss.
 **The authoritative record of whether money arrived is the merchant's bank
 account or merchant app. Not this database.**
 
-D1 records what staff *observed* there. `order_payments.status = 'verified'`
+D1 records what staff _observed_ there. `order_payments.status = 'verified'`
 means "an authorised person looked at the real account and saw this money",
 carrying who, when, how much and which reference.
 
@@ -73,9 +73,9 @@ inconvenience rather than data loss.
 `inventory_levels` holds the counters; `stock_movements` and
 `stock_reservations` hold the events.
 
-Counters are authoritative for *serving* — recomputing availability from the full
+Counters are authoritative for _serving_ — recomputing availability from the full
 ledger on every product view would not scale. The ledger is authoritative for
-*explaining*, and a reconciliation script compares the two. Drift is a bug, and
+_explaining_, and a reconciliation script compares the two. Drift is a bug, and
 the ledger wins.
 
 ---
@@ -91,11 +91,11 @@ Renaming a product must not rewrite what a customer bought last month.
 
 ## What is deliberately not stored
 
-| Not stored | Why |
-|---|---|
-| Card numbers, CVV, card tokens | No card payments in Phase 1. Nothing to store. |
-| Banking passwords, PINs, OTPs | Never requested. A site asking for these is phishing. |
-| Full decrypted IBAN in logs | Encrypted at rest; only a masked form is displayed. |
-| WhatsApp message content | Click-to-Chat only. Messages are never read programmatically. |
-| Analytics or behavioural profiles | No trackers in Phase 1. |
-| Plaintext passwords | Better Auth hashing. |
+| Not stored                        | Why                                                           |
+| --------------------------------- | ------------------------------------------------------------- |
+| Card numbers, CVV, card tokens    | No card payments in Phase 1. Nothing to store.                |
+| Banking passwords, PINs, OTPs     | Never requested. A site asking for these is phishing.         |
+| Full decrypted IBAN in logs       | Encrypted at rest; only a masked form is displayed.           |
+| WhatsApp message content          | Click-to-Chat only. Messages are never read programmatically. |
+| Analytics or behavioural profiles | No trackers in Phase 1.                                       |
+| Plaintext passwords               | Better Auth hashing.                                          |

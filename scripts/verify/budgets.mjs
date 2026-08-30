@@ -7,6 +7,20 @@
  * Measures the CLIENT bundle, because that is what a customer downloads. The
  * server bundle runs on Cloudflare and its size does not affect anyone on a
  * mid-range Android on cellular data, which is this audience.
+ *
+ * HONESTY NOTE on what this number is.
+ *
+ * It sums EVERY client chunk, which is deliberately CONSERVATIVE and is not the
+ * same as "what one page loads". React Router code-splits per route, so a
+ * storefront visitor never downloads the admin chunks, and an admin never
+ * downloads the device finder. The real per-page figure is lower than what is
+ * printed here.
+ *
+ * The over-count is kept on purpose: it fails early, it cannot be gamed by
+ * moving weight into a lazily-loaded chunk that every page happens to need, and
+ * a budget that flatters the result is not a budget. Per-route measurement
+ * belongs with the deployed-preview Core Web Vitals run, which is the only
+ * place a real figure can be obtained.
  */
 import { readdirSync, statSync, readFileSync, existsSync } from "node:fs";
 import { join, extname } from "node:path";
@@ -15,8 +29,8 @@ import { gzipSync } from "node:zlib";
 const CLIENT_DIR = "build/client";
 
 const BUDGETS = {
-  js: { limit: 160 * 1024, label: "initial JavaScript" },
-  css: { limit: 45 * 1024, label: "CSS" },
+  js: { limit: 160 * 1024, label: "client JavaScript (all routes)" },
+  css: { limit: 45 * 1024, label: "CSS (all routes)" },
 };
 
 if (!existsSync(CLIENT_DIR)) {

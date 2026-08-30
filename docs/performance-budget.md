@@ -15,10 +15,23 @@ a budget that gets ignored, and bundle size only ever moves one way without one.
 
 ---
 
-## Measured, at the storefront commit
+## Measured, with storefront and admin built
 
-    PASS  initial JavaScript: 118.9 KB / 160.0 KB (74%)
-    PASS  CSS:                  2.4 KB /  45.0 KB (5%)
+    PASS  client JavaScript (all routes): 130.4 KB / 160.0 KB (82%)
+    PASS  CSS (all routes):                 2.9 KB /  45.0 KB (6%)
+
+**What this number is, precisely.** It sums every client chunk, which is
+deliberately conservative and is NOT what one page loads. React Router
+code-splits per route: a storefront visitor never downloads the admin chunks,
+and an admin never downloads the device finder. The real per-page figure is
+lower.
+
+The over-count is kept on purpose. It fails early, and it cannot be gamed by
+shifting weight into a lazily-loaded chunk that every page happens to need. A
+budget that flatters the result is not a budget.
+
+The 82% figure is still worth watching: most of it is React itself, so the
+headroom for application code is smaller than it looks.
 
 Largest client chunks:
 

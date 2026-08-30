@@ -1,0 +1,11 @@
+node_modules
+build
+dist
+.react-router
+.wrangler
+coverage
+playwright-report
+test-results
+package-lock.json
+db/migrations
+app/locales/*.json

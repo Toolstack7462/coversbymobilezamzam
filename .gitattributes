@@ -1,0 +1,19 @@
+# Normalise line endings so Windows and CI agree. Without this, a checkout on
+# Windows rewrites every file to CRLF and every diff looks like a rewrite.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.avif binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
+*.xlsx binary
+
+# Generated files: collapse in review, but still diffable on request.
+package-lock.json linguist-generated=true -diff
+db/migrations/meta/** linguist-generated=true -diff

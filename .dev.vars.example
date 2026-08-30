@@ -1,0 +1,26 @@
+# Copy to .dev.vars for local development. .dev.vars is gitignored.
+# NEVER put real values in this file - it is committed.
+# Deployed environments use `wrangler secret put <NAME>` instead.
+
+# ── Required ───────────────────────────────────────────────────────────────────
+# Session signing. Generate with: openssl rand -base64 32
+BETTER_AUTH_SECRET=
+# Absolute origin, no trailing slash. e.g. http://localhost:5173
+APP_BASE_URL=http://localhost:5173
+# AES-GCM key for encrypting merchant payment identifiers (IBAN etc.) at rest.
+# Generate with: openssl rand -base64 32
+SETTINGS_ENCRYPTION_KEY=
+
+# ── Optional. Each feature stays DISABLED until its values are present. ───────
+# Bot protection on high-risk forms. Cloudflare provides always-pass test keys
+# for automated tests; see docs/security-threat-model.md.
+TURNSTILE_SITE_KEY=
+TURNSTILE_SECRET_KEY=
+
+# Transactional email. Without these the outbox still records every message and
+# the store works normally - nothing is lost, delivery is simply deferred.
+RESEND_API_KEY=
+EMAIL_FROM=
+
+# Public base URL for product media served from R2.
+PUBLIC_MEDIA_BASE_URL=

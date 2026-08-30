@@ -72,7 +72,9 @@ reason, a staff user, and the before/after quantities.
 Without a ledger, a discrepancy is unexplainable: you know the count is wrong and
 you cannot find out when or why.
 
-**Enforced:** repositories expose no bare stock setter.
+**Enforced:** repositories expose no bare stock setter, and
+`CHECK (reserved >= 0 AND reserved <= on_hand)` aborts any batch that would
+oversell.
 **Tested:** `tests/integration/inventory-ledger.test.ts`.
 
 ---

@@ -78,9 +78,13 @@ all, and every read goes through an authenticated, logged route.
 
 ### Why not Durable Objects
 
-D1 supports conditional writes, and `UPDATE … WHERE reserved + ? <= on_hand`
-either affects a row or does not. That is sufficient to prevent overselling, and
-it is proven by a concurrency test rather than assumed.
+D1 batches are transactional, and a CHECK constraint violation aborts the whole
+batch. That is sufficient to prevent overselling, and it is proven by a
+concurrency test rather than assumed.
+
+(A conditional `WHERE reserved + ? <= on_hand` looks like the obvious answer and
+is not: inside a batch, matching zero rows is a silent success. See
+`docs/inventory-and-reservations.md`.)
 
 Durable Objects would add a coordination layer, cost, and a second consistency
 model. If measured concurrency ever shows D1 conditional writes are insufficient,
@@ -99,7 +103,8 @@ Prices and availability come from the database on every render.
 4. Validate quantities against available.
 5. Insert order, order items (snapshotted), addresses.
 6. Insert reservations.
-7. Conditionally increment `reserved` — the guard that prevents overselling.
+7. Increment `reserved`. The CHECK constraint `reserved <= on_hand` raises an
+   error rather than overselling, which aborts the batch.
 8. Insert order events and audit rows.
 
 Any failed statement rolls back the batch. A partially created order that has

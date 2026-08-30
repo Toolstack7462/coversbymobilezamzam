@@ -1,0 +1,148 @@
+/**
+ * Design tokens — ITALIAN TECH ATELIER.
+ *
+ * THE ONLY FILE IN THIS PROJECT PERMITTED TO CONTAIN A LITERAL COLOUR.
+ * A hex value anywhere else is a review failure.
+ *
+ * Ported from the Shopify reference project, including the two contrast
+ * corrections measured there.
+ */
+
+:root {
+  /* ── Brand palette ────────────────────────────────────────────────────── */
+  --color-ink: #0b1220;
+  --color-primary: #2457ff;
+  --color-primary-hover: #1743d3;
+  --color-accent: #b9f227;
+  --color-background: #f7f8f5;
+  --color-surface: #ffffff;
+  --color-text-secondary: #667085;
+  --color-border: #dde3ea;
+  --color-success: #15845a;
+  --color-danger: #d92d20;
+  --color-warning: #b54708;
+
+  /* Derived surfaces. Explicit values rather than colour-mix() so the palette
+     stays predictable and every pair stays auditable. */
+  --color-ink-80: #33404f;
+  --color-ink-60: #5c6675;
+  --color-surface-sunken: #f0f2ef;
+  --color-border-strong: #c3ccd6;
+  --color-success-surface: #e7f4ee;
+  --color-danger-surface: #fdecea;
+  --color-warning-surface: #fdf3e8;
+  --color-accent-surface: #f2fbd9;
+  --color-primary-surface: #edf2ff;
+
+  /**
+   * TEXT variants of the status colours.
+   *
+   * The brand values above are correct as FILLS: white on --color-danger
+   * measures 4.83:1. As TEXT on a light surface they fall just short of AA —
+   * #15845A on porcelain is 4.40:1 and #D92D20 on its own tint is 4.22:1, both
+   * measured by axe in the reference project.
+   *
+   * These are ~5% darker and clear 4.5:1 on porcelain, white and their own tint.
+   * Use them wherever the colour carries TEXT; use the brand tokens for fills,
+   * borders and icons.
+   */
+  --color-success-text: #147d56;
+  --color-danger-text: #d02b1f;
+  --color-warning-text: #b54708;
+  --color-focus: var(--color-primary);
+
+  /* ── Typography ───────────────────────────────────────────────────────── */
+  --font-heading:
+    "Manrope Variable", "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-body:
+    "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-display: 800;
+
+  /* clamp() interpolates between the mobile and desktop steps from the type
+     scale rather than inventing intermediate sizes. */
+  --text-display: clamp(2.125rem, 1.55rem + 2.6vw, 3rem); /* 34 → 48 */
+  --text-display-lh: clamp(2.5rem, 1.95rem + 2.4vw, 3.5rem); /* 40 → 56 */
+  --text-h1: clamp(1.875rem, 1.5rem + 1.6vw, 2.5rem); /* 30 → 40 */
+  --text-h1-lh: clamp(2.25rem, 1.9rem + 1.5vw, 3rem); /* 36 → 48 */
+  --text-h2: clamp(1.625rem, 1.4rem + 1vw, 2rem); /* 26 → 32 */
+  --text-h2-lh: clamp(2rem, 1.75rem + 1vw, 2.5rem); /* 32 → 40 */
+  --text-h3: 1.5rem; /* 24 */
+  --text-h3-lh: 2rem; /* 32 */
+  --text-body: 1rem; /* 16 */
+  --text-body-lh: 1.5rem; /* 24 */
+  --text-ui: 0.875rem; /* 14 */
+  --text-ui-lh: 1.25rem; /* 20 */
+  --text-caption: 0.75rem; /* 12 */
+  --text-caption-lh: 1rem; /* 16 */
+  --text-price: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem); /* 20 → 24 */
+  --text-price-lh: clamp(1.625rem, 1.5rem + 0.5vw, 1.875rem); /* 26 → 30 */
+
+  /* ── Spacing: strict 8-point system ───────────────────────────────────── */
+  /* Sub-grid step. The 8-point system does not go below 4px, but chips and
+     badges genuinely need optical padding under that. One named token beats
+     1/2/3/5px scattered around. */
+  --space-half: 0.125rem; /* 2 */
+  --space-1: 0.25rem; /* 4 */
+  --space-2: 0.5rem; /* 8 */
+  --space-3: 0.75rem; /* 12 */
+  --space-4: 1rem; /* 16 */
+  --space-5: 1.5rem; /* 24 */
+  --space-6: 2rem; /* 32 */
+  --space-7: 3rem; /* 48 */
+  --space-8: 4rem; /* 64 */
+  --space-9: 5rem; /* 80 */
+  --space-10: 6rem; /* 96 */
+
+  /* ── Layout ───────────────────────────────────────────────────────────── */
+  --page-width: 1440px;
+  --gutter: var(--space-4);
+  --header-height: 64px;
+  --utility-bar-height: 36px;
+
+  /* ── Radii. Deliberately NOT uniform: flat edges are part of the art
+     direction, and device-context surfaces use an asymmetric notch. ─────── */
+  --radius-control: 10px;
+  --radius-card: 12px;
+  --radius-editorial: 18px;
+  --radius-chip: 999px;
+  --radius-device-notch: 2px;
+
+  /* ── Elevation. Borders carry cards; shadows are reserved for things that
+     genuinely float above the page. ─────────────────────────────────────── */
+  --shadow-drawer: 0 16px 48px -12px rgb(11 18 32 / 0.28);
+  --shadow-menu: 0 12px 32px -8px rgb(11 18 32 / 0.18);
+  --shadow-dialog: 0 24px 64px -16px rgb(11 18 32 / 0.32);
+
+  /* ── Motion ───────────────────────────────────────────────────────────── */
+  --ease: cubic-bezier(0.2, 0, 0.13, 1);
+  --duration-fast: 140ms;
+  --duration-base: 180ms;
+  --duration-slow: 220ms;
+
+  /* ── Controls ─────────────────────────────────────────────────────────── */
+  --control-height: 48px;
+  --target-min: 44px;
+  --border-width: 1px;
+  --focus-ring-width: 2px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --gutter: var(--space-5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+  }
+}

@@ -15,13 +15,23 @@ staff user, and before/after quantities. Repositories expose no bare setter.
 
 ## Oversell prevention
 
-Conditional write, never read-then-write:
+The **CHECK constraint** is the guard, inside a D1 batch:
+
+    CHECK (reserved >= 0 AND reserved <= on_hand)
 
     UPDATE inventory_levels SET reserved = reserved + ?
-     WHERE variant_id = ? AND location_id = ? AND reserved + ? <= on_hand
+     WHERE variant_id = ? AND location_id = ?
 
-Zero rows affected means the order batch rolls back. Read-then-write has a window
-where two requests both see the last unit.
+An increment that would oversell RAISES, which rolls the whole batch back.
+
+Do NOT "improve" this into `WHERE reserved + ? <= on_hand`. Inside a batch a
+conditional update matching nothing is a silent success (`changes = 0`), the
+batch commits, and an order exists holding stock nobody reserved. D1 has no
+interactive transactions, so there is no chance to inspect `changes` and abort.
+The condition has to throw.
+
+Read-then-write is worse again: a window where two requests both see the last
+unit.
 
 ## Order creation is one batch
 

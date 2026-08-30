@@ -1,0 +1,448 @@
+@import "./tokens.css";
+
+/**
+ * Base styles and shared primitives.
+ *
+ * No CSS framework, deliberately. Everything here is used; nothing is shipped
+ * "just in case", which is how a stylesheet stays under budget.
+ *
+ * Every colour is a token. Literal colours belong only in tokens.css.
+ */
+
+/* ── Reset ─────────────────────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: var(--text-body-lh);
+  color: var(--color-ink);
+  background: var(--color-background);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100dvh;
+}
+
+img,
+picture,
+video,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-heading);
+  font-weight: var(--weight-bold);
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: var(--text-h1);
+  line-height: var(--text-h1-lh);
+}
+h2 {
+  font-size: var(--text-h2);
+  line-height: var(--text-h2-lh);
+}
+h3 {
+  font-size: var(--text-h3);
+  line-height: var(--text-h3-lh);
+}
+
+p {
+  text-wrap: pretty;
+}
+
+a {
+  color: inherit;
+}
+
+/* ── Focus ─────────────────────────────────────────────────────────────── */
+/* Never removed. `:focus-visible` keeps it off mouse clicks without hiding it
+   from keyboard users. */
+
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-device-notch);
+}
+
+/* ── Layout ────────────────────────────────────────────────────────────── */
+
+.page {
+  width: 100%;
+  max-width: var(--page-width);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.stack > * + * {
+  margin-block-start: var(--space-4);
+}
+
+.cluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+/* Logical properties throughout, so an RTL locale mirrors correctly from the
+   `dir` attribute alone rather than needing a second stylesheet. */
+.grid-products {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Skip link ─────────────────────────────────────────────────────────── */
+
+.skip-link {
+  position: absolute;
+  inset-inline-start: var(--space-4);
+  inset-block-start: calc(var(--space-4) * -4);
+  z-index: 100;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-ink);
+  color: var(--color-surface);
+  border-radius: var(--radius-control);
+  text-decoration: none;
+  transition: inset-block-start var(--duration-fast) var(--ease);
+}
+
+.skip-link:focus {
+  inset-block-start: var(--space-4);
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────────── */
+/* Minimum target is 44px; the standard control height is 48px. */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--control-height);
+  min-width: var(--target-min);
+  padding-inline: var(--space-5);
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-control);
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-body);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease),
+    border-color var(--duration-fast) var(--ease);
+}
+
+.btn--primary {
+  background: var(--color-primary);
+  color: var(--color-surface);
+}
+.btn--primary:hover {
+  background: var(--color-primary-hover);
+}
+
+.btn--secondary {
+  background: var(--color-surface);
+  color: var(--color-ink);
+  border-color: var(--color-border-strong);
+}
+.btn--secondary:hover {
+  border-color: var(--color-ink);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--color-ink);
+  padding-inline: var(--space-3);
+}
+
+.btn[disabled],
+.btn[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Forms ─────────────────────────────────────────────────────────────── */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* Visible labels, never placeholder-only: a placeholder disappears the moment
+   someone starts typing, which is exactly when they need it. */
+.field__label {
+  font-size: var(--text-ui);
+  font-weight: var(--weight-medium);
+}
+
+.field__hint {
+  font-size: var(--text-ui);
+  color: var(--color-text-secondary);
+}
+
+.field__error {
+  font-size: var(--text-ui);
+  color: var(--color-danger-text);
+  font-weight: var(--weight-medium);
+}
+
+.input {
+  min-height: var(--control-height);
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-width) solid var(--color-border-strong);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  width: 100%;
+}
+
+.input[aria-invalid="true"] {
+  border-color: var(--color-danger);
+}
+
+/* ── Cards ─────────────────────────────────────────────────────────────── */
+
+.card {
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+.panel {
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-editorial);
+  padding: var(--space-5);
+}
+
+/* ── Prices ────────────────────────────────────────────────────────────── */
+/* Tabular numerals so a column of prices aligns and does not jitter as digits
+   change. */
+
+.price {
+  font-size: var(--text-price);
+  line-height: var(--text-price-lh);
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.price--previous {
+  font-size: var(--text-ui);
+  font-weight: var(--weight-regular);
+  color: var(--color-text-secondary);
+  text-decoration: line-through;
+}
+
+.price--reference {
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
+.numeric {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Badges and chips ──────────────────────────────────────────────────── */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-half) var(--space-2);
+  border-radius: var(--radius-chip);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-lh);
+  font-weight: var(--weight-semibold);
+}
+
+/* Interactive chips must clear 44px. This was a real regression in the
+   reference project: a duplicated rule left a stale 36px definition winning the
+   cascade. There is exactly one definition here. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--target-min);
+  padding-inline: var(--space-4);
+  border: var(--border-width) solid var(--color-border-strong);
+  border-radius: var(--radius-chip);
+  background: var(--color-surface);
+  font-size: var(--text-ui);
+  cursor: pointer;
+}
+
+.chip[aria-pressed="true"] {
+  border-color: var(--color-ink);
+  background: var(--color-surface-sunken);
+}
+
+/* ── Compatibility states ──────────────────────────────────────────────── */
+/*
+ * Lime (--color-accent) appears HERE and nowhere else: selected device,
+ * verified compatibility, selected compatibility filter. It is never a button,
+ * never a generic success, never a focus ring.
+ *
+ * Every state carries text and an icon as well as colour — status is never
+ * conveyed by colour alone.
+ */
+
+.compat {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-control);
+  font-size: var(--text-ui);
+  font-weight: var(--weight-medium);
+}
+
+.compat--exact {
+  background: var(--color-accent-surface);
+  color: var(--color-ink);
+  border-inline-start: 3px solid var(--color-accent);
+}
+
+.compat--compatible {
+  background: var(--color-success-surface);
+  color: var(--color-success-text);
+}
+
+.compat--universal {
+  background: var(--color-surface-sunken);
+  color: var(--color-ink-80);
+}
+
+.compat--adapter {
+  background: var(--color-warning-surface);
+  color: var(--color-warning-text);
+}
+
+.compat--mismatch {
+  background: var(--color-danger-surface);
+  color: var(--color-danger-text);
+}
+
+.compat--unverified {
+  background: var(--color-surface-sunken);
+  color: var(--color-ink-60);
+}
+
+/* ── Availability ──────────────────────────────────────────────────────── */
+
+.stock--in_stock {
+  color: var(--color-success-text);
+}
+.stock--low_stock {
+  color: var(--color-warning-text);
+}
+.stock--out_of_stock {
+  color: var(--color-text-secondary);
+}
+
+/* ── Notices ───────────────────────────────────────────────────────────── */
+
+.notice {
+  padding: var(--space-4);
+  border-radius: var(--radius-control);
+  border: var(--border-width) solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.notice--warning {
+  background: var(--color-warning-surface);
+  border-color: var(--color-warning);
+  color: var(--color-warning-text);
+}
+
+.notice--danger {
+  background: var(--color-danger-surface);
+  border-color: var(--color-danger);
+  color: var(--color-danger-text);
+}
+
+.notice--info {
+  background: var(--color-primary-surface);
+  border-color: var(--color-primary);
+}
+
+/* ── Empty states ──────────────────────────────────────────────────────── */
+/* An absent section looks finished; an empty frame looks broken. Sections with
+   no data render nothing at all — this is for genuinely empty results, which is
+   a different thing. */
+
+.empty-state {
+  text-align: center;
+  padding: var(--space-8) var(--space-4);
+  color: var(--color-text-secondary);
+}
+
+/* ── Utility ───────────────────────────────────────────────────────────── */
+
+.muted {
+  color: var(--color-text-secondary);
+}
+
+.small {
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-lh);
+}
+
+.caption {
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-lh);
+}

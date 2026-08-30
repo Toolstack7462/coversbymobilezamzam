@@ -15,14 +15,12 @@ discrepancy.
 `stock_movements` and `stock_reservations` hold the events.
 `available = on_hand − reserved`.
 
-Every change writes an event. Reservations are made by **conditional write**:
+Every change writes an event. Reservations are guarded by a **CHECK constraint** inside a D1 batch:
 
-    UPDATE inventory_levels
-       SET reserved = reserved + :qty
-     WHERE variant_id = :v AND location_id = :l
-       AND reserved + :qty <= on_hand
+    CHECK (reserved >= 0 AND reserved <= on_hand)
 
-Zero rows affected means the stock is gone and the order batch rolls back.
+An increment that would oversell raises an error, which rolls back the entire
+order batch.
 
 ## Alternatives considered
 
@@ -36,6 +34,14 @@ changed.
 the write. Two requests both read `available = 1` and both proceed. This is the
 classic oversell, and it appears exactly when it hurts — the last unit of a
 popular item.
+
+**A conditional `UPDATE ... WHERE reserved + :qty <= on_hand`.** This was the
+original decision and it was **wrong**, discovered while writing the concurrency
+test. Inside a D1 batch a conditional update that matches nothing is not an
+error — it succeeds with `changes = 0`, the batch commits, and an order exists
+holding stock that was never reserved. D1 has no interactive transactions, so
+there is no way to inspect `changes` and abort partway. The condition must be
+expressed as something that throws.
 
 **Optimistic locking with a version column.** Workable, but it needs retry logic
 in the caller and it fails on contention rather than resolving it. The
@@ -57,8 +63,8 @@ automatically. Shop and online cannot double-count the same shelf.
 so drift is possible. Every stock path is more code than `SET quantity = ?`.
 Held stock is unavailable to walk-in customers while an order sits unpaid.
 
-**Mitigations.** `CHECK (reserved >= 0 AND reserved <= on_hand)` as a loud
-backstop. `reconcile-inventory.mjs` replays the ledger and reports drift rather
+**Mitigations.** The CHECK constraint is the enforcement rather than a mere
+backstop, and the concurrency test proves it. `reconcile-inventory.mjs` replays the ledger and reports drift rather
 than silently correcting it. Reservation windows are short for instant payment
 methods, so the shop floor is not starved. Movement archival is documented for
 when the table gets large.

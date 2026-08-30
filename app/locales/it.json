@@ -1,0 +1,248 @@
+{
+  "common": {
+    "skip_to_content": "Vai al contenuto principale",
+    "menu": "Menu",
+    "close": "Chiudi",
+    "search": "Cerca",
+    "search_placeholder": "Cerca prodotti, accessori o modello…",
+    "loading": "Caricamento…",
+    "back": "Indietro",
+    "home": "Home",
+    "shop": "Shop",
+    "cart": "Carrello",
+    "account": "Account",
+    "wishlist": "Preferiti",
+    "store": "Negozio",
+    "required": "obbligatorio",
+    "optional": "facoltativo",
+    "yes": "Sì",
+    "no": "No",
+    "quantity": "Quantità",
+    "remove": "Rimuovi",
+    "continue": "Continua",
+    "cancel": "Annulla",
+    "save": "Salva",
+    "total": "Totale",
+    "subtotal": "Subtotale",
+    "shipping": "Spedizione",
+    "vat_included": "IVA inclusa"
+  },
+
+  "nav": {
+    "cases": "Cover",
+    "screen_protection": "Protezione schermo",
+    "chargers": "Caricatori",
+    "cables": "Cavi",
+    "power_banks": "Power Bank",
+    "magsafe": "MagSafe e magnetici",
+    "audio": "Audio",
+    "car_mounts": "Supporti Auto",
+    "smartwatch": "Smartwatch",
+    "tablet": "Accessori Tablet",
+    "offers": "Offerte",
+    "new_arrivals": "Nuovi Arrivi",
+    "find_by_device": "Trova per Dispositivo"
+  },
+
+  "home": {
+    "hero_heading": "Accessori per il tuo smartphone.",
+    "hero_heading_line2": "Online e nel nostro negozio.",
+    "hero_body": "Cover, vetri, caricatori, cavi, power bank e molto altro.",
+    "shop_now": "Acquista ora",
+    "find_device": "Trova il tuo dispositivo",
+    "visit_store": "Visita il negozio",
+    "popular_categories": "Categorie popolari",
+    "new_arrivals": "Nuovi arrivi",
+    "why_us": "Perché sceglierci"
+  },
+
+  "device": {
+    "finder_title": "Trova accessori per il tuo dispositivo",
+    "finder_intro": "Scegli la marca, la famiglia e il modello esatto per vedere solo ciò che è compatibile.",
+    "select_brand": "Scegli la marca",
+    "select_family": "Scegli la famiglia",
+    "select_model": "Scegli il modello",
+    "my_device": "Il mio dispositivo",
+    "change_device": "Cambia dispositivo",
+    "remove_device": "Rimuovi dispositivo",
+    "popular_devices": "Dispositivi più cercati",
+    "recently_selected": "Selezionati di recente",
+    "search_device": "Cerca il tuo modello",
+    "no_device_results": "Nessun modello trovato. Prova con il nome completo, ad esempio “iPhone 16 Pro”.",
+    "saved_locally": "Il dispositivo selezionato è salvato su questo browser."
+  },
+
+  "compatibility": {
+    "exact": "Compatibilità esatta con {{device}}",
+    "compatible": "Compatibile con {{device}}",
+    "universal": "Accessorio universale — controlla connettore e potenza",
+    "adapter": "Compatibile tramite adattatore",
+    "mismatch": "Questo prodotto non risulta compatibile con il dispositivo selezionato",
+    "unverified": "Compatibilità non verificata",
+    "prompt": "Verifica la compatibilità",
+    "check": "Verifica la compatibilità",
+    "see_alternatives": "Vedi prodotti compatibili",
+    "full_list": "Compatibilità completa"
+  },
+
+  "availability": {
+    "in_stock": "Disponibile online",
+    "low_stock": "Ultimi pezzi disponibili",
+    "out_of_stock": "Non disponibile",
+    "backorder": "Disponibile su ordinazione",
+    "not_tracked": "Disponibilità da confermare",
+    "pickup_available": "Disponibile per il ritiro",
+    "pickup_unavailable": "Non disponibile per il ritiro"
+  },
+
+  "product": {
+    "add_to_cart": "Aggiungi al carrello",
+    "added_to_cart": "Aggiunto al carrello",
+    "sold_out": "Esaurito",
+    "sku": "Codice",
+    "description": "Descrizione",
+    "specifications": "Caratteristiche tecniche",
+    "package_contents": "Contenuto della confezione",
+    "shipping_returns": "Spedizioni e resi",
+    "legal_guarantee": "Garanzia legale",
+    "product_safety": "Sicurezza del prodotto",
+    "related": "Prodotti correlati",
+    "recently_viewed": "Visti di recente",
+    "choose_variant": "Scegli un'opzione",
+    "save_percent": "Risparmi il {{percent}}%",
+    "prior_price_note": "Prezzo più basso applicato nei 30 giorni precedenti: {{price}}"
+  },
+
+  "collection": {
+    "results_one": "{{count}} prodotto",
+    "results_other": "{{count}} prodotti",
+    "no_results": "Nessun prodotto trovato",
+    "no_results_help": "Prova a rimuovere qualche filtro o a cercare con parole diverse.",
+    "filters": "Filtri",
+    "clear_filters": "Rimuovi filtri",
+    "sort": "Ordina",
+    "sort_relevance": "Più rilevanti",
+    "sort_price_asc": "Prezzo crescente",
+    "sort_price_desc": "Prezzo decrescente",
+    "sort_newest": "Più recenti",
+    "compatible_only": "Solo compatibili con il mio dispositivo",
+    "load_more": "Mostra altri prodotti"
+  },
+
+  "cart": {
+    "title": "Il tuo carrello",
+    "empty": "Il carrello è vuoto",
+    "empty_help": "Aggiungi qualche accessorio per iniziare.",
+    "checkout": "Vai alla cassa",
+    "continue_shopping": "Continua gli acquisti",
+    "price_changed": "Il prezzo di alcuni articoli è cambiato ed è stato aggiornato.",
+    "stock_changed": "La disponibilità di alcuni articoli è cambiata.",
+    "variant_unavailable": "Alcuni articoli non sono più disponibili e sono stati rimossi.",
+    "compatibility_changed": "La compatibilità di alcuni articoli è cambiata."
+  },
+
+  "checkout": {
+    "title": "Conferma il tuo ordine",
+    "your_details": "I tuoi dati",
+    "first_name": "Nome",
+    "last_name": "Cognome",
+    "email": "Email",
+    "whatsapp": "Numero WhatsApp",
+    "phone": "Telefono",
+    "delivery": "Consegna",
+    "delivery_shipping": "Spedizione",
+    "delivery_pickup": "Ritiro in negozio",
+    "address": "Indirizzo",
+    "street_number": "Numero civico",
+    "postcode": "CAP",
+    "city": "Città",
+    "province": "Provincia",
+    "country": "Paese",
+    "order_note": "Note ordine",
+    "payment_method": "Metodo di pagamento",
+    "confirm_order": "Conferma l'ordine",
+    "no_payment_on_site": "Il pagamento non verrà effettuato sul sito. Riceverai le istruzioni per completarlo tramite WhatsApp.",
+    "no_payment_on_site_alt": "Il pagamento non verrà effettuato sul sito. Ti invieremo le istruzioni per completarlo.",
+    "terms_accept": "Confermando l'ordine accetti i termini e le condizioni di vendita.",
+    "invalid_postcode": "Inserisci un CAP valido di cinque cifre.",
+    "no_payment_methods": "Al momento non è possibile completare un ordine online. Contattaci per assistenza."
+  },
+
+  "order": {
+    "confirmed_title": "Ordine ricevuto",
+    "confirmed_body": "Grazie. Il tuo ordine è stato registrato e i prodotti sono riservati.",
+    "order_number": "Numero ordine",
+    "reserved_until": "Prodotti riservati fino al {{datetime}}.",
+    "continue_whatsapp": "Continua su WhatsApp",
+    "copy_order_number": "Copia numero ordine",
+    "copy_amount": "Copia importo",
+    "view_instructions": "Visualizza istruzioni",
+    "track_order": "Traccia ordine",
+    "payment_instructions": "Istruzioni per il pagamento",
+    "payment_reference": "Causale",
+    "beneficiary": "Beneficiario",
+    "amount": "Importo",
+    "status": "Stato",
+    "copied": "Copiato"
+  },
+
+  "order_status": {
+    "draft": "Bozza",
+    "awaiting_customer_contact": "In attesa di contatto",
+    "awaiting_payment": "In attesa di pagamento",
+    "payment_under_review": "Pagamento da verificare",
+    "paid": "Pagato",
+    "processing": "In preparazione",
+    "ready_for_pickup": "Pronto per il ritiro",
+    "shipped": "Spedito",
+    "delivered": "Consegnato",
+    "collected": "Ritirato",
+    "cancelled": "Annullato",
+    "expired": "Scaduto",
+    "return_requested": "Reso richiesto",
+    "returned": "Reso ricevuto",
+    "partially_refunded": "Parzialmente rimborsato",
+    "refunded": "Rimborsato"
+  },
+
+  "payment_status": {
+    "awaiting_customer_contact": "In attesa di contatto",
+    "awaiting_payment": "In attesa di pagamento",
+    "proof_received": "Ricevuta ricevuta",
+    "under_verification": "Pagamento da verificare",
+    "verified": "Pagamento verificato",
+    "partially_paid": "Pagamento parziale",
+    "overpaid": "Pagamento in eccesso",
+    "rejected": "Pagamento non riscontrato",
+    "expired": "Scaduto",
+    "refunded": "Rimborsato",
+    "cancelled": "Annullato"
+  },
+
+  "store": {
+    "title": "Il nostro negozio",
+    "address": "Indirizzo",
+    "opening_hours": "Orari di apertura",
+    "directions": "Indicazioni stradali",
+    "pickup_info": "Ritiro in negozio",
+    "services": "Servizi"
+  },
+
+  "errors": {
+    "not_found_title": "Pagina non trovata",
+    "not_found_body": "La pagina che cerchi non esiste o è stata spostata.",
+    "server_title": "Si è verificato un errore",
+    "server_body": "Riprova tra qualche istante. Se il problema persiste, contattaci.",
+    "out_of_stock": "Alcuni prodotti non sono più disponibili nella quantità richiesta.",
+    "unavailable": "Alcuni prodotti non sono più disponibili.",
+    "payment_method_unavailable": "Il metodo di pagamento selezionato non è disponibile.",
+    "generic": "Qualcosa non ha funzionato. Riprova."
+  },
+
+  "footer": {
+    "shop": "Acquista",
+    "support": "Assistenza",
+    "legal": "Informazioni legali",
+    "language": "Lingua"
+  }
+}

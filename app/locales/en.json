@@ -1,0 +1,248 @@
+{
+  "common": {
+    "skip_to_content": "Skip to main content",
+    "menu": "Menu",
+    "close": "Close",
+    "search": "Search",
+    "search_placeholder": "Search products, accessories or model…",
+    "loading": "Loading…",
+    "back": "Back",
+    "home": "Home",
+    "shop": "Shop",
+    "cart": "Cart",
+    "account": "Account",
+    "wishlist": "Wishlist",
+    "store": "Store",
+    "required": "required",
+    "optional": "optional",
+    "yes": "Yes",
+    "no": "No",
+    "quantity": "Quantity",
+    "remove": "Remove",
+    "continue": "Continue",
+    "cancel": "Cancel",
+    "save": "Save",
+    "total": "Total",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping",
+    "vat_included": "VAT included"
+  },
+
+  "nav": {
+    "cases": "Cases",
+    "screen_protection": "Screen protection",
+    "chargers": "Chargers",
+    "cables": "Cables",
+    "power_banks": "Power banks",
+    "magsafe": "MagSafe and magnetic",
+    "audio": "Audio",
+    "car_mounts": "Car mounts",
+    "smartwatch": "Smartwatch",
+    "tablet": "Tablet accessories",
+    "offers": "Offers",
+    "new_arrivals": "New arrivals",
+    "find_by_device": "Find by device"
+  },
+
+  "home": {
+    "hero_heading": "Accessories for your smartphone.",
+    "hero_heading_line2": "Online and in our shop.",
+    "hero_body": "Cases, screen protectors, chargers, cables, power banks and much more.",
+    "shop_now": "Shop now",
+    "find_device": "Find your device",
+    "visit_store": "Visit the shop",
+    "popular_categories": "Popular categories",
+    "new_arrivals": "New arrivals",
+    "why_us": "Why buy from us"
+  },
+
+  "device": {
+    "finder_title": "Find accessories for your device",
+    "finder_intro": "Choose the brand, family and exact model to see only what fits.",
+    "select_brand": "Choose a brand",
+    "select_family": "Choose a family",
+    "select_model": "Choose a model",
+    "my_device": "My device",
+    "change_device": "Change device",
+    "remove_device": "Remove device",
+    "popular_devices": "Most searched devices",
+    "recently_selected": "Recently selected",
+    "search_device": "Search for your model",
+    "no_device_results": "No model found. Try the full name, for example “iPhone 16 Pro”.",
+    "saved_locally": "The selected device is saved in this browser."
+  },
+
+  "compatibility": {
+    "exact": "Exact fit for {{device}}",
+    "compatible": "Compatible with {{device}}",
+    "universal": "Universal accessory — check connector and power",
+    "adapter": "Compatible with an adapter",
+    "mismatch": "This product is not listed as compatible with the selected device",
+    "unverified": "Compatibility not verified",
+    "prompt": "Check compatibility",
+    "check": "Check compatibility",
+    "see_alternatives": "See compatible products",
+    "full_list": "Full compatibility"
+  },
+
+  "availability": {
+    "in_stock": "Available online",
+    "low_stock": "Only a few left",
+    "out_of_stock": "Not available",
+    "backorder": "Available to order",
+    "not_tracked": "Availability to be confirmed",
+    "pickup_available": "Available for pickup",
+    "pickup_unavailable": "Not available for pickup"
+  },
+
+  "product": {
+    "add_to_cart": "Add to cart",
+    "added_to_cart": "Added to cart",
+    "sold_out": "Sold out",
+    "sku": "SKU",
+    "description": "Description",
+    "specifications": "Technical specifications",
+    "package_contents": "In the box",
+    "shipping_returns": "Shipping and returns",
+    "legal_guarantee": "Legal guarantee",
+    "product_safety": "Product safety",
+    "related": "Related products",
+    "recently_viewed": "Recently viewed",
+    "choose_variant": "Choose an option",
+    "save_percent": "Save {{percent}}%",
+    "prior_price_note": "Lowest price applied in the previous 30 days: {{price}}"
+  },
+
+  "collection": {
+    "results_one": "{{count}} product",
+    "results_other": "{{count}} products",
+    "no_results": "No products found",
+    "no_results_help": "Try removing a filter or searching with different words.",
+    "filters": "Filters",
+    "clear_filters": "Clear filters",
+    "sort": "Sort",
+    "sort_relevance": "Most relevant",
+    "sort_price_asc": "Price low to high",
+    "sort_price_desc": "Price high to low",
+    "sort_newest": "Newest",
+    "compatible_only": "Only compatible with my device",
+    "load_more": "Show more products"
+  },
+
+  "cart": {
+    "title": "Your cart",
+    "empty": "Your cart is empty",
+    "empty_help": "Add an accessory to get started.",
+    "checkout": "Go to checkout",
+    "continue_shopping": "Continue shopping",
+    "price_changed": "The price of some items has changed and has been updated.",
+    "stock_changed": "The availability of some items has changed.",
+    "variant_unavailable": "Some items are no longer available and have been removed.",
+    "compatibility_changed": "The compatibility of some items has changed."
+  },
+
+  "checkout": {
+    "title": "Confirm your order",
+    "your_details": "Your details",
+    "first_name": "First name",
+    "last_name": "Last name",
+    "email": "Email",
+    "whatsapp": "WhatsApp number",
+    "phone": "Phone",
+    "delivery": "Delivery",
+    "delivery_shipping": "Shipping",
+    "delivery_pickup": "Store pickup",
+    "address": "Address",
+    "street_number": "Street number",
+    "postcode": "Postcode",
+    "city": "City",
+    "province": "Province",
+    "country": "Country",
+    "order_note": "Order notes",
+    "payment_method": "Payment method",
+    "confirm_order": "Confirm order",
+    "no_payment_on_site": "Payment is not taken on this website. You will receive instructions to complete it via WhatsApp.",
+    "no_payment_on_site_alt": "Payment is not taken on this website. We will send you instructions to complete it.",
+    "terms_accept": "By confirming you accept the terms and conditions of sale.",
+    "invalid_postcode": "Enter a valid five-digit postcode.",
+    "no_payment_methods": "Online ordering is not available at the moment. Please contact us for help."
+  },
+
+  "order": {
+    "confirmed_title": "Order received",
+    "confirmed_body": "Thank you. Your order has been recorded and the items are reserved.",
+    "order_number": "Order number",
+    "reserved_until": "Items reserved until {{datetime}}.",
+    "continue_whatsapp": "Continue on WhatsApp",
+    "copy_order_number": "Copy order number",
+    "copy_amount": "Copy amount",
+    "view_instructions": "View instructions",
+    "track_order": "Track order",
+    "payment_instructions": "Payment instructions",
+    "payment_reference": "Reference",
+    "beneficiary": "Beneficiary",
+    "amount": "Amount",
+    "status": "Status",
+    "copied": "Copied"
+  },
+
+  "order_status": {
+    "draft": "Draft",
+    "awaiting_customer_contact": "Awaiting contact",
+    "awaiting_payment": "Awaiting payment",
+    "payment_under_review": "Payment under review",
+    "paid": "Paid",
+    "processing": "Preparing",
+    "ready_for_pickup": "Ready for pickup",
+    "shipped": "Shipped",
+    "delivered": "Delivered",
+    "collected": "Collected",
+    "cancelled": "Cancelled",
+    "expired": "Expired",
+    "return_requested": "Return requested",
+    "returned": "Returned",
+    "partially_refunded": "Partially refunded",
+    "refunded": "Refunded"
+  },
+
+  "payment_status": {
+    "awaiting_customer_contact": "Awaiting contact",
+    "awaiting_payment": "Awaiting payment",
+    "proof_received": "Receipt received",
+    "under_verification": "Payment under review",
+    "verified": "Payment verified",
+    "partially_paid": "Partially paid",
+    "overpaid": "Overpaid",
+    "rejected": "Payment not found",
+    "expired": "Expired",
+    "refunded": "Refunded",
+    "cancelled": "Cancelled"
+  },
+
+  "store": {
+    "title": "Our shop",
+    "address": "Address",
+    "opening_hours": "Opening hours",
+    "directions": "Directions",
+    "pickup_info": "Store pickup",
+    "services": "Services"
+  },
+
+  "errors": {
+    "not_found_title": "Page not found",
+    "not_found_body": "The page you are looking for does not exist or has moved.",
+    "server_title": "Something went wrong",
+    "server_body": "Please try again shortly. If the problem persists, contact us.",
+    "out_of_stock": "Some products are no longer available in the requested quantity.",
+    "unavailable": "Some products are no longer available.",
+    "payment_method_unavailable": "The selected payment method is not available.",
+    "generic": "Something went wrong. Please try again."
+  },
+
+  "footer": {
+    "shop": "Shop",
+    "support": "Support",
+    "legal": "Legal",
+    "language": "Language"
+  }
+}

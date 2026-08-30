@@ -7,14 +7,18 @@ description: Cloudflare Workers, D1, R2 and Cron patterns for this project. Use 
 
 ## D1
 
-**Never read-then-write for anything contended.** Put the condition in the SQL:
+**Never read-then-write for anything contended.**
 
-    UPDATE inventory_levels
-       SET reserved = reserved + ?
-     WHERE variant_id = ? AND location_id = ?
-       AND reserved + ? <= on_hand
+Outside a batch, a conditional update works and you check `meta.changes`:
 
-Zero rows affected means it did not happen. Check `meta.changes`.
+    UPDATE stock_reservations SET status = 'expired'
+     WHERE id = ? AND status = 'active'    -- changes === 0 means someone won
+
+INSIDE a batch it does NOT work: matching zero rows is a silent success, and the
+batch commits regardless. D1 has no interactive transactions, so nothing can
+inspect `changes` mid-batch and abort. Express the condition as something that
+THROWS instead - a CHECK constraint or a UNIQUE index. That is how both the
+oversell guard and idempotency are enforced here.
 
 **Use batches for anything atomic.** `db.batch([...])` is all-or-nothing. Order
 creation is one batch. A partially created order that holds stock is worse than

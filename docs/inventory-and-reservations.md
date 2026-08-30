@@ -57,20 +57,41 @@ system said 5, two missing after stocktake" is.
 
 ## Preventing oversell
 
-The mechanism is a **conditional write**, not a read-then-write:
+The guard is the **CHECK constraint**, enforced inside a D1 batch:
 
+    -- schema
+    CHECK (reserved >= 0 AND reserved <= on_hand)
+
+    -- inside the order batch
     UPDATE inventory_levels
        SET reserved = reserved + :qty
-     WHERE variant_id = :v
-       AND location_id = :l
-       AND reserved + :qty <= on_hand
+     WHERE variant_id = :v AND location_id = :l
 
-If it affects zero rows, the stock is gone and the whole order batch rolls back.
+If the increment would oversell, the constraint **raises an error**, the
+statement fails, and D1 rolls back the entire batch. No order, no reservation,
+nothing partial.
 
-Check-then-write has a window between the check and the write. Two requests can
-both read `available = 1` and both proceed. Putting the check in the `WHERE`
-clause makes the database arbitrate, and SQLite serialises writes, so exactly one
-wins.
+### Why not `WHERE reserved + :qty <= on_hand`
+
+That was the original design, and it is wrong _inside a batch_. A conditional
+UPDATE that matches nothing is not an error: it succeeds with `changes = 0`. The
+batch would commit happily, leaving an order that holds stock nobody reserved —
+silently, with no failure anywhere to notice.
+
+Because D1 has no interactive transactions, there is no opportunity to inspect
+`changes` and abort mid-batch. The condition therefore has to be expressed as
+something that _throws_, and a CHECK constraint is exactly that.
+
+Check-then-write in application code is worse again: there is a window between
+the read and the write in which another request can take the last unit.
+
+This is verified, not assumed. `tests/integration/concurrency.test.ts` fires two
+simultaneous orders for the final unit and asserts exactly one succeeds, that
+`reserved` never exceeds `on_hand`, and that the loser leaves behind no order,
+no line items and no reservation.
+
+The pre-check in the order use case still exists, but only to produce a useful
+message and to catch a missing inventory row. It does not prevent the race.
 
 `tests/integration/concurrency.test.ts` fires two simultaneous attempts at the
 final unit and asserts exactly one succeeds and `reserved` never exceeds

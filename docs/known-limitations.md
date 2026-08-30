@@ -68,6 +68,17 @@ Doing backorders properly needs a separate `backordered` counter and a relaxed
 constraint. It is not in Phase 1, and the merchant does not have supplier lead
 times configured anyway.
 
+### Do NOT merge the Dependabot TypeScript 7 branch
+
+Dependabot has opened `dependabot/npm_and_yarn/typescript-7.0.2` on the remote.
+**Merging it breaks `npm run lint`.**
+
+`typescript-eslint@8.68.0` declares `typescript: ">=4.8.4 <6.1.0"`. TypeScript
+5.9.3 is pinned for that reason — it was verified at bootstrap, not guessed.
+
+Revisit only when typescript-eslint publishes a release whose peer range admits
+TypeScript 7. A green Dependabot badge is not evidence that an upgrade is safe.
+
 ### Workers compatibility date is pinned to 2026-08-22
 
 The `workerd` binary bundled with `@cloudflare/vitest-pool-workers` 0.22 refuses

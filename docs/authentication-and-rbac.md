@@ -1,5 +1,15 @@
 # Authentication and RBAC
 
+> **STATUS: DESIGNED AND SEEDED, NOT IMPLEMENTED.**
+>
+> Better Auth is installed and the roles, permissions and step-up tables exist
+> and are seeded. Nothing is wired to a route yet: there is no login, no
+> session, no step-up check and no admin panel to protect. This document
+> describes the intended design, and the permission matrix in
+> `app/domain/users/permissions.ts` is real and unit-tested — but treat the
+> enforcement described below as a specification, not as shipped behaviour.
+> See `docs/known-limitations.md`.
+
 ## Authentication
 
 Better Auth over D1. It owns its own tables; this project does **not**
@@ -114,9 +124,11 @@ read admin data by requesting the route's data directly.
 There is **no public admin registration**, and no default account with a known
 password. Shipping either would be an open door.
 
-`npm run bootstrap-admin` creates the first super admin. It refuses to run if any
-staff user already exists, requires a password meeting policy, prints nothing
-secret to stdout, and writes an audit entry.
+There is deliberately **no bootstrap script yet**. Until authentication is
+wired, a script that appeared to create a working administrator would be
+misleading. When it is written it must: refuse to run if any staff user already
+exists, require a password meeting policy, print nothing secret to stdout, and
+write an audit entry.
 
 ---
 

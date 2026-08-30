@@ -32,8 +32,10 @@ after checking the real account. See `docs/adr/0006-manual-payments.md`.
     npm run db:seed
     npm run dev
 
-Then `npm run bootstrap-admin` to create the first administrator. There is no
-default account and no public admin registration.
+> **The admin panel and authentication are NOT implemented in this pass.**
+> There is no default account, no public admin registration, and no bootstrap
+> script - one that appeared to create a working administrator would be
+> misleading. See `docs/known-limitations.md`.
 
 ## Commands
 

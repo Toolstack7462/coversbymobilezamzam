@@ -47,9 +47,15 @@ that adds nothing.
 | `design-taste-frontend` | Available.                                                       |
 | `emil-design-eng`       | Available.                                                       |
 
-`ui-ux-pro-max` **is** installed, at `~/.claude/skills/ui-ux-pro-max/`. It was
-therefore used, not recreated — the brief's fallback (write a project-local
-`ui-ux-commerce`) did not apply. Its recommendations were treated as input and
+`ui-ux-pro-max` **is** installed, at `~/.claude/skills/ui-ux-pro-max/`, and was
+invoked during this session. The brief's fallback (write a project-local
+`ui-ux-commerce` because the skill is missing) did not apply — though a
+project-local `ui-ux-commerce` skill was still written, carrying only the
+constraints specific to this codebase rather than duplicating general practice.
+
+Where its guidance and this project's constraints disagreed, the project won:
+the fill-versus-text token split and the 44px target rule come from measured
+axe results in the reference project, not from general advice. Its recommendations were treated as input and
 not followed where they would have cost accessibility, performance or
 originality; any such divergence is noted in `docs/design-system.md`.
 
@@ -96,6 +102,10 @@ contains no destructive script, and deliberately avoids restating `CLAUDE.md`.
 Written to `.claude/agents/`. **All are read-only reviewers** — they report, and
 fixes are applied in one place afterwards, so two agents can never edit the same
 file concurrently.
+
+**They have been created but not yet run.** The review phase they exist for has
+not been reached, and saying otherwise would be the exact overclaiming the
+`release-reviewer` is written to catch.
 
 | Agent                     | Scope                                                     |
 | ------------------------- | --------------------------------------------------------- |

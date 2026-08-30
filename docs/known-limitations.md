@@ -95,6 +95,35 @@ reserved. The CHECK constraint throws instead.
 
 ---
 
+## 2b. Not built in this pass — the largest gap
+
+Stated plainly, because the rest of this document would otherwise imply more
+than exists.
+
+| Not built                                                                | Consequence                                                                                                                           |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **Authentication** (Better Auth is installed but not wired to any route) | No login, no sessions, no step-up. No administrator can be created; there is deliberately no bootstrap script.                        |
+| **The admin panel** — all 36 sections                                    | Products, prices, stock, compatibility, content and settings can only be changed by writing to D1 directly.                           |
+| **The payment verification queue**                                       | The domain rules and status machine exist and are tested; the SCREEN staff would use does not.                                        |
+| **RBAC enforcement at endpoints**                                        | Roles and permissions are seeded and the domain logic is tested, but nothing enforces them yet, because there are no admin endpoints. |
+| **Import / export centre**                                               | Templates and job tables exist; the UI and parsers do not.                                                                            |
+| **Payment proof upload**                                                 | Schema, private bucket and policy exist; the upload route does not.                                                                   |
+| **Search (D1 FTS5)**                                                     | Listing search is a LIKE query. The FTS index and Italian synonyms are designed but not built.                                        |
+| **Browser tests**                                                        | Playwright is installed and configured; no specs are written.                                                                         |
+| **Email / outbox worker**                                                | Tables exist; nothing drains the outbox.                                                                                              |
+
+What DOES work end to end: browse, filter by device, view a product with
+resolved compatibility, add to cart, check out, create a real order with an
+atomic stock reservation, see the confirmation with payment instructions and the
+WhatsApp handoff, track the order, and have the reservation expire correctly on
+cron.
+
+Invariants 6 and 8 are therefore only partly pinned by tests — the rules are
+implemented and unit-tested, but the endpoints that would enforce them do not
+exist yet. See `docs/testing-strategy.md`.
+
+---
+
 ## 3. Deliberately not built in Phase 1
 
 | Not built                           | Why                                                                                                                       |

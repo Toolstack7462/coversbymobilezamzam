@@ -37,8 +37,9 @@
     "validate-env": "node scripts/validate-env/validate.mjs",
     "backup": "node scripts/backup/export.mjs",
     "restore:test": "node scripts/restore/restore-test.mjs",
-    "bootstrap-admin": "node scripts/bootstrap-admin/create.mjs",
-    "verify": "node scripts/verify/verify.mjs"
+    "verify": "node scripts/verify/verify.mjs",
+    "reconcile": "node scripts/verify/reconcile-inventory.mjs",
+    "media:inventory": "node scripts/verify/media-inventory.mjs"
   },
   "dependencies": {
     "better-auth": "1.7.2",

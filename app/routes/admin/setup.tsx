@@ -3,27 +3,23 @@ import type { Route } from "./+types/setup";
 import { cloudflareContext } from "../../../workers/app";
 import { createAuth } from "~/infrastructure/auth/auth.server";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
+import {
+  bootstrapAdmin,
+  BootstrapAdminInput,
+  isInstalled,
+} from "~/application/commands/bootstrap-admin";
 
 /**
  * First-run administrator setup.
  *
- * **Self-closing**: it works only while zero staff profiles exist. The moment
- * the first administrator is created, every subsequent request here 404s. That
- * is what makes a public setup route safe — there is no window to race, because
- * the check and the insert happen in the same request and the guard is the
- * absence of data rather than a flag someone could flip back.
+ * The guard is an ATOMIC CLAIM on a singleton row, taken before anything is
+ * created — not a "count staff profiles" read, which two concurrent requests
+ * can both pass. See docs/initial-admin-bootstrap.md.
  *
- * Deliberately a route rather than a CLI script: it uses Better Auth's own
- * sign-up path, so password hashing is never reimplemented here. Two
- * implementations of password storage would be one too many.
+ * Access additionally requires INITIAL_ADMIN_SETUP_TOKEN, a high-entropy secret
+ * submitted through this POST form. It is never placed in a URL, never logged,
+ * and never echoed back into the rendered HTML after submission.
  */
-
-async function staffCount(env: Env): Promise<number> {
-  const row = await env.DB.prepare(
-    `SELECT COUNT(*) AS n FROM staff_profiles WHERE archived_at IS NULL`,
-  ).first<{ n: number }>();
-  return row?.n ?? 0;
-}
 
 export function meta() {
   return [{ title: "Configurazione iniziale" }, { name: "robots", content: "noindex, nofollow" }];
@@ -32,8 +28,8 @@ export function meta() {
 export async function loader({ context }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
 
-  // Closed forever once an administrator exists.
-  if ((await staffCount(env)) > 0) {
+  // Closed permanently once installation has completed.
+  if (await isInstalled(env)) {
     throw new Response("Not found", { status: 404 });
   }
 
@@ -41,101 +37,135 @@ export async function loader({ context }: Route.LoaderArgs) {
     id: string;
   }>();
 
-  return { rolesSeeded: roleSeeded !== null };
+  return {
+    rolesSeeded: roleSeeded !== null,
+    // Whether a token is configured at all - never the token itself.
+    tokenConfigured: Boolean(
+      env.INITIAL_ADMIN_SETUP_TOKEN && env.INITIAL_ADMIN_SETUP_TOKEN.trim().length >= 24,
+    ),
+    turnstileSiteKey: env.TURNSTILE_SITE_KEY ?? null,
+  };
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
   const { env } = context.get(cloudflareContext);
 
-  if ((await staffCount(env)) > 0) {
+  if (await isInstalled(env)) {
     throw new Response("Not found", { status: 404 });
   }
 
   const form = await request.formData();
-  const name = String(form.get("name") ?? "").trim();
-  const email = String(form.get("email") ?? "").trim();
   const password = String(form.get("password") ?? "");
   const confirm = String(form.get("confirm") ?? "");
 
-  if (!name || !email) return { error: "Nome ed email sono obbligatori." };
   if (password !== confirm) return { error: "Le due password non coincidono." };
-  // These accounts can change where money goes.
-  if (password.length < 12) return { error: "La password deve avere almeno 12 caratteri." };
 
-  const role = await env.DB.prepare(`SELECT id FROM roles WHERE code = 'super_admin'`).first<{
-    id: string;
-  }>();
-  if (!role) {
-    return { error: "I ruoli non sono ancora stati creati. Esegui prima `npm run db:seed`." };
+  const parsed = BootstrapAdminInput.safeParse({
+    name: String(form.get("name") ?? ""),
+    email: String(form.get("email") ?? ""),
+    password,
+    setupToken: String(form.get("setupToken") ?? ""),
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Dati non validi." };
+  }
+
+  // Turnstile, when configured. Verified SERVER-side: a token that only passes
+  // in the browser proves nothing.
+  if (env.TURNSTILE_SECRET_KEY) {
+    const turnstileToken = String(form.get("cf-turnstile-response") ?? "");
+    const verification = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        secret: env.TURNSTILE_SECRET_KEY,
+        response: turnstileToken,
+        remoteip: request.headers.get("CF-Connecting-IP") ?? undefined,
+      }),
+    });
+    const outcome = (await verification.json()) as { success?: boolean };
+    if (!outcome.success) return { error: "Verifica anti-bot non superata." };
   }
 
   const auth = createAuth(env);
 
-  let response: Response;
-  try {
-    response = await auth.api.signUpEmail({
-      body: { name, email, password },
-      headers: request.headers,
-      asResponse: true,
-    });
-  } catch {
-    return { error: "Impossibile creare l'account. Controlla che l'email non sia già registrata." };
-  }
-  if (!response.ok) {
-    return { error: "Impossibile creare l'account." };
-  }
+  const result = await bootstrapAdmin(parsed.data, {
+    env,
+    clock: systemClock,
+    ids: cryptoIds,
+    ipAddress: request.headers.get("CF-Connecting-IP"),
+    // Better Auth owns password hashing. There is no second implementation.
+    createAccount: async ({ name, email, password: pw }) => {
+      try {
+        const response = await auth.api.signUpEmail({
+          body: { name, email, password: pw },
+          headers: request.headers,
+          asResponse: true,
+        });
+        if (!response.ok) return { ok: false as const, detail: "signup_rejected" };
 
-  const cookie = response.headers.get("Set-Cookie");
-  const session = await auth.api.getSession({
-    headers: new Headers({ Cookie: cookie ?? "" }),
+        const cookie = response.headers.get("Set-Cookie");
+        const session = await auth.api.getSession({
+          headers: new Headers({ Cookie: cookie ?? "" }),
+        });
+        if (!session?.user?.id) return { ok: false as const, detail: "no_session" };
+
+        return { ok: true as const, userId: session.user.id, setCookie: cookie };
+      } catch {
+        return { ok: false as const, detail: "signup_threw" };
+      }
+    },
   });
-  if (!session?.user?.id) return { error: "Account creato ma sessione non disponibile." };
 
-  const now = systemClock.now();
+  if (!result.ok) {
+    // Messages are deliberately non-specific about the token. "Wrong token" and
+    // "already installed" read the same to an unauthenticated caller.
+    const messages: Record<string, string> = {
+      not_configured:
+        "La configurazione iniziale non è abilitata su questo ambiente. Imposta INITIAL_ADMIN_SETUP_TOKEN.",
+      invalid_token: "Token di installazione non valido.",
+      rate_limited: "Troppi tentativi. Riprova più tardi.",
+      already_installed: "Installazione già completata.",
+      concurrent_install: "Installazione già in corso o completata.",
+      roles_missing: "I ruoli non sono ancora stati creati. Esegui prima `npm run db:seed`.",
+      account_creation_failed:
+        "Impossibile creare l'account. Controlla che l'email non sia già registrata.",
+    };
+    return { error: messages[result.reason] ?? "Installazione non riuscita." };
+  }
 
-  // The staff profile and the role grant are what actually confer admin access.
-  // A Better Auth user on its own is a customer.
-  await env.DB.batch([
-    env.DB.prepare(
-      `INSERT INTO staff_profiles (id, user_id, display_name, job_title, active, created_at, updated_at)
-       VALUES (?1,?2,?3,'Amministratore',1,?4,?4)`,
-    ).bind(cryptoIds.generate(), session.user.id, name, now),
-
-    env.DB.prepare(
-      `INSERT INTO user_roles (id, user_id, role_id, granted_by, granted_at)
-       VALUES (?1,?2,?3,?2,?4)`,
-    ).bind(cryptoIds.generate(), session.user.id, role.id, now),
-
-    env.DB.prepare(
-      `INSERT INTO audit_logs
-         (id, actor_id, actor_label, action, entity_type, entity_id, after_value, created_at)
-       VALUES (?1,?2,?3,'staff.bootstrap','user',?2,?4,?5)`,
-    ).bind(
-      cryptoIds.generate(),
-      session.user.id,
-      name,
-      JSON.stringify({ role: "super_admin", viaFirstRunSetup: true }),
-      now,
-    ),
-  ]);
-
-  return redirect("/admin", cookie ? { headers: { "Set-Cookie": cookie } } : undefined);
+  return redirect(
+    "/admin/sicurezza/2fa",
+    result.setCookie ? { headers: { "Set-Cookie": result.setCookie } } : undefined,
+  );
 }
 
 export default function AdminSetup({ loaderData, actionData }: Route.ComponentProps) {
+  const { rolesSeeded, tokenConfigured, turnstileSiteKey } = loaderData;
+  const ready = rolesSeeded && tokenConfigured;
+
   return (
     <main id="main" className="admin-auth">
       <div className="panel stack admin-auth__panel">
         <h1>Configurazione iniziale</h1>
         <p className="small muted">
-          Crea il primo amministratore. Questa pagina si disattiva automaticamente e in modo
-          definitivo appena l&apos;account è creato.
+          Crea il primo amministratore. Questa pagina si disattiva in modo definitivo appena
+          l&apos;installazione è completata.
         </p>
 
-        {!loaderData.rolesSeeded ? (
+        {!rolesSeeded ? (
           <p className="notice notice--warning">
             I ruoli non sono ancora presenti nel database. Esegui <code>npm run db:seed</code> prima
             di continuare.
+          </p>
+        ) : null}
+
+        {!tokenConfigured ? (
+          <p className="notice notice--warning">
+            <code>INITIAL_ADMIN_SETUP_TOKEN</code> non è configurato, oppure è troppo corto (minimo
+            24 caratteri). Senza token questa pagina si rifiuta di funzionare: non si apre mai senza
+            autorizzazione.
           </p>
         ) : null}
 
@@ -145,12 +175,42 @@ export default function AdminSetup({ loaderData, actionData }: Route.ComponentPr
           </p>
         ) : null}
 
-        <Form method="post" className="stack">
+        <Form method="post" className="stack" autoComplete="off">
+          <div className="field">
+            <label className="field__label" htmlFor="setupToken">
+              Token di installazione
+            </label>
+            {/*
+              type=password so it is not shoulder-surfed, and the value is NEVER
+              written back into the response - a rejected attempt returns an
+              empty field rather than echoing the guess.
+            */}
+            <input
+              id="setupToken"
+              name="setupToken"
+              type="password"
+              className="input"
+              required
+              autoComplete="off"
+              disabled={!ready}
+            />
+            <span className="field__hint">
+              Fornito da chi ha configurato l&apos;ambiente. Non compare mai in un URL o in un log.
+            </span>
+          </div>
+
           <div className="field">
             <label className="field__label" htmlFor="name">
               Nome e cognome
             </label>
-            <input id="name" name="name" className="input" required autoComplete="name" />
+            <input
+              id="name"
+              name="name"
+              className="input"
+              required
+              autoComplete="name"
+              disabled={!ready}
+            />
           </div>
 
           <div className="field">
@@ -164,6 +224,7 @@ export default function AdminSetup({ loaderData, actionData }: Route.ComponentPr
               className="input"
               required
               autoComplete="username"
+              disabled={!ready}
             />
           </div>
 
@@ -179,6 +240,7 @@ export default function AdminSetup({ loaderData, actionData }: Route.ComponentPr
               required
               minLength={12}
               autoComplete="new-password"
+              disabled={!ready}
             />
             <span className="field__hint">
               Almeno 12 caratteri. Questo account potrà modificare i dati di pagamento.
@@ -197,17 +259,22 @@ export default function AdminSetup({ loaderData, actionData }: Route.ComponentPr
               required
               minLength={12}
               autoComplete="new-password"
+              disabled={!ready}
             />
           </div>
 
-          <button type="submit" className="btn btn--primary" disabled={!loaderData.rolesSeeded}>
+          {turnstileSiteKey ? (
+            <div className="cf-turnstile" data-sitekey={turnstileSiteKey} />
+          ) : null}
+
+          <button type="submit" className="btn btn--primary" disabled={!ready}>
             Crea amministratore
           </button>
         </Form>
 
         <p className="caption muted">
-          Attiva l&apos;autenticazione a due fattori subito dopo: è un requisito di lancio per gli
-          amministratori e per chi verifica i pagamenti.
+          Subito dopo ti verrà chiesto di attivare l&apos;autenticazione a due fattori: è
+          obbligatoria per gli amministratori.
         </p>
       </div>
     </main>

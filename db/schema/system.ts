@@ -1,4 +1,5 @@
-import { sqliteTable, text, integer, index, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, index, uniqueIndex, check } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
 import { pk, ts, bool, stamps } from "./_shared";
 
 /**
@@ -230,4 +231,59 @@ export const scheduledJobRuns = sqliteTable(
     summary: text("summary"),
   },
   (t) => [index("scheduled_job_runs_job_idx").on(t.jobName, t.startedAt)],
+);
+
+/**
+ * Installation singleton — the atomic lock for initial-admin bootstrap.
+ *
+ * The previous guard was "run only while zero staff profiles exist", which is a
+ * READ followed by a WRITE. Two simultaneous requests can both read zero and
+ * both proceed, producing two administrators from a route that is meant to
+ * produce exactly one.
+ *
+ * `id` is constrained to the literal 'singleton', so the PRIMARY KEY itself is
+ * the lock: the first INSERT wins and a concurrent second fails. The claim is
+ * taken BEFORE the account is created, so the loser never reaches account
+ * creation at all.
+ */
+export const installationState = sqliteTable(
+  "installation_state",
+  {
+    id: text("id").primaryKey(),
+    /** in_progress | completed */
+    status: text("status").notNull(),
+    claimedAt: ts("claimed_at").notNull(),
+    completedAt: ts("completed_at"),
+    completedByUserId: text("completed_by_user_id"),
+    /**
+     * Set once the setup token has been accepted and spent. The token itself is
+     * NEVER stored - only the fact that one was consumed, and when.
+     */
+    tokenConsumedAt: ts("token_consumed_at"),
+  },
+  (t) => [
+    check("installation_state_singleton", sql`${t.id} = 'singleton'`),
+    check("installation_state_status", sql`${t.status} IN ('in_progress','completed')`),
+  ],
+);
+
+/**
+ * Bootstrap attempt log, for rate limiting and for after-the-fact review.
+ *
+ * The IP is stored HASHED: rate limiting needs to recognise a repeat visitor,
+ * not to identify them, and an unhashed address on an unauthenticated endpoint
+ * is personal data nobody needs.
+ *
+ * The submitted token is never recorded in any form.
+ */
+export const bootstrapAttempts = sqliteTable(
+  "bootstrap_attempts",
+  {
+    id: pk(),
+    ipHash: text("ip_hash"),
+    /** invalid_token | rate_limited | already_installed | claimed | completed | failed */
+    outcome: text("outcome").notNull(),
+    attemptedAt: ts("attempted_at").notNull(),
+  },
+  (t) => [index("bootstrap_attempts_recent_idx").on(t.attemptedAt)],
 );

@@ -39,9 +39,14 @@ export interface SeedOptions {
  */
 const TABLES_IN_DELETE_ORDER = [
   "audit_logs",
+  "bootstrap_attempts",
+  "installation_state",
   "step_up_sessions",
   "user_roles",
   "role_permissions",
+  // roles and permissions come AFTER their join tables, which reference them.
+  "roles",
+  "permissions",
   "staff_profiles",
   "session",
   "account",

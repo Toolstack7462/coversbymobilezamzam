@@ -25,6 +25,10 @@ const OPTIONAL = [
   { key: "RESEND_API_KEY", gates: "transactional email (the outbox still records it)" },
   { key: "EMAIL_FROM", gates: "transactional email" },
   { key: "PUBLIC_MEDIA_BASE_URL", gates: "product images" },
+  {
+    key: "INITIAL_ADMIN_SETUP_TOKEN",
+    gates: "initial admin setup at /admin/installazione (route refuses to run without it)",
+  },
 ];
 
 export function validateEnv(env) {

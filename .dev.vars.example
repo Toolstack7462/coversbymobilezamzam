@@ -11,6 +11,12 @@ APP_BASE_URL=http://localhost:5173
 # Generate with: openssl rand -base64 32
 SETTINGS_ENCRYPTION_KEY=
 
+# One-time token for creating the FIRST administrator at /admin/installazione.
+# Generate with: openssl rand -base64 32
+# Without it the setup route refuses to run - it never falls open.
+# Delete it after installation completes.
+INITIAL_ADMIN_SETUP_TOKEN=
+
 # ── Optional. Each feature stays DISABLED until its values are present. ───────
 # Bot protection on high-risk forms. Cloudflare provides always-pass test keys
 # for automated tests; see docs/security-threat-model.md.

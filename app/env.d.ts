@@ -20,6 +20,16 @@ interface AppSecrets {
   /** Required. AES-GCM key for merchant payment identifiers. */
   SETTINGS_ENCRYPTION_KEY: string;
 
+  /**
+   * One-time initial-admin bootstrap token. High entropy, at least 24
+   * characters. Set with `wrangler secret put INITIAL_ADMIN_SETUP_TOKEN`.
+   *
+   * Optional in the type because a fully installed system does not need it -
+   * but WITHOUT it the setup route refuses to run rather than falling open. A
+   * bootstrap endpoint that defaults to "no token required" is a back door.
+   */
+  INITIAL_ADMIN_SETUP_TOKEN?: string;
+
   /** Optional. Each gates a feature; absent means the feature is off. */
   TURNSTILE_SITE_KEY?: string;
   TURNSTILE_SECRET_KEY?: string;

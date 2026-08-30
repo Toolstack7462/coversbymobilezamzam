@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      # Grouped so a framework bump arrives as one reviewable PR rather than
+      # five that each fail typecheck on their own.
+      react-router:
+        patterns: ["react-router", "@react-router/*"]
+      cloudflare:
+        patterns: ["wrangler", "@cloudflare/*"]
+      testing:
+        patterns: ["vitest", "@vitest/*", "@playwright/*", "@axe-core/*"]
+      linting:
+        patterns: ["eslint", "@eslint/*", "typescript-eslint", "prettier"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

@@ -70,9 +70,15 @@ Anything else is rejected by `assertTransition()`.
 `payment_under_review` hold stock. Entering `cancelled` or `expired` from any of
 them releases it, exactly once.
 
-**`paid` requires human verification.** It is reachable only from
-`payment_under_review` or `awaiting_payment`, and only via the verification use
-case (invariant 6).
+**`paid` requires human verification.** It is reachable from
+`awaiting_customer_contact`, `awaiting_payment` or `payment_under_review` — the
+confirmation page carries the payment instructions, so a customer can pay before
+the shop has contacted them, and forcing an intermediate hop would make the
+status lie about what happened.
+
+Whichever state it comes from, it is reachable **only** through the verification
+use case, which requires `payment.verify`, a consumed step-up, a recorded amount
+and a reference (invariant 6).
 
 **`expired` requires unverified payment.** The sweeper re-checks payment status
 _after_ claiming the reservation. Without that check, a customer who pays at

@@ -39,6 +39,13 @@ export interface SeedOptions {
  */
 const TABLES_IN_DELETE_ORDER = [
   "audit_logs",
+  "step_up_sessions",
+  "user_roles",
+  "role_permissions",
+  "staff_profiles",
+  "session",
+  "account",
+  "user",
   "order_events",
   "order_status_history",
   "order_addresses",

@@ -1,5 +1,5 @@
 import { sqliteTable, text, index, uniqueIndex } from "drizzle-orm/sqlite-core";
-import { pk, ts, bool, stamps, archivable, sortOrder } from "./_shared";
+import { pk, ts, authTs, bool, stamps, archivable, sortOrder } from "./_shared";
 
 /**
  * Better Auth owns `user`, `session`, `account` and `verification`. They are
@@ -20,8 +20,8 @@ export const user = sqliteTable(
     emailVerified: bool("email_verified").notNull().default(false),
     image: text("image"),
     twoFactorEnabled: bool("two_factor_enabled").notNull().default(false),
-    createdAt: ts("created_at").notNull(),
-    updatedAt: ts("updated_at").notNull(),
+    createdAt: authTs("created_at").notNull(),
+    updatedAt: authTs("updated_at").notNull(),
   },
   (t) => [uniqueIndex("user_email_unique").on(t.email)],
 );
@@ -34,11 +34,11 @@ export const session = sqliteTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     token: text("token").notNull(),
-    expiresAt: ts("expires_at").notNull(),
+    expiresAt: authTs("expires_at").notNull(),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
-    createdAt: ts("created_at").notNull(),
-    updatedAt: ts("updated_at").notNull(),
+    createdAt: authTs("created_at").notNull(),
+    updatedAt: authTs("updated_at").notNull(),
   },
   (t) => [uniqueIndex("session_token_unique").on(t.token), index("session_user_idx").on(t.userId)],
 );
@@ -54,13 +54,13 @@ export const account = sqliteTable(
     providerId: text("provider_id").notNull(),
     accessToken: text("access_token"),
     refreshToken: text("refresh_token"),
-    accessTokenExpiresAt: ts("access_token_expires_at"),
-    refreshTokenExpiresAt: ts("refresh_token_expires_at"),
+    accessTokenExpiresAt: authTs("access_token_expires_at"),
+    refreshTokenExpiresAt: authTs("refresh_token_expires_at"),
     scope: text("scope"),
     idToken: text("id_token"),
     password: text("password"),
-    createdAt: ts("created_at").notNull(),
-    updatedAt: ts("updated_at").notNull(),
+    createdAt: authTs("created_at").notNull(),
+    updatedAt: authTs("updated_at").notNull(),
   },
   (t) => [index("account_user_idx").on(t.userId)],
 );
@@ -71,9 +71,9 @@ export const verification = sqliteTable(
     id: pk(),
     identifier: text("identifier").notNull(),
     value: text("value").notNull(),
-    expiresAt: ts("expires_at").notNull(),
-    createdAt: ts("created_at").notNull(),
-    updatedAt: ts("updated_at").notNull(),
+    expiresAt: authTs("expires_at").notNull(),
+    createdAt: authTs("created_at").notNull(),
+    updatedAt: authTs("updated_at").notNull(),
   },
   (t) => [index("verification_identifier_idx").on(t.identifier)],
 );

@@ -112,8 +112,30 @@ describe("payment status machine", () => {
     expect(payment.requiresHumanVerification("proof_received")).toBe(false);
   });
 
-  it("never lets a proof upload reach verified in one step", () => {
-    expect(payment.canTransition("proof_received", "verified")).toBe(false);
+  it("treats every outcome out of proof_received as human-verifiable", () => {
+    /**
+     * This assertion used to be `canTransition("proof_received", "verified")
+     * === false`, forcing an intermediate `under_verification` hop.
+     *
+     * That was testing the SHAPE of the transition map, not the rule. Invariant
+     * 6 forbids a proof upload from AUTOMATICALLY marking an order paid — it
+     * does not require an extra click before a human may record what they saw
+     * in the bank. Uploading a proof only inserts a row and moves the status to
+     * `proof_received`; nothing in that path calls the verification use case.
+     *
+     * The real protection is asserted in
+     * tests/security/payment-verification.test.ts:
+     *   - "uploading a payment proof does NOT change payment status"
+     *   - "refuses a user WITHOUT payment.verify"
+     *   - "refuses a user WITH the permission but WITHOUT step-up"
+     *
+     * What this test still pins is that every outcome reachable from
+     * `proof_received` is one the domain marks as requiring a human.
+     */
+    for (const to of payment.allowedTransitions("proof_received")) {
+      if (to === "cancelled" || to === "expired" || to === "under_verification") continue;
+      expect(payment.requiresHumanVerification(to)).toBe(true);
+    }
   });
 
   it("refuses to expire a settled payment", () => {

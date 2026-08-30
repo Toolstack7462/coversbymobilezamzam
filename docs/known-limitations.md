@@ -95,32 +95,46 @@ reserved. The CHECK constraint throws instead.
 
 ---
 
-## 2b. Not built in this pass — the largest gap
+## 2b. What is built, and what is still missing
 
-Stated plainly, because the rest of this document would otherwise imply more
-than exists.
+Authentication and the admin panel now exist. This section is kept accurate
+rather than aspirational.
 
-| Not built                                                                | Consequence                                                                                                                           |
-| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| **Authentication** (Better Auth is installed but not wired to any route) | No login, no sessions, no step-up. No administrator can be created; there is deliberately no bootstrap script.                        |
-| **The admin panel** — all 36 sections                                    | Products, prices, stock, compatibility, content and settings can only be changed by writing to D1 directly.                           |
-| **The payment verification queue**                                       | The domain rules and status machine exist and are tested; the SCREEN staff would use does not.                                        |
-| **RBAC enforcement at endpoints**                                        | Roles and permissions are seeded and the domain logic is tested, but nothing enforces them yet, because there are no admin endpoints. |
-| **Import / export centre**                                               | Templates and job tables exist; the UI and parsers do not.                                                                            |
-| **Payment proof upload**                                                 | Schema, private bucket and policy exist; the upload route does not.                                                                   |
-| **Search (D1 FTS5)**                                                     | Listing search is a LIKE query. The FTS index and Italian synonyms are designed but not built.                                        |
-| **Browser tests**                                                        | Playwright is installed and configured; no specs are written.                                                                         |
-| **Email / outbox worker**                                                | Tables exist; nothing drains the outbox.                                                                                              |
+### Built and working
 
-What DOES work end to end: browse, filter by device, view a product with
-resolved compatibility, add to cart, check out, create a real order with an
-atomic stock reservation, see the confirmation with payment instructions and the
-WhatsApp handoff, track the order, and have the reservation expire correctly on
-cron.
+| Area                           | State                                                                                                                                            |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Authentication**             | Better Auth over D1. Login, sessions, sign-out, rate limiting, `__Host-` cookies.                                                                |
+| **First-run setup**            | `/admin/installazione`, self-closing once one administrator exists.                                                                              |
+| **RBAC enforcement**           | `requireStaff()` on every admin loader AND action. Permissions read fresh per request, so a revoked role takes effect immediately.               |
+| **Step-up authentication**     | Required and **consumed** for payment verification and payment-settings changes. Purpose-scoped: a step-up for one does not authorise the other. |
+| **Payment verification queue** | The full workflow, with amount-mismatch refusal and duplicate-reference flagging.                                                                |
+| **Orders**                     | List, filter, and status changes limited to what the state machine allows.                                                                       |
+| **Inventory**                  | Levels plus adjustments that require a written reason and write the full ledger.                                                                 |
+| **Products**                   | Publish, unpublish, archive. Price changes write `price_history`.                                                                                |
+| **Settings**                   | All merchant settings, plus encrypted payment identifiers behind step-up.                                                                        |
+| **Audit log**                  | Read-only, filterable. No delete, no edit.                                                                                                       |
 
-Invariants 6 and 8 are therefore only partly pinned by tests — the rules are
-implemented and unit-tested, but the endpoints that would enforce them do not
-exist yet. See `docs/testing-strategy.md`.
+### Still missing
+
+| Not built                       | Consequence                                                                                                                                          |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **TOTP two-factor UI**          | Better Auth supports it and the table exists, but nothing surfaces enrolment. **This is a launch blocker** for administrators and payment verifiers. |
+| **Staff management screen**     | Roles are granted by inserting a `user_roles` row by hand. There is no UI to add a colleague.                                                        |
+| **Product and variant editors** | Products can be published, archived and repriced, but not created or edited in the admin.                                                            |
+| **Compatibility matrix editor** | Records are readable and countable; entering them needs the import centre or direct SQL.                                                             |
+| **Import / export centre**      | Templates and job tables exist; the UI and parsers do not.                                                                                           |
+| **Payment proof upload**        | Schema, private bucket and policy exist; the upload route does not.                                                                                  |
+| **Search (D1 FTS5)**            | Listing search is a LIKE query. The FTS index and Italian synonyms are designed, not built.                                                          |
+| **Browser tests**               | Playwright is configured; no specs are written.                                                                                                      |
+| **Email / outbox worker**       | Tables exist; nothing drains the outbox.                                                                                                             |
+| **Returns and refunds UI**      | Schema and state machine exist; no screens.                                                                                                          |
+
+What works end to end: browse, filter by device, add to cart, check out, create a
+real order with an atomic reservation, receive payment instructions and the
+WhatsApp handoff, track the order — and, on the staff side, sign in, verify the
+payment against the real bank account, watch the stock hold convert to a sale,
+and see the whole thing in the audit log.
 
 ---
 

@@ -47,8 +47,16 @@ a human has or has not confirmed against the real bank account or merchant app.
                     ▼
                 refunded
 
-`under_verification` is also reachable directly from `awaiting_payment`: staff
-routinely spot a transfer before the customer says anything.
+`under_verification` is an optional waypoint, not a mandatory one.
+
+Staff may record an outcome directly from `awaiting_payment` or
+`proof_received`. The actual checking happens in the bank or merchant app —
+outside this system — so requiring a separate click to announce "I am now
+checking" would be ceremony that staff learn to skip. The state remains useful
+for signalling "someone is already looking at this" on a shared queue.
+
+This does not weaken the rule: reaching `verified` still requires
+`payment.verify`, a consumed step-up, a recorded amount and a reference.
 
 `cancelled` is reachable from any non-terminal state.
 

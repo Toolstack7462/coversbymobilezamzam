@@ -44,4 +44,27 @@ export default [
     ...storefrontRoutes("-it"),
     ...prefix("en", storefrontRoutes("-en")),
   ]),
+
+  // Better Auth owns everything under /api/auth.
+  route("api/auth/*", "routes/api/auth.tsx"),
+
+  /**
+   * Admin. Italian only - it is a staff tool, and the staff are Italian.
+   *
+   * The login page sits OUTSIDE the protected layout: a route that requires a
+   * session cannot host the form that creates one.
+   */
+  route("admin/accedi", "routes/admin/login.tsx"),
+  route("admin/installazione", "routes/admin/setup.tsx"),
+  route("admin/esci", "routes/admin/logout.tsx"),
+
+  layout("routes/admin/layout.tsx", [
+    route("admin", "routes/admin/dashboard.tsx"),
+    route("admin/pagamenti", "routes/admin/payments.tsx"),
+    route("admin/ordini", "routes/admin/orders.tsx"),
+    route("admin/prodotti", "routes/admin/products.tsx"),
+    route("admin/inventario", "routes/admin/inventory.tsx"),
+    route("admin/impostazioni", "routes/admin/settings.tsx"),
+    route("admin/registro", "routes/admin/audit.tsx"),
+  ]),
 ] satisfies RouteConfig;

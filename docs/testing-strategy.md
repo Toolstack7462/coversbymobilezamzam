@@ -33,7 +33,7 @@ test could have shown.
 ## Current state — measured, not estimated
 
     npm run test:unit           10 files, 173 tests   PASS
-    npm run test:integration     4 files,  31 tests   PASS
+    npm run test:integration     5 files,  42 tests   PASS
 
 Unit coverage by area: money · compatibility resolution · all three status
 machines · price and discount display · order numbers and tracking tokens ·
@@ -42,7 +42,10 @@ configuration gates · permissions.
 
 Integration and security: concurrency · idempotency · reservation expiry and its
 race with verification · order snapshots · price tampering · payment-method
-gating · foreign-key protection of historical orders.
+gating · foreign-key protection of historical orders · **payment verification
+authorisation, step-up enforcement and step-up consumption** · proof upload not
+changing status · amount-mismatch refusal · duplicate-reference flagging ·
+audit-row writing · stock consumption on payment.
 
 **Browser tests are not yet written.** Stated plainly rather than implied.
 
@@ -57,9 +60,9 @@ gating · foreign-key protection of historical orders.
 | 3   | Compatibility is a record      | `unit/compatibility.test.ts`                |
 | 4   | Stock moves through the ledger | `integration/concurrency.test.ts`           |
 | 5   | Order items are snapshots      | `integration/order-snapshot.test.ts`        |
-| 6   | Only a human marks paid        | **not yet — needs the admin**               |
+| 6   | Only a human marks paid        | `security/payment-verification.test.ts`     |
 | 7   | Separate status machines       | `unit/state-machines.test.ts`               |
-| 8   | Sensitive mutations audited    | partial — sweeper only                      |
+| 8   | Sensitive mutations audited    | `security/payment-verification.test.ts`     |
 | 9   | Forward-only migrations        | `npm run migrations:check`                  |
 | 10  | UTC storage, Rome display      | `unit/order-number.test.ts` (date boundary) |
 | 11  | No fabricated claims           | `unit/price-display.test.ts`                |
@@ -67,8 +70,11 @@ gating · foreign-key protection of historical orders.
 | 13  | Archive, do not erase          | `integration/order-snapshot.test.ts`        |
 | 14  | Idempotency                    | `integration/concurrency.test.ts`           |
 
-Invariants 6 and 8 are only partly pinned because the admin panel is not built.
-That gap is real and is recorded in `docs/known-limitations.md`.
+All fourteen invariants now have at least one test that fails if they are
+violated. Coverage of 8 is partial by area rather than by principle: payment
+verification, price changes, inventory adjustments, product archiving and
+settings changes are audited and tested; other sensitive mutations will need
+their own tests as they are built.
 
 ---
 

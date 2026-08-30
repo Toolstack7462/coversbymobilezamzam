@@ -1,14 +1,15 @@
 # Authentication and RBAC
 
-> **STATUS: DESIGNED AND SEEDED, NOT IMPLEMENTED.**
+> **STATUS: IMPLEMENTED.**
 >
-> Better Auth is installed and the roles, permissions and step-up tables exist
-> and are seeded. Nothing is wired to a route yet: there is no login, no
-> session, no step-up check and no admin panel to protect. This document
-> describes the intended design, and the permission matrix in
-> `app/domain/users/permissions.ts` is real and unit-tested — but treat the
-> enforcement described below as a specification, not as shipped behaviour.
-> See `docs/known-limitations.md`.
+> Better Auth is wired at `/api/auth/*`. `requireStaff()` gates every admin
+> loader and action, step-up is enforced and **consumed** for payment
+> verification and payment-settings changes, and the first administrator is
+> created through the self-closing setup route.
+>
+> Still outstanding: TOTP two-factor is supported by the library but not yet
+> surfaced in the UI, and there is no staff-management screen — roles are
+> granted by inserting a `user_roles` row.
 
 ## Authentication
 
@@ -124,11 +125,18 @@ read admin data by requesting the route's data directly.
 There is **no public admin registration**, and no default account with a known
 password. Shipping either would be an open door.
 
-There is deliberately **no bootstrap script yet**. Until authentication is
-wired, a script that appeared to create a working administrator would be
-misleading. When it is written it must: refuse to run if any staff user already
-exists, require a password meeting policy, print nothing secret to stdout, and
-write an audit entry.
+The first administrator is created at **`/admin/installazione`**, a route that
+is **self-closing**: it works only while zero staff profiles exist, and 404s
+forever afterwards. The check and the insert happen in the same request, and the
+guard is the absence of data rather than a flag someone could set back.
+
+It is a route rather than a CLI script deliberately: it uses Better Auth's own
+sign-up path, so password hashing is never reimplemented. Two implementations of
+password storage would be one too many.
+
+Creating the account writes a `staff_profiles` row, a `user_roles` grant, and an
+audit entry. A Better Auth user without a staff profile is a customer, however
+valid their session.
 
 ---
 

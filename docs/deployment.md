@@ -104,10 +104,14 @@ Forward-only, reviewed files (ADR 0008). **Back up before every remote apply.**
     npm run db:seed
     npm run dev
 
-**There is no administrator to create yet.** Authentication and the admin panel
-are not implemented in this pass, so there is no default account, no public
-admin registration, and deliberately no bootstrap script - one that appeared to
-work would be misleading. See `docs/known-limitations.md`.
+Then create the first administrator at **`/admin/installazione`**.
+
+That route is **self-closing**: it works only while zero staff profiles exist
+and 404s permanently afterwards. There is no default account and no public admin
+registration.
+
+Enable two-factor immediately afterwards — it is a launch blocker for
+administrators and payment verifiers.
 
 ---
 

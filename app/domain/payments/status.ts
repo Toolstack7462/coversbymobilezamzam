@@ -23,15 +23,48 @@ export const PAYMENT_STATUSES = [
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 
 const TRANSITIONS: Record<PaymentStatus, readonly PaymentStatus[]> = {
-  awaiting_customer_contact: ["awaiting_payment", "cancelled"],
+  awaiting_customer_contact: [
+    "awaiting_payment",
+    // Staff may spot a transfer before anyone has contacted the customer.
+    "under_verification",
+    "verified",
+    "cancelled",
+    "expired",
+  ],
   awaiting_payment: [
     "proof_received",
     // Staff routinely spot a transfer before the customer says anything.
     "under_verification",
+    /**
+     * Direct outcomes, without first marking "I am checking".
+     *
+     * The checking happens in the bank or the merchant app - OUTSIDE this
+     * system - so requiring a separate click to announce it would be ceremony
+     * that staff would learn to skip. `under_verification` remains available
+     * and is genuinely useful for "someone is already looking at this", but it
+     * is not a mandatory waypoint.
+     *
+     * This does NOT weaken invariant 6: reaching any of these still requires
+     * payment.verify, a consumed step-up, an amount and a reference.
+     */
+    "verified",
+    "partially_paid",
+    "overpaid",
+    "rejected",
     "expired",
     "cancelled",
   ],
-  proof_received: ["under_verification", "cancelled", "expired"],
+  proof_received: [
+    "under_verification",
+    // A proof does not verify anything by itself - a human still must, and
+    // this is the transition they perform after checking the real account.
+    "verified",
+    "partially_paid",
+    "overpaid",
+    "rejected",
+    "cancelled",
+    "expired",
+  ],
   under_verification: ["verified", "partially_paid", "overpaid", "rejected", "cancelled"],
   // Both keep the reservation alive: the shortfall or excess is a conversation,
   // not an automatic outcome.

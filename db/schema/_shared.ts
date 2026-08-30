@@ -17,6 +17,16 @@ export const pk = () => text("id").primaryKey();
 /** Integer epoch milliseconds, UTC. */
 export const ts = (name: string) => integer(name);
 
+/**
+ * The same INTEGER column, but surfaced to TypeScript as a Date.
+ *
+ * Better Auth hands the adapter Date objects and expects them back. Storage is
+ * identical - epoch milliseconds - so this changes serialisation only and needs
+ * no migration. Used ONLY for the Better Auth-owned tables; project tables use
+ * `ts` and work in plain numbers, which keeps the Clock port meaningful.
+ */
+export const authTs = (name: string) => integer(name, { mode: "timestamp_ms" });
+
 /** SQLite has no boolean. Drizzle maps 0/1 for us. */
 export const bool = (name: string) => integer(name, { mode: "boolean" });
 

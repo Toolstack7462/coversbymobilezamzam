@@ -32,10 +32,9 @@ after checking the real account. See `docs/adr/0006-manual-payments.md`.
     npm run db:seed
     npm run dev
 
-> **The admin panel and authentication are NOT implemented in this pass.**
-> There is no default account, no public admin registration, and no bootstrap
-> script - one that appeared to create a working administrator would be
-> misleading. See `docs/known-limitations.md`.
+Then visit **/admin/installazione** to create the first administrator. That
+route is self-closing: it works only while no staff account exists. There is no
+default account and no public admin registration.
 
 ## Commands
 

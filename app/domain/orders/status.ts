@@ -57,7 +57,23 @@ const CANCELLABLE: readonly OrderStatus[] = [
 
 const TRANSITIONS: Record<OrderStatus, readonly OrderStatus[]> = {
   draft: ["awaiting_customer_contact", "cancelled"],
-  awaiting_customer_contact: ["awaiting_payment", "cancelled", "expired"],
+  awaiting_customer_contact: [
+    "awaiting_payment",
+    "payment_under_review",
+    /**
+     * Straight to paid.
+     *
+     * The confirmation page carries the payment instructions, so a customer can
+     * pay within a minute of ordering - before the shop has contacted them at
+     * all. Forcing an intermediate hop would mean the order status lies about
+     * what happened.
+     *
+     * Still only reachable through the verification use case (invariant 6).
+     */
+    "paid",
+    "cancelled",
+    "expired",
+  ],
   awaiting_payment: ["payment_under_review", "paid", "expired", "cancelled"],
   // Back to awaiting_payment when a proof is rejected: the customer gets
   // another go rather than losing the order over a bad screenshot.

@@ -77,8 +77,8 @@ before the legal block can be filled in.
 
 ## Security and access
 
-- [ ] **Authentication and the admin panel implemented** — not built in this pass
-- [ ] First administrator created
+- [x] Authentication and the admin panel implemented
+- [ ] First administrator created at `/admin/installazione`
 - [ ] Staff accounts created with **least-privilege** roles
 - [ ] **Two-factor enabled for every super admin** — blocker
 - [ ] **Two-factor enabled for every payment verifier** — blocker
@@ -125,6 +125,9 @@ than an obviously empty page.
       exactly one sale
 - [x] Expiry race proven: verification and the sweeper cannot both act
 - [x] Order snapshots proven immutable under product edits
+- [x] Payment verification proven to require permission AND step-up, with the
+      step-up consumed so it cannot be replayed
+- [x] Proof upload proven not to change payment status
 - [x] Bundle budgets met (118.9 KB JS / 2.4 KB CSS gzipped)
 - [ ] Browser tests written and passing
 - [ ] **Backup restore actually performed** against a disposable database — a

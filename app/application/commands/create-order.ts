@@ -442,12 +442,14 @@ export async function createOrder(
     );
   }
 
+  // Payment starts at 'awaiting_payment', not 'awaiting_customer_contact':
+  // the instructions are on the confirmation page the customer is looking at.
   statements.push(
     d1
       .prepare(
         `INSERT INTO order_payments (
            id, order_id, payment_method_id, status, amount_expected, currency, created_at, updated_at
-         ) VALUES (?1,?2,?3,'awaiting_customer_contact',?4,?5,?6,?7)`,
+         ) VALUES (?1,?2,?3,'awaiting_payment',?4,?5,?6,?7)`,
       )
       .bind(
         ids.generate(),

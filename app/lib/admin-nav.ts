@@ -109,12 +109,9 @@ export const ADMIN_NAV: NavGroup[] = [
         permission: "product.write",
         flag: "catalogueAdmin",
       },
-      {
-        label: "Dispositivi",
-        to: "/admin/dispositivi",
-        permission: "product.write",
-        flag: "catalogueAdmin",
-      },
+      // No flag: built. Compatibility depends on it, so it is the one catalogue
+      // screen that had to come first.
+      { label: "Dispositivi", to: "/admin/dispositivi", permission: "product.read" },
       // No flag: this screen is built. The rest of the catalogue group is not.
       { label: "Compatibilità", to: "/admin/compatibilita", permission: "product.read" },
       { label: "Recensioni", to: "/admin/recensioni", permission: "content.read", flag: "reviews" },

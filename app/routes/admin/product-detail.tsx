@@ -4,6 +4,12 @@ import { cloudflareContext } from "../../../workers/app";
 import { requireStaff } from "~/infrastructure/auth/session.server";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
 import { money, format as formatMoney, parseAmountToMinorUnits } from "~/domain/pricing/money";
+import { isCompatibilityLevel, COMPATIBILITY_LEVELS } from "~/domain/compatibility/resolve";
+import {
+  COMPATIBILITY_LABELS,
+  COMPATIBILITY_MEANING,
+  compatibilityTone,
+} from "~/lib/compatibility-views";
 import { formatDateTime } from "~/lib/i18n";
 import { breadcrumbsFor } from "~/lib/admin-nav";
 import { PageHeader } from "~/components/admin/admin-shell";
@@ -76,9 +82,10 @@ export async function loadProductDetail(env: Env, productId: string) {
     throw new Response("Prodotto non trovato", { status: 404 });
   }
 
-  const [variants, images, compatibility, priceHistory, brands, categories] = await Promise.all([
-    env.DB.prepare(
-      `SELECT v.id, v.sku, v.variant_label, v.colour, v.is_default, v.active,
+  const [variants, images, compatibility, priceHistory, brands, categories, deviceModels] =
+    await Promise.all([
+      env.DB.prepare(
+        `SELECT v.id, v.sku, v.variant_label, v.colour, v.is_default, v.active,
               vp.amount, vp.currency,
               il.on_hand, il.reserved, il.reorder_threshold
          FROM product_variants v
@@ -87,43 +94,43 @@ export async function loadProductDetail(env: Env, productId: string) {
          LEFT JOIN inventory_levels il ON il.variant_id = v.id
         WHERE v.product_id = ?1 AND v.archived_at IS NULL
         ORDER BY v.is_default DESC, v.sort_order, v.sku`,
-    )
-      .bind(productId)
-      .all<{
-        id: string;
-        sku: string;
-        variant_label: string | null;
-        colour: string | null;
-        is_default: number;
-        active: number;
-        amount: number | null;
-        currency: string | null;
-        on_hand: number | null;
-        reserved: number | null;
-        reorder_threshold: number | null;
-      }>(),
+      )
+        .bind(productId)
+        .all<{
+          id: string;
+          sku: string;
+          variant_label: string | null;
+          colour: string | null;
+          is_default: number;
+          active: number;
+          amount: number | null;
+          currency: string | null;
+          on_hand: number | null;
+          reserved: number | null;
+          reorder_threshold: number | null;
+        }>(),
 
-    env.DB.prepare(
-      `SELECT id, object_key, alt_it, width, height, is_primary
+      env.DB.prepare(
+        `SELECT id, object_key, alt_it, width, height, is_primary
          FROM product_images
         WHERE product_id = ?1 ORDER BY is_primary DESC, sort_order LIMIT 20`,
-    )
-      .bind(productId)
-      .all<{
-        id: string;
-        object_key: string;
-        alt_it: string | null;
-        width: number;
-        height: number;
-        is_primary: number;
-      }>(),
+      )
+        .bind(productId)
+        .all<{
+          id: string;
+          object_key: string;
+          alt_it: string | null;
+          width: number;
+          height: number;
+          is_primary: number;
+        }>(),
 
-    env.DB.prepare(
-      // `device_models.name` is the model's own name; the translation table
-      // only carries an optional per-locale display override, so COALESCE
-      // rather than a plain join — otherwise every untranslated model would
-      // render as a blank row.
-      `SELECT pc.compatibility_level, pc.verified, dm.id AS model_id,
+      env.DB.prepare(
+        // `device_models.name` is the model's own name; the translation table
+        // only carries an optional per-locale display override, so COALESCE
+        // rather than a plain join — otherwise every untranslated model would
+        // render as a blank row.
+        `SELECT pc.id, pc.compatibility_level, pc.verified, pc.note, dm.id AS model_id,
               COALESCE(dmt.display_name, dm.name) AS model_name,
               db.name AS brand_name
          FROM product_compatibility pc
@@ -134,40 +141,56 @@ export async function loadProductDetail(env: Env, productId: string) {
         WHERE pc.product_id = ?1
         ORDER BY db.name, model_name
         LIMIT 200`,
-    )
-      .bind(productId)
-      .all<{
-        compatibility_level: string;
-        verified: number;
-        model_id: string | null;
-        model_name: string | null;
-        brand_name: string | null;
-      }>(),
+      )
+        .bind(productId)
+        .all<{
+          id: string;
+          compatibility_level: string;
+          verified: number;
+          note: string | null;
+          model_id: string | null;
+          model_name: string | null;
+          brand_name: string | null;
+        }>(),
 
-    env.DB.prepare(
-      `SELECT ph.old_amount, ph.new_amount, ph.effective_from, ph.reason
+      env.DB.prepare(
+        `SELECT ph.old_amount, ph.new_amount, ph.effective_from, ph.reason
          FROM price_history ph
          JOIN product_variants v ON v.id = ph.variant_id
         WHERE v.product_id = ?1
         ORDER BY ph.effective_from DESC
         LIMIT 10`,
-    )
-      .bind(productId)
-      .all<{
-        old_amount: number | null;
-        new_amount: number;
-        effective_from: number;
-        reason: string | null;
+      )
+        .bind(productId)
+        .all<{
+          old_amount: number | null;
+          new_amount: number;
+          effective_from: number;
+          reason: string | null;
+        }>(),
+
+      env.DB.prepare(`SELECT id, name FROM brands ORDER BY name`).all<{
+        id: string;
+        name: string;
       }>(),
 
-    env.DB.prepare(`SELECT id, name FROM brands ORDER BY name`).all<{ id: string; name: string }>(),
-
-    env.DB.prepare(
-      `SELECT c.id, ct.name FROM categories c
+      env.DB.prepare(
+        `SELECT c.id, ct.name FROM categories c
          LEFT JOIN category_translations ct ON ct.category_id = c.id AND ct.locale = 'it'
         ORDER BY ct.name`,
-    ).all<{ id: string; name: string | null }>(),
-  ]);
+      ).all<{ id: string; name: string | null }>(),
+
+      // Only active models: an inactive one is a phone the shop has stopped
+      // listing, and offering it here would put it straight back on the site.
+      env.DB.prepare(
+        `SELECT m.id, m.name, b.name AS brand_name, f.name AS family_name
+         FROM device_models m
+         LEFT JOIN device_brands b ON b.id = m.device_brand_id
+         LEFT JOIN device_families f ON f.id = m.device_family_id
+        WHERE m.active = 1
+        ORDER BY b.name, f.release_year DESC, m.name`,
+      ).all<{ id: string; name: string; brand_name: string | null; family_name: string | null }>(),
+    ]);
 
   return {
     product,
@@ -177,6 +200,7 @@ export async function loadProductDetail(env: Env, productId: string) {
     priceHistory: priceHistory.results,
     brands: brands.results,
     categories: categories.results.filter((c) => c.name !== null),
+    deviceModels: deviceModels.results,
   };
 }
 
@@ -222,7 +246,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
       entityType,
       entityId,
       before === null ? null : JSON.stringify(before),
-      JSON.stringify(after),
+      after === null ? null : JSON.stringify(after),
       now,
     );
 
@@ -351,6 +375,98 @@ export async function action({ request, params, context }: Route.ActionArgs) {
     };
   }
 
+  if (intent === "add-compatibility") {
+    const actor = await requireStaff(request, env, "product.write");
+    const deviceModelId = String(form.get("deviceModelId") ?? "");
+    const level = String(form.get("level") ?? "");
+    const note = String(form.get("note") ?? "").trim() || null;
+
+    if (!isCompatibilityLevel(level)) return { error: "Livello non valido." };
+    if (!deviceModelId) return { error: "Scegli un modello di telefono." };
+
+    // A product-level record: variant_id NULL. The partial unique index on
+    // (product_id, device_model_id) WHERE variant_id IS NULL is what actually
+    // prevents two contradictory claims about the same phone — SQLite treats
+    // NULLs as distinct, so a single index over all three columns would not.
+    const existing = await env.DB.prepare(
+      `SELECT id FROM product_compatibility
+        WHERE product_id = ?1 AND device_model_id = ?2 AND variant_id IS NULL`,
+    )
+      .bind(productId, deviceModelId)
+      .first<{ id: string }>();
+
+    if (existing) {
+      return {
+        error:
+          "Esiste già una dichiarazione per questo modello. Modificate quella invece di aggiungerne una seconda: due righe che dicono cose diverse sullo stesso telefono sono peggio di nessuna riga.",
+      };
+    }
+
+    const id = cryptoIds.generate();
+    await env.DB.batch([
+      env.DB.prepare(
+        // verified = 0 always. Nobody can assert a fit by filling in a form;
+        // exact_fit in particular needs someone holding both objects.
+        `INSERT INTO product_compatibility
+           (id, product_id, variant_id, device_model_id, compatibility_level, note,
+            verified, created_at, updated_at)
+         VALUES (?1, ?2, NULL, ?3, ?4, ?5, 0, ?6, ?6)`,
+      ).bind(id, productId, deviceModelId, level, note, now),
+
+      audit(
+        actor.userId,
+        actor.displayName,
+        "compatibility.create",
+        "product_compatibility",
+        id,
+        null,
+        {
+          productId,
+          deviceModelId,
+          level,
+        },
+      ),
+    ]);
+
+    return {
+      success:
+        level === "exact_fit"
+          ? "Compatibilità aggiunta. Va ancora verificata su un telefono vero prima che il sito la presenti come certa."
+          : "Compatibilità aggiunta.",
+    };
+  }
+
+  if (intent === "remove-compatibility") {
+    const actor = await requireStaff(request, env, "product.write");
+    const id = String(form.get("compatibilityId") ?? "");
+
+    const row = await env.DB.prepare(
+      `SELECT compatibility_level, device_model_id FROM product_compatibility WHERE id = ?1`,
+    )
+      .bind(id)
+      .first<{ compatibility_level: string; device_model_id: string }>();
+    if (!row) return { error: "Riga non trovata." };
+
+    // A genuine delete, unlike products and devices. This row is not referenced
+    // by any order: an order snapshots the compatibility state it was placed
+    // under into `order_items.compatibility_state`, so removing the rule here
+    // cannot rewrite history.
+    await env.DB.batch([
+      env.DB.prepare(`DELETE FROM product_compatibility WHERE id = ?1`).bind(id),
+      audit(
+        actor.userId,
+        actor.displayName,
+        "compatibility.delete",
+        "product_compatibility",
+        id,
+        { level: row.compatibility_level, deviceModelId: row.device_model_id },
+        null,
+      ),
+    ]);
+
+    return { success: "Compatibilità rimossa." };
+  }
+
   if (intent === "set-status") {
     const actor = await requireStaff(request, env, "product.write");
     const status = String(form.get("status") ?? "");
@@ -449,6 +565,7 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
     priceHistory,
     brands,
     categories,
+    deviceModels,
     canWrite,
     canArchive,
     canPrice,
@@ -758,30 +875,131 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
       {/* ── Compatibility ─────────────────────────────────────────────────── */}
       <section className="panel stack">
         <h2>Compatibilità</h2>
+        <p className="small muted">
+          Con quali telefoni funziona. Non viene mai dedotta dalla categoria o dal nome: se non è
+          scritta qui, per il sito è <strong>sconosciuta</strong>, e il cliente lo legge.
+        </p>
+
         {compatibility.length === 0 ? (
           <div className="empty-state">
             <p>
               <strong>Nessuna compatibilità registrata</strong>
             </p>
             <p className="small muted">
-              Finché non indicate con quali telefoni funziona, i clienti non possono trovarlo
-              filtrando per dispositivo. La compatibilità non viene mai dedotta dalla categoria: se
-              non è registrata, per il sito è sconosciuta.
+              Finché non lo indicate, i clienti non possono trovare questo prodotto filtrando per il
+              proprio telefono — che è il motivo principale per cui visitano un sito di accessori.
             </p>
           </div>
         ) : (
-          <ul className="stack small">
-            {compatibility.map((row, i) => (
-              <li key={i}>
-                {row.brand_name ?? "—"} {row.model_name ?? row.model_id ?? "—"} ·{" "}
-                <span className="badge badge--muted">{row.compatibility_level}</span>
-                {row.compatibility_level === "exact_fit" && row.verified === 0 ? (
-                  <span className="badge badge--warning"> non verificata</span>
+          <ul className="ac-actions">
+            {compatibility.map((row) => (
+              <li key={row.id} className="ac-action">
+                <div className="ac-action__body">
+                  <p className="ac-action__label">
+                    {row.brand_name ? <span className="muted">{row.brand_name} </span> : null}
+                    {row.model_name ?? row.model_id ?? "—"}{" "}
+                    <span
+                      className={`badge ${compatibilityTone(row.compatibility_level, row.verified === 1)}`}
+                      title={
+                        isCompatibilityLevel(row.compatibility_level)
+                          ? COMPATIBILITY_MEANING[row.compatibility_level]
+                          : undefined
+                      }
+                    >
+                      {isCompatibilityLevel(row.compatibility_level)
+                        ? COMPATIBILITY_LABELS[row.compatibility_level]
+                        : row.compatibility_level}
+                    </span>
+                    {row.compatibility_level === "exact_fit" && row.verified === 0 ? (
+                      <span className="badge badge--warning"> da verificare</span>
+                    ) : null}
+                  </p>
+                </div>
+                {canWrite ? (
+                  <Form method="post">
+                    <input type="hidden" name="intent" value="remove-compatibility" />
+                    <input type="hidden" name="compatibilityId" value={row.id} />
+                    <button type="submit" className="btn btn--ghost btn--small">
+                      Rimuovi
+                    </button>
+                  </Form>
                 ) : null}
               </li>
             ))}
           </ul>
         )}
+
+        {canWrite ? (
+          deviceModels.length === 0 ? (
+            <p className="notice notice--warning small">
+              Non ci sono ancora modelli di telefono in archivio. Aggiungeteli in{" "}
+              <Link to="/admin/dispositivi">Dispositivi</Link>: senza quelli non si può registrare
+              nessuna compatibilità.
+            </p>
+          ) : (
+            <Form method="post" className="stack">
+              <input type="hidden" name="intent" value="add-compatibility" />
+
+              <div className="field">
+                <label className="field__label" htmlFor="deviceModelId">
+                  Telefono
+                </label>
+                <select id="deviceModelId" name="deviceModelId" className="input" required>
+                  <option value="">— scegli un modello —</option>
+                  {deviceModels.map((model) => (
+                    <option key={model.id} value={model.id}>
+                      {[model.brand_name, model.name].filter(Boolean).join(" ")}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="field">
+                <label className="field__label" htmlFor="level">
+                  Che tipo di compatibilità
+                </label>
+                <select id="level" name="level" className="input" defaultValue="compatible">
+                  {COMPATIBILITY_LEVELS.filter((l) => l !== "unverified").map((level) => (
+                    <option key={level} value={level}>
+                      {COMPATIBILITY_LABELS[level]}
+                    </option>
+                  ))}
+                </select>
+                {/*
+                  The meanings are listed rather than hidden behind a tooltip.
+                  The difference between "esatta" and "compatibile" is the
+                  difference between a sale and a return, and the person
+                  choosing is doing it from memory at the counter.
+                */}
+                <ul className="field__hint stack">
+                  {COMPATIBILITY_LEVELS.filter((l) => l !== "unverified").map((level) => (
+                    <li key={level}>
+                      <strong>{COMPATIBILITY_LABELS[level]}</strong> —{" "}
+                      {COMPATIBILITY_MEANING[level]}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="field">
+                <label className="field__label" htmlFor="compat-note">
+                  Nota
+                </label>
+                <input
+                  id="compat-note"
+                  name="note"
+                  className="input"
+                  maxLength={200}
+                  placeholder="es. i tasti sono un po' rigidi"
+                />
+              </div>
+
+              <button type="submit" className="btn btn--secondary">
+                Aggiungi compatibilità
+              </button>
+            </Form>
+          )
+        ) : null}
       </section>
 
       {/* ── Archive ───────────────────────────────────────────────────────── */}

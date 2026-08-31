@@ -81,6 +81,7 @@ export default [
     route("admin/prodotti/nuovo", "routes/admin/product-new.tsx"),
     route("admin/prodotti/:productId", "routes/admin/product-detail.tsx"),
     route("admin/inventario", "routes/admin/inventory.tsx"),
+    route("admin/dispositivi", "routes/admin/devices.tsx"),
     route("admin/compatibilita", "routes/admin/compatibility.tsx"),
     route("admin/contenuti/legale", "routes/admin/legal-documents.tsx"),
     route("admin/impostazioni", "routes/admin/settings.tsx"),

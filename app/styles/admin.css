@@ -824,3 +824,62 @@
   max-width: 22rem;
   margin-inline-start: auto;
 }
+
+/* ── Three-column picker ───────────────────────────────────────────────── */
+/* Brand, then family, then model. Side by side on a desktop because a shop
+   adds phones in bursts when a range launches, and navigating between three
+   pages to add one model would make that a chore nobody does. */
+
+.ac-columns {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  align-items: start;
+}
+
+.ac-picker {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-height: 24rem;
+  overflow-y: auto;
+}
+
+.ac-pick {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--target-min);
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-control);
+  color: inherit;
+  text-decoration: none;
+}
+
+a.ac-pick:hover {
+  background: var(--color-surface-sunken);
+}
+
+/* The selected step carries a border and a background as well as weight, so
+   the chain "Apple > iPhone 16 > ..." stays readable without relying on hue. */
+.ac-pick--active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-surface);
+  font-weight: var(--weight-medium);
+}
+
+.ac-pick__count {
+  flex: 0 0 auto;
+  min-width: 2rem;
+  padding: 0 var(--space-2);
+  font-size: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-chip);
+}

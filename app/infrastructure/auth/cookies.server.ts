@@ -61,3 +61,30 @@ export function cookieHeaderFrom(response: Response): string {
     .filter((pair) => pair !== "")
     .join("; ");
 }
+
+/**
+ * Is this request carrying a two-factor challenge?
+ *
+ * Better Auth issues a short-lived `two_factor` cookie — and NOT a session —
+ * once a password has been accepted for an account with a verified factor. Its
+ * presence is what makes the challenge page meaningful: without it there is no
+ * challenge to answer, and any code submitted is rejected whatever it is.
+ *
+ * Matched on the cookie NAME, tolerantly. Better Auth prefixes the name with
+ * `__Secure-` once cookies are secure, which they are over HTTPS and are not on
+ * localhost — so a hardcoded name would work in development and fail on the
+ * deployed site, which is the failure mode this codebase has already been
+ * bitten by twice.
+ *
+ * Only names are examined. A cookie whose VALUE happened to contain the word
+ * would otherwise let anyone conjure a challenge by setting a cookie.
+ */
+export function hasTwoFactorChallenge(request: Request): boolean {
+  const header = request.headers.get("Cookie");
+  if (!header) return false;
+
+  return header
+    .split(";")
+    .map((pair) => pair.trim().split("=")[0] ?? "")
+    .some((name) => /two[._-]?factor/i.test(name));
+}

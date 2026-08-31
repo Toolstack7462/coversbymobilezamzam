@@ -2,7 +2,11 @@ import { Form, redirect } from "react-router";
 import type { Route } from "./+types/security-2fa-verify";
 import { cloudflareContext } from "../../../workers/app";
 import { createAuth } from "~/infrastructure/auth/auth.server";
-import { relayCookies, cookieHeaderFrom } from "~/infrastructure/auth/cookies.server";
+import {
+  relayCookies,
+  cookieHeaderFrom,
+  hasTwoFactorChallenge,
+} from "~/infrastructure/auth/cookies.server";
 import { getSession } from "~/infrastructure/auth/session.server";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
 
@@ -28,6 +32,18 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   // Already fully signed in: nothing to challenge.
   const session = await getSession(request, env);
   if (session?.user?.id) throw redirect("/admin");
+
+  /*
+   * No challenge in flight: send them to the beginning.
+   *
+   * This page used to render for anyone who typed the address, with no
+   * credential of any kind. It was not a way in — a code submitted without the
+   * challenge cookie is refused whatever it is — but it offered a stranger a
+   * form that can never succeed, and let unauthenticated requests reach the
+   * verification endpoint. Found by the deployed smoke tests, which ask every
+   * route what it does for a visitor holding nothing.
+   */
+  if (!hasTwoFactorChallenge(request)) throw redirect("/admin/accedi");
 
   return null;
 }

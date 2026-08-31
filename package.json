@@ -44,7 +44,8 @@
     "verify": "node scripts/verify/verify.mjs",
     "reconcile": "node scripts/verify/reconcile-inventory.mjs",
     "media:inventory": "node scripts/verify/media-inventory.mjs",
-    "backup:preview": "node scripts/backup/export-fts-safe.mjs --db DB --env preview --remote"
+    "backup:preview": "node scripts/backup/export-fts-safe.mjs --db DB --env preview --remote",
+    "smoke:preview": "node scripts/verify/smoke-deployed.mjs https://italian-tech-atelier-commerce-preview.genzdigitaltools7462.workers.dev"
   },
   "dependencies": {
     "better-auth": "1.7.2",

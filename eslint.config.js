@@ -74,6 +74,10 @@ export default tseslint.config(
         URL: "readonly",
         Buffer: "readonly",
         __dirname: "readonly",
+        // Node has had these since 18; the deployed smoke tests use them to
+        // talk to a real HTTPS origin.
+        fetch: "readonly",
+        Response: "readonly",
       },
     },
     rules: { "@typescript-eslint/no-explicit-any": "off" },

@@ -18,6 +18,29 @@ import { user, session, account, verification, twoFactor as twoFactorTable } fro
 export function createAuth(env: Env) {
   const db = createDb(env.DB);
 
+  /*
+   * Refuse to build an auth system that does not know where it lives.
+   *
+   * Better Auth signs cookies against this origin and validates every request's
+   * origin header against it. Left undefined, `trustedOrigins: [undefined]`
+   * rejects sign-in on a check that never fires in local development, where
+   * .dev.vars always supplies a value — so the failure appears only after
+   * deploying, and appears as "wrong password".
+   *
+   * Throwing here turns that into an immediate, legible error that names the
+   * missing variable. The environments that are not configured yet — staging
+   * and production — will hit this on their first request rather than silently
+   * locking every member of staff out of the shop.
+   */
+  const baseUrl = env.APP_BASE_URL;
+  if (!baseUrl) {
+    throw new Error(
+      "APP_BASE_URL is not set. Better Auth cannot validate request origins " +
+        "without it, and every sign-in would fail. Set it to this deployment's " +
+        "exact origin (scheme included, no trailing slash) in wrangler.jsonc.",
+    );
+  }
+
   return betterAuth({
     database: drizzleAdapter(db, {
       provider: "sqlite",
@@ -34,7 +57,7 @@ export function createAuth(env: Env) {
     }),
 
     secret: env.BETTER_AUTH_SECRET,
-    baseURL: env.APP_BASE_URL,
+    baseURL: baseUrl,
     basePath: "/api/auth",
 
     emailAndPassword: {
@@ -141,7 +164,7 @@ export function createAuth(env: Env) {
 
     // No public sign-up reaches the admin: a customer account confers nothing.
     // Staff access is a staff_profiles row plus a role.
-    trustedOrigins: [env.APP_BASE_URL],
+    trustedOrigins: [baseUrl],
   });
 }
 

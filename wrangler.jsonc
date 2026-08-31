@@ -51,6 +51,12 @@
     "APP_ENV": "development",
     // Non-secret defaults. Real values are set per environment; secrets are set
     // with `wrangler secret put` and never appear in this file.
+    //
+    // APP_BASE_URL is where the application believes it is being served from.
+    // Better Auth signs cookies and validates request origins against it, so a
+    // wrong or absent value does not degrade gracefully — it rejects sign-in
+    // with an origin error. `.dev.vars` overrides this locally.
+    "APP_BASE_URL": "http://localhost:5173",
     "DEFAULT_LOCALE": "it",
     "SUPPORTED_LOCALES": "it,en",
     "DEFAULT_CURRENCY": "EUR",
@@ -79,8 +85,30 @@
       // production rather than the way localhost lets them.
       "workers_dev": true,
 
+      /*
+       * Off. Wrangler otherwise publishes an extra per-version hostname for
+       * every deploy, and each one is a second address serving the same shop.
+       * APP_BASE_URL can only name one of them, so auth would work on the
+       * canonical URL and fail on the others — and anyone handed the wrong link
+       * would report the shop as broken.
+       */
+      "preview_urls": false,
+
       "vars": {
         "APP_ENV": "preview",
+        /*
+         * The exact origin this Worker is served from, scheme and all.
+         *
+         * It cannot be known until the first deploy, because the workers.dev
+         * subdomain belongs to the account rather than the project — so the
+         * first deploy necessarily ran without it, and Better Auth was left
+         * with `trustedOrigins: [undefined]`. Every sign-in over real HTTPS
+         * would have failed an origin check that never fires locally, where
+         * the value comes from .dev.vars.
+         *
+         * No trailing slash: Better Auth compares origins by string.
+         */
+        "APP_BASE_URL": "https://italian-tech-atelier-commerce-preview.genzdigitaltools7462.workers.dev",
         "DEFAULT_LOCALE": "it",
         "SUPPORTED_LOCALES": "it,en",
         "DEFAULT_CURRENCY": "EUR",

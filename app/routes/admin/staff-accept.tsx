@@ -2,6 +2,7 @@ import { Form, redirect } from "react-router";
 import type { Route } from "./+types/staff-accept";
 import { cloudflareContext } from "../../../workers/app";
 import { createAuth } from "~/infrastructure/auth/auth.server";
+import { allSetCookies, cookieHeaderFrom } from "~/infrastructure/auth/cookies.server";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
 import {
   acceptInvitation,
@@ -73,9 +74,9 @@ export async function action({ request, params, context }: Route.ActionArgs) {
           asResponse: true,
         });
         if (!response.ok) return { ok: false as const, detail: "signup_rejected" };
-        const cookie = response.headers.get("Set-Cookie");
+        const cookie = allSetCookies(response).join("\n");
         const session = await auth.api.getSession({
-          headers: new Headers({ Cookie: cookie ?? "" }),
+          headers: new Headers({ Cookie: cookieHeaderFrom(response) }),
         });
         if (!session?.user?.id) return { ok: false as const, detail: "no_session" };
         return { ok: true as const, userId: session.user.id, setCookie: cookie };
@@ -98,7 +99,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
   // request anyway; this just avoids a pointless bounce.
   return redirect(
     result.mustEnrolTwoFactor ? "/admin/sicurezza/2fa?obbligatorio=1" : "/admin",
-    result.setCookie ? { headers: { "Set-Cookie": result.setCookie } } : undefined,
+    cookieHeaders(result.setCookie),
   );
 }
 
@@ -183,4 +184,21 @@ export default function AcceptInvite({ loaderData, actionData }: Route.Component
       </div>
     </main>
   );
+}
+
+/**
+ * Splits the newline-joined cookie list back into real Set-Cookie headers.
+ *
+ * The bootstrap command returns cookies as one string because its result type
+ * is a plain value, not a Response. Passing that string straight into a single
+ * `Set-Cookie` header would send a header containing a newline — which is
+ * either rejected or, worse, treated as header injection.
+ */
+function cookieHeaders(joined: string | null): { headers: Headers } | undefined {
+  const cookies = (joined ?? "").split("\n").filter((c) => c.trim() !== "");
+  if (cookies.length === 0) return undefined;
+
+  const headers = new Headers();
+  for (const cookie of cookies) headers.append("Set-Cookie", cookie);
+  return { headers };
 }

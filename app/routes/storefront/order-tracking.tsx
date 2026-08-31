@@ -12,6 +12,11 @@ import { money, format as formatMoney } from "~/domain/pricing/money";
  * carries its own date and is therefore partly guessable, so it never grants
  * access on its own (docs/security-threat-model.md).
  */
+export function meta() {
+  // The URL carries a tracking token. Indexing it would publish the token.
+  return [{ title: "Stato dell'ordine" }, { name: "robots", content: "noindex, nofollow" }];
+}
+
 export async function loader({ context, params }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
 

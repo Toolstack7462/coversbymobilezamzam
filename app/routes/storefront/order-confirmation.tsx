@@ -7,6 +7,11 @@ import { money, format as formatMoney } from "~/domain/pricing/money";
 import { buildWhatsAppMessage, buildWhatsAppUrl } from "~/domain/orders/whatsapp-message";
 import { settingValue, SETTING_KEYS, type SettingsMap } from "~/domain/content/gates";
 
+export function meta() {
+  // Never indexed: this page is reached with an order number in the URL.
+  return [{ title: "Ordine ricevuto" }, { name: "robots", content: "noindex, nofollow" }];
+}
+
 export async function loader({ context, request, params }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
   const trackingToken = new URL(request.url).searchParams.get("t");

@@ -13,6 +13,13 @@ import {
 import { availabilityState, availabilityLabelKey } from "~/domain/inventory/availability";
 import { CompatibilityBadge } from "~/components/storefront/compatibility-badge";
 
+export function meta({ loaderData }: Route.MetaArgs) {
+  // Falls back rather than inventing: an untranslated product still needs a
+  // title, and its slug is a real fact about it where a made-up name is not.
+  const name = loaderData?.product?.name ?? loaderData?.product?.slug ?? "Prodotto";
+  return [{ title: name }];
+}
+
 export async function loader({ context, params }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
 

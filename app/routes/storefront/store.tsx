@@ -21,6 +21,16 @@ import {
  * shop name, hours and contact details do not exist yet and therefore render
  * nothing at all.
  */
+export function meta() {
+  return [
+    { title: "Il negozio" },
+    {
+      name: "description",
+      content: "Dove siamo, quando siamo aperti e come ritirare un ordine in negozio.",
+    },
+  ];
+}
+
 export async function loader({ context }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
   const { results } = await env.DB.prepare(`SELECT key, value FROM store_settings`).all<{

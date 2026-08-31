@@ -45,6 +45,9 @@ export default [
     ...prefix("en", storefrontRoutes("-en")),
   ]),
 
+  // Product images from R2, used when no CDN base URL is configured.
+  route("media/*", "routes/media.tsx"),
+
   // Better Auth owns everything under /api/auth.
   route("api/auth/*", "routes/api/auth.tsx"),
 
@@ -72,11 +75,23 @@ export default [
 
   layout("routes/admin/layout.tsx", [
     route("admin", "routes/admin/dashboard.tsx"),
+    route("admin/configurazione", "routes/admin/setup-centre.tsx"),
+    route("admin/sistema", "routes/admin/system-health.tsx"),
     route("admin/pagamenti", "routes/admin/payments.tsx"),
     route("admin/ordini", "routes/admin/orders.tsx"),
+    route("admin/ordini/:orderId", "routes/admin/order-detail.tsx"),
+    route("admin/clienti", "routes/admin/customers.tsx"),
+    route("admin/sconti", "routes/admin/discounts.tsx"),
     route("admin/prodotti", "routes/admin/products.tsx"),
+    route("admin/prodotti/nuovo", "routes/admin/product-new.tsx"),
+    route("admin/prodotti/:productId", "routes/admin/product-detail.tsx"),
     route("admin/inventario", "routes/admin/inventory.tsx"),
+    route("admin/marchi", "routes/admin/catalogue-taxonomy.tsx"),
+    route("admin/dispositivi", "routes/admin/devices.tsx"),
+    route("admin/compatibilita", "routes/admin/compatibility.tsx"),
+    route("admin/contenuti/legale", "routes/admin/legal-documents.tsx"),
     route("admin/impostazioni", "routes/admin/settings.tsx"),
+    route("admin/importazioni", "routes/admin/imports.tsx"),
     route("admin/registro", "routes/admin/audit.tsx"),
     route("admin/personale", "routes/admin/staff.tsx"),
     route("admin/personale/:staffId", "routes/admin/staff-detail.tsx"),

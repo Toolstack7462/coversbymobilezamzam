@@ -4,6 +4,12 @@ Recorded at the start of the **Secure Merchant Operations** milestone,
 2026-08-31. Every figure here was produced by running the command shown, on a
 clean `npm ci`. Nothing is carried over from an earlier report.
 
+> **This is a dated snapshot, not the current state.** It is kept as written so
+> the milestone has an honest starting line. In particular the single
+> all-routes JS budget quoted below has since been replaced by separate
+> storefront and admin budgets — see `docs/performance-budget.md` for what the
+> gate measures now.
+
 ---
 
 ## 1. Repository
@@ -119,6 +125,9 @@ The browser figure is zero. Playwright is installed and `playwright.config.ts`
 does not exist yet; no `.spec` file is present anywhere under `tests/`. The
 earlier report's claim that browser tests were missing is **confirmed**.
 
+> Since this audit: `playwright.config.ts` and `tests/browser/` now exist and
+> 33 browser tests pass. See `docs/launch-checklist.md`.
+
 ### Bundle budgets
 
     PASS  client JavaScript (all routes): 130.4 KB / 160.0 KB (82%)
@@ -177,3 +186,84 @@ Confirmed still true at `54c4f12`:
     browser       0
     verify        10/10 PASS
     status        DO NOT LAUNCH
+
+---
+
+---
+
+# Audit — Merchant Control Centre milestone
+
+Re-audited 2026-08-31 at HEAD `4bd6c26`, branch
+`feat/secure-merchant-operations`. Reproduced by running the commands, not
+carried over from the previous section.
+
+## Repository
+
+| Property               | Value                                                                 |
+| ---------------------- | --------------------------------------------------------------------- |
+| Branch                 | `feat/secure-merchant-operations`                                     |
+| HEAD                   | `4bd6c26`                                                             |
+| Working tree           | clean                                                                 |
+| Remote                 | `coversbymobilezamzam` — **public**, merchant's explicit choice       |
+| `gh auth status`       | **not authenticated** (git push works via Windows Credential Manager) |
+| Node / npm / wrangler  | v24.14.1 / 11.11.0 / 4.127.1                                          |
+| Shopify reference repo | untouched, `f1a7df6`, clean                                           |
+
+## Feature inventory — what actually exists
+
+Checked against `app/routes.ts`, `app/routes/admin/`, `app/application/commands/`
+and `tests/`, not against memory.
+
+| Feature                    | State       | Evidence                                                                                     |
+| -------------------------- | ----------- | -------------------------------------------------------------------------------------------- |
+| Better Auth                | **Works**   | `auth.server.ts`, `/api/auth/*`                                                              |
+| Staff authentication       | **Works**   | `login.tsx`, `logout.tsx`, generic failure messages                                          |
+| TOTP                       | **Works**   | 5 routes; mandatory for privileged roles, enforced per request                               |
+| RBAC                       | **Works**   | `requireStaff()` in every admin loader and action                                            |
+| Initial-admin installation | **Works**   | Race-safe singleton claim, 16 tests                                                          |
+| Payment verification       | **Works**   | `verify-payment.ts` + `/admin/pagamenti`, step-up consumed                                   |
+| Staff management           | **Works**   | Invitations, roles, statuses, sessions                                                       |
+| Product management         | **PARTIAL** | List, publish/unpublish, archive, price edit. **No create, no edit, no variants, no media.** |
+| Variant management         | **ABSENT**  | Schema exists; no UI                                                                         |
+| Compatibility management   | **ABSENT**  | Domain resolver + schema exist; **no admin UI at all**                                       |
+| Inventory management       | **PARTIAL** | Levels list + adjustments. No receipts, transfers, movements or reservations pages.          |
+| Customer management        | **ABSENT**  |                                                                                              |
+| Discounts                  | **ABSENT**  | `coupons` / `promotions` tables exist; no UI                                                 |
+| Content management         | **ABSENT**  | `pages`, `homepage_sections`, `banners` exist; no UI                                         |
+| Import / export            | **ABSENT**  | Job tables exist; no UI, no parsers                                                          |
+| FTS search                 | **ABSENT**  | Storefront listing uses `LIKE`; no FTS5 index                                                |
+| Browser tests              | **ABSENT**  | 0 spec files                                                                                 |
+| GitHub remote              | **Exists**  | Public                                                                                       |
+| Cloudflare preview         | **None**    | No resource created, nothing deployed                                                        |
+
+### A broken script found during the audit
+
+`package.json` declares `"test:e2e": "playwright test"`, but **there is no
+`playwright.config.ts`**. The script would fail if anyone ran it. It is not part
+of `npm run verify`, so it has never failed a gate — which is precisely why it
+went unnoticed. Recorded here and fixed when the browser suite lands.
+
+## Baseline measurements
+
+    unit          207 passing (12 files)
+    integration    58 passing (6 files)
+    browser          0 — none exist
+    verify        10/10 PASS
+    bundle        140.4 KB / 160 KB JS (88%) · 3.0 KB / 45 KB CSS
+
+## What this milestone must not break
+
+Preserved without modification:
+
+- the compatibility resolver and its invariants;
+- the inventory ledger and the CHECK-constraint oversell guard;
+- atomic order creation in a single D1 batch;
+- the four status machines;
+- payment verification's permission + step-up + amount + reference requirement;
+- the WhatsApp message exclusion list;
+- TOTP enforcement and the pre-enrolment allowlist;
+- the last-super-admin guard;
+- immutable audit rows.
+
+**The dashboard is an operational layer over these, not a replacement for them.**
+Any UI that reimplements one of these rules locally is a defect.

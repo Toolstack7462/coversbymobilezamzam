@@ -101,20 +101,43 @@ export async function action({ request, context }: Route.ActionArgs) {
       };
     }
 
-    await env.DB.prepare(
-      `INSERT INTO audit_logs
-         (id, actor_id, actor_label, action, entity_type, entity_id, after_value, created_at)
-       VALUES (?1,?2,?3,'auth.2fa_enabled','user',?2,?4,?5)`,
-    )
-      .bind(
+    /*
+     * Mark the factor VERIFIED.
+     *
+     * `two_factor.verified` is this project's own column, not one Better Auth
+     * maintains — it exists so `requireEnrolledStaff` can distinguish "has a
+     * secret" from "has proved they can use it". Better Auth's verifyTOTP
+     * above confirms the code; nothing in it knows about this column.
+     *
+     * Without this write the column stayed 0 forever, which meant a privileged
+     * account could enrol successfully and then be refused by the gate on
+     * every single admin page — permanently locked out of the shop it owns,
+     * with the enrolment screen reporting success. It was found the first time
+     * a browser test tried to sign in and use the admin.
+     *
+     * Also clears the failure counter and any lockout: proving the factor is
+     * exactly the event those exist to wait for.
+     */
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE two_factor
+            SET verified = 1, failed_verification_count = 0, locked_until = NULL
+          WHERE user_id = ?1`,
+      ).bind(actor.userId),
+
+      env.DB.prepare(
+        `INSERT INTO audit_logs
+           (id, actor_id, actor_label, action, entity_type, entity_id, after_value, created_at)
+         VALUES (?1,?2,?3,'auth.2fa_enabled','user',?2,?4,?5)`,
+      ).bind(
         cryptoIds.generate(),
         actor.userId,
         actor.displayName,
         // The secret is not recorded. Only that enrolment happened.
         JSON.stringify({ method: "totp", verified: true }),
         now,
-      )
-      .run();
+      ),
+    ]);
 
     // Straight to the recovery codes: an enrolled factor with no way back in is
     // one lost phone from a lockout.

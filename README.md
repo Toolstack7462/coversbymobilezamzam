@@ -64,14 +64,41 @@ Start with `CLAUDE.md` — the operating contract — then:
 | `docs/architecture.md`       | How the layers fit                                    |
 | `docs/invariants.md`         | The fourteen rules that must hold                     |
 | `docs/adr/`                  | Why each major choice was made, and what was rejected |
-| `docs/merchant-guide.md`     | Running the shop, no code                             |
+| `docs/admin-guide.md`        | Running the shop, no code                             |
+| `docs/admin-user-flows.md`   | The jobs the shop does, screen by screen              |
 | `docs/operations-runbook.md` | When something is wrong                               |
 | `docs/launch-checklist.md`   | What must be true before going live                   |
 | `docs/known-limitations.md`  | What is missing and what is not built                 |
+
+Building on the admin:
+
+| Read                                     | For                                     |
+| ---------------------------------------- | --------------------------------------- |
+| `docs/admin-information-architecture.md` | What goes where in the sidebar, and why |
+| `docs/admin-design-system.md`            | The rules the interface is built from   |
+| `docs/admin-table-patterns.md`           | Every list, and the URL state behind it |
+| `docs/setup-centre.md`                   | The computed launch checklist           |
 
 ## Status
 
 **READY FOR MERCHANT REVIEW — DO NOT LAUNCH.**
 
-Merchant data, legal review, fiscal review, a tested restore and measured
-production performance are all outstanding. See `docs/launch-checklist.md`.
+The software is feature-complete for Phase 1: a merchant can install the shop,
+enrol in two-factor, add phones, products, photos and compatibility, import a
+supplier's spreadsheet after reviewing exactly what it will change, take an
+order, verify the payment against their own bank account, and hand off to
+WhatsApp — with every step audited.
+
+What is outstanding is not code:
+
+- **The merchant's own data.** Brand name, P.IVA, REA, contacts, opening hours
+  and payment details are all empty, deliberately. Nothing has been invented.
+- **Legal and fiscal review.** The eleven required documents are not written,
+  and this system will not generate them.
+- **A tested backup restore.** A backup nobody has restored is not a backup.
+- **A deployed preview.** Core Web Vitals, real-HTTPS cookie behaviour and the
+  first-run flow against a real Cloudflare environment are all unmeasured;
+  localhost is not evidence.
+
+See `docs/launch-checklist.md` for the full gate, and
+`docs/known-limitations.md` for what is deliberately not built.

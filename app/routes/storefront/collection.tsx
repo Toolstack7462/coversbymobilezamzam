@@ -3,6 +3,7 @@ import type { Route } from "./+types/collection";
 import { cloudflareContext } from "../../../workers/app";
 import { parseLocalePath, translator, localePath, plural } from "~/lib/i18n";
 import { ProductCard, type ProductCardData } from "~/components/storefront/product-card";
+import { parseSearchQuery, emptySearchReason } from "~/domain/search/query";
 
 const PER_PAGE = 24;
 
@@ -13,6 +14,16 @@ const PER_PAGE = 24;
  * filtered view is shareable, and the no-JavaScript path is real pagination
  * rather than an inert button.
  */
+export function meta() {
+  return [
+    { title: "Tutti gli accessori" },
+    {
+      name: "description",
+      content: "Cover, cavi, caricabatterie e pellicole per smartphone.",
+    },
+  ];
+}
+
 export async function loader({ context, request }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
   const url = new URL(request.url);
@@ -46,13 +57,30 @@ export async function loader({ context, request }: Route.LoaderArgs) {
          AND pc.compatibility_level <> 'incompatible')`);
   }
 
-  if (q) {
-    binds.push(`%${q.toLowerCase()}%`);
-    where.push(`(LOWER(pt.name) LIKE ?${binds.length}
-                 OR EXISTS (SELECT 1 FROM product_variants v
-                             WHERE v.product_id = p.id AND LOWER(v.sku) LIKE ?${binds.length}))`);
+  /*
+   * Full-text search, replacing `LOWER(name) LIKE '%term%'`.
+   *
+   * A leading-wildcard LIKE cannot use an index, so every search was a full
+   * scan of every product name — fine at fifty products, not at five hundred —
+   * and it could not rank, so the best match arrived in whatever order the
+   * table happened to hold it.
+   *
+   * `parsed.match` is built by the domain from the customer's words: quoted
+   * terms only, never their raw input, because FTS5's MATCH is a query language
+   * and a stray quotation mark in a search box would otherwise be a 500.
+   */
+  const parsed = parseSearchQuery(q);
+  if (parsed.match !== null) {
+    binds.push(parsed.match);
+    where.push(`p.id IN (
+      SELECT m.product_id FROM product_search s
+        JOIN product_search_map m ON m.rowid = s.rowid
+       WHERE product_search MATCH ?${binds.length})`);
   }
 
+  // With a search active, "relevance" means FTS5's own ranking rather than
+  // the merchant's featured order — the customer asked a question, and the
+  // answer to it outranks the shop's own preferences.
   const orderBy =
     sort === "price_asc"
       ? "price_amount ASC"
@@ -111,6 +139,9 @@ export async function loader({ context, request }: Route.LoaderArgs) {
     page,
     perPage: PER_PAGE,
     filters: { q, categoria, dispositivo, sort },
+    // Null unless every word was a stop word. "Nessun risultato" is true and
+    // unhelpful; this distinguishes "we have nothing" from "try other words".
+    searchHint: emptySearchReason(parsed, "it"),
   };
 }
 

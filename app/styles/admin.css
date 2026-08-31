@@ -1,0 +1,960 @@
+/**
+ * Merchant Control Centre.
+ *
+ * Loaded ONLY by the admin layout route, so it is a separate chunk and never
+ * reaches a customer browsing the shop.
+ *
+ * Same tokens as the storefront — this is the same product, not a second one —
+ * but denser and quieter. A staff tool is read many times a day by someone who
+ * already knows what everything is; atmosphere costs them scanning speed.
+ *
+ * Every colour here is a token. Literal colours belong only in tokens.css.
+ */
+
+.ac {
+  --ac-sidebar: 248px;
+  --ac-sidebar-collapsed: 72px;
+  --ac-topbar: 64px;
+
+  min-height: 100dvh;
+  background: var(--color-background);
+}
+
+/* ── Top bar ───────────────────────────────────────────────────────────── */
+
+.ac__topbar {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: var(--ac-topbar);
+  padding-inline: var(--space-4);
+  background: var(--color-surface);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.ac__brand {
+  font-family: var(--font-heading);
+  font-weight: var(--weight-bold);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.ac__topbar-spacer {
+  flex: 1;
+}
+
+/* 44px minimum target, like every other control in this project. */
+.ac__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--target-min);
+  min-height: var(--target-min);
+  border-radius: var(--radius-control);
+  background: transparent;
+  border: var(--border-width) solid transparent;
+  cursor: pointer;
+  list-style: none;
+}
+
+.ac__icon-btn:hover {
+  background: var(--color-surface-sunken);
+}
+
+.ac__icon-btn::-webkit-details-marker {
+  display: none;
+}
+
+/*
+ * Environment badge. Warning-toned because its whole job is to interrupt
+ * someone who thinks they are somewhere else.
+ */
+.ac__env {
+  padding: var(--space-half) var(--space-2);
+  border-radius: var(--radius-chip);
+  background: var(--color-warning-surface);
+  color: var(--color-warning-text);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Account menu ──────────────────────────────────────────────────────── */
+
+.ac__menu {
+  position: relative;
+}
+
+.ac__menu-panel {
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block-start: calc(100% + var(--space-2));
+  min-width: 15rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-menu);
+  z-index: 40;
+}
+
+/* ── Layout ────────────────────────────────────────────────────────────── */
+
+.ac__body {
+  display: grid;
+  grid-template-columns: var(--ac-sidebar) minmax(0, 1fr);
+  align-items: start;
+}
+
+/* The collapse toggle is a checkbox, so this works with no JavaScript. */
+.ac__collapse-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ac__collapse-input:checked ~ .ac__body {
+  grid-template-columns: var(--ac-sidebar-collapsed) minmax(0, 1fr);
+}
+
+.ac__collapse-input:checked ~ .ac__body .ac__nav-label,
+.ac__collapse-input:checked ~ .ac__body .ac__nav-heading {
+  display: none;
+}
+
+.ac__sidebar {
+  position: sticky;
+  inset-block-start: var(--ac-topbar);
+  max-height: calc(100dvh - var(--ac-topbar));
+  overflow-y: auto;
+  background: var(--color-surface);
+  border-inline-end: var(--border-width) solid var(--color-border);
+  padding-block: var(--space-4);
+}
+
+.ac__main {
+  /* minmax(0, 1fr) above plus this keeps a wide table from stretching the
+     grid and producing horizontal PAGE scroll. */
+  min-width: 0;
+  padding: var(--space-5);
+  max-width: 82rem;
+}
+
+/* ── Navigation ────────────────────────────────────────────────────────── */
+
+.ac__nav-group + .ac__nav-group {
+  margin-block-start: var(--space-5);
+}
+
+.ac__nav-heading {
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+  padding-inline: var(--space-5);
+  margin-block-end: var(--space-2);
+}
+
+.ac__nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ac__nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: var(--target-min);
+  padding: var(--space-2) var(--space-5);
+  font-size: var(--text-ui);
+  text-decoration: none;
+  border-inline-start: 3px solid transparent;
+}
+
+.ac__nav-link:hover {
+  background: var(--color-surface-sunken);
+}
+
+.ac__nav-link--active {
+  border-inline-start-color: var(--color-primary);
+  background: var(--color-primary-surface);
+  font-weight: var(--weight-semibold);
+}
+
+/*
+ * Count badge. Warning-toned and carrying a number, so it never relies on
+ * colour alone — and it has an aria-label, because "7" beside a link is
+ * meaningless to a screen reader without one.
+ */
+.ac__nav-badge {
+  min-width: 1.5rem;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-chip);
+  background: var(--color-warning-surface);
+  color: var(--color-warning-text);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+/* ── Page header ───────────────────────────────────────────────────────── */
+
+.ac__page-header {
+  margin-block-end: var(--space-5);
+}
+
+.ac__crumbs {
+  color: var(--color-text-secondary);
+  margin-block-end: var(--space-2);
+}
+
+.ac__page-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+/* ── Responsive ────────────────────────────────────────────────────────── */
+
+.ac__drawer {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .ac__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ac__sidebar {
+    position: static;
+    max-height: none;
+    border-inline-end: 0;
+    border-block-end: var(--border-width) solid var(--color-border);
+    padding-block: 0;
+  }
+
+  .ac__nav-desktop {
+    display: none;
+  }
+
+  .ac__drawer {
+    display: block;
+  }
+
+  .ac__drawer-toggle {
+    min-height: var(--target-min);
+    display: flex;
+    align-items: center;
+    padding-inline: var(--space-4);
+    font-weight: var(--weight-semibold);
+    cursor: pointer;
+  }
+
+  .ac__main {
+    padding: var(--space-4);
+  }
+}
+
+@media (max-width: 639px) {
+  .ac__hide-sm {
+    display: none;
+  }
+}
+
+/* ── Metric cards ──────────────────────────────────────────────────────── */
+
+.ac-metrics {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
+}
+
+.ac-metric {
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+
+.ac-metric__value {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: var(--text-h2);
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.ac-metric__label {
+  display: block;
+  margin-block-start: var(--space-1);
+  font-size: var(--text-ui);
+  color: var(--color-text-secondary);
+}
+
+.ac-metric__note {
+  display: block;
+  margin-block-start: var(--space-1);
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
+/* ── Action centre ─────────────────────────────────────────────────────── */
+
+.ac-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.ac-action {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--target-min);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control);
+  text-decoration: none;
+}
+
+.ac-action:hover {
+  border-color: var(--color-border-strong);
+}
+
+/* Blocking items are bordered, not merely coloured: the border survives a
+   greyscale print and a colour-vision difference. */
+.ac-action--blocking {
+  border-inline-start: 3px solid var(--color-danger);
+  background: var(--color-danger-surface);
+}
+
+.ac-action--warning {
+  border-inline-start: 3px solid var(--color-warning);
+  background: var(--color-warning-surface);
+}
+
+.ac-action--info {
+  border-inline-start: 3px solid var(--color-border-strong);
+}
+
+/* The count sits first in the action centre and last on the system page. It is
+   a leading badge in the first case and a trailing value in the second, so the
+   auto margin is applied only when it is genuinely the last thing in the row. */
+.ac-action__count {
+  min-width: 2.5rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-bold);
+  font-size: var(--text-h3);
+  line-height: 1.1;
+  text-align: center;
+}
+
+.ac-action__count:last-child {
+  margin-inline-start: auto;
+  font-size: var(--text-ui);
+}
+
+.ac-action__body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ac-action__label {
+  margin: 0;
+  font-weight: var(--weight-medium);
+}
+
+.ac-action__detail {
+  margin: var(--space-1) 0 0;
+}
+
+/* A link-shaped metric still has to look like a card, not like body copy. */
+.ac-metric--link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.ac-metric--link:hover {
+  border-color: var(--color-border-strong);
+}
+
+.ac-metric--link:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* Wrap to a stack before the button is squeezed off the row. */
+@media (max-width: 40rem) {
+  .ac-action {
+    flex-wrap: wrap;
+  }
+
+  .ac-action__body {
+    flex-basis: 100%;
+    order: 2;
+  }
+}
+
+/* ── Setup checklist ───────────────────────────────────────────────────── */
+
+.ac-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.ac-step {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control);
+}
+
+.ac-step--done {
+  background: var(--color-success-surface);
+  border-color: var(--color-success);
+}
+
+.ac-step--blocking {
+  border-inline-start: 3px solid var(--color-danger);
+}
+
+.ac-step__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  border: 2px solid var(--color-border-strong);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-bold);
+}
+
+.ac-step--done .ac-step__mark {
+  border-color: var(--color-success);
+  color: var(--color-success-text);
+}
+
+.ac-step__title {
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-ui);
+}
+
+.ac-step__why {
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
+.ac-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.ac-progress__track {
+  flex: 1;
+  height: 8px;
+  border-radius: var(--radius-chip);
+  background: var(--color-surface-sunken);
+  overflow: hidden;
+}
+
+.ac-progress__fill {
+  height: 100%;
+  background: var(--color-primary);
+}
+
+/* ── Data table ────────────────────────────────────────────────────────── */
+/* One table component for every list, so learning one list teaches all of
+   them. Below 48rem the SAME markup becomes a stack of cards through CSS
+   alone — there is no second component that could drift out of step. */
+
+.ac-table-wrap {
+  gap: var(--space-4);
+}
+
+.ac-table-scroll {
+  overflow-x: auto;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+}
+
+.ac-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-ui);
+}
+
+.ac-table th,
+.ac-table td {
+  padding: var(--space-3) var(--space-4);
+  text-align: start;
+  vertical-align: middle;
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.ac-table thead th {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
+  background: var(--color-surface-sunken);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.ac-table tbody tr:last-child td {
+  border-block-end: 0;
+}
+
+.ac-table tbody tr:hover {
+  background: var(--color-surface-sunken);
+}
+
+.ac-table__numeric {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.ac-table__select {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.ac-table__actions {
+  width: 1%;
+  white-space: nowrap;
+  text-align: end;
+}
+
+.ac-table__sort {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: inherit;
+  text-decoration: none;
+}
+
+.ac-table__sort:hover {
+  color: var(--color-text-primary);
+  text-decoration: underline;
+}
+
+.ac-table__arrow {
+  opacity: 0.5;
+}
+
+/* The active column's arrow is the one worth seeing. */
+.ac-table th[aria-sort="ascending"] .ac-table__arrow,
+.ac-table th[aria-sort="descending"] .ac-table__arrow {
+  opacity: 1;
+}
+
+/* ── Saved views ───────────────────────────────────────────────────────── */
+
+.ac-views ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.ac-view {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--target-min);
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  border-block-end: 3px solid transparent;
+}
+
+.ac-view:hover {
+  color: var(--color-text-primary);
+}
+
+/* The active tab is marked by weight and an underline as well as colour, and
+   carries aria-current so it does not depend on being seen at all. */
+.ac-view--active {
+  color: var(--color-text-primary);
+  font-weight: var(--weight-medium);
+  border-block-end-color: var(--color-primary);
+}
+
+.ac-view__count {
+  padding: 0 var(--space-2);
+  font-size: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-chip);
+}
+
+/* ── Search, bulk actions, pagination ──────────────────────────────────── */
+
+.ac-search {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.ac-search input[type="search"] {
+  flex: 1 1 16rem;
+  min-height: var(--target-min);
+}
+
+.ac-bulk {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  margin-block-start: var(--space-3);
+}
+
+.ac-bulk .caption {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.ac-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ac-pagination p {
+  margin: 0;
+}
+
+/* Not a disabled link: a disabled anchor still takes focus and announces as a
+   link that does nothing. This is inert text wearing the button's shape. */
+.is-inert {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* ── Cards below 48rem ─────────────────────────────────────────────────── */
+/* A twelve-column table on a 390px screen is a horizontal-scroll puzzle. The
+   same rows become cards, each cell labelled by the header it came from. */
+
+@media (max-width: 48rem) {
+  .ac-table-scroll {
+    border: 0;
+    background: none;
+    overflow-x: visible;
+  }
+
+  .ac-table thead {
+    /* Not display:none — that removes it from the accessibility tree too, and
+       the headers are what make the cells make sense. */
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .ac-table,
+  .ac-table tbody,
+  .ac-table tr,
+  .ac-table td {
+    display: block;
+    width: auto;
+  }
+
+  .ac-table tr {
+    margin-block-end: var(--space-3);
+    padding: var(--space-2) 0;
+    background: var(--color-surface);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-card);
+  }
+
+  .ac-table td {
+    display: flex;
+    gap: var(--space-3);
+    align-items: baseline;
+    justify-content: space-between;
+    padding: var(--space-2) var(--space-4);
+    border-block-end: 0;
+    text-align: end;
+  }
+
+  .ac-table td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    font-size: var(--text-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-secondary);
+    text-align: start;
+  }
+
+  /* Secondary columns earn their space on a desktop table and lose it here. */
+  .ac-table__secondary {
+    display: none;
+  }
+
+  .ac-table__actions,
+  .ac-table__select {
+    width: auto;
+    justify-content: flex-end;
+  }
+
+  .ac-table__actions::before,
+  .ac-table__select::before {
+    content: none;
+  }
+}
+
+/* A compact button for inside table rows, where a full-height control would
+   set the row height for every row in the table. Still meets the 44px touch
+   target through padding on the row itself. */
+.btn--small {
+  min-height: 2rem;
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-caption);
+}
+
+/* Admin-only badge tones. The word inside always carries the meaning; these
+   only reinforce it, so a greyscale print or a colour-vision difference loses
+   nothing. */
+.badge--success {
+  background: var(--color-success-surface);
+  color: var(--color-success-text);
+}
+
+.badge--info {
+  background: var(--color-primary-surface);
+  color: var(--color-primary-text, var(--color-text-primary));
+}
+
+/* A checkbox and its label read as one control, so they share a row and one
+   click target. The 44px minimum is met by the row, not by the box. */
+.field__checkbox {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  min-height: var(--target-min);
+  cursor: pointer;
+}
+
+.field__checkbox input {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: 0 0 auto;
+}
+
+/* ── Fact lists and totals ─────────────────────────────────────────────── */
+/* Label-and-value pairs on the detail screens. A definition list rather than a
+   table: these are facts about one thing, not rows to compare. */
+
+.ac-facts,
+.ac-totals {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.ac-fact,
+.ac-total {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: space-between;
+  align-items: baseline;
+  padding-block: var(--space-1);
+}
+
+.ac-total + .ac-total {
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+.ac-fact dt,
+.ac-total dt {
+  flex: 0 0 auto;
+  font-size: var(--text-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+}
+
+.ac-fact dd,
+.ac-total dd {
+  margin: 0;
+  text-align: end;
+}
+
+.ac-totals {
+  max-width: 22rem;
+  margin-inline-start: auto;
+}
+
+/* ── Three-column picker ───────────────────────────────────────────────── */
+/* Brand, then family, then model. Side by side on a desktop because a shop
+   adds phones in bursts when a range launches, and navigating between three
+   pages to add one model would make that a chore nobody does. */
+
+.ac-columns {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  align-items: start;
+}
+
+.ac-picker {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-height: 24rem;
+  overflow-y: auto;
+}
+
+.ac-pick {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--target-min);
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-control);
+  color: inherit;
+  text-decoration: none;
+}
+
+a.ac-pick:hover {
+  background: var(--color-surface-sunken);
+}
+
+/* The selected step carries a border and a background as well as weight, so
+   the chain "Apple > iPhone 16 > ..." stays readable without relying on hue. */
+.ac-pick--active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-surface);
+  font-weight: var(--weight-medium);
+}
+
+.ac-pick__count {
+  flex: 0 0 auto;
+  min-width: 2rem;
+  padding: 0 var(--space-2);
+  font-size: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-chip);
+}
+
+/* ── Image thumbnails ──────────────────────────────────────────────────── */
+/* Each thumb reserves its own aspect ratio from the stored dimensions, so the
+   grid does not reflow as the photos arrive. */
+
+.ac-thumbs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
+}
+
+.ac-thumb {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+
+/* No explicit aspect-ratio: browsers derive it from the width and height
+   ATTRIBUTES on the element, which the loader supplies from the stored
+   dimensions. `attr()` is not supported outside `content`, so writing it here
+   would have been a no-op that looked like it was doing the work. */
+.ac-thumb img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-control);
+}
+
+.ac-thumb__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+/* ── Secondary text on a tinted surface ────────────────────────────────── */
+/*
+ * `.muted` is a grey chosen for contrast against the plain surface. On the
+ * danger-, warning- and success-tinted backgrounds it drops below 4.5:1.
+ *
+ * This is exactly the failure the separate fill and text tokens exist to
+ * prevent, and it still happened — because the pairing looked fine in the
+ * palette and only broke once the text landed on a coloured row. axe found it
+ * on /admin and /admin/configurazione; reading the CSS would not have.
+ *
+ * Each tint therefore restates its own secondary colour, rather than letting
+ * the generic grey leak in.
+ */
+.ac-action--blocking .ac-action__detail,
+.ac-action--blocking .muted {
+  color: var(--color-danger-text);
+}
+
+.ac-action--warning .ac-action__detail,
+.ac-action--warning .muted {
+  color: var(--color-warning-text);
+}
+
+.ac-step--done .ac-step__why,
+.ac-step--done .muted {
+  color: var(--color-success-text);
+}
+
+.ac-step--blocking .ac-step__why,
+.ac-step--blocking .muted {
+  color: var(--color-danger-text);
+}

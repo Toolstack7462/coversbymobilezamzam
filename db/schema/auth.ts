@@ -50,6 +50,17 @@ export const account = sqliteTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+    /**
+     * Better Auth 1.7 scopes account identity by issuer, and treats this as a
+     * REQUIRED field. Its absence made `signUpEmail` throw before writing
+     * anything, which meant installation could never complete — see
+     * migration 0004.
+     *
+     * For credential accounts the issuer equals the provider id; the
+     * distinction only becomes meaningful with multiple OIDC providers sharing
+     * a provider name.
+     */
+    issuer: text("issuer").notNull(),
     accountId: text("account_id").notNull(),
     providerId: text("provider_id").notNull(),
     accessToken: text("access_token"),

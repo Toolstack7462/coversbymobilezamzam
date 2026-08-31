@@ -2,6 +2,7 @@ import { Form, redirect } from "react-router";
 import type { Route } from "./+types/security-2fa-verify";
 import { cloudflareContext } from "../../../workers/app";
 import { createAuth } from "~/infrastructure/auth/auth.server";
+import { relayCookies, cookieHeaderFrom } from "~/infrastructure/auth/cookies.server";
 import { getSession } from "~/infrastructure/auth/session.server";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
 
@@ -75,9 +76,11 @@ export async function action({ request, context }: Route.ActionArgs) {
     return { error: "Codice non valido o scaduto." };
   }
 
-  const cookie = response.headers.get("Set-Cookie");
+  // Every cookie: answering the challenge both establishes the session and
+  // clears the two-factor cookie, which is two Set-Cookie headers.
+  const setCookies = relayCookies(response);
   const session = await auth.api.getSession({
-    headers: new Headers({ Cookie: cookie ?? "" }),
+    headers: new Headers({ Cookie: cookieHeaderFrom(response) }),
   });
 
   if (session?.user?.id) {
@@ -95,7 +98,7 @@ export async function action({ request, context }: Route.ActionArgs) {
       .run();
   }
 
-  return redirect(safeNext, cookie ? { headers: { "Set-Cookie": cookie } } : undefined);
+  return redirect(safeNext, setCookies);
 }
 
 export default function TwoFactorChallenge({ actionData }: Route.ComponentProps) {

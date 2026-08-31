@@ -16,6 +16,9 @@ import {
   maskIdentifier,
 } from "~/infrastructure/primitives";
 import { gateStatuses, type SettingsMap } from "~/domain/content/gates";
+import { SETTING_GROUPS, uncoveredKeys, type SettingField } from "~/lib/setting-fields";
+import { breadcrumbsFor } from "~/lib/admin-nav";
+import { PageHeader } from "~/components/admin/admin-shell";
 
 /**
  * Merchant settings, and payment-method configuration.
@@ -29,13 +32,16 @@ import { gateStatuses, type SettingsMap } from "~/domain/content/gates";
  *     That is the highest-value target in the application.
  */
 
-const CATEGORY_LABELS: Record<string, string> = {
-  business: "Dati aziendali",
-  store: "Negozio",
-  contact: "Contatti",
-  fulfilment: "Consegna e ritiro",
-  tax: "Fiscale",
-};
+/**
+ * Grouping and labelling now come from `~/lib/setting-fields`, which describes
+ * each setting in the merchant's words. This screen previously grouped by the
+ * dotted key prefix and labelled every field with the key itself — a shopkeeper
+ * was shown a form field called `business.vat_number`.
+ */
+
+export function meta() {
+  return [{ title: "Impostazioni" }, { name: "robots", content: "noindex, nofollow" }];
+}
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
@@ -121,15 +127,40 @@ export async function action({ request, context }: Route.ActionArgs) {
     const actor = await requireStaff(request, env, "settings.write");
     const statements: D1PreparedStatement[] = [];
 
+    /*
+     * Collect the submitted values FIRST, last-wins.
+     *
+     * Two reasons, both of which were bugs in the previous version of this
+     * loop:
+     *
+     * 1. An unchecked checkbox submits NOTHING. Reading the form directly meant
+     *    a merchant could switch pickup on but never off — the absent field was
+     *    read as "unchanged" rather than "false", and the setting silently kept
+     *    its old value. Each boolean is now preceded by a hidden "false", so
+     *    the pair always submits; last-wins collapses them correctly.
+     *
+     * 2. The old loop issued one SELECT per field inside the iteration, so
+     *    saving this form meant roughly thirty sequential round trips to D1.
+     *    The current values are now read in a single query.
+     */
+    const submitted = new Map<string, string>();
     for (const [field, raw] of form.entries()) {
       if (!field.startsWith("setting:")) continue;
-      const key = field.slice("setting:".length);
-      const value = String(raw).trim();
+      submitted.set(field.slice("setting:".length), String(raw).trim());
+    }
 
-      const existing = await env.DB.prepare(`SELECT value FROM store_settings WHERE key = ?1`)
-        .bind(key)
-        .first<{ value: string }>();
-      if (!existing || existing.value === value) continue;
+    const currentRows = await env.DB.prepare(`SELECT key, value FROM store_settings`).all<{
+      key: string;
+      value: string;
+    }>();
+    const current = new Map(currentRows.results.map((row) => [row.key, row.value]));
+
+    for (const [key, value] of submitted) {
+      const existing = current.get(key);
+      // An unknown key is ignored rather than inserted: settings are created by
+      // migrations, so a key that is not there is a typo or a stale form, not a
+      // new setting someone meant to add from a browser.
+      if (existing === undefined || existing === value) continue;
 
       statements.push(
         env.DB.prepare(`UPDATE store_settings SET value = ?1, updated_at = ?2 WHERE key = ?3`).bind(
@@ -146,7 +177,7 @@ export async function action({ request, context }: Route.ActionArgs) {
           actor.userId,
           actor.displayName,
           key,
-          JSON.stringify({ value: existing.value }),
+          JSON.stringify({ value: existing }),
           JSON.stringify({ value }),
           now,
         ),
@@ -266,14 +297,20 @@ export async function action({ request, context }: Route.ActionArgs) {
 export default function AdminSettings({ loaderData, actionData }: Route.ComponentProps) {
   const { settings, methods, gates, canWrite, canWritePayments, paymentStepUp } = loaderData;
 
-  const byCategory = settings.reduce<Record<string, typeof settings>>((acc, setting) => {
-    (acc[setting.category] ??= []).push(setting);
-    return acc;
-  }, {});
+  const valueOf = new Map(settings.map((setting) => [setting.key, setting.value]));
+
+  // Anything a migration added but `setting-fields.ts` does not describe still
+  // has to be editable: a value the merchant can see gating a feature, with no
+  // way to set it, is worse than an ugly label.
+  const undescribed = uncoveredKeys(settings.map((setting) => setting.key));
 
   return (
-    <div className="stack">
-      <h1>Impostazioni</h1>
+    <>
+      <PageHeader
+        title="Impostazioni"
+        description="I dati del negozio. Un campo vuoto nasconde una funzione: non produce mai un segnaposto."
+        breadcrumbs={breadcrumbsFor("/admin/impostazioni")}
+      />
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
@@ -286,41 +323,52 @@ export default function AdminSettings({ loaderData, actionData }: Route.Componen
         </p>
       ) : null}
 
-      <p className="notice notice--info small">
-        Un campo lasciato vuoto <strong>non</strong> viene mostrato sul sito con un segnaposto: la
-        funzione che dipende da quel campo resta semplicemente nascosta.
-      </p>
-
       <Form method="post" className="stack">
         <input type="hidden" name="intent" value="save-settings" />
 
-        {Object.entries(byCategory).map(([category, items]) => (
-          <fieldset key={category} className="panel stack">
+        {SETTING_GROUPS.map((group) => (
+          <fieldset key={group.slug} className="panel stack">
             <legend>
-              <h2>{CATEGORY_LABELS[category] ?? category}</h2>
+              <h2>{group.title}</h2>
             </legend>
-            {items.map((setting) => (
-              <div className="field" key={setting.key}>
-                <label className="field__label" htmlFor={setting.key}>
-                  {setting.key}
-                  {setting.gates_feature === 1 ? (
-                    <span className="badge"> nasconde una funzione se vuoto</span>
-                  ) : null}
-                </label>
-                <input
-                  id={setting.key}
-                  name={`setting:${setting.key}`}
-                  className="input"
-                  defaultValue={setting.value}
-                  disabled={!canWrite}
-                />
-                {setting.description_it ? (
-                  <span className="field__hint">{setting.description_it}</span>
-                ) : null}
-              </div>
+            <p className="small muted">{group.blurb}</p>
+
+            {group.fields.map((field) => (
+              <SettingInput
+                key={field.key}
+                field={field}
+                value={valueOf.get(field.key) ?? ""}
+                disabled={!canWrite}
+              />
             ))}
           </fieldset>
         ))}
+
+        {undescribed.length > 0 ? (
+          <fieldset className="panel stack">
+            <legend>
+              <h2>Altre impostazioni</h2>
+            </legend>
+            <p className="small muted">
+              Impostazioni tecniche senza una descrizione. Modificatele solo se sapete a cosa
+              servono.
+            </p>
+            {undescribed.map((key) => (
+              <div className="field" key={key}>
+                <label className="field__label" htmlFor={key}>
+                  <code>{key}</code>
+                </label>
+                <input
+                  id={key}
+                  name={`setting:${key}`}
+                  className="input"
+                  defaultValue={valueOf.get(key) ?? ""}
+                  disabled={!canWrite}
+                />
+              </div>
+            ))}
+          </fieldset>
+        ) : null}
 
         {canWrite ? (
           <button type="submit" className="btn btn--primary">
@@ -471,6 +519,113 @@ export default function AdminSettings({ loaderData, actionData }: Route.Componen
           ))}
         </ul>
       </section>
+    </>
+  );
+}
+
+/**
+ * One setting.
+ *
+ * Three deliberate choices, each of which is the opposite of what a form
+ * builder would do by default:
+ *
+ *   - The help text is always visible, never a tooltip or a placeholder.
+ *     Placeholder-as-label disappears the moment someone types, which is
+ *     exactly when they were about to check what the field wanted.
+ *   - `example` is rendered as a placeholder and never as a value, so nothing
+ *     can be saved by accident. It reads as a format, not as data.
+ *   - The consequence of leaving it blank is stated on the field itself. The
+ *     storefront hides features rather than printing placeholders, so a blank
+ *     field silently removes something; saying which turns an invisible
+ *     behaviour into an informed choice.
+ */
+function SettingInput({
+  field,
+  value,
+  disabled,
+}: {
+  field: SettingField;
+  value: string;
+  disabled: boolean;
+}) {
+  const id = `setting-${field.key}`;
+  const describedBy = `${id}-help`;
+  const filled = value.trim() !== "";
+
+  if (field.type === "boolean") {
+    return (
+      <div className="field">
+        {/*
+          A hidden "false" before the checkbox, sharing its name. An unchecked
+          box submits nothing at all, so without this the setting could be
+          turned on and never off — and the failure is silent, which is the
+          worst way for a save to fail.
+        */}
+        <input type="hidden" name={`setting:${field.key}`} value="false" />
+        <label className="field__checkbox" htmlFor={id}>
+          <input
+            id={id}
+            type="checkbox"
+            name={`setting:${field.key}`}
+            value="true"
+            defaultChecked={value === "true"}
+            disabled={disabled}
+            aria-describedby={describedBy}
+          />
+          <span>{field.label}</span>
+        </label>
+        <span className="field__hint" id={describedBy}>
+          {field.help}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="field">
+      <label className="field__label" htmlFor={id}>
+        {field.label}
+        {field.required ? (
+          <span className="badge badge--warning" title="Serve prima di poter vendere">
+            {" "}
+            obbligatorio
+          </span>
+        ) : null}
+      </label>
+
+      {field.type === "textarea" ? (
+        <textarea
+          id={id}
+          name={`setting:${field.key}`}
+          className="input"
+          rows={3}
+          defaultValue={value}
+          disabled={disabled}
+          aria-describedby={describedBy}
+          {...(field.example ? { placeholder: field.example } : {})}
+        />
+      ) : (
+        <input
+          id={id}
+          name={`setting:${field.key}`}
+          className="input"
+          type={field.type}
+          defaultValue={value}
+          disabled={disabled}
+          aria-describedby={describedBy}
+          {...(field.example ? { placeholder: field.example } : {})}
+        />
+      )}
+
+      <span className="field__hint" id={describedBy}>
+        {field.help}
+        {field.consequence && !filled ? (
+          <>
+            {" "}
+            <strong>Ora è vuoto:</strong> {field.consequence}
+          </>
+        ) : null}
+      </span>
     </div>
   );
 }

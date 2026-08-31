@@ -2,6 +2,7 @@ import { Form, redirect } from "react-router";
 import type { Route } from "./+types/setup";
 import { cloudflareContext } from "../../../workers/app";
 import { createAuth } from "~/infrastructure/auth/auth.server";
+import { allSetCookies, cookieHeaderFrom } from "~/infrastructure/auth/cookies.server";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
 import {
   bootstrapAdmin,
@@ -105,13 +106,19 @@ export async function action({ request, context }: Route.ActionArgs) {
         });
         if (!response.ok) return { ok: false as const, detail: "signup_rejected" };
 
-        const cookie = response.headers.get("Set-Cookie");
         const session = await auth.api.getSession({
-          headers: new Headers({ Cookie: cookie ?? "" }),
+          headers: new Headers({ Cookie: cookieHeaderFrom(response) }),
         });
         if (!session?.user?.id) return { ok: false as const, detail: "no_session" };
 
-        return { ok: true as const, userId: session.user.id, setCookie: cookie };
+        // Joined with newlines: the caller splits them back into separate
+        // Set-Cookie headers. Reading only the first would drop whichever
+        // cookie Better Auth happened to send second.
+        return {
+          ok: true as const,
+          userId: session.user.id,
+          setCookie: allSetCookies(response).join("\n"),
+        };
       } catch {
         return { ok: false as const, detail: "signup_threw" };
       }
@@ -135,10 +142,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     return { error: messages[result.reason] ?? "Installazione non riuscita." };
   }
 
-  return redirect(
-    "/admin/sicurezza/2fa",
-    result.setCookie ? { headers: { "Set-Cookie": result.setCookie } } : undefined,
-  );
+  return redirect("/admin/sicurezza/2fa", cookieHeaders(result.setCookie));
 }
 
 export default function AdminSetup({ loaderData, actionData }: Route.ComponentProps) {
@@ -279,4 +283,21 @@ export default function AdminSetup({ loaderData, actionData }: Route.ComponentPr
       </div>
     </main>
   );
+}
+
+/**
+ * Splits the newline-joined cookie list back into real Set-Cookie headers.
+ *
+ * The bootstrap command returns cookies as one string because its result type
+ * is a plain value, not a Response. Passing that string straight into a single
+ * `Set-Cookie` header would send a header containing a newline — which is
+ * either rejected or, worse, treated as header injection.
+ */
+function cookieHeaders(joined: string | null): { headers: Headers } | undefined {
+  const cookies = (joined ?? "").split("\n").filter((c) => c.trim() !== "");
+  if (cookies.length === 0) return undefined;
+
+  const headers = new Headers();
+  for (const cookie of cookies) headers.append("Set-Cookie", cookie);
+  return { headers };
 }

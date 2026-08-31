@@ -128,24 +128,31 @@ rather than aspirational.
 
 ### Still missing
 
-| Not built                       | Consequence                                                                                         |
-| ------------------------------- | --------------------------------------------------------------------------------------------------- |
-| ~~TOTP two-factor UI~~          | **DELIVERED.** Mandatory for privileged roles, enforced on every request, backup codes single-use.  |
-| ~~Staff management screen~~     | **DELIVERED.** Invitation-based onboarding with hashed tokens, roles, statuses, session revocation. |
-| **Product and variant editors** | Products can be published, archived and repriced, but not created or edited in the admin.           |
-| **Compatibility matrix editor** | Records are readable and countable; entering them needs the import centre or direct SQL.            |
-| **Import / export centre**      | Templates and job tables exist; the UI and parsers do not.                                          |
-| **Payment proof upload**        | Schema, private bucket and policy exist; the upload route does not.                                 |
-| **Search (D1 FTS5)**            | Listing search is a LIKE query. The FTS index and Italian synonyms are designed, not built.         |
-| **Browser tests**               | Playwright is configured; no specs are written.                                                     |
-| **Email / outbox worker**       | Tables exist; nothing drains the outbox.                                                            |
-| **Returns and refunds UI**      | Schema and state machine exist; no screens.                                                         |
+| Not built                        | Consequence                                                                                                                                |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| ~~TOTP two-factor UI~~           | **DELIVERED.**                                                                                                                             |
+| ~~Staff management screen~~      | **DELIVERED.**                                                                                                                             |
+| ~~Product and variant editors~~  | **DELIVERED.** Create, edit, price, publish, archive; variants with default and archive rules.                                             |
+| ~~Compatibility matrix editor~~  | **DELIVERED.** Plus the devices screen it depends on, without which nothing could be recorded.                                             |
+| ~~Import / export centre~~       | **DELIVERED.** Two-step import with a plan the merchant confirms; Excel-compatible export.                                                 |
+| ~~Search (D1 FTS5)~~             | **DELIVERED.** External-content FTS5 kept in step by triggers, with a query parser that cannot emit invalid MATCH syntax.                  |
+| ~~Browser tests~~                | **DELIVERED.** 85 specs including the full first-run flow with real two-factor enrolment.                                                  |
+| ~~Product images~~               | **DELIVERED.** Upload to R2 with dimensions parsed from the file header.                                                                   |
+| ~~Customers~~                    | **DELIVERED**, as a view over orders rather than a second copy of personal data.                                                           |
+| ~~Discount codes~~               | **DELIVERED**, order-level only. Product price reductions go through the product editor, where `price_history` is written.                 |
+| **Payment proof upload**         | Schema, private bucket and policy exist; the upload route does not. Customers send proof over WhatsApp instead, which is the Phase 1 flow. |
+| **Email / outbox worker**        | Tables exist; nothing drains the outbox. Events queue up rather than being lost, and no order fails because of it.                         |
+| **Returns and refunds UI**       | Schema and state machine exist; no screens. A return is handled by hand and recorded as an order status change.                            |
+| **Content pages / homepage CMS** | The storefront's sections are code, not editable content. Changing them needs a developer.                                                 |
+| **Shipping zones and rates**     | Tables exist; the shop is pickup-first, and a flat rate is configured in settings.                                                         |
 
-What works end to end: browse, filter by device, add to cart, check out, create a
-real order with an atomic reservation, receive payment instructions and the
-WhatsApp handoff, track the order — and, on the staff side, sign in, verify the
-payment against the real bank account, watch the stock hold convert to a sale,
-and see the whole thing in the audit log.
+What works end to end: browse, search, filter by device, add to cart, check out,
+create a real order with an atomic reservation, receive payment instructions and
+the WhatsApp handoff, track the order — and, on the staff side, install the shop,
+enrol in two-factor, add devices and products with photos and compatibility,
+import a supplier's spreadsheet after reviewing exactly what it will change,
+verify a payment against the real bank account, watch the stock hold convert to a
+sale, and see all of it in the audit log.
 
 ---
 

@@ -420,6 +420,14 @@ a {
   border-color: var(--color-primary);
 }
 
+/* Used to say "there is nothing waiting" — a real, checkable statement, not a
+   congratulation. The text token, not the fill, carries the contrast. */
+.notice--success {
+  background: var(--color-success-surface);
+  border-color: var(--color-success);
+  color: var(--color-success-text);
+}
+
 /* ── Empty states ──────────────────────────────────────────────────────── */
 /* An absent section looks finished; an empty frame looks broken. Sections with
    no data render nothing at all — this is for genuinely empty results, which is
@@ -627,7 +635,9 @@ a {
 
 .badge--muted {
   background: var(--color-surface-sunken);
-  color: var(--color-text-secondary);
+  /* Not --color-text-secondary: that grey is picked against the page, and on
+     this sunken fill it falls below AA at badge size. */
+  color: var(--color-text-secondary-on-sunken);
 }
 
 .badge--sale {

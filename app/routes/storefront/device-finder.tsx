@@ -13,6 +13,17 @@ import { parseLocalePath, translator, localePath } from "~/lib/i18n";
  * Brands are read from the database, never hardcoded: this list changes every
  * year and a new brand must not require a deployment.
  */
+export function meta() {
+  return [
+    { title: "Trova il tuo dispositivo" },
+    {
+      name: "description",
+      content:
+        "Scegli marca e modello per vedere solo gli accessori compatibili con il tuo telefono.",
+    },
+  ];
+}
+
 export async function loader({ context, request }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
   const url = new URL(request.url);

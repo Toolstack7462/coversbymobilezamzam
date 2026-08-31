@@ -174,7 +174,14 @@ export default function SecuritySessions({ loaderData, actionData }: Route.Compo
         </p>
       ) : null}
 
-      <div className="admin-table-wrap">
+      <div
+        className="admin-table-wrap"
+        /* Focusable and labelled: a region that scrolls sideways and
+             cannot take focus is unscrollable without a mouse. */
+        tabIndex={0}
+        role="region"
+        aria-label="Tabella scorrevole"
+      >
         <table className="admin-table">
           <caption className="visually-hidden">Sessioni attive del tuo account</caption>
           <thead>

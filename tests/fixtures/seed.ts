@@ -4,6 +4,7 @@
  * Deliberately small and explicit: a test that fails should point at one rule,
  * not at a hundred rows of scenery.
  */
+import { SETTING_KEYS } from "~/domain/content/gates";
 
 export const IDS = {
   location: "loc_shop",
@@ -37,49 +38,102 @@ export interface SeedOptions {
  * the database persists across tests in a file. Resetting explicitly is more
  * honest than depending on a pool behaviour that has already changed once.
  */
-const TABLES_IN_DELETE_ORDER = [
-  "audit_logs",
-  "bootstrap_attempts",
-  "installation_state",
-  "step_up_sessions",
-  "user_roles",
-  "role_permissions",
-  // roles and permissions come AFTER their join tables, which reference them.
-  "roles",
-  "permissions",
-  "staff_profiles",
-  "session",
-  "account",
-  "user",
-  "order_events",
-  "order_status_history",
-  "order_addresses",
-  "order_items",
-  "payment_status_history",
-  "order_payments",
-  "orders",
-  "stock_movements",
-  "stock_reservations",
-  "inventory_levels",
-  "idempotency_keys",
-  "scheduled_job_runs",
-  "product_compatibility",
-  "device_models",
-  "device_families",
-  "device_brands",
-  "variant_prices",
-  "price_lists",
-  "product_variants",
-  "product_translations",
-  "products",
-  "categories",
-  "brands",
-  "payment_methods",
-  "inventory_locations",
-] as const;
+/**
+ * The order tables must be emptied in, computed from the LIVE schema.
+ *
+ * This used to be a hand-written list of twenty-odd table names. It was wrong:
+ * sixty-one tables were missing from it, so any test touching one of them
+ * leaked rows into the next test, and adding a row to `price_history` made
+ * `reset` fail outright on a restrict foreign key.
+ *
+ * A list that has to be updated whenever a migration adds a table will fall out
+ * of date again — this one already had — so it is derived instead. SQLite tells
+ * us both the tables and their foreign keys, and a topological sort puts every
+ * child before its parent.
+ *
+ * Computed once per process: the schema does not change between tests, and
+ * doing this per test would add a hundred pragma round trips to every one.
+ */
+let deleteOrder: string[] | null = null;
+
+async function tableDeleteOrder(db: D1Database): Promise<string[]> {
+  if (deleteOrder !== null) return deleteOrder;
+
+  const tables = await db
+    .prepare(
+      `SELECT name, COALESCE(sql, '') AS sql FROM sqlite_master
+        WHERE type = 'table'
+          AND name NOT LIKE 'sqlite_%'
+          AND name NOT LIKE '_cf_%'
+          AND name <> 'd1_migrations'`,
+    )
+    .all<{ name: string; sql: string }>();
+
+  /*
+   * FTS5 shadow tables must not be touched.
+   *
+   * A virtual table like `product_search` is backed by real tables —
+   * `product_search_data`, `_idx`, `_docsize`, `_config` — which SQLite refuses
+   * to modify directly ("table product_search_data may not be modified").
+   * Deleting from the VIRTUAL table clears them all correctly; deleting from a
+   * shadow table is an error that takes the whole reset batch down with it.
+   */
+  const ftsTables = tables.results.filter((t) => /USING\s+fts\d/i.test(t.sql)).map((t) => t.name);
+
+  const isShadow = (name: string) =>
+    ftsTables.some((fts) => name !== fts && name.startsWith(`${fts}_`));
+
+  const names = tables.results.map((r) => r.name).filter((name) => !isShadow(name));
+
+  /** table -> the tables it points AT. */
+  const dependsOn = new Map<string, Set<string>>();
+  for (const name of names) {
+    // A virtual table reports no foreign keys, which is correct: its content
+    // comes from the tables the triggers read, and clearing it is independent.
+    const fks = await db.prepare(`PRAGMA foreign_key_list(${name})`).all<{ table: string }>();
+    dependsOn.set(
+      name,
+      // A self-reference (a category with a parent category) would otherwise
+      // make the table depend on itself and never sort.
+      new Set(fks.results.map((r) => r.table).filter((t) => t !== name && names.includes(t))),
+    );
+  }
+
+  // Children first: a table is safe to empty once everything pointing at it is
+  // already empty.
+  const order: string[] = [];
+  const placed = new Set<string>();
+
+  while (order.length < names.length) {
+    const ready = names.filter(
+      (name) =>
+        !placed.has(name) &&
+        // Everything that REFERENCES this table has already been emptied.
+        names.every(
+          (other) => placed.has(other) || other === name || !dependsOn.get(other)!.has(name),
+        ),
+    );
+
+    if (ready.length === 0) {
+      // A foreign-key cycle. Rather than loop forever, empty the rest in any
+      // order and let the batch fail loudly if it genuinely cannot be done.
+      order.push(...names.filter((n) => !placed.has(n)));
+      break;
+    }
+
+    for (const name of ready) {
+      order.push(name);
+      placed.add(name);
+    }
+  }
+
+  deleteOrder = order;
+  return order;
+}
 
 export async function reset(db: D1Database): Promise<void> {
-  await db.batch(TABLES_IN_DELETE_ORDER.map((t) => db.prepare(`DELETE FROM ${t}`)));
+  const order = await tableDeleteOrder(db);
+  await db.batch(order.map((t) => db.prepare(`DELETE FROM ${t}`)));
 }
 
 export async function seed(db: D1Database, options: SeedOptions = {}): Promise<void> {
@@ -92,6 +146,31 @@ export async function seed(db: D1Database, options: SeedOptions = {}): Promise<v
   } = options;
 
   await reset(db);
+
+  /*
+   * Every merchant setting, created EMPTY.
+   *
+   * This mirrors what `scripts/import/seed.mjs` does on a real installation:
+   * the rows exist so the storefront's feature gates have something to read,
+   * and every value is blank because no merchant information is invented.
+   *
+   * The fixture previously created no settings at all, which quietly made a
+   * whole class of behaviour untestable — the save path, the gates and the
+   * setup checklist all read this table, and against an empty one they were
+   * being exercised against a state no real installation is ever in.
+   */
+  await db.batch(
+    Object.values(SETTING_KEYS).map((key) =>
+      db
+        .prepare(
+          `INSERT INTO store_settings
+             (id, key, value, value_type, category, gates_feature, created_at, updated_at)
+           VALUES (?1, ?2, '', 'string', ?3, 0, ?4, ?4)
+           ON CONFLICT(key) DO NOTHING`,
+        )
+        .bind(`set_${key.replace(".", "_")}`, key, key.split(".")[0], NOW),
+    ),
+  );
 
   await db.batch([
     db

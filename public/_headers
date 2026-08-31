@@ -1,0 +1,35 @@
+# Headers for STATIC ASSETS only.
+#
+# Cloudflare serves everything in build/client without ever invoking the Worker,
+# so nothing in workers/app.ts can reach these responses — the noindex header it
+# sets was never actually on a single .js or .css file. This file is the only
+# place those responses can be given headers, and the Worker is the only place
+# dynamic responses can. Both are needed; neither covers the other.
+#
+# Copied to the client build output from public/ at build time.
+
+# ── Fingerprinted assets ────────────────────────────────────────────────────
+#
+# Every filename here contains a hash of its own content (lib-BVqF-UOZ.js), so
+# the file at a given URL can never change. Cloudflare's default for assets is
+# `public, max-age=0, must-revalidate`, which is the safe default for files that
+# might change — and means the browser re-checks all fourteen bundles on every
+# single page load, for files that are incapable of being stale.
+#
+# A year, immutable: the browser does not ask again. A new build produces new
+# filenames, so there is nothing to invalidate.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+  X-Content-Type-Options: nosniff
+
+# ── Never index a workers.dev address ───────────────────────────────────────
+#
+# Scoped to the hostname rather than the path, on purpose. A blanket noindex
+# here would be copied into production along with the rest of the build and
+# quietly de-list the real shop. Matching the workers.dev host means it applies
+# to every preview automatically and to a custom domain never.
+https://:worker.:subdomain.workers.dev/*
+  X-Robots-Tag: noindex, nofollow, noarchive, nosnippet
+
+https://:version.:worker.:subdomain.workers.dev/*
+  X-Robots-Tag: noindex, nofollow, noarchive, nosnippet

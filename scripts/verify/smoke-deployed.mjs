@@ -162,6 +162,107 @@ for (const path of ["/", "/shop", "/api/health", "/admin/accedi"]) {
   });
 }
 
+// ── Security headers ────────────────────────────────────────────────────────
+
+group("Security headers");
+
+const REQUIRED_HEADERS = {
+  "content-security-policy": /frame-ancestors 'none'/,
+  "x-frame-options": /^DENY$/,
+  "x-content-type-options": /^nosniff$/,
+  "referrer-policy": /strict-origin-when-cross-origin/,
+  "permissions-policy": /camera=\(\)/,
+  "cross-origin-opener-policy": /^same-origin$/,
+  // workers.dev is HTTPS-only, so this should always be present here.
+  "strict-transport-security": /max-age=\d+/,
+};
+
+for (const [header, pattern] of Object.entries(REQUIRED_HEADERS)) {
+  await check(`${header} on the homepage`, async () => {
+    const value = (await get("/")).headers.get(header) ?? "";
+    assert(pattern.test(value), value ? `is "${value}"` : "ABSENT");
+    return value.length > 60 ? `${value.slice(0, 57)}…` : value;
+  });
+}
+
+await check("the CSP allows no cross-origin script source", async () => {
+  const csp = (await get("/")).headers.get("content-security-policy") ?? "";
+  const scriptSrc = /script-src ([^;]*)/.exec(csp)?.[1] ?? "";
+  assert(scriptSrc.length > 0, "no script-src directive at all");
+  // 'unsafe-inline' is present and documented — streaming SSR emits inline
+  // scripts. An external origin would be a different matter entirely.
+  assert(!/https?:/.test(scriptSrc), `script-src permits an origin: ${scriptSrc}`);
+  return scriptSrc;
+});
+
+await check("HSTS is not preloaded", async () => {
+  const hsts = (await get("/")).headers.get("strict-transport-security") ?? "";
+  // Preloading is submitted to a browser-maintained list and is slow to undo.
+  // Not something a preview should ever assert.
+  assert(!/preload/i.test(hsts), `HSTS asks to be preloaded: ${hsts}`);
+  return hsts;
+});
+
+// ── Cache directives ────────────────────────────────────────────────────────
+
+group("Cache directives");
+
+await check("staff pages are never stored", async () => {
+  const value = (await get("/admin/ordini")).headers.get("cache-control") ?? "";
+  assert(/no-store/.test(value), value ? `is "${value}"` : "ABSENT");
+  assert(/private/.test(value), `is "${value}" — missing private`);
+  return value;
+});
+
+await check("the login page is never stored", async () => {
+  const value = (await get("/admin/accedi")).headers.get("cache-control") ?? "";
+  assert(/no-store/.test(value), value ? `is "${value}"` : "ABSENT");
+  return value;
+});
+
+for (const path of ["/", "/shop", "/carrello"]) {
+  await check(`${path} is private and revalidated`, async () => {
+    const value = (await get(path)).headers.get("cache-control") ?? "";
+    assert(/private/.test(value), value ? `is "${value}"` : "ABSENT");
+    /*
+     * `public` here would let a shared cache hand one customer's basket to the
+     * next person who asks for the same URL, because these pages vary by the
+     * session cookie.
+     */
+    assert(!/public/.test(value), `is "${value}" — public on a cookie-varying page`);
+    assert(/no-cache|no-store/.test(value), `is "${value}" — may be reused without revalidating`);
+    return value;
+  });
+}
+
+await check("fingerprinted assets are cached hard", async () => {
+  /*
+   * These are served by Cloudflare without invoking the Worker, so their
+   * headers come from public/_headers rather than from workers/app.ts. The
+   * filename contains a hash of the content, so the file at a URL can never
+   * change and the browser never needs to ask again.
+   */
+  const html = await (await get("/")).text();
+  const asset = /\/assets\/[A-Za-z0-9._-]+\.js/.exec(html)?.[0];
+  assert(asset, "no hashed asset referenced by the homepage");
+
+  const response = await get(asset);
+  const value = response.headers.get("cache-control") ?? "";
+  assert(/immutable/.test(value), value ? `is "${value}"` : "ABSENT");
+  assert(!/max-age=0/.test(value), `is "${value}" — revalidated on every page load`);
+  return `${asset.slice(0, 28)}… ${value}`;
+});
+
+await check("static assets are not indexable either", async () => {
+  // The Worker cannot reach these responses; this proves public/_headers is
+  // actually being applied, not merely present in the repository.
+  const html = await (await get("/")).text();
+  const asset = /\/assets\/[A-Za-z0-9._-]+\.js/.exec(html)?.[0];
+  const value = (await get(asset)).headers.get("x-robots-tag") ?? "";
+  assert(/noindex/.test(value), value ? `is "${value}"` : "ABSENT");
+  return value;
+});
+
 // ── Storefront ──────────────────────────────────────────────────────────────
 
 group("Storefront");

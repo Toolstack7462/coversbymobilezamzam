@@ -11,11 +11,15 @@ question needs answering. Everything else passed.
 
 | #   | Finding                                                | Severity | Status                         |
 | --- | ------------------------------------------------------ | -------- | ------------------------------ |
-| 1   | The deployed cron has never been observed to run       | High     | **Open**                       |
+| 1   | The cron did not start firing for ~82 minutes          | Medium   | **Resolved by waiting**        |
 | 2   | No security response headers at all                    | High     | **Fixed** — version `3a7d05ef` |
 | 3   | No `Cache-Control` on any page, including admin        | Medium   | **Fixed** — version `3a7d05ef` |
-| 4   | `Content-Type: text/html` with no charset              | Low      | Open                           |
+| 4   | `Content-Type: text/html` with no charset              | Low      | **Fixed** — version `580ddc7c` |
 | 5   | No product images exist, so image delivery is unproven | Low      | Open                           |
+| 7   | **The storefront stylesheet was never written**        | High     | **Fixed** — version `580ddc7c` |
+
+Finding 7 was raised by the merchant, not by this audit, and that is the most
+useful thing in this document — see [What this audit missed](#what-this-audit-missed).
 
 A sixth was found while fixing 2 and 3: **no static asset had ever carried the
 `noindex` header**, despite a comment in `workers/app.ts` claiming the Worker
@@ -264,3 +268,32 @@ order pipeline cannot be exercised end to end here.
 
 The next step is the merchant following
 [first-admin-setup.md](./first-admin-setup.md).
+
+---
+
+## What this audit missed
+
+The first version of this report recorded **"Storefront result — PASS"**. The
+storefront was rendering as an unstyled document: bulleted navigation, every
+link underlined, no cards, no layout. The merchant looked at it and said so.
+
+Everything the audit checked was true. Products loaded, prices were in correct
+Italian format, search returned the right product over HTTPS, add-to-cart
+worked, the compatibility invariant held, LCP was 166–638ms and CLS was zero on
+every page at both widths. All of it measured, none of it wrong.
+
+But it was measured entirely through `curl` and through browser APIs. A
+screenshot was never taken and never looked at. A CLS of zero and a fast LCP are
+perfectly consistent with a page that has no visual design at all — an unstyled
+document is _very_ fast, and it shifts nothing.
+
+The cause was that `app/styles/app.css` held the admin's styles plus shared
+primitives, and almost none of the BEM classes the storefront components
+referenced: `.site-header`, `.hero`, `.section`, `.product-card`,
+`.site-footer`, `.product-page__grid`, `.cart-line`, `.timeline` and eleven
+others were used in the markup and defined nowhere. The few elements carrying a
+`.btn` or a `.panel` looked finished, which made the rest read as a styling bug
+rather than as a stylesheet that was never written.
+
+**The lesson, for the next audit of anything with a user interface:** a suite of
+green checks is evidence about the things it checks. Look at the page.

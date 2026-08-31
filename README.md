@@ -64,10 +64,20 @@ Start with `CLAUDE.md` — the operating contract — then:
 | `docs/architecture.md`       | How the layers fit                                    |
 | `docs/invariants.md`         | The fourteen rules that must hold                     |
 | `docs/adr/`                  | Why each major choice was made, and what was rejected |
-| `docs/merchant-guide.md`     | Running the shop, no code                             |
+| `docs/admin-guide.md`        | Running the shop, no code                             |
+| `docs/admin-user-flows.md`   | The jobs the shop does, screen by screen              |
 | `docs/operations-runbook.md` | When something is wrong                               |
 | `docs/launch-checklist.md`   | What must be true before going live                   |
 | `docs/known-limitations.md`  | What is missing and what is not built                 |
+
+Building on the admin:
+
+| Read                                     | For                                     |
+| ---------------------------------------- | --------------------------------------- |
+| `docs/admin-information-architecture.md` | What goes where in the sidebar, and why |
+| `docs/admin-design-system.md`            | The rules the interface is built from   |
+| `docs/admin-table-patterns.md`           | Every list, and the URL state behind it |
+| `docs/setup-centre.md`                   | The computed launch checklist           |
 
 ## Status
 

@@ -57,7 +57,7 @@ Where its guidance and this project's constraints disagreed, the project won:
 the fill-versus-text token split and the 44px target rule come from measured
 axe results in the reference project, not from general advice. Its recommendations were treated as input and
 not followed where they would have cost accessibility, performance or
-originality; any such divergence is noted in `docs/design-system.md`.
+originality; any such divergence is noted in `docs/admin-design-system.md`.
 
 ### Bundled commands — what actually exists here
 

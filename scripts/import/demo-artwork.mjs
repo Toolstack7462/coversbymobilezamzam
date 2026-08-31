@@ -55,15 +55,43 @@ export const ARTWORK = {
   },
 };
 
+/**
+ * Two views per product.
+ *
+ * `full` is the object; `detail` is the same drawing enlarged and cropped, the
+ * way a second photograph would show the part that justifies the price.
+ *
+ * It is a real second view rather than a duplicate, and it is still plainly an
+ * illustration — which is the point. A gallery with one image cannot be judged,
+ * and inventing a second *photograph* would be a lie. Enlarging a drawing is
+ * not.
+ */
+export const VIEWS = {
+  full: { scale: 0.8, translate: 6.4, suffix: "", labelIt: "", labelEn: "" },
+  detail: {
+    scale: 1.9,
+    translate: -30,
+    suffix: "-detail",
+    labelIt: " — vista di dettaglio",
+    labelEn: " — detail view",
+  },
+};
+
 /** A complete SVG document for one illustration, on the shop's surface colour. */
-export function svgFor(key, { size = 1000, ink = "#667085", surface = "#f4f5f2" } = {}) {
+export function svgFor(
+  key,
+  { size = 1000, ink = "#667085", surface = "#f4f5f2", view = "full" } = {},
+) {
   const art = ARTWORK[key];
   if (!art) throw new Error(`No artwork for "${key}"`);
+  const v = VIEWS[view];
+  if (!v) throw new Error(`No view "${view}"`);
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 64 64">
   <rect width="64" height="64" fill="${surface}"/>
-  <g fill="none" stroke="${ink}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"
-     opacity="0.75" transform="translate(6.4 6.4) scale(0.8)">${art.paths}
+  <g fill="none" stroke="${ink}" stroke-width="${(1.4 / v.scale).toFixed(2)}"
+     stroke-linecap="round" stroke-linejoin="round" opacity="0.75"
+     transform="translate(${v.translate} ${v.translate}) scale(${v.scale})">${art.paths}
   </g>
 </svg>`;
 }

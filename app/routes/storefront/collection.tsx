@@ -156,6 +156,74 @@ export async function loader({ context, request }: Route.LoaderArgs) {
       .first<{ n: number }>(),
   ]);
 
+  /*
+   * Everything the page needs to be more than a grid.
+   *
+   * Four small reads, run together. Each is bounded and indexed; the page was
+   * already doing one query for products and one for the count, and these add
+   * no round trip because they share the same batch.
+   */
+  const [activeCategory, activeDevice, categoryOptions, deviceOptions] = await Promise.all([
+    // The editorial header: a category's own name and description, written by
+    // the merchant. Absent description renders nothing rather than filler.
+    categoria
+      ? env.DB.prepare(
+          `SELECT ct.name, ct.description
+             FROM categories c
+             JOIN category_translations ct ON ct.category_id = c.id AND ct.locale = 'it'
+            WHERE c.slug = ?1 AND c.visible = 1 AND c.archived_at IS NULL`,
+        )
+          .bind(categoria)
+          .first<{ name: string; description: string | null }>()
+      : null,
+
+    // The device the customer is filtering by, so the page can say so in words
+    // rather than leaving a query string to be decoded.
+    dispositivo
+      ? env.DB.prepare(
+          `SELECT dm.name, db.name AS brand_name
+             FROM device_models dm
+             JOIN device_families df ON df.id = dm.device_family_id
+             JOIN device_brands db ON db.id = df.device_brand_id
+            WHERE dm.handle = ?1 AND dm.active = 1`,
+        )
+          .bind(dispositivo)
+          .first<{ name: string; brand_name: string }>()
+      : null,
+
+    env.DB.prepare(
+      `SELECT c.slug, ct.name
+         FROM categories c
+         LEFT JOIN category_translations ct ON ct.category_id = c.id AND ct.locale = 'it'
+        WHERE c.visible = 1 AND c.archived_at IS NULL AND c.depth = 0
+        ORDER BY c.sort_order ASC LIMIT 12`,
+    ).all<{ slug: string; name: string | null }>(),
+
+    /*
+     * Devices worth offering, ordered by how many products fit them.
+     *
+     * A device filter that leads to an empty grid is worse than no filter: it
+     * tells the customer the shop cannot help them when in fact the shop was
+     * never asked the right question.
+     */
+    env.DB.prepare(
+      `SELECT dm.handle, dm.name, db.name AS brand_name,
+              COUNT(DISTINCT pc.product_id) AS product_count
+         FROM device_models dm
+         JOIN device_families df ON df.id = dm.device_family_id
+         JOIN device_brands db ON db.id = df.device_brand_id
+         JOIN product_compatibility pc ON pc.device_model_id = dm.id
+                                      AND pc.compatibility_level <> 'incompatible'
+         JOIN products p ON p.id = pc.product_id
+                        AND p.status = 'active' AND p.archived_at IS NULL
+        WHERE dm.active = 1
+        GROUP BY dm.id
+       HAVING product_count > 0
+        ORDER BY product_count DESC, dm.name ASC
+        LIMIT 6`,
+    ).all<{ handle: string; name: string; brand_name: string; product_count: number }>(),
+  ]);
+
   return {
     // Where product images are served from. A CDN base if one is configured,
     // otherwise the app's own /media route.
@@ -174,6 +242,10 @@ export async function loader({ context, request }: Route.LoaderArgs) {
     page,
     perPage: PER_PAGE,
     filters: { q, categoria, dispositivo, sort },
+    activeCategory,
+    activeDevice,
+    categoryOptions: categoryOptions.results.filter((c) => c.name),
+    deviceOptions: deviceOptions.results,
     // Null unless every word was a stop word. "Nessun risultato" is true and
     // unhelpful; this distinguishes "we have nothing" from "try other words".
     searchHint: emptySearchReason(parsed, "it"),
@@ -186,8 +258,30 @@ export default function Collection({ loaderData }: Route.ComponentProps) {
   const t = translator(locale);
   const path = (p: string) => localePath(locale, p);
 
-  const { products, total, page, perPage, filters } = loaderData;
+  const { products, total, page, perPage, filters, activeCategory, activeDevice } = loaderData;
   const lastPage = Math.max(1, Math.ceil(total / perPage));
+
+  /*
+   * Filter links preserve everything except the page number.
+   *
+   * Dropping `pagina` matters: page 3 of "all products" is not page 3 of
+   * "iPhone 16 Pro", and keeping it lands the customer on an empty page that
+   * looks like a shop with nothing in it.
+   */
+  const withParam = (key: string, value: string) => {
+    const params = new URLSearchParams(search);
+    params.set(key, value);
+    params.delete("pagina");
+    return `${path("/shop")}?${params.toString()}`;
+  };
+
+  const clearedHref = (key: string) => {
+    const params = new URLSearchParams(search);
+    params.delete(key);
+    params.delete("pagina");
+    const query = params.toString();
+    return query ? `${path("/shop")}?${query}` : path("/shop");
+  };
 
   const pageHref = (n: number) => {
     const params = new URLSearchParams(search);
@@ -201,10 +295,93 @@ export default function Collection({ loaderData }: Route.ComponentProps) {
         <Link to={path("/")}>{t("common.home")}</Link> / <span>{t("common.shop")}</span>
       </nav>
 
-      <h1>{filters.q ? `${t("common.search")}: ${filters.q}` : t("common.shop")}</h1>
-      <p className="muted" role="status">
-        {plural(t, "collection.results", total)}
-      </p>
+      {/*
+        An editorial header, not a bare title.
+        The heading answers "where am I", the lead answers "why would I buy
+        here" — and the lead is the merchant's own category description, so a
+        category they have not written about renders a heading alone rather
+        than filler prose.
+      */}
+      <header className="collection-head">
+        {activeCategory ? <p className="eyebrow">{t("common.shop")}</p> : null}
+        <h1 className="collection-head__title">
+          {filters.q
+            ? `${t("common.search")}: ${filters.q}`
+            : (activeCategory?.name ?? t("common.shop"))}
+        </h1>
+
+        {activeCategory?.description ? (
+          <p className="collection-head__lead">{activeCategory.description}</p>
+        ) : null}
+
+        {/* The device filter said in words. A query string is not a sentence. */}
+        {activeDevice ? (
+          <p className="collection-head__device">
+            {t("collection.filtered_by_device", {
+              device: `${activeDevice.brand_name} ${activeDevice.name}`,
+            })}{" "}
+            <Link className="collection-head__clear" to={clearedHref("dispositivo")}>
+              {t("collection.clear_device")}
+            </Link>
+          </p>
+        ) : null}
+
+        <p className="muted" role="status">
+          {plural(t, "collection.results", total)}
+        </p>
+      </header>
+
+      {/*
+        Filters as links, not a form.
+        Every combination is a real URL: shareable, bookmarkable, and the back
+        button behaves. A JavaScript filter panel would be faster to click and
+        would break all three.
+      */}
+      {loaderData.deviceOptions.length > 0 ? (
+        <section className="filter-row" aria-label={t("collection.filter_device")}>
+          <h2 className="filter-row__label">{t("collection.filter_device")}</h2>
+          <ul className="cluster">
+            {loaderData.deviceOptions.map((device) => {
+              const active = filters.dispositivo === device.handle;
+              return (
+                <li key={device.handle}>
+                  <Link
+                    className="chip"
+                    to={
+                      active ? clearedHref("dispositivo") : withParam("dispositivo", device.handle)
+                    }
+                    aria-pressed={active}
+                  >
+                    {device.name}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ) : null}
+
+      {loaderData.categoryOptions.length > 0 ? (
+        <section className="filter-row" aria-label={t("collection.filter_category")}>
+          <h2 className="filter-row__label">{t("collection.filter_category")}</h2>
+          <ul className="cluster">
+            {loaderData.categoryOptions.map((category) => {
+              const active = filters.categoria === category.slug;
+              return (
+                <li key={category.slug}>
+                  <Link
+                    className="chip"
+                    to={active ? clearedHref("categoria") : withParam("categoria", category.slug)}
+                    aria-pressed={active}
+                  >
+                    {category.name}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ) : null}
 
       {/* A real GET form: sorting works without JavaScript and the result is a
           shareable URL. */}

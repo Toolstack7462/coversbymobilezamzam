@@ -326,9 +326,24 @@ a {
   cursor: pointer;
 }
 
+/*
+ * A selected chip inverts.
+ *
+ * Keyed on `aria-pressed` rather than a class, because the attribute has to be
+ * correct anyway — colour alone must never be the only signal that a filter is
+ * on — and one source of truth cannot disagree with itself. A `.chip--active`
+ * class was briefly added alongside this and lost every time: (0,2,0) beats
+ * (0,1,0), so the text went white on a background that stayed pale.
+ */
 .chip[aria-pressed="true"] {
   border-color: var(--color-ink);
-  background: var(--color-surface-sunken);
+  background: var(--color-ink);
+  color: var(--color-surface);
+}
+
+.chip[aria-pressed="true"]:hover {
+  background: var(--color-ink-deep);
+  border-color: var(--color-ink-deep);
 }
 
 /* ── Compatibility states ──────────────────────────────────────────────── */
@@ -1761,5 +1776,137 @@ a.chip:hover {
   /* Room for BOTH bars, or the specification table's last row is unreachable. */
   body:has(.buy-bar) {
     padding-block-end: calc(7rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* ── Collection: editorial header and filters ─────────────────────────────── */
+
+.collection-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-inline-size: var(--measure);
+}
+
+.collection-head__title {
+  letter-spacing: -0.025em;
+}
+
+.collection-head__lead {
+  font-size: var(--text-h3);
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.collection-head__device {
+  font-weight: var(--weight-medium);
+}
+
+.collection-head__clear {
+  font-weight: var(--weight-regular);
+  color: var(--color-text-secondary);
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.filter-row__label {
+  font-size: var(--text-eyebrow);
+  line-height: var(--text-ui-lh);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--text-eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  flex: 0 0 100%;
+}
+
+/* ── Product gallery ──────────────────────────────────────────────────────── */
+
+.gallery {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/*
+ * A scroll-snapping strip, driven by anchors.
+ *
+ * The thumbnails are `<a href="#vista-2">`, so the browser does the scrolling.
+ * No state, no JavaScript, no carousel library — and it keeps working before
+ * hydration and for anyone who never gets it.
+ */
+.gallery__stage {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface-sunken);
+  /* The strip is the scroller; hide its bar rather than have one appear under
+     every product image. */
+  scrollbar-width: none;
+}
+
+.gallery__stage::-webkit-scrollbar {
+  display: none;
+}
+
+.gallery__slide {
+  flex: 0 0 100%;
+  scroll-snap-align: center;
+  aspect-ratio: 1 / 1;
+  margin: 0;
+}
+
+.gallery__slide img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: contain;
+}
+
+.gallery__thumbs {
+  list-style: none;
+  padding-inline-start: 0;
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.gallery__thumbs::-webkit-scrollbar {
+  display: none;
+}
+
+.gallery__thumb {
+  display: block;
+  inline-size: 4.5rem;
+  block-size: 4.5rem;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control);
+  overflow: hidden;
+  background: var(--color-surface-sunken);
+  transition: border-color var(--duration-fast) var(--ease);
+}
+
+.gallery__thumb:hover {
+  border-color: var(--color-ink);
+}
+
+.gallery__thumb img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: contain;
+}
+
+/* Smooth scrolling is motion. Someone who asked for less gets an instant jump,
+   which still lands on the right image. */
+@media (prefers-reduced-motion: reduce) {
+  .gallery__stage {
+    scroll-behavior: auto;
   }
 }

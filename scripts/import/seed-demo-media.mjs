@@ -26,7 +26,7 @@ import { pathToFileURL } from "node:url";
 
 import { chromium } from "playwright";
 
-import { ARTWORK, svgFor } from "./demo-artwork.mjs";
+import { ARTWORK, VIEWS, svgFor } from "./demo-artwork.mjs";
 
 const args = process.argv.slice(2);
 const argOf = (name, fallback = null) => {
@@ -81,28 +81,35 @@ const page = await browser.newPage({ viewport: { width: SIZE, height: SIZE } });
 const files = [];
 
 for (const [productId, artKey] of ASSIGNMENTS) {
-  const svg = svgFor(artKey, { size: SIZE });
-  const svgPath = join(work, `${artKey}.svg`);
-  writeFileSync(svgPath, svg, "utf8");
+  // Sort order matters: the first view is the primary, and the primary is what
+  // the grid shows.
+  for (const [viewKey, view] of Object.entries(VIEWS)) {
+    const name = `${artKey}${view.suffix}`;
+    const svg = svgFor(artKey, { size: SIZE, view: viewKey });
+    const svgPath = join(work, `${name}.svg`);
+    writeFileSync(svgPath, svg, "utf8");
 
-  // file:// so nothing is fetched over the network, and the SVG never touches
-  // a server.
-  // pathToFileURL rather than string surgery: a Windows path is not a URL,
-  // and hand-escaping backslashes is how this line broke the first time.
-  await page.goto(pathToFileURL(svgPath).href);
-  const pngPath = join(work, `${artKey}.png`);
-  await page.screenshot({ path: pngPath, omitBackground: false });
+    // file:// so nothing is fetched over the network, and the SVG never touches
+    // a server. pathToFileURL rather than string surgery: a Windows path is not
+    // a URL, and hand-escaping backslashes is how this line broke the first time.
+    await page.goto(pathToFileURL(svgPath).href);
+    const pngPath = join(work, `${name}.png`);
+    await page.screenshot({ path: pngPath, omitBackground: false });
 
-  const bytes = readFileSync(pngPath);
-  files.push({
-    productId,
-    artKey,
-    pngPath,
-    size: bytes.byteLength,
-    // Content-addressed: the same artwork uploaded twice keeps one key.
-    hash: createHash("sha256").update(bytes).digest("hex"),
-  });
-  console.log(`  ${artKey.padEnd(11)} ${(bytes.byteLength / 1024).toFixed(1)} KB`);
+    const bytes = readFileSync(pngPath);
+    files.push({
+      productId,
+      artKey,
+      viewKey,
+      view,
+      name,
+      pngPath,
+      size: bytes.byteLength,
+      // Content-addressed: the same artwork uploaded twice keeps one key.
+      hash: createHash("sha256").update(bytes).digest("hex"),
+    });
+    console.log(`  ${name.padEnd(20)} ${(bytes.byteLength / 1024).toFixed(1)} KB`);
+  }
 }
 
 await browser.close();
@@ -112,7 +119,7 @@ await browser.close();
 console.log(`\nUploading to R2 bucket ${BUCKET}…`);
 
 for (const file of files) {
-  file.key = `demo/${file.artKey}-${file.hash.slice(0, 12)}.png`;
+  file.key = `demo/${file.name}-${file.hash.slice(0, 12)}.png`;
   wrangler([
     "r2",
     "object",
@@ -133,21 +140,28 @@ for (const file of files) {
 
 console.log("\nWriting product_images rows…");
 
+// Idempotent: clear each product once, then insert every view for it.
+for (const productId of new Set(files.map((f) => f.productId))) {
+  d1(`DELETE FROM product_images WHERE product_id = '${productId}'`);
+}
+
 for (const file of files) {
   const art = ARTWORK[file.artKey];
-  // Idempotent: re-running replaces the row rather than adding a second
-  // primary image to the same product.
-  d1(`DELETE FROM product_images WHERE product_id = '${file.productId}'`);
+  const primary = file.viewKey === "full";
+  const altIt = `${art.it}${file.view.labelIt}`;
+  const altEn = `${art.en}${file.view.labelEn}`;
+
   d1(
     `INSERT INTO product_images
        (id, product_id, variant_id, object_key, alt_it, alt_en,
         width, height, mime_type, file_size, file_hash, is_primary, sort_order, created_at)
      VALUES
        ('img_${randomUUID().replace(/-/g, "").slice(0, 20)}', '${file.productId}', NULL,
-        '${file.key}', '${art.it.replace(/'/g, "''")}', '${art.en.replace(/'/g, "''")}',
-        ${SIZE}, ${SIZE}, 'image/png', ${file.size}, '${file.hash}', 1, 0, ${Date.now()})`,
+        '${file.key}', '${altIt.replace(/'/g, "''")}', '${altEn.replace(/'/g, "''")}',
+        ${SIZE}, ${SIZE}, 'image/png', ${file.size}, '${file.hash}',
+        ${primary ? 1 : 0}, ${primary ? 0 : 1}, ${Date.now()})`,
   );
-  console.log(`  ${file.productId} → ${file.key}`);
+  console.log(`  ${file.productId} → ${file.key}${primary ? "  (primary)" : ""}`);
 }
 
 rmSync(work, { recursive: true, force: true });

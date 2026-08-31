@@ -124,7 +124,8 @@
     "recently_viewed": "Recently viewed",
     "choose_variant": "Choose an option",
     "save_percent": "Save {{percent}}%",
-    "prior_price_note": "Lowest price applied in the previous 30 days: {{price}}"
+    "prior_price_note": "Lowest price applied in the previous 30 days: {{price}}",
+    "view_n": "View {{n}}"
   },
   "collection": {
     "results_one": "{{count}} product",
@@ -139,7 +140,11 @@
     "sort_price_desc": "Price high to low",
     "sort_newest": "Newest",
     "compatible_only": "Only compatible with my device",
-    "load_more": "Show more products"
+    "load_more": "Show more products",
+    "filtered_by_device": "Compatible with {{device}}",
+    "clear_device": "show all",
+    "filter_device": "Filter by device",
+    "filter_category": "Filter by category"
   },
   "cart": {
     "title": "Your cart",

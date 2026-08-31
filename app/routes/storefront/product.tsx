@@ -50,15 +50,15 @@ export async function loader({ context, params }: Route.LoaderArgs) {
    * picture on the page, rather than two queries disagreeing about which
    * photograph represents the product.
    */
-  const image = await env.DB.prepare(
+  const images = await env.DB.prepare(
     `SELECT object_key, alt_it, alt_en, width, height
        FROM product_images
       WHERE product_id = ?1
       ORDER BY is_primary DESC, sort_order ASC
-      LIMIT 1`,
+      LIMIT 8`,
   )
     .bind(product.id)
-    .first<{
+    .all<{
       object_key: string;
       alt_it: string | null;
       alt_en: string | null;
@@ -130,7 +130,7 @@ export async function loader({ context, params }: Route.LoaderArgs) {
 
   return {
     product,
-    image,
+    images: images.results,
     mediaBaseUrl: env.PUBLIC_MEDIA_BASE_URL?.replace(/\/$/, "") ?? "/media",
     variants: variants.results,
     /**
@@ -158,8 +158,15 @@ export default function ProductPage({ loaderData }: Route.ComponentProps) {
   const { pathname } = useLocation();
   const { locale } = parseLocalePath(pathname);
   const t = translator(locale);
-  const { product, image, mediaBaseUrl, variants, compatibilityRecords, specs, compatibleDevices } =
-    loaderData;
+  const {
+    product,
+    images,
+    mediaBaseUrl,
+    variants,
+    compatibilityRecords,
+    specs,
+    compatibleDevices,
+  } = loaderData;
 
   const variant = variants[0];
   const intl = locale === "it" ? "it-IT" : "en-GB";
@@ -200,24 +207,60 @@ export default function ProductPage({ loaderData }: Route.ComponentProps) {
       </nav>
 
       <div className="product-page__grid">
-        <div className="product-page__media">
-          {image ? (
-            <img
-              src={`${mediaBaseUrl}/${image.object_key}`}
-              /* The alt text belongs to the image, not to the product: these
-                 are currently placeholder illustrations and say so. An empty
-                 alt would be right for pure decoration, but this carries
-                 information the sighted visitor is getting. */
-              alt={(locale === "en" ? image.alt_en : image.alt_it) ?? ""}
-              width={image.width}
-              height={image.height}
-              /* Above the fold on the page it belongs to — never lazy. */
-              fetchPriority="high"
-              decoding="async"
-            />
-          ) : (
-            <div className="product-card__media-empty" aria-hidden="true" />
-          )}
+        {/*
+          The gallery.
+
+          No JavaScript: every view is an anchor to its own image, and the
+          browser scrolls the strip. That means it works before hydration, works
+          without it, and costs nothing to the bundle — where a carousel library
+          would cost more than the images.
+
+          Thumbnails appear only when there is more than one view. A single
+          thumbnail under a single photograph is a control that does nothing.
+        */}
+        <div className="gallery">
+          <div className="gallery__stage">
+            {images.length > 0 ? (
+              images.map((img, index) => (
+                <figure key={img.object_key} className="gallery__slide" id={`vista-${index + 1}`}>
+                  <img
+                    src={`${mediaBaseUrl}/${img.object_key}`}
+                    /* The alt belongs to the image, not the product: these are
+                       placeholder illustrations and say so. */
+                    alt={(locale === "en" ? img.alt_en : img.alt_it) ?? ""}
+                    width={img.width}
+                    height={img.height}
+                    /* The first is the LCP element of this page. The rest are
+                       off to the side and can wait. */
+                    fetchPriority={index === 0 ? "high" : "low"}
+                    loading={index === 0 ? "eager" : "lazy"}
+                    decoding="async"
+                  />
+                </figure>
+              ))
+            ) : (
+              <div className="product-card__media-empty" aria-hidden="true" />
+            )}
+          </div>
+
+          {images.length > 1 ? (
+            <ul className="gallery__thumbs">
+              {images.map((img, index) => (
+                <li key={img.object_key}>
+                  <a className="gallery__thumb" href={`#vista-${index + 1}`}>
+                    <img
+                      src={`${mediaBaseUrl}/${img.object_key}`}
+                      alt={t("product.view_n", { n: index + 1 })}
+                      width={120}
+                      height={120}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </div>
 
         <div className="product-page__info stack">

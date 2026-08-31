@@ -79,16 +79,41 @@ and gives no hint that a missing environment is the reason.
 ## Order of operations
 
 1. `npm run verify` — never deploy something unverified.
-2. `npx wrangler d1 migrations apply DB --env preview --remote`
-3. `npm run deploy:preview`
-4. Read the workers.dev URL from the output.
-5. Set `APP_BASE_URL` to that exact origin in the preview `vars`.
-6. `npm run deploy:preview` again.
+2. `npm run backup:preview` — before any migration, without exception.
+3. `npx wrangler d1 migrations apply DB --env preview --remote`
+4. `npm run deploy:preview`
+5. `npm run smoke:preview` — 60 checks against the deployed site.
 
-Steps 4–6 exist because Better Auth needs to know its own origin, and the origin
-is not knowable until the Worker has a hostname. The second deploy is not
-optional: until it happens, `APP_BASE_URL` is missing and every absolute URL and
-origin check is working from nothing.
+**On a first deploy to a new hostname**, insert between 4 and 5: read the
+workers.dev URL from the output, set `APP_BASE_URL` to that exact origin in the
+preview `vars`, and deploy again.
+
+That second deploy is not optional. Better Auth validates every request's origin
+against `APP_BASE_URL` and the origin is not knowable until the Worker has a
+hostname — so the first deploy necessarily runs without it, and until the second
+one happens `trustedOrigins` is `[undefined]` and **nobody can sign in**. It
+fails looking like a wrong password, and nothing local reproduces it.
+
+`createAuth` now throws if the variable is missing, so the failure at least
+names itself.
+
+---
+
+## Verifying a deploy
+
+`npm run smoke:preview` runs 60 checks against the live site: that D1 and both
+buckets answer, that every admin route redirects an anonymous visitor to the
+login page, that a forged `Origin` is refused with 403 while the real one
+reaches the credential check, that no page sets a cookie, and that the whole
+site is `noindex`.
+
+The admin gate list is parsed out of `app/routes.ts`, so a new admin page is
+checked automatically. It is worth knowing why: hand-listing the routes would
+mean a new page is unprotected AND untested on the same day somebody forgets,
+which are exactly the two failures that have to coincide for a leak.
+
+The suite also refuses a deploy made from a dirty working tree, by comparing the
+commit reported by `/api/health` against the repository.
 
 ---
 
@@ -105,6 +130,11 @@ be done from the CLI non-interactively, and the name is account-wide and
 effectively permanent — so it is the account owner's decision, not a deployment
 detail.
 
-The resulting URL is:
+**This account's subdomain is `genzdigitaltools7462`**, so the preview is at:
 
-    https://italian-tech-atelier-commerce-preview.<subdomain>.workers.dev
+    https://italian-tech-atelier-commerce-preview.genzdigitaltools7462.workers.dev
+
+Per-version preview URLs are turned off (`"preview_urls": false`). Wrangler
+otherwise publishes an extra hostname for every deploy, and `APP_BASE_URL` can
+only name one of them — so auth would work on the canonical URL and fail on
+every other, and anyone handed the wrong link would report the shop as broken.

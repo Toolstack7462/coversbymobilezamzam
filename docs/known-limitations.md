@@ -190,17 +190,19 @@ needs the RTL pass described in ADR 0009.
 
 ## 5. Operational gaps
 
-| Gap                       | Status                                                                                                             |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| **GitHub remote**         | `gh` is installed but **not authenticated**. All work is committed locally. Exact command in `docs/deployment.md`. |
-| **Cloudflare resources**  | None created. `wrangler.jsonc` carries placeholder database ids.                                                   |
-| **Production deployment** | Not performed, and not permitted without separate explicit authorisation.                                          |
-| **Backup restore**        | Scripted but **not yet exercised against a disposable database**. Until it has been, the backup is unproven.       |
-| **Core Web Vitals**       | Not measured. No deployed preview exists, and a localhost Lighthouse run is not evidence.                          |
-| **Legal content**         | No legal text ships. Every page is an empty, clearly-labelled placeholder awaiting a lawyer.                       |
-| **Fiscal workflow**       | Unreviewed. A _commercialista_ must rule on invoicing before launch.                                               |
-| **Two-factor**            | Supported, not yet enforced. A launch blocker for super admins and payment verifiers.                              |
-| **Accessibility**         | Automated axe checks only. Automated testing covers roughly a third of WCAG and is not a screen-reader test.       |
+| Gap                       | Status                                                                                                                                                                                        |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **GitHub remote**         | `gh` is installed but **not authenticated**. All work is committed locally. Exact command in `docs/deployment.md`.                                                                            |
+| **Cloudflare resources**  | Preview only: one D1, two EU R2 buckets, one Worker, one disposable restore-test D1. Staging and production still carry placeholder database ids.                                             |
+| **Production deployment** | Not performed, and not permitted without separate explicit authorisation.                                                                                                                     |
+| **Backup restore**        | **Exercised and passed** 31 Aug 2026 on preview demo data. Not yet repeated at production size.                                                                                               |
+| **Free-plan CPU**         | Measured: median 4–7ms against a 10ms limit, peaks of 10–11ms on the homepage and device finder. Nothing terminated, but the margin is thin — see `docs/cloudflare/free-plan-cpu-results.md`. |
+| **Cron under load**       | The reservation sweeper gets the same 10ms as a page render and batches up to 100 rows. Never measured with a real backlog.                                                                   |
+| **Core Web Vitals**       | Not measured. A deployed preview now exists, so this is finally possible — but it has not been done.                                                                                          |
+| **Legal content**         | No legal text ships. Every page is an empty, clearly-labelled placeholder awaiting a lawyer.                                                                                                  |
+| **Fiscal workflow**       | Unreviewed. A _commercialista_ must rule on invoicing before launch.                                                                                                                          |
+| **Two-factor**            | Supported, not yet enforced. A launch blocker for super admins and payment verifiers.                                                                                                         |
+| **Accessibility**         | Automated axe checks only. Automated testing covers roughly a third of WCAG and is not a screen-reader test.                                                                                  |
 
 ---
 

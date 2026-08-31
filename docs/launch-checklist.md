@@ -150,18 +150,33 @@ than an obviously empty page.
       locked the account out permanently, and every correct two-factor code
       was rejected.
 
-- [ ] A staged rehearsal of the first-run flow on a deployed preview. The
-      browser suite proves it against local D1; it has never been done against
-      a real Cloudflare environment, where cookie `Secure` attributes and the
-      `__Host-` prefix behave differently over HTTPS.
-- [ ] **Backup restore actually performed** against a disposable database — a
-      backup nobody has restored is not a backup
+- [ ] A staged rehearsal of the first-run flow on a deployed preview. Partly
+      done: the preview is deployed, the setup page is open and waiting, and 60
+      smoke checks pass against it over real HTTPS — including that a forged
+      `Origin` is refused while the real one reaches the credential check. The
+      part still outstanding is the merchant creating the first administrator
+      and enrolling a factor, which nobody else can do: the setup token is in
+      their password manager and the password must be theirs alone. See
+      `docs/cloudflare/first-admin-setup.md`.
+- [x] **Backup restore actually performed** against a disposable database —
+      31 Aug 2026, 207 rows / 20 tables restored exactly, schema rebuilt from
+      migrations and the search index rebuilt by its triggers. Preview demo data
+      only; not yet repeated at production size. See
+      `docs/backup-and-fts-restore.md`.
 - [ ] **Core Web Vitals measured on a deployed preview** — localhost is not
-      evidence
+      evidence. A preview now exists, so this is unblocked.
+- [ ] **Decide on the paid plan.** The storefront renders at 4–7ms of CPU
+      against the free plan's 10ms ceiling, with peaks touching it. Nothing is
+      failing, but a shop taking real orders has about one page's worth of
+      headroom. See `docs/cloudflare/free-plan-cpu-results.md`.
 - [ ] Independent accessibility audit including screen-reader testing — axe
       finds roughly a third of WCAG issues, so a clean automated run is a
       floor, not a pass
 - [ ] Cron confirmed running in production (`scheduled_job_runs`)
+- [ ] **Cron CPU measured with a real backlog.** A Cron Trigger gets the same
+      10ms as a page render on the free plan, and the sweeper batches up to 100
+      reservations. On an empty preview it finishes in 16ms of wall time, which
+      proves only that it is wired up.
 - [ ] Alerting configured for a stopped sweeper
 
 ---

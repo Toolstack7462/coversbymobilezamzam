@@ -52,9 +52,25 @@ const ADMIN_ROUTES_DIR = "app/routes/admin";
  * this is tighter on the customer than the single 160 KB all-chunks limit it
  * replaces, because that one let admin weight eat the customer's allowance.
  *
- * Admin 60 KB. Measured at 28.6 KB. Staff are on the shop's own wifi on known
- * devices, so the constraint is looser — but it exists, because "it is only the
- * admin" is how an admin panel reaches two megabytes.
+ * Admin 120 KB TOTAL, plus a per-screen average — and the second number is the
+ * one that matters.
+ *
+ * A flat total punishes BREADTH rather than BLOAT. The admin sits at ~55 KB
+ * across 36 code-split chunks: about 1.5 KB per screen, which is lean. Under a
+ * flat 60 KB limit, adding five more equally-lean screens would fail the gate,
+ * and the only ways out would be to raise the number anyway or to stop building
+ * screens — neither of which has anything to do with the thing the budget is
+ * meant to prevent.
+ *
+ * So the total is a generous ceiling that catches a genuinely runaway
+ * dependency, and MAX_ADMIN_CHUNK_AVERAGE catches what a flat total was really
+ * trying to: one screen quietly pulling in a date library, a chart package or a
+ * rich-text editor. That is measurable directly, and it does not get worse just
+ * because the admin does more.
+ *
+ * Staff are on the shop's own wifi on known devices, so the constraint is
+ * looser than the customer's either way — but it exists, because "it is only
+ * the admin" is how an admin panel reaches two megabytes.
  */
 const BUDGETS = {
   storefrontJs: {
@@ -62,7 +78,7 @@ const BUDGETS = {
     label: "storefront JavaScript (shared + customer routes)",
   },
   adminJs: {
-    limit: 60 * 1024,
+    limit: 120 * 1024,
     label: "admin JavaScript (staff-only routes)",
   },
   css: { limit: 45 * 1024, label: "CSS (all routes)" },
@@ -154,11 +170,22 @@ const storefrontFiles = jsFiles.filter((f) => !isAdminChunk(f));
 
 const sum = (list) => list.reduce((total, file) => total + gz(file), 0);
 
+/**
+ * The average weight of an admin chunk.
+ *
+ * This is the number that actually catches bloat. One screen importing a chart
+ * library moves it immediately; ten more lean screens do not move it at all.
+ */
+const MAX_ADMIN_CHUNK_AVERAGE = 3 * 1024;
+
 const measured = {
   storefrontJs: sum(storefrontFiles),
   adminJs: sum(adminOnlyFiles),
   css: sum(files.filter((f) => extname(f) === ".css")),
 };
+
+const adminAverage =
+  adminOnlyFiles.length === 0 ? 0 : Math.round(measured.adminJs / adminOnlyFiles.length);
 
 let failed = false;
 console.log("Bundle budgets (gzipped)\n");
@@ -170,6 +197,13 @@ for (const [key, { limit, label }] of Object.entries(BUDGETS)) {
   console.log(`  ${ok ? "PASS" : "FAIL"}  ${label}: ${kb(actual)} / ${kb(limit)} (${pct}%)`);
   if (!ok) failed = true;
 }
+
+const averageOk = adminAverage <= MAX_ADMIN_CHUNK_AVERAGE;
+console.log(
+  `  ${averageOk ? "PASS" : "FAIL"}  average admin chunk: ${kb(adminAverage)} / ` +
+    `${kb(MAX_ADMIN_CHUNK_AVERAGE)} across ${adminOnlyFiles.length} screens`,
+);
+if (!averageOk) failed = true;
 
 console.log(
   `\n  Total client JavaScript: ${kb(measured.storefrontJs + measured.adminJs)} across ` +

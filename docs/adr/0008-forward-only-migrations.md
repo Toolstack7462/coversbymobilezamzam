@@ -56,4 +56,4 @@ most releases need no destructive step at all.
 
 Restore from the pre-migration backup, then write a corrective forward migration.
 The procedure, including how to verify a restore actually worked, is in
-`docs/backup-and-restore.md`.
+`docs/backup-and-fts-restore.md`.

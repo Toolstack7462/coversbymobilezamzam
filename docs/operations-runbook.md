@@ -123,7 +123,7 @@ D1 applies migrations one file at a time; a failure leaves earlier files applied
 
 1. `npx wrangler d1 migrations list ita-commerce --remote` to see the state.
 2. **Do not** hand-edit the migrations table.
-3. Restore from the pre-migration backup (`docs/backup-and-restore.md`).
+3. Restore from the pre-migration backup (`docs/backup-and-fts-restore.md`).
 4. Fix the migration, test locally, apply again.
 
 Forward-only means recovery is restore-plus-fix, never a down-migration

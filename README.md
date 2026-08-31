@@ -51,7 +51,7 @@ default account and no public admin registration.
 | `npm run test:a11y`        | Playwright + axe                              |
 | `npm run db:generate`      | Generate a migration from the schema          |
 | `npm run db:migrate:local` | Apply migrations locally                      |
-| `npm run backup`           | Export the database                           |
+| `npm run backup`           | Export the database (FTS-safe; see the doc)   |
 | `npm run restore:test`     | Restore into a disposable database and verify |
 | **`npm run verify`**       | **Everything. The only gate that counts.**    |
 
@@ -59,16 +59,17 @@ default account and no public admin registration.
 
 Start with `CLAUDE.md` — the operating contract — then:
 
-| Read                         | For                                                   |
-| ---------------------------- | ----------------------------------------------------- |
-| `docs/architecture.md`       | How the layers fit                                    |
-| `docs/invariants.md`         | The fourteen rules that must hold                     |
-| `docs/adr/`                  | Why each major choice was made, and what was rejected |
-| `docs/admin-guide.md`        | Running the shop, no code                             |
-| `docs/admin-user-flows.md`   | The jobs the shop does, screen by screen              |
-| `docs/operations-runbook.md` | When something is wrong                               |
-| `docs/launch-checklist.md`   | What must be true before going live                   |
-| `docs/known-limitations.md`  | What is missing and what is not built                 |
+| Read                             | For                                                   |
+| -------------------------------- | ----------------------------------------------------- |
+| `docs/architecture.md`           | How the layers fit                                    |
+| `docs/invariants.md`             | The fourteen rules that must hold                     |
+| `docs/adr/`                      | Why each major choice was made, and what was rejected |
+| `docs/admin-guide.md`            | Running the shop, no code                             |
+| `docs/admin-user-flows.md`       | The jobs the shop does, screen by screen              |
+| `docs/operations-runbook.md`     | When something is wrong                               |
+| `docs/backup-and-fts-restore.md` | Taking a backup that can actually be restored         |
+| `docs/launch-checklist.md`       | What must be true before going live                   |
+| `docs/known-limitations.md`      | What is missing and what is not built                 |
 
 Building on the admin:
 

@@ -136,6 +136,58 @@
       },
     },
 
+    /*
+     * RESTORE-TEST — a disposable target for proving a backup.
+     *
+     * Declared here rather than created ad hoc because Wrangler can only reach
+     * a database that its configuration names, and a restore procedure that
+     * requires hand-editing config before it can run is a procedure nobody
+     * runs. It exists so `--env restore-test` works.
+     *
+     * It is NOT a deployable environment: no Worker is ever published to it,
+     * and it has no buckets or secrets. The database it points at is created
+     * and destroyed by the restore drill. If the database has been deleted —
+     * which is the normal resting state — commands against this environment
+     * will fail, and that is correct.
+     */
+    "restore-test": {
+      "name": "ita-commerce-restore-test-never-deployed",
+      "workers_dev": false,
+      /*
+       * These two are repeated from the top level, and NOT because this
+       * environment uses them — nothing is ever deployed here.
+       *
+       * `wrangler types` generates one Env type covering every declared
+       * environment, so a binding that is missing from any one of them becomes
+       * optional in all of them. Leaving these out turned `env.MEDIA` into
+       * `R2Bucket | undefined` across the whole application and broke the
+       * typecheck in five unrelated files. Wrangler also warns on every command
+       * that a top-level `vars`/`r2_buckets` is not inherited by environments.
+       *
+       * Declaring them keeps the generated types honest for the environments
+       * that are real.
+       */
+      "vars": {
+        "APP_ENV": "development",
+        "DEFAULT_LOCALE": "it",
+        "SUPPORTED_LOCALES": "it,en",
+        "DEFAULT_CURRENCY": "EUR",
+        "STORE_TIMEZONE": "Europe/Rome",
+      },
+      "r2_buckets": [
+        { "binding": "MEDIA", "bucket_name": "ita-commerce-media" },
+        { "binding": "PRIVATE_FILES", "bucket_name": "ita-commerce-private" },
+      ],
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "ita-commerce-preview-restore-test",
+          "database_id": "1f832320-2b10-43be-8f64-9f6427d384f4",
+          "migrations_dir": "db/migrations",
+        },
+      ],
+    },
+
     "staging": {
       "name": "ita-commerce-staging",
       "workers_dev": false,

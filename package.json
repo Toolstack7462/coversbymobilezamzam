@@ -39,11 +39,12 @@
     "budgets": "node scripts/verify/budgets.mjs",
     "secret-scan": "node scripts/secret-scan/scan.mjs",
     "validate-env": "node scripts/validate-env/validate.mjs",
-    "backup": "node scripts/backup/export.mjs",
+    "backup": "node scripts/backup/export-fts-safe.mjs",
     "restore:test": "node scripts/restore/restore-test.mjs",
     "verify": "node scripts/verify/verify.mjs",
     "reconcile": "node scripts/verify/reconcile-inventory.mjs",
-    "media:inventory": "node scripts/verify/media-inventory.mjs"
+    "media:inventory": "node scripts/verify/media-inventory.mjs",
+    "backup:preview": "node scripts/backup/export-fts-safe.mjs --db DB --env preview --remote"
   },
   "dependencies": {
     "better-auth": "1.7.2",

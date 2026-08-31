@@ -160,7 +160,7 @@ created, the reservation appears, the cron sweeper runs.
     npx wrangler rollback [deployment-id]
 
 **A code rollback does not undo a migration.** If the release included a schema
-change, follow `docs/backup-and-restore.md` instead.
+change, follow `docs/backup-and-fts-restore.md` instead.
 
 ---
 

@@ -83,5 +83,22 @@ Building on the admin:
 
 **READY FOR MERCHANT REVIEW — DO NOT LAUNCH.**
 
-Merchant data, legal review, fiscal review, a tested restore and measured
-production performance are all outstanding. See `docs/launch-checklist.md`.
+The software is feature-complete for Phase 1: a merchant can install the shop,
+enrol in two-factor, add phones, products, photos and compatibility, import a
+supplier's spreadsheet after reviewing exactly what it will change, take an
+order, verify the payment against their own bank account, and hand off to
+WhatsApp — with every step audited.
+
+What is outstanding is not code:
+
+- **The merchant's own data.** Brand name, P.IVA, REA, contacts, opening hours
+  and payment details are all empty, deliberately. Nothing has been invented.
+- **Legal and fiscal review.** The eleven required documents are not written,
+  and this system will not generate them.
+- **A tested backup restore.** A backup nobody has restored is not a backup.
+- **A deployed preview.** Core Web Vitals, real-HTTPS cookie behaviour and the
+  first-run flow against a real Cloudflare environment are all unmeasured;
+  localhost is not evidence.
+
+See `docs/launch-checklist.md` for the full gate, and
+`docs/known-limitations.md` for what is deliberately not built.

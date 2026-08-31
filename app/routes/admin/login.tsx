@@ -66,16 +66,31 @@ export async function action({ request, context }: Route.ActionArgs) {
     headers: new Headers({ Cookie: cookie ?? "" }),
   });
 
-  // A valid customer account is not staff access. Same generic message: a
-  // customer probing the admin learns nothing about whether their address is
-  // known to it.
-  if (!session?.user?.id || !(await loadStaffActor(env, session.user.id))) {
-    return { error: "Credenziali non valide." };
-  }
-
   // Only redirect to an internal path. A next= parameter pointing off-site is
   // an open redirect.
   const safeNext = next.startsWith("/admin") ? next : "/admin";
+
+  /**
+   * NO SESSION YET, BUT THE PASSWORD WAS ACCEPTED.
+   *
+   * With a verified second factor, Better Auth issues a short-lived two-factor
+   * cookie rather than a session. That is the guarantee this branch preserves:
+   * between a correct password and a correct code there is no authenticated
+   * request, so a stolen password alone never reaches the admin.
+   */
+  if (!session?.user?.id) {
+    return redirect(
+      `/admin/sicurezza/2fa/verifica?next=${encodeURIComponent(safeNext)}`,
+      cookie ? { headers: { "Set-Cookie": cookie } } : undefined,
+    );
+  }
+
+  // A valid customer account is not staff access. Same generic message: a
+  // customer probing the admin learns nothing about whether their address is
+  // known to it.
+  if (!(await loadStaffActor(env, session.user.id))) {
+    return { error: "Credenziali non valide." };
+  }
 
   return redirect(safeNext, cookie ? { headers: { "Set-Cookie": cookie } } : undefined);
 }

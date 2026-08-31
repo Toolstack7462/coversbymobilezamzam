@@ -56,6 +56,12 @@ export default [
    */
   route("admin/accedi", "routes/admin/login.tsx"),
   route("admin/installazione", "routes/admin/setup.tsx"),
+  /**
+   * The second-factor challenge is OUTSIDE the protected layout: at that point
+   * the password has been accepted but no session exists yet, so a route that
+   * required one could never be reached.
+   */
+  route("admin/sicurezza/2fa/verifica", "routes/admin/security-2fa-verify.tsx"),
   route("admin/esci", "routes/admin/logout.tsx"),
 
   layout("routes/admin/layout.tsx", [
@@ -66,5 +72,14 @@ export default [
     route("admin/inventario", "routes/admin/inventory.tsx"),
     route("admin/impostazioni", "routes/admin/settings.tsx"),
     route("admin/registro", "routes/admin/audit.tsx"),
+
+    // Own-account security. These sit on the pre-enrolment allowlist, because
+    // a page that required enrolment in order to enrol would be a locked door
+    // with the key inside.
+    route("admin/sicurezza", "routes/admin/security.tsx"),
+    route("admin/sicurezza/2fa", "routes/admin/security-2fa.tsx"),
+    route("admin/sicurezza/2fa/configura", "routes/admin/security-2fa-setup.tsx"),
+    route("admin/sicurezza/codici-recupero", "routes/admin/security-backup-codes.tsx"),
+    route("admin/sicurezza/sessioni", "routes/admin/security-sessions.tsx"),
   ]),
 ] satisfies RouteConfig;

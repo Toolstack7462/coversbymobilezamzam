@@ -191,3 +191,95 @@ export async function requireStepUp(
 
   return actor;
 }
+
+// ── Two-factor enforcement ───────────────────────────────────────────────────
+
+/**
+ * Permissions that make an account privileged enough to require TOTP.
+ *
+ * The list is derived from consequence, not from job title: each of these can
+ * move money, redirect money, or grant someone else the ability to.
+ */
+export const TOTP_REQUIRED_PERMISSIONS: readonly Permission[] = [
+  "payment.verify", // can declare money received
+  "payment.settings", // can change where money goes
+  "staff.roles", // can grant either of the above to anyone
+  "staff.write", // can create and modify staff accounts
+  "settings.write", // can change merchant configuration
+  "order.refund", // can move money back out
+];
+
+/** Whether this actor's permissions oblige them to enrol. */
+export function requiresTwoFactor(actor: StaffActor): boolean {
+  return TOTP_REQUIRED_PERMISSIONS.some((p) => actor.permissions.includes(p));
+}
+
+/**
+ * Whether the user has a VERIFIED second factor.
+ *
+ * `verified` matters: a row exists from the moment enrolment starts, but an
+ * unverified secret is not a factor - nobody has proved they can generate a
+ * code from it.
+ */
+export async function hasVerifiedTwoFactor(env: Env, userId: string): Promise<boolean> {
+  const row = await env.DB.prepare(
+    `SELECT verified FROM two_factor WHERE user_id = ?1 AND verified = 1 LIMIT 1`,
+  )
+    .bind(userId)
+    .first<{ verified: number }>();
+  return row !== null;
+}
+
+/**
+ * The ONLY paths a privileged account may reach before enrolling.
+ *
+ * Everything else is refused. Note what is absent: no orders, no payments, no
+ * products, no settings. An unenrolled administrator can do exactly two useful
+ * things - enrol, or leave.
+ */
+export const PRE_ENROLMENT_ALLOWLIST: readonly string[] = [
+  "/admin/sicurezza",
+  "/admin/sicurezza/2fa",
+  "/admin/sicurezza/2fa/configura",
+  "/admin/sicurezza/2fa/verifica",
+  "/admin/sicurezza/codici-recupero",
+  "/admin/sicurezza/sessioni",
+  "/admin/profilo",
+  "/admin/esci",
+  "/admin/aiuto",
+];
+
+export function isPreEnrolmentPath(pathname: string): boolean {
+  return PRE_ENROLMENT_ALLOWLIST.some(
+    (allowed) => pathname === allowed || pathname.startsWith(`${allowed}/`),
+  );
+}
+
+/**
+ * The gate used by the admin layout.
+ *
+ * Identical to `requireStaff`, plus: a privileged account without a verified
+ * second factor is redirected to enrolment and cannot reach anything else.
+ *
+ * The check is server-side on every request, not a one-time redirect after
+ * login - otherwise deep-linking straight to a payment screen would skip it.
+ */
+export async function requireEnrolledStaff(
+  request: Request,
+  env: Env,
+  permission?: Permission,
+): Promise<{ actor: StaffActor; mustEnrol: boolean }> {
+  const actor = await requireStaff(request, env, permission);
+  const pathname = new URL(request.url).pathname;
+
+  if (!requiresTwoFactor(actor)) return { actor, mustEnrol: false };
+
+  const enrolled = await hasVerifiedTwoFactor(env, actor.userId);
+  if (enrolled) return { actor, mustEnrol: false };
+
+  if (!isPreEnrolmentPath(pathname)) {
+    throw redirect("/admin/sicurezza/2fa?obbligatorio=1");
+  }
+
+  return { actor, mustEnrol: true };
+}

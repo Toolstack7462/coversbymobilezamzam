@@ -1,4 +1,4 @@
-import { sqliteTable, text, index, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, index, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { pk, ts, authTs, bool, stamps, archivable, sortOrder } from "./_shared";
 
 /**
@@ -78,7 +78,18 @@ export const verification = sqliteTable(
   (t) => [index("verification_identifier_idx").on(t.identifier)],
 );
 
-/** TOTP secrets, kept out of `user` so the auth tables stay Better Auth shaped. */
+/**
+ * TOTP secrets and backup codes.
+ *
+ * Shape is dictated by Better Auth's two-factor plugin (`TwoFactorTable`), which
+ * owns this table. Do not add project columns to it.
+ *
+ * `verified` is what makes `skipVerificationOnEnable: false` meaningful: the
+ * secret exists from the moment enrolment starts, but the factor does not count
+ * until the user has proved they can generate a code from it. Enrolling and
+ * then losing the authenticator before the first successful code would
+ * otherwise lock someone out of their own account.
+ */
 export const twoFactor = sqliteTable(
   "two_factor",
   {
@@ -87,7 +98,12 @@ export const twoFactor = sqliteTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     secret: text("secret").notNull(),
+    /** Encrypted by Better Auth. Never rendered, never logged. */
     backupCodes: text("backup_codes"),
+    verified: bool("verified").notNull().default(false),
+    /** Account-level lockout counter, across challenges and factors. */
+    failedVerificationCount: integer("failed_verification_count").notNull().default(0),
+    lockedUntil: authTs("locked_until"),
   },
   (t) => [index("two_factor_user_idx").on(t.userId)],
 );

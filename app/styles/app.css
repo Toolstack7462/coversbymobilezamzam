@@ -634,3 +634,37 @@ a {
   background: var(--color-danger-surface);
   color: var(--color-danger-text);
 }
+
+/* ── Two-factor ────────────────────────────────────────────────────────── */
+
+.totp-qr {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+
+/* The QR must be large enough to scan from a phone held at arm's length, and
+   must keep a quiet zone — a QR cropped to its modules often will not read. */
+.totp-qr svg {
+  width: 100%;
+  max-width: 15rem;
+  height: auto;
+}
+
+/* Backup codes are read aloud and typed by hand, so they get tabular figures
+   and generous spacing. */
+.backup-codes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: var(--space-2);
+  padding-inline-start: var(--space-5);
+  font-variant-numeric: tabular-nums;
+}
+
+.backup-codes code {
+  font-size: var(--text-body);
+  letter-spacing: 0.04em;
+}

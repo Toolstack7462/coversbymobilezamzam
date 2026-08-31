@@ -1,7 +1,7 @@
 import { Outlet, NavLink, Form, isRouteErrorResponse, useRouteError } from "react-router";
 import type { Route } from "./+types/layout";
 import { cloudflareContext } from "../../../workers/app";
-import { requireStaff } from "~/infrastructure/auth/session.server";
+import { requireEnrolledStaff } from "~/infrastructure/auth/session.server";
 
 /**
  * The admin shell.
@@ -29,22 +29,33 @@ const NAV = [
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
-  const actor = await requireStaff(request, env);
+
+  /**
+   * Enrolment is checked on EVERY request, not once after login.
+   *
+   * A one-time redirect would be skipped by deep-linking straight to a payment
+   * screen, which is precisely the screen it is protecting.
+   */
+  const { actor, mustEnrol } = await requireEnrolledStaff(request, env);
 
   return {
     displayName: actor.displayName,
     email: actor.email,
     permissions: actor.permissions,
     roleCodes: actor.roleCodes,
+    mustEnrol,
   };
 }
 
 export default function AdminLayout({ loaderData }: Route.ComponentProps) {
-  const { displayName, permissions, roleCodes } = loaderData;
+  const { displayName, permissions, roleCodes, mustEnrol } = loaderData;
 
-  const visible = NAV.filter(
-    (item) => item.permission === null || permissions.includes(item.permission),
-  );
+  // While enrolment is outstanding the operational nav is hidden entirely -
+  // every one of those routes would refuse the request anyway, so offering
+  // them would only produce a wall of redirects.
+  const visible = mustEnrol
+    ? []
+    : NAV.filter((item) => item.permission === null || permissions.includes(item.permission));
 
   return (
     <div className="admin">
@@ -58,6 +69,9 @@ export default function AdminLayout({ loaderData }: Route.ComponentProps) {
         <div className="admin__actor">
           <span className="small">{displayName}</span>
           <span className="caption muted">{roleCodes.join(", ")}</span>
+          <a className="btn btn--ghost" href="/admin/sicurezza">
+            Sicurezza
+          </a>
           <Form method="post" action="/admin/esci">
             <button type="submit" className="btn btn--ghost">
               Esci
@@ -69,6 +83,13 @@ export default function AdminLayout({ loaderData }: Route.ComponentProps) {
       <div className="admin__body">
         <nav className="admin__nav" aria-label="Navigazione amministrazione">
           <ul>
+            {mustEnrol ? (
+              <li>
+                <NavLink to="/admin/sicurezza/2fa" className="admin__nav-link">
+                  Attiva 2FA
+                </NavLink>
+              </li>
+            ) : null}
             {visible.map((item) => (
               <li key={item.to}>
                 <NavLink

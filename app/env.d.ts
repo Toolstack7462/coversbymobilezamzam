@@ -30,6 +30,13 @@ interface AppSecrets {
    */
   INITIAL_ADMIN_SETUP_TOKEN?: string;
 
+  /**
+   * Name shown in the authenticator app for TOTP. Falls back to a neutral
+   * constant, because the merchant's public brand name is not yet known and
+   * inventing one would put a guess on their phone screen.
+   */
+  TOTP_ISSUER?: string;
+
   /** Optional. Each gates a feature; absent means the feature is off. */
   TURNSTILE_SITE_KEY?: string;
   TURNSTILE_SECRET_KEY?: string;

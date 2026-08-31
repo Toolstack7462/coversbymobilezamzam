@@ -4,6 +4,12 @@ Recorded at the start of the **Secure Merchant Operations** milestone,
 2026-08-31. Every figure here was produced by running the command shown, on a
 clean `npm ci`. Nothing is carried over from an earlier report.
 
+> **This is a dated snapshot, not the current state.** It is kept as written so
+> the milestone has an honest starting line. In particular the single
+> all-routes JS budget quoted below has since been replaced by separate
+> storefront and admin budgets — see `docs/performance-budget.md` for what the
+> gate measures now.
+
 ---
 
 ## 1. Repository

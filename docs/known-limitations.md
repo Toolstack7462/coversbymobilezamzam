@@ -128,18 +128,18 @@ rather than aspirational.
 
 ### Still missing
 
-| Not built                       | Consequence                                                                                                                                          |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **TOTP two-factor UI**          | Better Auth supports it and the table exists, but nothing surfaces enrolment. **This is a launch blocker** for administrators and payment verifiers. |
-| **Staff management screen**     | Roles are granted by inserting a `user_roles` row by hand. There is no UI to add a colleague.                                                        |
-| **Product and variant editors** | Products can be published, archived and repriced, but not created or edited in the admin.                                                            |
-| **Compatibility matrix editor** | Records are readable and countable; entering them needs the import centre or direct SQL.                                                             |
-| **Import / export centre**      | Templates and job tables exist; the UI and parsers do not.                                                                                           |
-| **Payment proof upload**        | Schema, private bucket and policy exist; the upload route does not.                                                                                  |
-| **Search (D1 FTS5)**            | Listing search is a LIKE query. The FTS index and Italian synonyms are designed, not built.                                                          |
-| **Browser tests**               | Playwright is configured; no specs are written.                                                                                                      |
-| **Email / outbox worker**       | Tables exist; nothing drains the outbox.                                                                                                             |
-| **Returns and refunds UI**      | Schema and state machine exist; no screens.                                                                                                          |
+| Not built                       | Consequence                                                                                         |
+| ------------------------------- | --------------------------------------------------------------------------------------------------- |
+| ~~TOTP two-factor UI~~          | **DELIVERED.** Mandatory for privileged roles, enforced on every request, backup codes single-use.  |
+| ~~Staff management screen~~     | **DELIVERED.** Invitation-based onboarding with hashed tokens, roles, statuses, session revocation. |
+| **Product and variant editors** | Products can be published, archived and repriced, but not created or edited in the admin.           |
+| **Compatibility matrix editor** | Records are readable and countable; entering them needs the import centre or direct SQL.            |
+| **Import / export centre**      | Templates and job tables exist; the UI and parsers do not.                                          |
+| **Payment proof upload**        | Schema, private bucket and policy exist; the upload route does not.                                 |
+| **Search (D1 FTS5)**            | Listing search is a LIKE query. The FTS index and Italian synonyms are designed, not built.         |
+| **Browser tests**               | Playwright is configured; no specs are written.                                                     |
+| **Email / outbox worker**       | Tables exist; nothing drains the outbox.                                                            |
+| **Returns and refunds UI**      | Schema and state machine exist; no screens.                                                         |
 
 What works end to end: browse, filter by device, add to cart, check out, create a
 real order with an atomic reservation, receive payment instructions and the

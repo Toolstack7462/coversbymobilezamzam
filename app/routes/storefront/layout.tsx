@@ -14,6 +14,7 @@ import {
 } from "~/domain/content/gates";
 import { SiteHeader } from "~/components/storefront/site-header";
 import { SiteFooter } from "~/components/storefront/site-footer";
+import { MobileNav } from "~/components/storefront/mobile-nav";
 
 /**
  * The storefront shell.
@@ -64,6 +65,10 @@ export default function StorefrontLayout({ loaderData }: Route.ComponentProps) {
       {loaderData.appEnv !== "production" ? <PreviewBanner env={loaderData.appEnv} /> : null}
 
       <SiteFooter t={t} locale={locale} settings={loaderData.settings} gates={loaderData.gates} />
+
+      {/* Phones only — see mobile-nav.tsx. Last in the DOM so it is last in the
+          tab order, where a persistent navigation bar belongs. */}
+      <MobileNav t={t} locale={locale} />
     </>
   );
 }

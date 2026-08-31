@@ -15,9 +15,38 @@ import { parseLocalePath, translator, direction, DEFAULT_LOCALE } from "~/lib/i1
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
-  // Only the two faces used above the fold are preconnected. Preloading every
-  // weight costs more than it saves.
-  { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+
+  /*
+   * The two faces that render above the fold, preloaded.
+   *
+   * There used to be a `preconnect` to fonts.gstatic.com here and no font at
+   * all: the tokens named Manrope and Inter, nothing declared them, and every
+   * page fell back to the system UI font while opening a connection to Google
+   * for nothing. Both families are now self-hosted, so there is no third-party
+   * request to make and no privacy question to answer.
+   *
+   * Only the Latin subsets are preloaded. Latin Extended is declared with a
+   * `unicode-range` and fetched only if a character needs it, which for Italian
+   * is rare — `à è é ì ò ù` all live in the Latin subset.
+   *
+   * `crossOrigin` is required even for same-origin fonts: without it the
+   * preload is made in a different mode from the CSS fetch, and the file is
+   * downloaded twice.
+   */
+  {
+    rel: "preload",
+    href: "/fonts/inter-latin.woff2",
+    as: "font",
+    type: "font/woff2",
+    crossOrigin: "anonymous",
+  },
+  {
+    rel: "preload",
+    href: "/fonts/manrope-latin.woff2",
+    as: "font",
+    type: "font/woff2",
+    crossOrigin: "anonymous",
+  },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {

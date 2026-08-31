@@ -44,6 +44,28 @@ export async function loader({ context, params }: Route.LoaderArgs) {
 
   if (!product) throw data(null, { status: 404 });
 
+  /*
+   * The primary image. Ordered exactly as the collection grid orders it —
+   * is_primary first, then sort_order — so the picture on the card is the
+   * picture on the page, rather than two queries disagreeing about which
+   * photograph represents the product.
+   */
+  const image = await env.DB.prepare(
+    `SELECT object_key, alt_it, alt_en, width, height
+       FROM product_images
+      WHERE product_id = ?1
+      ORDER BY is_primary DESC, sort_order ASC
+      LIMIT 1`,
+  )
+    .bind(product.id)
+    .first<{
+      object_key: string;
+      alt_it: string | null;
+      alt_en: string | null;
+      width: number;
+      height: number;
+    }>();
+
   const [variants, compatibility, specs, devices] = await Promise.all([
     env.DB.prepare(
       `SELECT v.id, v.sku, v.variant_label, vp.amount AS price_amount,
@@ -108,6 +130,8 @@ export async function loader({ context, params }: Route.LoaderArgs) {
 
   return {
     product,
+    image,
+    mediaBaseUrl: env.PUBLIC_MEDIA_BASE_URL?.replace(/\/$/, "") ?? "/media",
     variants: variants.results,
     /**
      * The server emits the FACTS. The browser resolves them against the device
@@ -134,7 +158,8 @@ export default function ProductPage({ loaderData }: Route.ComponentProps) {
   const { pathname } = useLocation();
   const { locale } = parseLocalePath(pathname);
   const t = translator(locale);
-  const { product, variants, compatibilityRecords, specs, compatibleDevices } = loaderData;
+  const { product, image, mediaBaseUrl, variants, compatibilityRecords, specs, compatibleDevices } =
+    loaderData;
 
   const variant = variants[0];
   const intl = locale === "it" ? "it-IT" : "en-GB";
@@ -176,7 +201,23 @@ export default function ProductPage({ loaderData }: Route.ComponentProps) {
 
       <div className="product-page__grid">
         <div className="product-page__media">
-          <div className="product-card__media-empty" aria-hidden="true" />
+          {image ? (
+            <img
+              src={`${mediaBaseUrl}/${image.object_key}`}
+              /* The alt text belongs to the image, not to the product: these
+                 are currently placeholder illustrations and say so. An empty
+                 alt would be right for pure decoration, but this carries
+                 information the sighted visitor is getting. */
+              alt={(locale === "en" ? image.alt_en : image.alt_it) ?? ""}
+              width={image.width}
+              height={image.height}
+              /* Above the fold on the page it belongs to — never lazy. */
+              fetchPriority="high"
+              decoding="async"
+            />
+          ) : (
+            <div className="product-card__media-empty" aria-hidden="true" />
+          )}
         </div>
 
         <div className="product-page__info stack">
@@ -221,7 +262,12 @@ export default function ProductPage({ loaderData }: Route.ComponentProps) {
           ) : null}
 
           {/* A real POST form. Adding to the cart works without JavaScript. */}
-          <Form method="post" action={localePath(locale, "/carrello")} className="stack">
+          <Form
+            id="acquista"
+            method="post"
+            action={localePath(locale, "/carrello")}
+            className="stack"
+          >
             <input type="hidden" name="intent" value="add" />
             <input type="hidden" name="variantId" value={variant?.id ?? ""} />
             <div className="field" style={{ maxWidth: "8rem" }}>
@@ -248,6 +294,28 @@ export default function ProductPage({ loaderData }: Route.ComponentProps) {
             </button>
           </Form>
         </div>
+      </div>
+
+      {/*
+        Sticky purchase bar, phones only.
+
+        A link to the form above rather than a second form: two forms posting
+        the same variant would be two sources of truth for the quantity, and the
+        one the customer did not look at would win. This scrolls them to the
+        real control.
+      */}
+      <div className="buy-bar">
+        <span className="buy-bar__price">
+          {variant ? (
+            <span className="price">{formatMoney(money(variant.price_amount), intl)}</span>
+          ) : null}
+          {stock !== "not_tracked" ? (
+            <span className={`caption stock--${stock}`}>{t(availabilityLabelKey(stock))}</span>
+          ) : null}
+        </span>
+        <a className="btn btn--primary" href="#acquista">
+          {stock === "out_of_stock" ? t("product.sold_out") : t("product.add_to_cart")}
+        </a>
       </div>
 
       {/* Native <details>: an accessible accordion with zero JavaScript. */}

@@ -4,6 +4,7 @@ import { discountDisplay } from "~/domain/pricing/resolve";
 import { localePath, type Locale, type Translator } from "~/lib/i18n";
 import { CompatibilityBadge } from "./compatibility-badge";
 import type { CompatibilityState } from "~/domain/compatibility/resolve";
+import { availabilityLabelKey, type AvailabilityState } from "~/domain/inventory/availability";
 
 export interface ProductCardData {
   slug: string;
@@ -14,6 +15,14 @@ export interface ProductCardData {
   previousPriceAmount?: number | null;
   /** The evidenced 30-day low. Without it, no percentage is shown. */
   priorPrice30dAmount?: number | null;
+  /**
+   * Availability, resolved in the domain layer and passed in.
+   *
+   * On the card because it is one of the two questions a customer opens the
+   * product page to answer — the other being fit. A grid that answers
+   * neither costs a click per product.
+   */
+  availability?: AvailabilityState | null;
   compatibility?: CompatibilityState;
   deviceName?: string | null;
   brandName?: string | null;
@@ -70,6 +79,14 @@ export function ProductCard({ product, locale, t, mediaBaseUrl }: Props) {
               t={t}
               compact
             />
+          ) : null}
+
+          {/* `not_tracked` says nothing useful to a customer, so it says
+              nothing at all rather than filling the line. */}
+          {product.availability && product.availability !== "not_tracked" ? (
+            <p className={`product-card__stock small stock--${product.availability}`}>
+              {t(availabilityLabelKey(product.availability))}
+            </p>
           ) : null}
 
           <p className="product-card__price">

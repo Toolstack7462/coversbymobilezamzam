@@ -27,7 +27,6 @@
     "shipping": "Shipping",
     "vat_included": "VAT included"
   },
-
   "nav": {
     "cases": "Cases",
     "screen_protection": "Screen protection",
@@ -43,7 +42,6 @@
     "new_arrivals": "New arrivals",
     "find_by_device": "Find by device"
   },
-
   "home": {
     "hero_heading": "Accessories for your smartphone.",
     "hero_heading_line2": "Online and in our shop.",
@@ -53,9 +51,26 @@
     "visit_store": "Visit the shop",
     "popular_categories": "Popular categories",
     "new_arrivals": "New arrivals",
-    "why_us": "Why buy from us"
+    "why_us": "Why buy from us",
+    "hero_statement_1": "Protect.",
+    "hero_statement_2": "Charge.",
+    "hero_statement_3": "Connect.",
+    "hero_lead": "Accessories chosen for your exact model, with fit stated on every product. Collect in our Sulmona shop or have it delivered anywhere in Italy.",
+    "shop_by_device": "Shop by device",
+    "shop_by_device_intro": "Start from the phone in your hand.",
+    "browse_all": "See all accessories",
+    "store_eyebrow": "The shop",
+    "store_title": "A real shop, with real people.",
+    "store_body": "We are a physical shop in Sulmona. If you would rather see a product before buying it, or want someone to fit the screen protector for you, come in.",
+    "trust_compatibility": "Fit stated on every product",
+    "trust_compatibility_body": "Every accessory lists the models it is verified against. No guesswork.",
+    "trust_pickup": "Collect in store",
+    "trust_pickup_body": "Order online, collect in Sulmona with no delivery charge.",
+    "trust_help": "Help in Italian",
+    "trust_help_body": "You are answered by the people who work in the shop, not an outsourced desk.",
+    "hero_lead_eyebrow": "Italian Tech Atelier — Sulmona",
+    "shop_by_device_count": "accessories"
   },
-
   "device": {
     "finder_title": "Find accessories for your device",
     "finder_intro": "Choose the brand, family and exact model to see only what fits.",
@@ -71,7 +86,6 @@
     "no_device_results": "No model found. Try the full name, for example “iPhone 16 Pro”.",
     "saved_locally": "The selected device is saved in this browser."
   },
-
   "compatibility": {
     "exact": "Exact fit for {{device}}",
     "compatible": "Compatible with {{device}}",
@@ -84,7 +98,6 @@
     "see_alternatives": "See compatible products",
     "full_list": "Full compatibility"
   },
-
   "availability": {
     "in_stock": "Available online",
     "low_stock": "Only a few left",
@@ -94,7 +107,6 @@
     "pickup_available": "Available for pickup",
     "pickup_unavailable": "Not available for pickup"
   },
-
   "product": {
     "add_to_cart": "Add to cart",
     "added_to_cart": "Added to cart",
@@ -112,7 +124,6 @@
     "save_percent": "Save {{percent}}%",
     "prior_price_note": "Lowest price applied in the previous 30 days: {{price}}"
   },
-
   "collection": {
     "results_one": "{{count}} product",
     "results_other": "{{count}} products",
@@ -128,7 +139,6 @@
     "compatible_only": "Only compatible with my device",
     "load_more": "Show more products"
   },
-
   "cart": {
     "title": "Your cart",
     "empty": "Your cart is empty",
@@ -140,7 +150,6 @@
     "variant_unavailable": "Some items are no longer available and have been removed.",
     "compatibility_changed": "The compatibility of some items has changed."
   },
-
   "checkout": {
     "title": "Confirm your order",
     "your_details": "Your details",
@@ -167,7 +176,6 @@
     "invalid_postcode": "Enter a valid five-digit postcode.",
     "no_payment_methods": "Online ordering is not available at the moment. Please contact us for help."
   },
-
   "order": {
     "confirmed_title": "Order received",
     "confirmed_body": "Thank you. Your order has been recorded and the items are reserved.",
@@ -185,7 +193,6 @@
     "status": "Status",
     "copied": "Copied"
   },
-
   "order_status": {
     "draft": "Draft",
     "awaiting_customer_contact": "Awaiting contact",
@@ -204,7 +211,6 @@
     "partially_refunded": "Partially refunded",
     "refunded": "Refunded"
   },
-
   "payment_status": {
     "awaiting_customer_contact": "Awaiting contact",
     "awaiting_payment": "Awaiting payment",
@@ -218,7 +224,6 @@
     "refunded": "Refunded",
     "cancelled": "Cancelled"
   },
-
   "store": {
     "title": "Our shop",
     "address": "Address",
@@ -227,7 +232,6 @@
     "pickup_info": "Store pickup",
     "services": "Services"
   },
-
   "errors": {
     "not_found_title": "Page not found",
     "not_found_body": "The page you are looking for does not exist or has moved.",
@@ -238,7 +242,6 @@
     "payment_method_unavailable": "The selected payment method is not available.",
     "generic": "Something went wrong. Please try again."
   },
-
   "footer": {
     "shop": "Shop",
     "support": "Support",

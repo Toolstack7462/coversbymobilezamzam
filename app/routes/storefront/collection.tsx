@@ -3,6 +3,7 @@ import type { Route } from "./+types/collection";
 import { cloudflareContext } from "../../../workers/app";
 import { parseLocalePath, translator, localePath, plural } from "~/lib/i18n";
 import { ProductCard, type ProductCardData } from "~/components/storefront/product-card";
+import { availabilityState } from "~/domain/inventory/availability";
 import { parseSearchQuery, emptySearchReason } from "~/domain/search/query";
 
 const PER_PAGE = 24;
@@ -22,6 +23,24 @@ export function meta() {
       content: "Cover, cavi, caricabatterie e pellicole per smartphone.",
     },
   ];
+}
+
+/** Availability for a card. See the identical helper on the homepage. */
+function availabilityFor(row: {
+  on_hand: number | null;
+  reserved: number | null;
+  reorder_threshold: number | null;
+}) {
+  if (row.on_hand === null) return null;
+  return availabilityState({
+    variantId: "",
+    locationId: "",
+    onHand: row.on_hand,
+    reserved: row.reserved ?? 0,
+    incoming: 0,
+    reorderThreshold: row.reorder_threshold,
+    allowBackorder: false,
+  });
 }
 
 export async function loader({ context, request }: Route.LoaderArgs) {
@@ -100,7 +119,16 @@ export async function loader({ context, request }: Route.LoaderArgs) {
                 WHERE v.product_id = p.id ORDER BY vp.amount ASC LIMIT 1) AS price_amount,
               (SELECT object_key FROM product_images pi
                 WHERE pi.product_id = p.id
-                ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS image_key
+                ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS image_key,
+              (SELECT il.on_hand FROM inventory_levels il
+                 JOIN product_variants v ON v.id = il.variant_id
+                WHERE v.product_id = p.id ORDER BY il.on_hand DESC LIMIT 1) AS on_hand,
+              (SELECT il.reserved FROM inventory_levels il
+                 JOIN product_variants v ON v.id = il.variant_id
+                WHERE v.product_id = p.id ORDER BY il.on_hand DESC LIMIT 1) AS reserved,
+              (SELECT il.reorder_threshold FROM inventory_levels il
+                 JOIN product_variants v ON v.id = il.variant_id
+                WHERE v.product_id = p.id ORDER BY il.on_hand DESC LIMIT 1) AS reorder_threshold
          FROM products p
          LEFT JOIN product_translations pt ON pt.product_id = p.id AND pt.locale = 'it'
          LEFT JOIN brands b ON b.id = p.brand_id
@@ -115,6 +143,9 @@ export async function loader({ context, request }: Route.LoaderArgs) {
         brand_name: string | null;
         price_amount: number | null;
         image_key: string | null;
+        on_hand: number | null;
+        reserved: number | null;
+        reorder_threshold: number | null;
       }>(),
     env.DB.prepare(
       `SELECT COUNT(*) AS n FROM products p
@@ -126,6 +157,9 @@ export async function loader({ context, request }: Route.LoaderArgs) {
   ]);
 
   return {
+    // Where product images are served from. A CDN base if one is configured,
+    // otherwise the app's own /media route.
+    mediaBaseUrl: env.PUBLIC_MEDIA_BASE_URL?.replace(/\/$/, "") ?? "/media",
     products: rows.results
       .filter((r) => r.price_amount !== null)
       .map<ProductCardData>((r) => ({
@@ -134,6 +168,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
         brandName: r.brand_name,
         priceAmount: r.price_amount!,
         imageKey: r.image_key,
+        availability: availabilityFor(r),
       })),
     total: count?.n ?? 0,
     page,
@@ -210,7 +245,13 @@ export default function Collection({ loaderData }: Route.ComponentProps) {
       ) : (
         <div className="grid-products">
           {products.map((product) => (
-            <ProductCard key={product.slug} product={product} locale={locale} t={t} />
+            <ProductCard
+              key={product.slug}
+              product={product}
+              locale={locale}
+              t={t}
+              mediaBaseUrl={loaderData.mediaBaseUrl}
+            />
           ))}
         </div>
       )}

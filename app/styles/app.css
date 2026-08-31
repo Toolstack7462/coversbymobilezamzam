@@ -979,17 +979,30 @@ a {
 
 /* ── Footer ───────────────────────────────────────────────────────────────── */
 
+/*
+ * The footer goes dark, and it is the only place on the site that does besides
+ * the store band.
+ *
+ * Not decoration. A light footer of three link lists is where a customer stops
+ * reading; a dark one closes the page and, on a shop nobody has heard of, is
+ * the last chance to look like a business rather than a project. It also gives
+ * the legal identity — VAT number, registered name — somewhere to sit that
+ * looks deliberate instead of apologetic.
+ *
+ * Every block inside it is still gated on real merchant data. A dark surface
+ * does not license inventing a phone number to fill it.
+ */
 .site-footer {
   margin-block-start: var(--space-8);
-  background: var(--color-surface);
-  border-block-start: var(--border-width) solid var(--color-border);
+  background: var(--color-ink-deep);
+  color: var(--color-on-deep);
 }
 
 .site-footer__inner {
   display: grid;
   gap: var(--space-6);
-  padding-block: var(--space-7);
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  padding-block: clamp(var(--space-7), 6vw, var(--space-9));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
 }
 
 .site-footer__column {
@@ -1002,34 +1015,48 @@ a {
    with a name — but a footer heading is not a section title and must not
    compete with one. */
 .site-footer__heading {
-  font-size: var(--text-ui);
+  font-size: var(--text-eyebrow);
   line-height: var(--text-ui-lh);
   font-weight: var(--weight-semibold);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--color-text-secondary);
+  letter-spacing: var(--text-eyebrow-tracking);
+  color: var(--color-on-deep-secondary);
 }
 
 .site-footer__column ul {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--space-2);
 }
 
 .site-footer a {
   text-decoration: none;
-  color: var(--color-ink-80);
+  color: var(--color-on-deep);
+  transition: color var(--duration-fast) var(--ease);
 }
 
 .site-footer a:hover {
-  color: var(--color-ink);
+  color: #ffffff;
   text-decoration: underline;
-  text-underline-offset: 2px;
+  text-underline-offset: 3px;
 }
 
-.site-footer address {
+.site-footer address,
+.site-footer p {
   font-style: normal;
-  color: var(--color-text-secondary);
+  color: var(--color-on-deep-secondary);
+}
+
+/* The ring is drawn against the page; on near-black the default blue vanishes
+   into the background. */
+.site-footer :focus-visible {
+  outline-color: var(--color-on-deep);
+}
+
+.site-footer__legal {
+  padding-block: var(--space-4);
+  border-block-start: var(--border-width) solid var(--color-on-deep-border);
+  color: var(--color-on-deep-secondary);
 }
 
 /* ── Product page ─────────────────────────────────────────────────────────── */
@@ -1205,4 +1232,526 @@ a.chip:hover {
 .site-footer__legal {
   padding-block: var(--space-4);
   border-block-start: var(--border-width) solid var(--color-border);
+}
+
+/* ── Product imagery ──────────────────────────────────────────────────────── */
+
+/* Cards crop to a uniform square so the grid stays a grid whatever shape the
+   merchant's photographs are. */
+.product-card__media img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+/* The product page shows the whole photograph. Cropping the one large view of
+   the thing being bought is not a trade worth making for tidiness. */
+.product-page__media img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: contain;
+}
+
+/* ══ PREMIUM STOREFRONT ═════════════════════════════════════════════════════
+ *
+ * The layer that makes this read as a shop rather than a catalogue: a hero that
+ * states a position, a band of reasons to believe it, one dark section, and
+ * surfaces with enough contrast that the eye is told where to go.
+ */
+
+/* An eyebrow labels a section without spending a heading on it, so the heading
+   underneath can be a statement rather than a category name. */
+.eyebrow {
+  font-size: var(--text-eyebrow);
+  line-height: var(--text-ui-lh);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--text-eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.eyebrow--on-deep {
+  color: var(--color-on-deep-secondary);
+}
+
+/* ── Hero ─────────────────────────────────────────────────────────────────── */
+
+.hero {
+  background: var(--color-canvas);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.hero__inner {
+  padding-block: clamp(var(--space-7), 8vw, var(--space-10));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+/*
+ * Three verbs on three lines.
+ *
+ * Set as a block rather than a sentence because each one is a promise on its
+ * own, and because a three-line stack at display size is the only element on
+ * the page that can carry the whole hero without a photograph — which this shop
+ * does not yet have.
+ */
+.hero__statement {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--text-display);
+  line-height: 0.98;
+  font-weight: var(--weight-display);
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+/* The third verb takes the accent. One coloured word, not three: the point is
+   emphasis, and emphasis on everything is emphasis on nothing. */
+.hero__statement span:last-child {
+  color: var(--color-primary);
+}
+
+.hero__lead {
+  max-inline-size: var(--measure);
+  font-size: var(--text-h3);
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+  margin-block-start: var(--space-2);
+}
+
+/* ── Trust band ───────────────────────────────────────────────────────────── */
+
+.trust-band {
+  background: var(--color-surface);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.trust-band__inner {
+  list-style: none;
+  padding-inline-start: 0;
+  display: grid;
+  gap: var(--space-5);
+  padding-block: var(--space-6);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+}
+
+/*
+ * A lone trust item must not stretch across 1400px.
+ *
+ * Two of the three are gated on settings the merchant has not filled in yet, so
+ * one is the common case today — and a single sentence with a rule above it
+ * spanning the full page reads as a layout fault rather than a statement.
+ */
+.trust {
+  max-inline-size: 32rem;
+}
+
+.trust__title {
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-lh);
+  font-weight: var(--weight-semibold);
+  /* A rule above rather than an icon: an icon set would need to be invented,
+     and a wrong icon is worse than none. */
+  padding-block-start: var(--space-3);
+  border-block-start: 2px solid var(--color-ink);
+}
+
+.trust__body {
+  margin-block-start: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-lh);
+}
+
+/* ── Section heads ────────────────────────────────────────────────────────── */
+
+.section__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.section__more {
+  font-size: var(--text-ui);
+  font-weight: var(--weight-medium);
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.section__more:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ── Device finder callout ────────────────────────────────────────────────── */
+
+/*
+ * The shop's differentiator, given the room that implies.
+ *
+ * Two columns: the invitation on the left, and on the right the shortcuts for
+ * customers who already know their model — which is most of them. The
+ * shortcuts are the conversion path; the button is for everyone else.
+ */
+.finder-callout {
+  display: grid;
+  gap: var(--space-6);
+  padding: clamp(var(--space-5), 4vw, var(--space-7));
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-editorial);
+}
+
+@media (min-width: 62rem) {
+  .finder-callout {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    align-items: center;
+  }
+}
+
+.finder-callout__body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.finder-callout__title {
+  font-size: var(--text-h2);
+  line-height: var(--text-h2-lh);
+  letter-spacing: -0.02em;
+}
+
+.finder-callout__intro {
+  color: var(--color-text-secondary);
+  max-inline-size: 34rem;
+}
+
+.finder-callout__devices {
+  list-style: none;
+  padding-inline-start: 0;
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
+}
+
+/* A device shortcut states the model AND how many accessories fit it. The count
+   is the honest part: it sets the expectation before the click rather than
+   after. */
+.device-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-canvas);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control);
+  text-decoration: none;
+  transition:
+    border-color var(--duration-fast) var(--ease),
+    background var(--duration-fast) var(--ease);
+}
+
+.device-chip:hover {
+  background: var(--color-surface);
+  border-color: var(--color-ink);
+}
+
+.device-chip__brand {
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-lh);
+  color: var(--color-text-secondary);
+}
+
+.device-chip__model {
+  font-weight: var(--weight-semibold);
+  line-height: var(--text-ui-lh);
+}
+
+.device-chip__count {
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-lh);
+  color: var(--color-text-secondary);
+}
+
+/* ── Category tiles ───────────────────────────────────────────────────────── */
+
+/*
+ * Tiles, not text pills.
+ *
+ * They carry no imagery yet — the merchant has supplied none — so they are
+ * built to look deliberate while empty: a tall surface, the name at the bottom,
+ * and a hairline that fills on hover. When category photography arrives it
+ * drops behind the name without the layout changing.
+ */
+.category-grid {
+  list-style: none;
+  padding-inline-start: 0;
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
+}
+
+.category-tile {
+  display: flex;
+  align-items: flex-end;
+  min-block-size: 7.5rem;
+  padding: var(--space-4);
+  background: var(--color-stone);
+  border-radius: var(--radius-card);
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  transition: background var(--duration-fast) var(--ease);
+}
+
+.category-tile::after {
+  content: "";
+  position: absolute;
+  inset-inline: var(--space-4);
+  inset-block-end: 0;
+  block-size: 2px;
+  background: var(--color-primary);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--duration-base) var(--ease);
+}
+
+.category-tile:hover::after {
+  transform: scaleX(1);
+}
+
+.category-tile__name {
+  font-weight: var(--weight-semibold);
+  line-height: var(--text-ui-lh);
+  text-wrap: balance;
+}
+
+/* ── The dark band ────────────────────────────────────────────────────────── */
+
+/*
+ * One dark section on the whole site, and it carries the physical shop —
+ * the fact a marketplace cannot copy. Going quiet once is worth more than five
+ * accent colours.
+ */
+.store-band {
+  background: var(--color-ink-deep);
+  color: var(--color-on-deep);
+}
+
+.store-band__inner {
+  padding-block: clamp(var(--space-7), 7vw, var(--space-9));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.store-band__title {
+  font-size: var(--text-h1);
+  line-height: var(--text-h1-lh);
+  letter-spacing: -0.025em;
+  max-inline-size: 20ch;
+}
+
+.store-band__body {
+  max-inline-size: var(--measure);
+  color: var(--color-on-deep-secondary);
+  font-size: var(--text-h3);
+  line-height: 1.55;
+}
+
+/* ── Button variants for the premium surfaces ─────────────────────────────── */
+
+/* A primary action under a display-size heading needs to hold its own against
+   it. Same shape, more presence — not a different button. */
+.btn--lg {
+  min-height: 3.25rem;
+  padding-inline: var(--space-6);
+  font-size: var(--text-body);
+}
+
+/*
+ * On the dark band.
+ *
+ * White fill rather than the brand blue: #2457FF on #060B14 is a 2.5:1
+ * contrast, which is legible as a large shape and fails as a control. This
+ * keeps the emphasis and passes.
+ */
+.btn--on-deep {
+  background: var(--color-on-deep);
+  color: var(--color-ink-deep);
+  border-color: var(--color-on-deep);
+}
+
+.btn--on-deep:hover {
+  background: #ffffff;
+  border-color: #ffffff;
+}
+
+/* The focus ring is drawn against the page, and on the dark band the page is
+   nearly black — the default blue ring disappears into it. */
+.store-band :focus-visible {
+  outline-color: var(--color-on-deep);
+}
+
+/* ── Mobile bottom navigation ─────────────────────────────────────────────── */
+
+/*
+ * Phones only. Above 48rem the header carries everything and a second bar would
+ * be a duplicate.
+ *
+ * `display: none` rather than visually-hidden: this is genuinely absent on a
+ * desktop, and leaving it in the tab order for keyboard users who will never
+ * see it is worse than removing it.
+ */
+.mobile-nav {
+  display: none;
+}
+
+@media (max-width: 47.99rem) {
+  .mobile-nav {
+    display: block;
+    position: fixed;
+    inset-inline: 0;
+    inset-block-end: 0;
+    z-index: 40;
+    background: var(--color-surface);
+    border-block-start: var(--border-width) solid var(--color-border);
+    /* Clear of the home indicator on a modern phone. */
+    padding-block-end: env(safe-area-inset-bottom, 0);
+  }
+
+  .mobile-nav__list {
+    list-style: none;
+    padding-inline-start: 0;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+  }
+
+  .mobile-nav__link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* The documented 44px minimum, and the reason the label is 13px rather
+       than 12: a target this size is only useful if the word in it is
+       readable. */
+    min-block-size: 3.25rem;
+    padding: var(--space-2);
+    font-size: var(--text-eyebrow);
+    line-height: var(--text-ui-lh);
+    font-weight: var(--weight-medium);
+    color: var(--color-text-secondary);
+    text-align: center;
+    text-decoration: none;
+  }
+
+  .mobile-nav__link[aria-current="page"] {
+    color: var(--color-ink);
+    font-weight: var(--weight-semibold);
+    box-shadow: inset 0 2px 0 0 var(--color-primary);
+  }
+
+  /*
+   * Room at the bottom of every page for the bar to sit over.
+   *
+   * Without this the footer's last line is permanently hidden behind it — the
+   * classic fixed-bar bug, and the reason a customer never finds the VAT number
+   * or the language switch.
+   */
+  body {
+    padding-block-end: calc(3.25rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* ── Product card, premium ────────────────────────────────────────────────── */
+
+/* Availability sits between the title and the price: the customer reads name →
+   can I have it → what does it cost, which is the order they decide in. */
+.product-card__stock {
+  font-weight: var(--weight-medium);
+}
+
+/*
+ * The media lifts very slightly on hover.
+ *
+ * `transform` and `opacity` only — both composite on the GPU and neither
+ * triggers layout, so a grid of twenty cards does not repaint the page. Any
+ * hover effect that animates width, height or a shadow's blur does.
+ */
+.product-card__media {
+  overflow: hidden;
+}
+
+.product-card__media img {
+  transition: transform var(--duration-slow) var(--ease);
+}
+
+@media (hover: hover) {
+  .product-card:hover .product-card__media img {
+    transform: scale(1.03);
+  }
+}
+
+/* Motion is a preference, and this one is decorative: it goes away entirely
+   when the visitor has asked for less. The reset at the top of this file
+   shortens durations; here the effect itself is removed. */
+@media (prefers-reduced-motion: reduce) {
+  .product-card__media img {
+    transition: none;
+  }
+
+  .product-card:hover .product-card__media img {
+    transform: none;
+  }
+}
+
+/* ── Sticky purchase bar (phones) ─────────────────────────────────────────── */
+
+/*
+ * The product page is two thousand pixels tall on a phone. Without this the
+ * price and the add-to-cart button scroll away after the first screen and the
+ * customer has to find their way back to buy.
+ *
+ * It sits above the bottom navigation, not over it: two fixed bars fighting for
+ * the same 60px is worse than either alone.
+ */
+.buy-bar {
+  display: none;
+}
+
+@media (max-width: 47.99rem) {
+  .buy-bar {
+    display: flex;
+    position: fixed;
+    inset-inline: 0;
+    inset-block-end: calc(3.25rem + env(safe-area-inset-bottom, 0px));
+    z-index: 39;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--gutter);
+    background: var(--color-surface);
+    border-block-start: var(--border-width) solid var(--color-border);
+    box-shadow: var(--shadow-menu);
+  }
+
+  .buy-bar__price {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+
+  .buy-bar .btn {
+    flex-shrink: 0;
+  }
+
+  /* Room for BOTH bars, or the specification table's last row is unreachable. */
+  body:has(.buy-bar) {
+    padding-block-end: calc(7rem + env(safe-area-inset-bottom, 0px));
+  }
 }

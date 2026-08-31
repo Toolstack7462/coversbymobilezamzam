@@ -115,12 +115,8 @@ export const ADMIN_NAV: NavGroup[] = [
         permission: "product.write",
         flag: "catalogueAdmin",
       },
-      {
-        label: "Compatibilità",
-        to: "/admin/compatibilita",
-        permission: "product.write",
-        flag: "catalogueAdmin",
-      },
+      // No flag: this screen is built. The rest of the catalogue group is not.
+      { label: "Compatibilità", to: "/admin/compatibilita", permission: "product.read" },
       { label: "Recensioni", to: "/admin/recensioni", permission: "content.read", flag: "reviews" },
     ],
   },
@@ -211,12 +207,8 @@ export const ADMIN_NAV: NavGroup[] = [
         permission: "content.write",
         flag: "content",
       },
-      {
-        label: "Documenti legali",
-        to: "/admin/contenuti/legale",
-        permission: "content.publish",
-        flag: "content",
-      },
+      // No flag: built. The rest of the content group is not.
+      { label: "Documenti legali", to: "/admin/contenuti/legale", permission: "content.read" },
       { label: "SEO", to: "/admin/contenuti/seo", permission: "content.write", flag: "content" },
     ],
   },

@@ -779,3 +779,48 @@
   height: 1.15rem;
   flex: 0 0 auto;
 }
+
+/* ── Fact lists and totals ─────────────────────────────────────────────── */
+/* Label-and-value pairs on the detail screens. A definition list rather than a
+   table: these are facts about one thing, not rows to compare. */
+
+.ac-facts,
+.ac-totals {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.ac-fact,
+.ac-total {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: space-between;
+  align-items: baseline;
+  padding-block: var(--space-1);
+}
+
+.ac-total + .ac-total {
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+.ac-fact dt,
+.ac-total dt {
+  flex: 0 0 auto;
+  font-size: var(--text-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+}
+
+.ac-fact dd,
+.ac-total dd {
+  margin: 0;
+  text-align: end;
+}
+
+.ac-totals {
+  max-width: 22rem;
+  margin-inline-start: auto;
+}

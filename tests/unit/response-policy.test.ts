@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { CSP_PRODUCTION, CSP_DEVELOPMENT, cacheControlFor } from "../../workers/app";
+import { CSP_PRODUCTION, CSP_DEVELOPMENT, cacheControlFor } from "../../workers/response-policy";
 
 /**
  * The response policy.

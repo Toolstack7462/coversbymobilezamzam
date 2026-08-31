@@ -693,3 +693,516 @@ a {
   font-size: var(--text-ui);
   text-align: center;
 }
+
+/* ══ STOREFRONT ═════════════════════════════════════════════════════════════
+ *
+ * The shop's own layout. Everything above this line is shared with the admin or
+ * is a primitive; everything below dresses the customer-facing pages.
+ *
+ * These classes were referenced by the storefront components long before they
+ * existed here, so the pages rendered as bare semantic HTML: bulleted
+ * navigation, underlined everything, no card, no rhythm. The markup was right
+ * the whole time — only the stylesheet was missing.
+ */
+
+/* ── Lists used as layout ──────────────────────────────────────────────────
+ *
+ * A <ul> is the correct markup for a set of navigation links: it tells a screen
+ * reader how many there are. It is not a bulleted list visually, and every one
+ * of these was showing its markers.
+ */
+.cluster,
+.site-footer ul,
+.site-header__nav ul {
+  list-style: none;
+  padding-inline-start: 0;
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+
+.site-header {
+  background: var(--color-surface);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.site-header__inner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-block-size: var(--header-height);
+  padding-block: var(--space-3);
+}
+
+.site-header__brand {
+  font-family: var(--font-heading);
+  font-size: var(--text-h3);
+  font-weight: var(--weight-bold);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+/* The search field is the widest thing in the bar on purpose: on a catalogue
+   this size, typing a model number is faster than any menu. */
+.site-header__search {
+  display: flex;
+  flex: 1 1 20rem;
+  gap: var(--space-2);
+  max-inline-size: 34rem;
+  margin-inline: auto;
+}
+
+.site-header__search .input {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+.site-header__actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+/* Below this width the three groups cannot share a line without the search
+   field becoming unusable, so they stack and the search leads. */
+@media (max-width: 60rem) {
+  .site-header__inner {
+    flex-wrap: wrap;
+    row-gap: var(--space-3);
+  }
+
+  .site-header__search {
+    order: 3;
+    flex-basis: 100%;
+    max-inline-size: none;
+    margin-inline: 0;
+  }
+
+  .site-header__actions {
+    margin-inline-start: auto;
+  }
+}
+
+/* ── Category bar ─────────────────────────────────────────────────────────── */
+
+.site-header__nav {
+  background: var(--color-surface-sunken);
+  border-block-end: var(--border-width) solid var(--color-border);
+  /* Scrolls sideways rather than wrapping to three lines on a phone. */
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.site-header__nav::-webkit-scrollbar {
+  display: none;
+}
+
+.site-header__nav-inner {
+  padding-block: var(--space-2);
+}
+
+.site-header__nav ul {
+  flex-wrap: nowrap;
+  gap: var(--space-1);
+}
+
+.site-header__nav a {
+  display: block;
+  padding: var(--space-half) var(--space-3);
+  border-radius: var(--radius-chip);
+  color: var(--color-text-secondary-on-sunken);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-lh);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background var(--duration-fast) var(--ease);
+}
+
+.site-header__nav a:hover {
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+
+/* ── Hero ─────────────────────────────────────────────────────────────────── */
+
+.hero {
+  background: var(--color-surface);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+/* The stack. `.hero__body` is the body PARAGRAPH, not a wrapper — the gap has
+   to live on the container or the heading, sentence and buttons sit on top of
+   each other. */
+.hero__inner {
+  padding-block: var(--space-8);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+/* A measure, not the full 1440px. A headline that runs the whole width of a
+   desktop monitor is not read, it is scanned past. */
+.hero__heading,
+.hero__body {
+  max-inline-size: 46rem;
+}
+
+.hero__body {
+  font-size: var(--text-h3);
+  line-height: var(--text-body-lh);
+  color: var(--color-text-secondary);
+}
+
+.hero__heading {
+  font-size: var(--text-display);
+  line-height: var(--text-display-lh);
+  font-weight: var(--weight-display);
+  letter-spacing: -0.02em;
+}
+
+/* The second line of the promise — "Online e nel nostro negozio" — is the part
+   that separates this shop from a marketplace, so it stays in the heading
+   rather than dropping to body text, but sits back tonally. */
+.hero__heading-secondary {
+  display: block;
+  color: var(--color-text-secondary);
+}
+
+/* ── Sections ─────────────────────────────────────────────────────────────── */
+
+.section {
+  padding-block: var(--space-7);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.section + .section {
+  padding-block-start: 0;
+}
+
+.section > h2 {
+  letter-spacing: -0.01em;
+}
+
+.device-finder-promo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: flex-start;
+  margin-block-start: var(--space-6);
+}
+
+/* ── Product card ─────────────────────────────────────────────────────────── */
+
+.product-card {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  transition:
+    border-color var(--duration-fast) var(--ease),
+    box-shadow var(--duration-fast) var(--ease);
+}
+
+.product-card:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-menu);
+}
+
+/* The whole card is the target. `position: static` on the card plus an
+   ::after that covers it means the entire tile is clickable while the accessible
+   name stays the product title — rather than wrapping everything in one anchor
+   and reading the price and badge out as part of the link. */
+.product-card__link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.product-card__link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.product-card {
+  position: relative;
+}
+
+.product-card__title {
+  font-size: var(--text-body);
+  line-height: var(--text-body-lh);
+  font-weight: var(--weight-semibold);
+}
+
+.product-card:hover .product-card__title {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.product-card__media {
+  aspect-ratio: 1 / 1;
+  background: var(--color-surface-sunken);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+/*
+ * The placeholder shown until a product has a photograph.
+ *
+ * Deliberately a calm empty frame rather than a broken-image icon or the word
+ * "no image": the catalogue is seeded without media, and a grid of error states
+ * reads as a broken shop rather than an unfinished one.
+ */
+.product-card__media-empty {
+  block-size: 100%;
+  background:
+    linear-gradient(var(--color-border) 0 0) center / 2rem var(--border-width) no-repeat,
+    linear-gradient(var(--color-border) 0 0) center / var(--border-width) 2rem no-repeat;
+  opacity: 0.6;
+}
+
+.product-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4);
+}
+
+.product-card__price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin-block-start: var(--space-1);
+}
+
+/* ── Footer ───────────────────────────────────────────────────────────────── */
+
+.site-footer {
+  margin-block-start: var(--space-8);
+  background: var(--color-surface);
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+.site-footer__inner {
+  display: grid;
+  gap: var(--space-6);
+  padding-block: var(--space-7);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+}
+
+.site-footer__column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* These are <h2> for document structure — every footer group is a landmark
+   with a name — but a footer heading is not a section title and must not
+   compete with one. */
+.site-footer__heading {
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-lh);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+}
+
+.site-footer__column ul {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.site-footer a {
+  text-decoration: none;
+  color: var(--color-ink-80);
+}
+
+.site-footer a:hover {
+  color: var(--color-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.site-footer address {
+  font-style: normal;
+  color: var(--color-text-secondary);
+}
+
+/* ── Product page ─────────────────────────────────────────────────────────── */
+
+/*
+ * Media beside the buy box, not above it.
+ *
+ * Single-column, this page ran down the left of a 1440px screen with the right
+ * half empty — the photograph, the price and the add-to-cart button all below
+ * the fold on a laptop, on the one page where they are the entire point.
+ */
+.product-page__grid {
+  display: grid;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+@media (min-width: 60rem) {
+  .product-page__grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  /* The buy box stays in view while the customer scrolls the description and
+     the compatibility table, which is where the doubt actually gets resolved. */
+  .product-page__info {
+    position: sticky;
+    inset-block-start: var(--space-4);
+  }
+}
+
+.product-page__media {
+  aspect-ratio: 1 / 1;
+  background: var(--color-surface-sunken);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+.product-page__price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+/* A measure for prose. The specification list and description are read, and a
+   line of text 1400px wide is not. */
+.product-page__info > p {
+  max-inline-size: 42rem;
+}
+
+.spec-list {
+  display: grid;
+  gap: 0;
+}
+
+.spec-list > div {
+  display: grid;
+  grid-template-columns: minmax(8rem, 14rem) 1fr;
+  gap: var(--space-4);
+  padding-block: var(--space-2);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.spec-list > div:last-child {
+  border-block-end: 0;
+}
+
+.spec-list dt {
+  color: var(--color-text-secondary);
+}
+
+/* ── Cart ─────────────────────────────────────────────────────────────────── */
+
+.cart-lines {
+  list-style: none;
+  padding-inline-start: 0;
+}
+
+.cart-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.cart-line__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1 1 18rem;
+  min-inline-size: 0;
+}
+
+.cart-line__title {
+  font-size: var(--text-body);
+  line-height: var(--text-body-lh);
+  font-weight: var(--weight-semibold);
+}
+
+.cart-line__title a {
+  text-decoration: none;
+}
+
+.cart-line__title a:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.cart-line__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.cart-line__price {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cart-summary {
+  margin-inline-start: auto;
+  max-inline-size: 26rem;
+}
+
+.checkout {
+  max-inline-size: 42rem;
+}
+
+/* ── Order tracking ───────────────────────────────────────────────────────── */
+
+.timeline {
+  list-style: none;
+  padding-inline-start: var(--space-5);
+  border-inline-start: var(--border-width) solid var(--color-border);
+}
+
+.timeline > li {
+  position: relative;
+}
+
+/* The dot on the line. Drawn rather than an image so it inherits the border
+   colour and needs no asset. */
+.timeline > li::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 0.45em;
+  inset-inline-start: calc(var(--space-5) * -1 - var(--border-width));
+  inline-size: 9px;
+  block-size: 9px;
+  transform: translateX(-4px);
+  border-radius: 50%;
+  background: var(--color-border-strong);
+}
+
+/* ── Chips and footer legal ───────────────────────────────────────────────── */
+
+/* A chip is already a bordered pill; underlining the label inside it as well
+   reads as two separate affordances stacked on each other. */
+.chip a,
+a.chip {
+  text-decoration: none;
+}
+
+.chip a:hover,
+a.chip:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.site-footer__legal {
+  padding-block: var(--space-4);
+  border-block-start: var(--border-width) solid var(--color-border);
+}

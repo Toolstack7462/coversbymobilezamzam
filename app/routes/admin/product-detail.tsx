@@ -386,6 +386,181 @@ export async function action({ request, params, context }: Route.ActionArgs) {
     };
   }
 
+  if (intent === "add-variant") {
+    const actor = await requireStaff(request, env, "product.write");
+    const sku = String(form.get("sku") ?? "")
+      .trim()
+      .toUpperCase();
+    const label = String(form.get("variantLabel") ?? "").trim() || null;
+    const colour = String(form.get("colour") ?? "").trim() || null;
+    const rawPrice = String(form.get("price") ?? "").trim();
+    const onHand = Math.max(0, Math.trunc(Number(form.get("onHand")) || 0));
+
+    if (sku === "") return { error: "Il codice SKU è obbligatorio." };
+    if (label === null && colour === null) {
+      // Two variants that differ in nothing a customer can see are two rows the
+      // shop cannot tell apart at the counter.
+      return {
+        error:
+          "Dai un nome alla variante (colore, lunghezza, capacità). Senza, in cassa non si distingue da quella che esiste già.",
+      };
+    }
+
+    let amount: number | null = null;
+    if (rawPrice !== "") {
+      try {
+        amount = parseAmountToMinorUnits(rawPrice);
+      } catch {
+        return { error: `Prezzo non leggibile: "${rawPrice}". Usa la forma 39,90.` };
+      }
+      if (amount < 0) return { error: "Il prezzo non può essere negativo." };
+    }
+
+    const duplicate = await env.DB.prepare(`SELECT id FROM product_variants WHERE sku = ?1`)
+      .bind(sku)
+      .first<{ id: string }>();
+    if (duplicate) return { error: `Il codice SKU "${sku}" è già usato.` };
+
+    const location = await env.DB.prepare(
+      `SELECT id FROM inventory_locations ORDER BY created_at LIMIT 1`,
+    ).first<{ id: string }>();
+    if (!location) return { error: "Nessuna sede di magazzino configurata." };
+
+    const priceList = await env.DB.prepare(
+      `SELECT id FROM price_lists WHERE is_default = 1 LIMIT 1`,
+    ).first<{ id: string }>();
+    if (!priceList) return { error: "Nessun listino predefinito configurato." };
+
+    const nextSort = await env.DB.prepare(
+      `SELECT COALESCE(MAX(sort_order), -1) + 1 AS n FROM product_variants WHERE product_id = ?1`,
+    )
+      .bind(productId)
+      .first<{ n: number }>();
+
+    const variantId = cryptoIds.generate();
+    const statements: D1PreparedStatement[] = [
+      env.DB.prepare(
+        // Never is_default: the product already has one, and two defaults would
+        // make the storefront's initial selection arbitrary.
+        `INSERT INTO product_variants
+           (id, product_id, sku, variant_label, colour, is_default, active, sort_order,
+            created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, 0, 1, ?6, ?7, ?7)`,
+      ).bind(variantId, productId, sku, label, colour, nextSort?.n ?? 0, now),
+
+      // Same reasoning as product creation: a variant with no inventory row is
+      // at UNKNOWN stock, not zero, and would never be sellable.
+      env.DB.prepare(
+        `INSERT INTO inventory_levels
+           (id, variant_id, location_id, on_hand, reserved, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, 0, ?5, ?5)`,
+      ).bind(cryptoIds.generate(), variantId, location.id, onHand, now),
+    ];
+
+    if (amount !== null) {
+      statements.push(
+        env.DB.prepare(
+          `INSERT INTO variant_prices
+             (id, variant_id, price_list_id, amount, currency, created_at, updated_at)
+           VALUES (?1, ?2, ?3, ?4, 'EUR', ?5, ?5)`,
+        ).bind(cryptoIds.generate(), variantId, priceList.id, amount, now),
+
+        env.DB.prepare(
+          `INSERT INTO price_history
+             (id, variant_id, price_list_id, old_amount, new_amount, currency, channel,
+              effective_from, reason, changed_by, created_at)
+           VALUES (?1,?2,?3,NULL,?4,'EUR','online',?5,'variant created',?6,?5)`,
+        ).bind(cryptoIds.generate(), variantId, priceList.id, amount, now, actor.userId),
+      );
+    }
+
+    statements.push(
+      audit(actor.userId, actor.displayName, "variant.create", "product_variant", variantId, null, {
+        productId,
+        sku,
+        label,
+        colour,
+      }),
+    );
+
+    await env.DB.batch(statements);
+    return { success: `Variante "${label ?? colour}" aggiunta.` };
+  }
+
+  if (intent === "archive-variant") {
+    const actor = await requireStaff(request, env, "product.write");
+    const variantId = String(form.get("variantId") ?? "");
+
+    const variant = await env.DB.prepare(
+      `SELECT sku, is_default FROM product_variants WHERE id = ?1 AND product_id = ?2`,
+    )
+      .bind(variantId, productId)
+      .first<{ sku: string; is_default: number }>();
+    if (!variant) return { error: "Variante non trovata." };
+
+    if (variant.is_default === 1) {
+      // Removing the default would leave the storefront with nothing selected
+      // when the page opens, and no rule for what to pick instead.
+      return {
+        error:
+          "Non si può archiviare la variante predefinita. Rendine predefinita un'altra, poi archivia questa.",
+      };
+    }
+
+    const remaining = await env.DB.prepare(
+      `SELECT COUNT(*) AS n FROM product_variants WHERE product_id = ?1 AND archived_at IS NULL`,
+    )
+      .bind(productId)
+      .first<{ n: number }>();
+    if ((remaining?.n ?? 0) <= 1) {
+      return { error: "Un prodotto deve avere almeno una variante." };
+    }
+
+    // Archived, never deleted: order_items reference this row (invariant 13).
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE product_variants SET archived_at = ?1, active = 0, updated_at = ?1 WHERE id = ?2`,
+      ).bind(now, variantId),
+      audit(
+        actor.userId,
+        actor.displayName,
+        "variant.archive",
+        "product_variant",
+        variantId,
+        { sku: variant.sku },
+        { archived: true },
+      ),
+    ]);
+
+    return { success: `Variante ${variant.sku} archiviata. Gli ordini storici restano intatti.` };
+  }
+
+  if (intent === "set-default-variant") {
+    const actor = await requireStaff(request, env, "product.write");
+    const variantId = String(form.get("variantId") ?? "");
+
+    await env.DB.batch([
+      env.DB.prepare(`UPDATE product_variants SET is_default = 0 WHERE product_id = ?1`).bind(
+        productId,
+      ),
+      env.DB.prepare(
+        `UPDATE product_variants SET is_default = 1, updated_at = ?1
+          WHERE id = ?2 AND product_id = ?3 AND archived_at IS NULL`,
+      ).bind(now, variantId, productId),
+      audit(
+        actor.userId,
+        actor.displayName,
+        "variant.default",
+        "product_variant",
+        variantId,
+        null,
+        { productId },
+      ),
+    ]);
+
+    return { success: "Variante predefinita aggiornata." };
+  }
+
   if (intent === "upload-image") {
     const actor = await requireStaff(request, env, "product.write");
     const file = form.get("image");
@@ -970,6 +1145,28 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
                     {variant.is_default === 1 ? (
                       <span className="badge badge--muted"> predefinita</span>
                     ) : null}
+                    {canWrite && variants.length > 1 ? (
+                      <span className="cluster">
+                        {variant.is_default === 0 ? (
+                          <>
+                            <Form method="post">
+                              <input type="hidden" name="intent" value="set-default-variant" />
+                              <input type="hidden" name="variantId" value={variant.id} />
+                              <button type="submit" className="btn btn--ghost btn--small">
+                                Rendi predefinita
+                              </button>
+                            </Form>
+                            <Form method="post">
+                              <input type="hidden" name="intent" value="archive-variant" />
+                              <input type="hidden" name="variantId" value={variant.id} />
+                              <button type="submit" className="btn btn--ghost btn--small">
+                                Archivia
+                              </button>
+                            </Form>
+                          </>
+                        ) : null}
+                      </span>
+                    ) : null}
                   </td>
                   <td data-label="Disponibile" className="ac-table__numeric numeric">
                     {variant.on_hand === null ? (
@@ -1017,6 +1214,84 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
           Le giacenze si modificano dall&apos;<Link to="/admin/inventario">inventario</Link>, dove
           ogni rettifica registra un motivo e resta nel registro.
         </p>
+
+        {canWrite ? (
+          <details className="panel">
+            <summary>Aggiungi una variante</summary>
+            <Form method="post" className="stack">
+              <input type="hidden" name="intent" value="add-variant" />
+              <p className="small muted">
+                Una variante è lo stesso prodotto in una versione diversa: un altro colore,
+                un&apos;altra lunghezza, un&apos;altra capacità. Ognuna ha il proprio codice e la
+                propria giacenza.
+              </p>
+
+              <div className="field">
+                <label className="field__label" htmlFor="v-sku">
+                  Codice SKU
+                </label>
+                <input id="v-sku" name="sku" className="input" required maxLength={64} />
+              </div>
+
+              <div className="field">
+                <label className="field__label" htmlFor="v-label">
+                  Nome della variante
+                </label>
+                <input
+                  id="v-label"
+                  name="variantLabel"
+                  className="input"
+                  maxLength={80}
+                  placeholder="Trasparente"
+                  aria-describedby="v-label-help"
+                />
+                <span className="field__hint" id="v-label-help">
+                  Come la chiedereste in negozio. Serve per distinguerla: senza, in cassa due
+                  varianti sono indistinguibili.
+                </span>
+              </div>
+
+              <div className="field">
+                <label className="field__label" htmlFor="v-colour">
+                  Colore
+                </label>
+                <input id="v-colour" name="colour" className="input" maxLength={40} />
+              </div>
+
+              <div className="field">
+                <label className="field__label" htmlFor="v-price">
+                  Prezzo
+                </label>
+                <input
+                  id="v-price"
+                  name="price"
+                  className="input"
+                  inputMode="decimal"
+                  placeholder="39,90"
+                />
+              </div>
+
+              <div className="field">
+                <label className="field__label" htmlFor="v-stock">
+                  Quantità disponibile
+                </label>
+                <input
+                  id="v-stock"
+                  name="onHand"
+                  className="input"
+                  type="number"
+                  min={0}
+                  step={1}
+                  defaultValue="0"
+                />
+              </div>
+
+              <button type="submit" className="btn btn--secondary">
+                Aggiungi variante
+              </button>
+            </Form>
+          </details>
+        ) : null}
       </section>
 
       {/* ── Price history ─────────────────────────────────────────────────── */}

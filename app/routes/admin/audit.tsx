@@ -11,6 +11,10 @@ import { formatDateTime } from "~/lib/i18n";
  * can be tidied is not an audit trail, and "who changed this price?" must stay
  * answerable months later.
  */
+export function meta() {
+  return [{ title: "Registro attività" }, { name: "robots", content: "noindex, nofollow" }];
+}
+
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
   await requireStaff(request, env, "audit.read");
@@ -57,7 +61,15 @@ export default function AdminAudit({ loaderData }: Route.ComponentProps) {
 
       {actions.length > 0 ? (
         <nav className="cluster" aria-label="Filtra per azione">
-          <Link to="/admin/registro" className="chip" aria-pressed={filter === ""}>
+          <Link
+            to="/admin/registro"
+            className="chip"
+            // aria-current, not aria-pressed: these are links to filtered
+            // views, not toggle buttons. aria-pressed is not allowed on an
+            // anchor, and it makes a screen reader announce a link that
+            // claims to be pressed.
+            aria-current={filter === "" ? "page" : undefined}
+          >
             Tutte
           </Link>
           {actions.map((action) => (
@@ -65,7 +77,7 @@ export default function AdminAudit({ loaderData }: Route.ComponentProps) {
               key={action}
               to={`/admin/registro?azione=${encodeURIComponent(action)}`}
               className="chip"
-              aria-pressed={filter === action}
+              aria-current={filter === action ? "page" : undefined}
             >
               {action}
             </Link>
@@ -78,7 +90,14 @@ export default function AdminAudit({ loaderData }: Route.ComponentProps) {
           <p>Nessuna voce registrata.</p>
         </div>
       ) : (
-        <div className="admin-table-wrap">
+        <div
+          className="admin-table-wrap"
+          /* Focusable and labelled: a region that scrolls sideways and
+             cannot take focus is unscrollable without a mouse. */
+          tabIndex={0}
+          role="region"
+          aria-label="Tabella scorrevole"
+        >
           <table className="admin-table">
             <caption className="visually-hidden">Registro attività</caption>
             <thead>

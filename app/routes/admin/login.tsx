@@ -2,6 +2,7 @@ import { Form, redirect } from "react-router";
 import type { Route } from "./+types/login";
 import { cloudflareContext } from "../../../workers/app";
 import { createAuth } from "~/infrastructure/auth/auth.server";
+import { relayCookies, cookieHeaderFrom } from "~/infrastructure/auth/cookies.server";
 import { getSession, loadStaffActor } from "~/infrastructure/auth/session.server";
 
 /**
@@ -61,9 +62,18 @@ export async function action({ request, context }: Route.ActionArgs) {
     return { error: "Credenziali non valide." };
   }
 
-  const cookie = response.headers.get("Set-Cookie");
+  /*
+   * ALL the cookies, not the first one.
+   *
+   * A login that needs a second factor sets both a session cookie and a
+   * two-factor challenge cookie. `headers.get("Set-Cookie")` returns only one
+   * of them, so the challenge cookie was dropped and the verification page had
+   * nothing to identify the pending challenge — every correct code came back
+   * "Codice non valido o scaduto", and the account could never log in.
+   */
+  const setCookies = relayCookies(response);
   const session = await auth.api.getSession({
-    headers: new Headers({ Cookie: cookie ?? "" }),
+    headers: new Headers({ Cookie: cookieHeaderFrom(response) }),
   });
 
   // Only redirect to an internal path. A next= parameter pointing off-site is
@@ -81,7 +91,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   if (!session?.user?.id) {
     return redirect(
       `/admin/sicurezza/2fa/verifica?next=${encodeURIComponent(safeNext)}`,
-      cookie ? { headers: { "Set-Cookie": cookie } } : undefined,
+      setCookies,
     );
   }
 
@@ -92,7 +102,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     return { error: "Credenziali non valide." };
   }
 
-  return redirect(safeNext, cookie ? { headers: { "Set-Cookie": cookie } } : undefined);
+  return redirect(safeNext, setCookies);
 }
 
 export default function AdminLogin({ actionData }: Route.ComponentProps) {

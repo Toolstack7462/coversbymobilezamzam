@@ -96,13 +96,9 @@ export const ADMIN_NAV: NavGroup[] = [
     label: "Catalogo",
     items: [
       { label: "Prodotti", to: "/admin/prodotti", permission: "product.read" },
-      {
-        label: "Categorie",
-        to: "/admin/categorie",
-        permission: "product.write",
-        flag: "catalogueAdmin",
-      },
-      { label: "Marchi", to: "/admin/marchi", permission: "product.write", flag: "catalogueAdmin" },
+      // Brands and categories share one screen: they are the same kind of
+      // thing, and a merchant sets both up in one sitting.
+      { label: "Marchi e categorie", to: "/admin/marchi", permission: "product.read" },
       {
         label: "Famiglie prodotto",
         to: "/admin/famiglie",

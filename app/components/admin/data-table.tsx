@@ -116,7 +116,15 @@ export function DataTable<Row>({
         )
       ) : (
         <FormOrDiv bulkActions={bulkActions}>
-          <div className="ac-table-scroll">
+          <div
+            className="ac-table-scroll"
+            /* See the note in the admin routes: a sideways-scrolling
+               box that cannot be focused cannot be scrolled without a
+               mouse. */
+            tabIndex={0}
+            role="region"
+            aria-label="Tabella scorrevole"
+          >
             <table className="ac-table">
               <thead>
                 <tr>

@@ -49,7 +49,12 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         (SELECT COUNT(*) FROM audit_logs) AS audit_rows,
         (SELECT value FROM system_settings WHERE key = 'ops.last_restore_test_at') AS last_restore,
         (SELECT value FROM system_settings WHERE key = 'ops.preview_deployed_at') AS preview_at`,
-    ).first<Record<string, number | string | null>>(),
+    )
+      // The `?1` above went unbound, so D1 refused the whole statement and the
+      // page 500'd — on the one screen whose job is to tell the merchant that
+      // something is wrong. Caught by the first browser test that opened it.
+      .bind(now)
+      .first<Record<string, number | string | null>>(),
   ]);
 
   // The sweeper runs every five minutes. Half an hour of silence means stopped,

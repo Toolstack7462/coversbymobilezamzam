@@ -39,6 +39,10 @@ import { PageHeader } from "~/components/admin/admin-shell";
  * was shown a form field called `business.vat_number`.
  */
 
+export function meta() {
+  return [{ title: "Impostazioni" }, { name: "robots", content: "noindex, nofollow" }];
+}
+
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
   const actor = await requireStaff(request, env, "settings.read");

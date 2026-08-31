@@ -17,6 +17,15 @@
   --color-background: #f7f8f5;
   --color-surface: #ffffff;
   --color-text-secondary: #667085;
+  /*
+   * Secondary text that sits on a SUNKEN surface rather than the page.
+   *
+   * --color-text-secondary is chosen against the page background and reaches
+   * about 4.0:1 on #f0f2ef — under the 4.5:1 AA needs for small text, which is
+   * exactly the size these labels are. axe caught it on the muted badges in
+   * the settings screen. This one is ~6.8:1 on the same surface.
+   */
+  --color-text-secondary-on-sunken: #4b5565;
   --color-border: #dde3ea;
   --color-success: #15845a;
   --color-danger: #d92d20;

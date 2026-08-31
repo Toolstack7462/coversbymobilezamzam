@@ -49,15 +49,23 @@ describe("server-side filtering", () => {
       .map((i) => i.permission)
       .filter((p): p is NonNullable<typeof p> => p !== null);
 
+    // Picked from the tree rather than hardcoded, so this test keeps working
+    // as screens get built and their flags removed. It previously named
+    // /admin/marchi, which has since shipped.
+    const stillFlagged = ADMIN_NAV.flatMap((g) => g.items).find(
+      (item) => item.flag !== undefined && !ADMIN_FEATURES[item.flag],
+    );
+    expect(stillFlagged, "no flagged module left to test with").toBeDefined();
+
     const withFlagsOff = visibleNav(everyPermission)
       .flatMap((g) => g.items)
       .map((i) => i.to);
-    expect(withFlagsOff).not.toContain("/admin/marchi");
+    expect(withFlagsOff).not.toContain(stillFlagged!.to);
 
     const withFlagsOn = visibleNav(everyPermission, ALL_ON)
       .flatMap((g) => g.items)
       .map((i) => i.to);
-    expect(withFlagsOn).toContain("/admin/marchi");
+    expect(withFlagsOn).toContain(stillFlagged!.to);
   });
 
   it("never sends the browser a route the actor cannot open", () => {

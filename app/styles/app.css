@@ -635,7 +635,9 @@ a {
 
 .badge--muted {
   background: var(--color-surface-sunken);
-  color: var(--color-text-secondary);
+  /* Not --color-text-secondary: that grey is picked against the page, and on
+     this sunken fill it falls below AA at badge size. */
+  color: var(--color-text-secondary-on-sunken);
 }
 
 .badge--sale {

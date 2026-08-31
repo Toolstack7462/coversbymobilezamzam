@@ -141,11 +141,28 @@ than an obviously empty page.
       real WCAG 2.4.2 failures on their first run: the collection, device
       finder, cart and store pages shipped no `<title>`. Fixed in the same
       change.
-- [ ] Browser coverage extended to signed-in admin screens — the current specs
-      cover the public storefront and the login page only, because no test
-      fixture creates an authenticated staff session yet. The admin table's
-      sorting, paging and card layout are therefore proven by integration tests
-      and by reading, not in a browser.
+- [x] Browser coverage extended to signed-in admin screens — a setup project
+      installs the shop, logs in and enrols in two-factor through the real
+      forms, then every admin screen is opened, scanned with axe, and checked
+      for a working sidebar. It found FOUR bugs that nothing else could have,
+      three of which made the application unusable:
+
+      1. `account.issuer` was missing, so Better Auth's sign-up threw and
+                 **installation could never complete on any environment**.
+              2. `two_factor.verified` was read by the access gate and written by
+                 nothing, so a privileged account that enrolled correctly was
+                 **locked out of every admin page, permanently**.
+              3. Only the first `Set-Cookie` header was relayed after login, so the
+                 two-factor challenge cookie was dropped and **every correct code was
+                 rejected** — with a message telling the merchant to check their
+                 phone's clock.
+              4. `/admin/sistema` bound no parameter to its `?1` and returned a 500 —
+                 on the one screen whose job is to report that something is wrong.
+
+- [ ] A staged rehearsal of the first-run flow on a deployed preview. The
+      browser suite proves it against local D1; it has never been done against
+      a real Cloudflare environment, where cookie `Secure` attributes and the
+      `__Host-` prefix behave differently over HTTPS.
 - [ ] **Backup restore actually performed** against a disposable database — a
       backup nobody has restored is not a backup
 - [ ] **Core Web Vitals measured on a deployed preview** — localhost is not

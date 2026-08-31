@@ -925,3 +925,36 @@ a.ac-pick:hover {
   gap: var(--space-2);
   align-items: center;
 }
+
+/* ── Secondary text on a tinted surface ────────────────────────────────── */
+/*
+ * `.muted` is a grey chosen for contrast against the plain surface. On the
+ * danger-, warning- and success-tinted backgrounds it drops below 4.5:1.
+ *
+ * This is exactly the failure the separate fill and text tokens exist to
+ * prevent, and it still happened — because the pairing looked fine in the
+ * palette and only broke once the text landed on a coloured row. axe found it
+ * on /admin and /admin/configurazione; reading the CSS would not have.
+ *
+ * Each tint therefore restates its own secondary colour, rather than letting
+ * the generic grey leak in.
+ */
+.ac-action--blocking .ac-action__detail,
+.ac-action--blocking .muted {
+  color: var(--color-danger-text);
+}
+
+.ac-action--warning .ac-action__detail,
+.ac-action--warning .muted {
+  color: var(--color-warning-text);
+}
+
+.ac-step--done .ac-step__why,
+.ac-step--done .muted {
+  color: var(--color-success-text);
+}
+
+.ac-step--blocking .ac-step__why,
+.ac-step--blocking .muted {
+  color: var(--color-danger-text);
+}

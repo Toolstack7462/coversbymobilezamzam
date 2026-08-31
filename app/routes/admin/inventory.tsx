@@ -51,6 +51,10 @@ const SORT_COLUMNS: Record<string, string> = {
   sku: "v.sku",
 };
 
+export function meta() {
+  return [{ title: "Inventario" }, { name: "robots", content: "noindex, nofollow" }];
+}
+
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
   const actor = await requireStaff(request, env, "inventory.read");
@@ -278,7 +282,14 @@ export default function AdminInventory({ loaderData, actionData }: Route.Compone
           <p>Nessuna giacenza registrata.</p>
         </div>
       ) : (
-        <div className="admin-table-wrap">
+        <div
+          className="admin-table-wrap"
+          /* Focusable and labelled: a region that scrolls sideways and
+             cannot take focus is unscrollable without a mouse. */
+          tabIndex={0}
+          role="region"
+          aria-label="Tabella scorrevole"
+        >
           <table className="admin-table">
             <caption className="visually-hidden">Giacenze</caption>
             <thead>

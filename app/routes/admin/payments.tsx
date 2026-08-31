@@ -45,6 +45,10 @@ const SPEC: TableSpec = {
   sortable: [],
 };
 
+export function meta() {
+  return [{ title: "Verifica pagamenti" }, { name: "robots", content: "noindex, nofollow" }];
+}
+
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
   const actor = await requireStaff(request, env, "payment.read");
@@ -298,7 +302,14 @@ export default function AdminPayments({ loaderData, actionData }: Route.Componen
           <p>Nessun pagamento in attesa di verifica.</p>
         </div>
       ) : (
-        <div className="admin-table-wrap">
+        <div
+          className="admin-table-wrap"
+          /* Focusable and labelled: a region that scrolls sideways and
+             cannot take focus is unscrollable without a mouse. */
+          tabIndex={0}
+          role="region"
+          aria-label="Tabella scorrevole"
+        >
           <table className="admin-table">
             <caption className="visually-hidden">Pagamenti in attesa di verifica</caption>
             <thead>

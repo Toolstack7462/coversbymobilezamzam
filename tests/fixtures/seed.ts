@@ -4,6 +4,7 @@
  * Deliberately small and explicit: a test that fails should point at one rule,
  * not at a hundred rows of scenery.
  */
+import { SETTING_KEYS } from "~/domain/content/gates";
 
 export const IDS = {
   location: "loc_shop",
@@ -76,6 +77,7 @@ const TABLES_IN_DELETE_ORDER = [
   "brands",
   "payment_methods",
   "inventory_locations",
+  "store_settings",
 ] as const;
 
 export async function reset(db: D1Database): Promise<void> {
@@ -92,6 +94,31 @@ export async function seed(db: D1Database, options: SeedOptions = {}): Promise<v
   } = options;
 
   await reset(db);
+
+  /*
+   * Every merchant setting, created EMPTY.
+   *
+   * This mirrors what `scripts/import/seed.mjs` does on a real installation:
+   * the rows exist so the storefront's feature gates have something to read,
+   * and every value is blank because no merchant information is invented.
+   *
+   * The fixture previously created no settings at all, which quietly made a
+   * whole class of behaviour untestable — the save path, the gates and the
+   * setup checklist all read this table, and against an empty one they were
+   * being exercised against a state no real installation is ever in.
+   */
+  await db.batch(
+    Object.values(SETTING_KEYS).map((key) =>
+      db
+        .prepare(
+          `INSERT INTO store_settings
+             (id, key, value, value_type, category, gates_feature, created_at, updated_at)
+           VALUES (?1, ?2, '', 'string', ?3, 0, ?4, ?4)
+           ON CONFLICT(key) DO NOTHING`,
+        )
+        .bind(`set_${key.replace(".", "_")}`, key, key.split(".")[0], NOW),
+    ),
+  );
 
   await db.batch([
     db

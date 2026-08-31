@@ -763,3 +763,19 @@
   background: var(--color-primary-surface);
   color: var(--color-primary-text, var(--color-text-primary));
 }
+
+/* A checkbox and its label read as one control, so they share a row and one
+   click target. The 44px minimum is met by the row, not by the box. */
+.field__checkbox {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  min-height: var(--target-min);
+  cursor: pointer;
+}
+
+.field__checkbox input {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: 0 0 auto;
+}

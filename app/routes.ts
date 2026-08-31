@@ -89,6 +89,7 @@ export default [
     route("admin/compatibilita", "routes/admin/compatibility.tsx"),
     route("admin/contenuti/legale", "routes/admin/legal-documents.tsx"),
     route("admin/impostazioni", "routes/admin/settings.tsx"),
+    route("admin/importazioni", "routes/admin/imports.tsx"),
     route("admin/registro", "routes/admin/audit.tsx"),
     route("admin/personale", "routes/admin/staff.tsx"),
     route("admin/personale/:staffId", "routes/admin/staff-detail.tsx"),

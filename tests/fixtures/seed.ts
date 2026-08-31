@@ -61,19 +61,35 @@ async function tableDeleteOrder(db: D1Database): Promise<string[]> {
 
   const tables = await db
     .prepare(
-      `SELECT name FROM sqlite_master
+      `SELECT name, COALESCE(sql, '') AS sql FROM sqlite_master
         WHERE type = 'table'
           AND name NOT LIKE 'sqlite_%'
           AND name NOT LIKE '_cf_%'
           AND name <> 'd1_migrations'`,
     )
-    .all<{ name: string }>();
+    .all<{ name: string; sql: string }>();
 
-  const names = tables.results.map((r) => r.name);
+  /*
+   * FTS5 shadow tables must not be touched.
+   *
+   * A virtual table like `product_search` is backed by real tables —
+   * `product_search_data`, `_idx`, `_docsize`, `_config` — which SQLite refuses
+   * to modify directly ("table product_search_data may not be modified").
+   * Deleting from the VIRTUAL table clears them all correctly; deleting from a
+   * shadow table is an error that takes the whole reset batch down with it.
+   */
+  const ftsTables = tables.results.filter((t) => /USING\s+fts\d/i.test(t.sql)).map((t) => t.name);
+
+  const isShadow = (name: string) =>
+    ftsTables.some((fts) => name !== fts && name.startsWith(`${fts}_`));
+
+  const names = tables.results.map((r) => r.name).filter((name) => !isShadow(name));
 
   /** table -> the tables it points AT. */
   const dependsOn = new Map<string, Set<string>>();
   for (const name of names) {
+    // A virtual table reports no foreign keys, which is correct: its content
+    // comes from the tables the triggers read, and clearing it is independent.
     const fks = await db.prepare(`PRAGMA foreign_key_list(${name})`).all<{ table: string }>();
     dependsOn.set(
       name,

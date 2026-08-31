@@ -211,12 +211,9 @@ export const ADMIN_NAV: NavGroup[] = [
       { label: "Impostazioni", to: "/admin/impostazioni", permission: "settings.read", end: true },
       { label: "Personale e ruoli", to: "/admin/personale", permission: "staff.read" },
       { label: "Sicurezza", to: "/admin/sicurezza", permission: null },
-      {
-        label: "Importa ed esporta",
-        to: "/admin/importazioni",
-        permission: "import.run",
-        flag: "importExport",
-      },
+      // No flag: built. Export needs only product.read, so the nav shows it to
+      // anyone who can see the catalogue; the import half checks import.run.
+      { label: "Importa ed esporta", to: "/admin/importazioni", permission: "product.read" },
       { label: "Stato del sistema", to: "/admin/sistema", permission: "settings.read" },
     ],
   },

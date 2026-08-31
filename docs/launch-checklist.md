@@ -144,20 +144,11 @@ than an obviously empty page.
 - [x] Browser coverage extended to signed-in admin screens — a setup project
       installs the shop, logs in and enrols in two-factor through the real
       forms, then every admin screen is opened, scanned with axe, and checked
-      for a working sidebar. It found FOUR bugs that nothing else could have,
-      three of which made the application unusable:
-
-      1. `account.issuer` was missing, so Better Auth's sign-up threw and
-                 **installation could never complete on any environment**.
-              2. `two_factor.verified` was read by the access gate and written by
-                 nothing, so a privileged account that enrolled correctly was
-                 **locked out of every admin page, permanently**.
-              3. Only the first `Set-Cookie` header was relayed after login, so the
-                 two-factor challenge cookie was dropped and **every correct code was
-                 rejected** — with a message telling the merchant to check their
-                 phone's clock.
-              4. `/admin/sistema` bound no parameter to its `?1` and returned a 500 —
-                 on the one screen whose job is to report that something is wrong.
+      for a working sidebar. It found four bugs nothing else could have; see
+      `docs/authentication-incidents.md`. Three of them made the application
+      unusable: installation could never complete, enrolling in two-factor
+      locked the account out permanently, and every correct two-factor code
+      was rejected.
 
 - [ ] A staged rehearsal of the first-run flow on a deployed preview. The
       browser suite proves it against local D1; it has never been done against

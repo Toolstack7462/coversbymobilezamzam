@@ -40,7 +40,9 @@
     "tablet": "Tablet accessories",
     "offers": "Offers",
     "new_arrivals": "New arrivals",
-    "find_by_device": "Find by device"
+    "find_by_device": "Find by device",
+    "device_short": "Device",
+    "search_short": "Search"
   },
   "home": {
     "hero_heading": "Accessories for your smartphone.",

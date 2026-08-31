@@ -1330,7 +1330,15 @@ a.chip:hover {
 
 .trust-band__inner {
   list-style: none;
-  padding-inline-start: 0;
+  /*
+   * Re-asserted, not zeroed.
+   *
+   * This element is also `.page`, which supplies the gutter — and
+   * `padding-inline-start: 0`, the usual way to drop a list's indent, silently
+   * took the gutter with it and pinned the whole band to the left edge of the
+   * screen while every other section stayed aligned.
+   */
+  padding-inline: var(--gutter);
   display: grid;
   gap: var(--space-5);
   padding-block: var(--space-6);

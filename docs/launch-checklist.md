@@ -78,10 +78,16 @@ before the legal block can be filled in.
 ## Security and access
 
 - [x] Authentication and the admin panel implemented
-- [ ] First administrator created at `/admin/installazione`
+- [x] Initial admin creation is race-safe (atomic singleton claim)
+- [x] Mandatory TOTP implemented and enforced for privileged roles
+- [x] Invitation-based staff onboarding, no public registration
+- [x] Last-super-admin lockout protection
+- [ ] First administrator created at `/admin/installazione` (needs INITIAL_ADMIN_SETUP_TOKEN)
 - [ ] Staff accounts created with **least-privilege** roles
-- [ ] **Two-factor enabled for every super admin** — blocker
-- [ ] **Two-factor enabled for every payment verifier** — blocker
+- [x] Two-factor is **structurally mandatory** for both — an unenrolled
+      privileged account can reach only enrolment, recovery, sessions, profile,
+      help and sign-out
+- [ ] Each real administrator has actually completed enrolment
 - [ ] Nobody except a super admin holds both `payment.verify` and
       `payment.settings`
 - [ ] `SETTINGS_ENCRYPTION_KEY` and `BETTER_AUTH_SECRET` set as Cloudflare

@@ -395,7 +395,7 @@
 }
 
 .ac-metric--link:focus-visible {
-  outline: var(--focus-width) solid var(--color-focus);
+  outline: var(--focus-ring-width) solid var(--color-focus);
   outline-offset: 2px;
 }
 
@@ -486,4 +486,280 @@
 .ac-progress__fill {
   height: 100%;
   background: var(--color-primary);
+}
+
+/* ── Data table ────────────────────────────────────────────────────────── */
+/* One table component for every list, so learning one list teaches all of
+   them. Below 48rem the SAME markup becomes a stack of cards through CSS
+   alone — there is no second component that could drift out of step. */
+
+.ac-table-wrap {
+  gap: var(--space-4);
+}
+
+.ac-table-scroll {
+  overflow-x: auto;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+}
+
+.ac-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-ui);
+}
+
+.ac-table th,
+.ac-table td {
+  padding: var(--space-3) var(--space-4);
+  text-align: start;
+  vertical-align: middle;
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.ac-table thead th {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
+  background: var(--color-surface-sunken);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.ac-table tbody tr:last-child td {
+  border-block-end: 0;
+}
+
+.ac-table tbody tr:hover {
+  background: var(--color-surface-sunken);
+}
+
+.ac-table__numeric {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.ac-table__select {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.ac-table__actions {
+  width: 1%;
+  white-space: nowrap;
+  text-align: end;
+}
+
+.ac-table__sort {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: inherit;
+  text-decoration: none;
+}
+
+.ac-table__sort:hover {
+  color: var(--color-text-primary);
+  text-decoration: underline;
+}
+
+.ac-table__arrow {
+  opacity: 0.5;
+}
+
+/* The active column's arrow is the one worth seeing. */
+.ac-table th[aria-sort="ascending"] .ac-table__arrow,
+.ac-table th[aria-sort="descending"] .ac-table__arrow {
+  opacity: 1;
+}
+
+/* ── Saved views ───────────────────────────────────────────────────────── */
+
+.ac-views ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.ac-view {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--target-min);
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  border-block-end: 3px solid transparent;
+}
+
+.ac-view:hover {
+  color: var(--color-text-primary);
+}
+
+/* The active tab is marked by weight and an underline as well as colour, and
+   carries aria-current so it does not depend on being seen at all. */
+.ac-view--active {
+  color: var(--color-text-primary);
+  font-weight: var(--weight-medium);
+  border-block-end-color: var(--color-primary);
+}
+
+.ac-view__count {
+  padding: 0 var(--space-2);
+  font-size: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-chip);
+}
+
+/* ── Search, bulk actions, pagination ──────────────────────────────────── */
+
+.ac-search {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.ac-search input[type="search"] {
+  flex: 1 1 16rem;
+  min-height: var(--target-min);
+}
+
+.ac-bulk {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  margin-block-start: var(--space-3);
+}
+
+.ac-bulk .caption {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.ac-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ac-pagination p {
+  margin: 0;
+}
+
+/* Not a disabled link: a disabled anchor still takes focus and announces as a
+   link that does nothing. This is inert text wearing the button's shape. */
+.is-inert {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* ── Cards below 48rem ─────────────────────────────────────────────────── */
+/* A twelve-column table on a 390px screen is a horizontal-scroll puzzle. The
+   same rows become cards, each cell labelled by the header it came from. */
+
+@media (max-width: 48rem) {
+  .ac-table-scroll {
+    border: 0;
+    background: none;
+    overflow-x: visible;
+  }
+
+  .ac-table thead {
+    /* Not display:none — that removes it from the accessibility tree too, and
+       the headers are what make the cells make sense. */
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .ac-table,
+  .ac-table tbody,
+  .ac-table tr,
+  .ac-table td {
+    display: block;
+    width: auto;
+  }
+
+  .ac-table tr {
+    margin-block-end: var(--space-3);
+    padding: var(--space-2) 0;
+    background: var(--color-surface);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-card);
+  }
+
+  .ac-table td {
+    display: flex;
+    gap: var(--space-3);
+    align-items: baseline;
+    justify-content: space-between;
+    padding: var(--space-2) var(--space-4);
+    border-block-end: 0;
+    text-align: end;
+  }
+
+  .ac-table td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    font-size: var(--text-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-secondary);
+    text-align: start;
+  }
+
+  /* Secondary columns earn their space on a desktop table and lose it here. */
+  .ac-table__secondary {
+    display: none;
+  }
+
+  .ac-table__actions,
+  .ac-table__select {
+    width: auto;
+    justify-content: flex-end;
+  }
+
+  .ac-table__actions::before,
+  .ac-table__select::before {
+    content: none;
+  }
+}
+
+/* A compact button for inside table rows, where a full-height control would
+   set the row height for every row in the table. Still meets the 44px touch
+   target through padding on the row itself. */
+.btn--small {
+  min-height: 2rem;
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-caption);
+}
+
+/* Admin-only badge tones. The word inside always carries the meaning; these
+   only reinforce it, so a greyscale print or a colour-vision difference loses
+   nothing. */
+.badge--success {
+  background: var(--color-success-surface);
+  color: var(--color-success-text);
+}
+
+.badge--info {
+  background: var(--color-primary-surface);
+  color: var(--color-primary-text, var(--color-text-primary));
 }

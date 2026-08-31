@@ -27,6 +27,16 @@ const REMOTE = args.includes("--remote");
 const persistIndex = args.indexOf("--persist-to");
 const PERSIST_TO = persistIndex >= 0 ? args[persistIndex + 1] : null;
 
+/**
+ * The Wrangler environment whose configuration names the database.
+ *
+ * Needed because a database defined only inside `env.preview` is invisible to a
+ * top-level lookup: Wrangler reports "Couldn't find a D1 DB with the name or
+ * binding" and gives no hint that an environment was the missing part.
+ */
+const envIndex = args.indexOf("--env");
+const ENVIRONMENT = envIndex >= 0 ? args[envIndex + 1] : null;
+
 if (REMOTE && PERSIST_TO) {
   console.error("--persist-to is a local-only option; it cannot be combined with --remote.");
   process.exit(1);
@@ -245,7 +255,8 @@ METHODS.forEach(([code, type, nameIt, nameEn, minutes], index) => {
 // ── Apply ────────────────────────────────────────────────────────────────────
 
 console.log(
-  `Seeding ${DB} (${REMOTE ? "remote" : "local"}${PERSIST_TO ? ` in ${PERSIST_TO}` : ""}) — ` +
+  `Seeding ${DB} (${REMOTE ? "remote" : "local"}${ENVIRONMENT ? `, env ${ENVIRONMENT}` : ""}` +
+    `${PERSIST_TO ? ` in ${PERSIST_TO}` : ""}) — ` +
     `${statements.length} statements`,
 );
 
@@ -258,6 +269,7 @@ try {
       "execute",
       DB,
       REMOTE ? "--remote" : "--local",
+      ...(ENVIRONMENT ? ["--env", ENVIRONMENT] : []),
       ...(PERSIST_TO ? ["--persist-to", PERSIST_TO] : []),
       "--command",
       statements.join(";\n"),

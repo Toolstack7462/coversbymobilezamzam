@@ -26,15 +26,56 @@ const requestHandler = createRequestHandler(
   import.meta.env.MODE,
 );
 
+/**
+ * Environments whose responses must never be indexed.
+ *
+ * A preview is a working copy of a real shop on a public HTTPS address. If a
+ * crawler finds it, the merchant ends up with two versions of their catalogue
+ * competing in search results — and the one with the demo prices and the
+ * `[DEMO]` names is the one that outranks nothing but confuses everyone.
+ *
+ * Worse, an indexed preview leaks order-confirmation and tracking URLs, which
+ * carry order numbers and tracking tokens.
+ */
+const NON_INDEXABLE_ENVIRONMENTS = new Set(["preview", "staging", "development", "test"]);
+
+/**
+ * Applied at the WORKER level, not per route.
+ *
+ * A `<meta name="robots">` tag covers HTML that renders successfully. This
+ * covers everything: static assets, JSON, redirects, 404s and 500s alike. There
+ * is no route anyone can add later that forgets it, which is the property that
+ * matters — the failure mode of per-route protection is that it is correct
+ * until someone adds a route.
+ */
+function applyPreviewHeaders(response: Response, env: Env): Response {
+  if (!NON_INDEXABLE_ENVIRONMENTS.has(env.APP_ENV ?? "development")) return response;
+
+  // A new Response, because the one React Router returns may have immutable
+  // headers — notably any response constructed from a cached asset.
+  const headers = new Headers(response.headers);
+  headers.set("x-robots-tag", "noindex, nofollow, noarchive, nosnippet");
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 export default {
-  fetch(request, env, ctx) {
+  async fetch(request, env, ctx) {
     const context = new RouterContextProvider();
     context.set(cloudflareContext, { env, ctx });
-    return requestHandler(request, context);
+
+    const response = await requestHandler(request, context);
+    return applyPreviewHeaders(response, env);
   },
 
   /**
-   * Cron: every five minutes, UTC. See wrangler.jsonc.
+   * Cron, UTC — always UTC, Cloudflare crons have no timezone. Every five
+   * minutes in the base configuration, every fifteen in preview; both are
+   * declared in wrangler.jsonc and neither is read here.
    *
    * The handler is idempotent, so an overlapping or repeated run is harmless -
    * which matters because Cloudflare gives at-least-once delivery, not exactly

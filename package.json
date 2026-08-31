@@ -11,6 +11,10 @@
   "scripts": {
     "dev": "react-router dev",
     "build": "react-router build",
+    "build:preview": "node scripts/deploy/preview.mjs",
+    "deploy:preview": "node scripts/deploy/preview.mjs --deploy",
+    "preview:migrate": "wrangler d1 migrations apply ita-commerce-preview-db --remote",
+    "preview:seed": "node scripts/import/seed.mjs --db ita-commerce-preview-db --remote",
     "start": "vite preview",
     "typegen": "wrangler types && react-router typegen",
     "typecheck": "npm run typegen && tsc --noEmit",

@@ -48,6 +48,12 @@ export default [
   // Product images from R2, used when no CDN base URL is configured.
   route("media/*", "routes/media.tsx"),
 
+  // Operational endpoints. Unauthenticated on purpose: the thing most likely
+  // to be broken is authentication, and a health check that needs a working
+  // login cannot tell you the login is broken.
+  route("api/health", "routes/api/health.tsx"),
+  route("robots.txt", "routes/api/robots.tsx"),
+
   // Better Auth owns everything under /api/auth.
   route("api/auth/*", "routes/api/auth.tsx"),
 

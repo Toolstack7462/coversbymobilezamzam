@@ -678,3 +678,18 @@ a {
   font-size: var(--text-body);
   letter-spacing: 0.04em;
 }
+
+/* ── Preview environment banner ────────────────────────────────────────────
+   Shown on every storefront page outside production. Restrained on purpose:
+   this is a shop, and an overlay that covers the product on a phone is worse
+   than the confusion it prevents. It sits after the footer, in the document
+   flow, where it cannot obscure anything. */
+
+.preview-banner {
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-warning-surface);
+  border-block-start: 3px solid var(--color-warning);
+  color: var(--color-warning-text);
+  font-size: var(--text-ui);
+  text-align: center;
+}

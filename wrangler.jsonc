@@ -10,6 +10,11 @@
     "head_sampling_rate": 1,
   },
 
+  // No workers.dev URL by default. A *.workers.dev address is a public,
+  // unauthenticated origin for whatever is deployed to it; the preview
+  // environment turns it on deliberately, and nothing else does.
+  "workers_dev": false,
+
   // ── D1: the relational source of truth ────────────────────────────────────
   // database_id is a PLACEHOLDER. Local development does not use it; `--remote`
   // does. Create the database with the command in docs/deployment.md and paste
@@ -53,8 +58,87 @@
   },
 
   "env": {
+    /*
+     * PREVIEW — an isolated environment on a temporary workers.dev address.
+     *
+     * Everything here is separate from staging and production: its own Worker,
+     * its own D1, its own buckets. Nothing it can reach is shared with an
+     * environment that might one day hold real orders.
+     *
+     * The Worker is named for the project rather than inheriting the short base
+     * name, because the name becomes the public hostname and
+     * `italian-tech-atelier-commerce-preview.<subdomain>.workers.dev` says what
+     * it is to anyone who sees it in a browser bar.
+     */
+    "preview": {
+      "name": "italian-tech-atelier-commerce-preview",
+
+      // The only environment with a public workers.dev hostname, and the whole
+      // point of it: a real HTTPS origin, so cookie `Secure`, the `__Host-`
+      // prefix and cross-origin redirects behave the way they will in
+      // production rather than the way localhost lets them.
+      "workers_dev": true,
+
+      "vars": {
+        "APP_ENV": "preview",
+        "DEFAULT_LOCALE": "it",
+        "SUPPORTED_LOCALES": "it,en",
+        "DEFAULT_CURRENCY": "EUR",
+        "STORE_TIMEZONE": "Europe/Rome",
+      },
+
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "ita-commerce-preview-db",
+          // EU jurisdiction: the merchant and their customers are in Italy, so
+          // the data stays inside the EU rather than wherever Cloudflare would
+          // otherwise place it.
+          "database_id": "2f1ee61e-c5bc-410c-884a-59e2886baf27",
+          "migrations_dir": "db/migrations",
+        },
+      ],
+
+      "r2_buckets": [
+        // Both buckets are PRIVATE at the R2 level. Product images are served
+        // through the Worker's own /media/* route, which sets an immutable
+        // cache and a sandboxed CSP; there is no r2.dev domain and no public
+        // bucket URL, so the only way in is through code that can be reviewed.
+        {
+          "binding": "MEDIA",
+          "bucket_name": "ita-commerce-preview-media",
+          "jurisdiction": "eu",
+        },
+        // Payment proofs. This one must never gain a public URL under any
+        // circumstances: every read goes through an authenticated staff route
+        // that logs the access.
+        {
+          "binding": "PRIVATE_FILES",
+          "bucket_name": "ita-commerce-preview-proofs",
+          "jurisdiction": "eu",
+        },
+      ],
+
+      /*
+       * Every fifteen minutes, UTC — Cloudflare crons have no timezone, so this
+       * fires at :00, :15, :30 and :45 Europe/Rome as well, since Italy is a
+       * whole number of hours from UTC in both CET and CEST.
+       *
+       * Production intent is every five minutes (see the base config): the
+       * sweeper's job is to release stock held by unpaid orders, and the
+       * interval is the worst-case over-hold. Fifteen is chosen for preview
+       * because it is demo data and it keeps well inside the Free plan's
+       * request budget, while still being twice inside the thirty-minute
+       * window after which /admin/sistema reports the sweeper as stopped.
+       */
+      "triggers": {
+        "crons": ["*/15 * * * *"],
+      },
+    },
+
     "staging": {
       "name": "ita-commerce-staging",
+      "workers_dev": false,
       "vars": { "APP_ENV": "staging" },
       "d1_databases": [
         {
@@ -72,6 +156,7 @@
     },
     "production": {
       "name": "ita-commerce-production",
+      "workers_dev": false,
       "vars": { "APP_ENV": "production" },
       "d1_databases": [
         {

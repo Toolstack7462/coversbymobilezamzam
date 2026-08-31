@@ -34,6 +34,10 @@ export async function loader({ context }: Route.LoaderArgs) {
 
   return {
     settings,
+    // Drives the preview banner. Read from the environment rather than guessed
+    // from the hostname: a hostname check would silently stop working the day
+    // a custom domain is attached to a preview.
+    appEnv: env.APP_ENV ?? "development",
     gates: {
       store: canShowStoreSection(settings),
       phone: canShowPhone(settings),
@@ -57,7 +61,31 @@ export default function StorefrontLayout({ loaderData }: Route.ComponentProps) {
       <main id="main">
         <Outlet />
       </main>
+      {loaderData.appEnv !== "production" ? <PreviewBanner env={loaderData.appEnv} /> : null}
+
       <SiteFooter t={t} locale={locale} settings={loaderData.settings} gates={loaderData.gates} />
     </>
+  );
+}
+
+/**
+ * Says, on every page, that this is not the shop.
+ *
+ * A preview is a working copy of a real business on a real HTTPS address. Anyone
+ * who is sent the link — a friend, a supplier, the merchant's accountant — has
+ * no way to tell it apart from the live shop, and the prices, stock and
+ * compatibility on it are all invented. Saying so once, quietly, at the bottom
+ * of the page, costs nothing and prevents somebody acting on demo data.
+ *
+ * Deliberately not a floating overlay: this is a shop, and something that
+ * covers the product on a phone screen is worse than the problem it solves.
+ */
+function PreviewBanner({ env }: { env: string }) {
+  return (
+    <aside className="preview-banner" role="note">
+      <strong>Ambiente di prova</strong> — questo non è il negozio. Prodotti, prezzi, disponibilità
+      e compatibilità sono inventati a scopo di test, e nessun ordine è reale.{" "}
+      <span className="caption">({env})</span>
+    </aside>
   );
 }

@@ -9,8 +9,8 @@ who sells phone accessories and does not write SQL.
 
 **Group by what the merchant is doing, not by what the database contains.**
 
-"Prenotazioni" and "Movimenti" are both inventory tables, but one answers *why
-can't I sell this?* and the other answers *where did the count go wrong?* They
+"Prenotazioni" and "Movimenti" are both inventory tables, but one answers _why
+can't I sell this?_ and the other answers _where did the count go wrong?_ They
 live together under INVENTARIO because that is the mental context, not because
 they share a foreign key.
 
@@ -104,14 +104,14 @@ without loading the page that links to them.
 
 ## Deliberate omissions
 
-| Not built | Why |
-|---|---|
-| Subscriptions, appointments, donations, gift cards | Not this business. |
-| Printful, TikTok Shop, marketplaces | Not this business. |
-| Payment gateways | Phase 1 takes no card payments (ADR 0006). |
-| Sales-channel switcher | One channel. |
-| Email-marketing dashboard | No provider configured. A marketing screen that cannot send is a lie. |
-| Multi-currency, multi-store | EUR, one shop. |
+| Not built                                          | Why                                                                   |
+| -------------------------------------------------- | --------------------------------------------------------------------- |
+| Subscriptions, appointments, donations, gift cards | Not this business.                                                    |
+| Printful, TikTok Shop, marketplaces                | Not this business.                                                    |
+| Payment gateways                                   | Phase 1 takes no card payments (ADR 0006).                            |
+| Sales-channel switcher                             | One channel.                                                          |
+| Email-marketing dashboard                          | No provider configured. A marketing screen that cannot send is a lie. |
+| Multi-currency, multi-store                        | EUR, one shop.                                                        |
 
 Each of these is a permanent tax on every screen a merchant scans, forever.
 

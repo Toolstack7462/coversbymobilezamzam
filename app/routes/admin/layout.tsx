@@ -1,117 +1,81 @@
-import { Outlet, NavLink, Form, isRouteErrorResponse, useRouteError } from "react-router";
+import { Outlet, isRouteErrorResponse, useRouteError, Link } from "react-router";
+import type { LinksFunction } from "react-router";
 import type { Route } from "./+types/layout";
 import { cloudflareContext } from "../../../workers/app";
 import { requireEnrolledStaff } from "~/infrastructure/auth/session.server";
+import { visibleNav } from "~/lib/admin-nav";
+import { AdminShell } from "~/components/admin/admin-shell";
+import adminStyles from "~/styles/admin.css?url";
 
 /**
- * The admin shell.
+ * The admin shell route.
  *
- * Every admin route inherits this loader, so **no admin page renders without an
- * authenticated staff session**. Individual routes then require their own
- * specific permission — this layout proves you are staff, not that you may do
- * a particular thing.
+ * Every admin page inherits this loader, so no admin screen renders without an
+ * authenticated staff session AND, for a privileged role, a verified second
+ * factor. Individual routes then require their own specific permission — this
+ * layout proves you are staff, not that you may do a particular thing.
+ *
+ * The stylesheet is imported HERE rather than in root, so the admin CSS is a
+ * separate chunk that never reaches a customer browsing the shop.
  */
+
+export const links: LinksFunction = () => [{ rel: "stylesheet", href: adminStyles }];
 
 export function meta() {
   return [{ name: "robots", content: "noindex, nofollow" }];
 }
 
-/** Nav entries appear only when the actor holds the permission. */
-const NAV = [
-  { to: "/admin", label: "Dashboard", permission: null, end: true },
-  { to: "/admin/pagamenti", label: "Pagamenti", permission: "payment.read" },
-  { to: "/admin/ordini", label: "Ordini", permission: "order.read" },
-  { to: "/admin/prodotti", label: "Prodotti", permission: "product.read" },
-  { to: "/admin/inventario", label: "Inventario", permission: "inventory.read" },
-  { to: "/admin/personale", label: "Personale", permission: "staff.read" },
-  { to: "/admin/impostazioni", label: "Impostazioni", permission: "settings.read" },
-  { to: "/admin/registro", label: "Registro attività", permission: "audit.read" },
-] as const;
-
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
 
   /**
-   * Enrolment is checked on EVERY request, not once after login.
-   *
-   * A one-time redirect would be skipped by deep-linking straight to a payment
-   * screen, which is precisely the screen it is protecting.
+   * Checked on EVERY request, not once after login. A one-time redirect is
+   * skipped by deep-linking straight to the payment queue, which is exactly
+   * the screen it protects.
    */
   const { actor, mustEnrol } = await requireEnrolledStaff(request, env);
 
+  // Sidebar counts. One query, and only the counts this actor may act on -
+  // a badge for a screen you cannot open is noise.
+  const canSeePayments = actor.permissions.includes("payment.read");
+  const canSeeInventory = actor.permissions.includes("inventory.read");
+
+  const counts = await env.DB.prepare(
+    `SELECT
+       (SELECT COUNT(*) FROM order_payments
+         WHERE status IN ('proof_received','under_verification')) AS payments_to_verify,
+       (SELECT COUNT(*) FROM orders WHERE status = 'processing') AS pickups_to_prepare,
+       (SELECT COUNT(*) FROM inventory_levels
+         WHERE reorder_threshold IS NOT NULL
+           AND (on_hand - reserved) <= reorder_threshold) AS low_stock`,
+  ).first<{ payments_to_verify: number; pickups_to_prepare: number; low_stock: number }>();
+
   return {
-    displayName: actor.displayName,
-    email: actor.email,
-    permissions: actor.permissions,
-    roleCodes: actor.roleCodes,
+    actor: { displayName: actor.displayName, roleCodes: actor.roleCodes },
+    // Filtered on the SERVER: the browser is never sent the names of routes
+    // this user cannot open.
+    nav: visibleNav(actor.permissions),
+    badges: {
+      paymentsToVerify: canSeePayments ? (counts?.payments_to_verify ?? 0) : 0,
+      pickupsToPrepare: canSeePayments ? (counts?.pickups_to_prepare ?? 0) : 0,
+      lowStock: canSeeInventory ? (counts?.low_stock ?? 0) : 0,
+    },
+    environment: env.APP_ENV ?? "development",
     mustEnrol,
   };
 }
 
 export default function AdminLayout({ loaderData }: Route.ComponentProps) {
-  const { displayName, permissions, roleCodes, mustEnrol } = loaderData;
-
-  // While enrolment is outstanding the operational nav is hidden entirely -
-  // every one of those routes would refuse the request anyway, so offering
-  // them would only produce a wall of redirects.
-  const visible = mustEnrol
-    ? []
-    : NAV.filter((item) => item.permission === null || permissions.includes(item.permission));
-
   return (
-    <div className="admin">
-      <header className="admin__bar">
-        <div className="admin__brand">
-          <span>Amministrazione</span>
-          {/* No customer-facing brand here: this tool is not the shop, and the
-              shop may not even have a public name configured yet. */}
-        </div>
-
-        <div className="admin__actor">
-          <span className="small">{displayName}</span>
-          <span className="caption muted">{roleCodes.join(", ")}</span>
-          <a className="btn btn--ghost" href="/admin/sicurezza">
-            Sicurezza
-          </a>
-          <Form method="post" action="/admin/esci">
-            <button type="submit" className="btn btn--ghost">
-              Esci
-            </button>
-          </Form>
-        </div>
-      </header>
-
-      <div className="admin__body">
-        <nav className="admin__nav" aria-label="Navigazione amministrazione">
-          <ul>
-            {mustEnrol ? (
-              <li>
-                <NavLink to="/admin/sicurezza/2fa" className="admin__nav-link">
-                  Attiva 2FA
-                </NavLink>
-              </li>
-            ) : null}
-            {visible.map((item) => (
-              <li key={item.to}>
-                <NavLink
-                  to={item.to}
-                  end={"end" in item ? item.end : false}
-                  className={({ isActive }) =>
-                    isActive ? "admin__nav-link admin__nav-link--active" : "admin__nav-link"
-                  }
-                >
-                  {item.label}
-                </NavLink>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
-        <main id="main" className="admin__main">
-          <Outlet />
-        </main>
-      </div>
-    </div>
+    <AdminShell
+      nav={loaderData.nav}
+      badges={loaderData.badges}
+      actor={loaderData.actor}
+      environment={loaderData.environment}
+      mustEnrol={loaderData.mustEnrol}
+    >
+      <Outlet />
+    </AdminShell>
   );
 }
 
@@ -119,8 +83,8 @@ export default function AdminLayout({ loaderData }: Route.ComponentProps) {
  * 403 is shown, not redirected.
  *
  * A staff member who lacks a permission is already past the login form;
- * bouncing them back to it would be confusing and would teach them to
- * re-enter credentials at any obstacle.
+ * bouncing them back would be confusing and would teach them to re-enter
+ * credentials at any obstacle.
  */
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -135,9 +99,25 @@ export function ErrorBoundary() {
             errore, chiedi a un amministratore.
           </p>
           <p>
-            <a className="btn btn--secondary" href="/admin">
-              Torna alla dashboard
-            </a>
+            <Link className="btn btn--secondary" to="/admin">
+              Torna alla panoramica
+            </Link>
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  if (isRouteErrorResponse(error) && error.status === 404) {
+    return (
+      <main id="main" className="page section">
+        <div className="panel stack" style={{ maxWidth: "34rem" }}>
+          <h1>Pagina non trovata</h1>
+          <p className="muted">Questa pagina non esiste o l&apos;elemento è stato rimosso.</p>
+          <p>
+            <Link className="btn btn--secondary" to="/admin">
+              Torna alla panoramica
+            </Link>
           </p>
         </div>
       </main>
@@ -148,7 +128,7 @@ export function ErrorBoundary() {
     <main id="main" className="page section">
       <div className="panel stack" style={{ maxWidth: "34rem" }}>
         <h1>Si è verificato un errore</h1>
-        <p className="muted">Riprova tra qualche istante.</p>
+        <p className="muted">Riprova tra qualche istante. Se il problema persiste, contattaci.</p>
       </div>
     </main>
   );

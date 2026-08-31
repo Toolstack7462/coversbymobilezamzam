@@ -72,6 +72,8 @@ export default [
 
   layout("routes/admin/layout.tsx", [
     route("admin", "routes/admin/dashboard.tsx"),
+    route("admin/configurazione", "routes/admin/setup-centre.tsx"),
+    route("admin/sistema", "routes/admin/system-health.tsx"),
     route("admin/pagamenti", "routes/admin/payments.tsx"),
     route("admin/ordini", "routes/admin/orders.tsx"),
     route("admin/prodotti", "routes/admin/products.tsx"),

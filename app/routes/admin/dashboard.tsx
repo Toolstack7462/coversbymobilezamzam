@@ -1,36 +1,63 @@
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import type { Route } from "./+types/dashboard";
 import { cloudflareContext } from "../../../workers/app";
 import { requireStaff } from "~/infrastructure/auth/session.server";
 import { systemClock } from "~/infrastructure/primitives";
 import { money, format as formatMoney } from "~/domain/pricing/money";
 import { gateStatuses, type SettingsMap } from "~/domain/content/gates";
+import { buildActionCentre, isClear, type ActionItem } from "~/domain/content/action-centre";
+import { computeSetupSteps, summariseSetup } from "~/domain/content/setup-steps";
+import { breadcrumbsFor } from "~/lib/admin-nav";
+import { PageHeader } from "~/components/admin/admin-shell";
+import { loadSetupSnapshot } from "./setup-centre";
 
 /**
- * The dashboard.
+ * The Overview.
  *
- * Real counts only. **No charts**, because with no data a chart is decoration
- * and with a little data it is misleading. Every card is a number someone can
- * act on, and each links to the screen where they would act.
+ * Two things only: **what happened**, and **what needs me**.
+ *
+ * No charts. With no data a chart is decoration; with a fortnight of data it
+ * invites conclusions the sample cannot support. Every number here is a real
+ * count someone can act on, and every one links to the screen where they act.
  */
+
+export function meta() {
+  return [{ title: "Panoramica" }, { name: "robots", content: "noindex, nofollow" }];
+}
+
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
   const actor = await requireStaff(request, env);
 
   const now = systemClock.now();
   const dayAgo = now - 24 * 60 * 60 * 1000;
+  const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
 
-  const [counts, settingsResult, jobs] = await Promise.all([
+  const [counts, settingsResult, lastJob, setupSnapshot] = await Promise.all([
     env.DB.prepare(
       `SELECT
         (SELECT COUNT(*) FROM orders WHERE created_at > ?1) AS orders_today,
+        (SELECT COUNT(*) FROM orders WHERE created_at > ?3) AS orders_week,
+
+        -- Order value, NOT revenue: an order created is not money received.
         (SELECT COALESCE(SUM(grand_total), 0) FROM orders
           WHERE created_at > ?1 AND status NOT IN ('cancelled','expired')) AS value_today,
+
+        -- Money actually confirmed by a human. This one IS collected.
+        (SELECT COALESCE(SUM(p.amount_received), 0) FROM order_payments p
+          WHERE p.status = 'verified' AND p.verified_at > ?1) AS verified_today,
+
         (SELECT COUNT(*) FROM order_payments
           WHERE status IN ('proof_received','under_verification')) AS to_verify,
-        (SELECT COUNT(*) FROM order_payments WHERE status = 'awaiting_payment') AS awaiting_payment,
-        (SELECT COUNT(*) FROM orders WHERE status = 'ready_for_pickup') AS ready_for_pickup,
-        (SELECT COUNT(*) FROM orders WHERE status = 'processing') AS processing,
+        (SELECT COUNT(*) FROM order_payments
+          WHERE status = 'under_verification') AS under_verification,
+        (SELECT COUNT(*) FROM orders WHERE status = 'awaiting_customer_contact') AS awaiting_contact,
+
+        (SELECT COUNT(*) FROM orders o
+          WHERE o.status = 'processing' AND o.delivery_method = 'pickup') AS pickups_to_prepare,
+        (SELECT COUNT(*) FROM orders o
+          WHERE o.status = 'processing' AND o.delivery_method = 'shipping') AS orders_to_ship,
+
         (SELECT COUNT(*) FROM inventory_levels
           WHERE reorder_threshold IS NOT NULL AND (on_hand - reserved) <= reorder_threshold
             AND (on_hand - reserved) > 0) AS low_stock,
@@ -38,135 +65,219 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         (SELECT COUNT(*) FROM stock_reservations
           WHERE status = 'active' AND expires_at < ?2) AS overdue_reservations`,
     )
-      .bind(dayAgo, now)
+      .bind(dayAgo, now, weekAgo)
       .first<Record<string, number>>(),
 
-    env.DB.prepare(`SELECT key, value FROM store_settings`).all<{
-      key: string;
-      value: string;
-    }>(),
+    env.DB.prepare(`SELECT key, value FROM store_settings`).all<{ key: string; value: string }>(),
 
     env.DB.prepare(
       `SELECT job_name, status, started_at FROM scheduled_job_runs
         ORDER BY started_at DESC LIMIT 1`,
     ).first<{ job_name: string; status: string; started_at: number }>(),
+
+    loadSetupSnapshot(env, now),
   ]);
 
   const settings: SettingsMap = Object.fromEntries(
     settingsResult.results.map((r) => [r.key, r.value]),
   );
 
+  const c = counts ?? {};
+  const n = (key: string) => Number(c[key] ?? 0);
+
+  // A sweeper silent for half an hour has stopped; it runs every five minutes.
+  const sweeperStale = !lastJob || now - lastJob.started_at > 30 * 60 * 1000;
+  const setup = summariseSetup(computeSetupSteps(setupSnapshot));
+
+  const actions = buildActionCentre(
+    {
+      paymentsToVerify: n("to_verify"),
+      paymentsUnderVerification: n("under_verification"),
+      ordersAwaitingContact: n("awaiting_contact"),
+      pickupsToPrepare: n("pickups_to_prepare"),
+      ordersToShip: n("orders_to_ship"),
+      outOfStock: n("out_of_stock"),
+      lowStock: n("low_stock"),
+      overdueReservations: n("overdue_reservations"),
+      productsWithoutPrice: setupSnapshot.productsWithoutPrice,
+      productsWithoutImage: setupSnapshot.productsWithoutImage,
+      unverifiedExactFit: setupSnapshot.exactFitUnverified,
+      privilegedWithoutTotp: setupSnapshot.privilegedWithoutTotp,
+      blockingSetupSteps: setup.blockingIncomplete.length,
+      sweeperStale,
+    },
+    actor.permissions,
+  );
+
   return {
     displayName: actor.displayName,
-    counts: counts ?? {},
-    // Which storefront features are hidden, and exactly why.
-    gates: gateStatuses(settings).filter((g) => !g.enabled),
-    lastJob: jobs,
-    now,
+    actions,
+    setup: { percentage: setup.percentage, readyToTrade: setup.readyToTrade },
+    metrics: {
+      ordersToday: n("orders_today"),
+      ordersWeek: n("orders_week"),
+      valueToday: n("value_today"),
+      verifiedToday: n("verified_today"),
+      toVerify: n("to_verify"),
+      pickupsToPrepare: n("pickups_to_prepare"),
+      lowStock: n("low_stock"),
+    },
     canSeePayments: actor.permissions.includes("payment.read"),
+    gates: gateStatuses(settings).filter((g) => !g.enabled),
   };
 }
 
-interface CardProps {
+function Metric({
+  label,
+  value,
+  note,
+  to,
+}: {
   label: string;
   value: string | number;
+  note?: string;
   to?: string;
-  tone?: "default" | "warning";
-}
-
-function Card({ label, value, to, tone = "default" }: CardProps) {
+}) {
   const body = (
     <>
-      <span className="admin-card__value numeric">{value}</span>
-      <span className="admin-card__label">{label}</span>
+      <span className="ac-metric__label">{label}</span>
+      <span className="ac-metric__value numeric">{value}</span>
+      {note ? <span className="ac-metric__note">{note}</span> : null}
     </>
   );
-  const className = `admin-card${tone === "warning" ? " admin-card--warning" : ""}`;
   return to ? (
-    <Link to={to} className={className}>
+    <Link to={to} className="ac-metric ac-metric--link">
       {body}
     </Link>
   ) : (
-    <div className={className}>{body}</div>
+    <div className="ac-metric">{body}</div>
+  );
+}
+
+const SEVERITY_CLASS = {
+  blocking: "ac-action--blocking",
+  attention: "ac-action--warning",
+  informational: "ac-action--info",
+} as const;
+
+function ActionRow({ item }: { item: ActionItem }) {
+  return (
+    <li className={`ac-action ${SEVERITY_CLASS[item.severity]}`}>
+      <span className="ac-action__count numeric" aria-hidden="true">
+        {item.count}
+      </span>
+      <div className="ac-action__body">
+        <p className="ac-action__label">
+          {item.label}
+          {/*
+            The badge is hidden from assistive tech because a bare number read
+            before its label is noise; it is spoken here as part of a sentence.
+          */}
+          <span className="visually-hidden">: {item.count}</span>
+        </p>
+        <p className="ac-action__detail small muted">{item.detail}</p>
+      </div>
+      <Link to={item.href} className="btn btn--secondary">
+        Apri
+      </Link>
+    </li>
   );
 }
 
 export default function AdminDashboard({ loaderData }: Route.ComponentProps) {
-  const { displayName, counts, gates, lastJob, now, canSeePayments } = loaderData;
-
-  // A sweeper that stopped leaves stock reserved forever, so it gets a card of
-  // its own rather than being buried in logs.
-  const sweeperStale = !lastJob || now - lastJob.started_at > 30 * 60 * 1000;
+  const { pathname } = useLocation();
+  const { displayName, actions, setup, metrics, canSeePayments, gates } = loaderData;
 
   return (
-    <div className="stack">
-      <h1>Ciao, {displayName}</h1>
+    <>
+      <PageHeader
+        title={`Ciao, ${displayName}`}
+        description="Cosa è successo, e cosa aspetta voi."
+        breadcrumbs={breadcrumbsFor(pathname)}
+        primaryAction={{ label: "Aggiungi prodotto", to: "/admin/prodotti/nuovo" }}
+        {...(setup.readyToTrade
+          ? {}
+          : {
+              secondaryActions: [
+                { label: "Completa la configurazione", to: "/admin/configurazione" },
+              ],
+            })}
+      />
 
-      <section>
-        <h2>Ultime 24 ore</h2>
-        <div className="admin-cards">
-          <Card label="Ordini" value={counts.orders_today ?? 0} to="/admin/ordini" />
-          <Card label="Valore ordini" value={formatMoney(money(counts.value_today ?? 0))} />
-          {canSeePayments ? (
-            <Card
-              label="Da verificare"
-              value={counts.to_verify ?? 0}
-              to="/admin/pagamenti"
-              tone={(counts.to_verify ?? 0) > 0 ? "warning" : "default"}
-            />
-          ) : null}
-          <Card label="In attesa di pagamento" value={counts.awaiting_payment ?? 0} />
-        </div>
-      </section>
+      {!setup.readyToTrade ? (
+        <p className="notice notice--warning" role="status">
+          Configurazione al <strong className="numeric">{setup.percentage}%</strong>. Alcuni
+          passaggi obbligatori mancano ancora: finché restano aperti il negozio non è pronto a
+          vendere. <Link to="/admin/configurazione">Vedi cosa manca</Link>.
+        </p>
+      ) : null}
 
-      <section>
-        <h2>Da fare</h2>
-        <div className="admin-cards">
-          <Card
-            label="Pronti per il ritiro"
-            value={counts.ready_for_pickup ?? 0}
-            to="/admin/ordini"
-          />
-          <Card label="In preparazione" value={counts.processing ?? 0} to="/admin/ordini" />
-          <Card
-            label="Scorte in esaurimento"
-            value={counts.low_stock ?? 0}
-            to="/admin/inventario"
-            tone={(counts.low_stock ?? 0) > 0 ? "warning" : "default"}
-          />
-          <Card label="Esauriti" value={counts.out_of_stock ?? 0} to="/admin/inventario" />
-        </div>
-      </section>
+      {/* ── What needs me ─────────────────────────────────────────────────── */}
+      <section className="stack" aria-labelledby="azioni">
+        <h2 id="azioni">Da fare adesso</h2>
 
-      <section>
-        <h2>Sistema</h2>
-        <div className="admin-cards">
-          <Card
-            label="Prenotazioni scadute non rilasciate"
-            value={counts.overdue_reservations ?? 0}
-            tone={(counts.overdue_reservations ?? 0) > 0 ? "warning" : "default"}
-          />
-          <Card
-            label={sweeperStale ? "Job automatico: NON attivo" : "Job automatico: attivo"}
-            value={lastJob ? lastJob.status : "mai eseguito"}
-            tone={sweeperStale ? "warning" : "default"}
-          />
-        </div>
-        {sweeperStale ? (
-          <p className="notice notice--warning small">
-            Il job di rilascio prenotazioni non risulta eseguito di recente. Se non gira, le scorte
-            restano bloccate e i prodotti spariscono dalla vendita. Vedi{" "}
-            <code>docs/operations-runbook.md</code>.
+        {isClear(actions) ? (
+          <p className="notice notice--success" role="status">
+            Non c&apos;è nulla in attesa. Nessun pagamento da verificare, nessun ordine da
+            preparare, nessuna scorta esaurita.
           </p>
-        ) : null}
+        ) : (
+          <ul className="ac-actions">
+            {actions.map((item) => (
+              <ActionRow key={item.id} item={item} />
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {/* ── What happened ─────────────────────────────────────────────────── */}
+      <section className="stack" style={{ marginBlockStart: "var(--space-6)" }}>
+        <h2>Ultime 24 ore</h2>
+        <div className="ac-metrics">
+          <Metric label="Ordini ricevuti" value={metrics.ordersToday} to="/admin/ordini" />
+          <Metric
+            label="Valore degli ordini"
+            value={formatMoney(money(metrics.valueToday))}
+            // Calling this "incasso" would be a lie: most of it is not paid yet.
+            note="Ordini creati, non incassati"
+          />
+          {canSeePayments ? (
+            <>
+              <Metric
+                label="Pagamenti verificati"
+                value={formatMoney(money(metrics.verifiedToday))}
+                note="Confermati da una persona"
+              />
+              <Metric
+                label="Pagamenti da verificare"
+                value={metrics.toVerify}
+                to="/admin/pagamenti?stato=da-verificare"
+              />
+            </>
+          ) : null}
+          <Metric
+            label="Ritiri da preparare"
+            value={metrics.pickupsToPrepare}
+            to="/admin/ordini?consegna=ritiro&stato=da-preparare"
+          />
+          <Metric
+            label="Scorte in esaurimento"
+            value={metrics.lowStock}
+            to="/admin/inventario?vista=scorte-basse"
+          />
+        </div>
+        <p className="caption muted">
+          Ordini negli ultimi 7 giorni: <span className="numeric">{metrics.ordersWeek}</span>.
+          Nessun grafico: con questi volumi una curva direbbe più di quanto i dati sappiano.
+        </p>
       </section>
 
       {/*
-        Not an error list. This is the honest answer to "why is my phone number
-        not on the site?" — the feature is off because the value is empty.
+        Not an error list. The honest answer to "why is my phone number not on
+        the site?" — the feature is off because the value is empty.
       */}
       {gates.length > 0 ? (
-        <section>
+        <section className="stack" style={{ marginBlockStart: "var(--space-6)" }}>
           <h2>Funzioni nascoste sul sito</h2>
           <p className="small muted">
             Queste parti del sito non vengono mostrate perché mancano i dati. Non viene inventato
@@ -187,6 +298,6 @@ export default function AdminDashboard({ loaderData }: Route.ComponentProps) {
           </p>
         </section>
       ) : null}
-    </div>
+    </>
   );
 }

@@ -1,7 +1,7 @@
 # Hostinger admin benchmark
 
 Research for the **Merchant Control Centre** milestone. The goal is to reach
-Hostinger Store Manager's *ease of use* for a non-technical shopkeeper, without
+Hostinger Store Manager's _ease of use_ for a non-technical shopkeeper, without
 adopting its data model, its shortcuts, or anything of its visual identity.
 
 ---
@@ -10,15 +10,15 @@ adopting its data model, its shortcuts, or anything of its visual identity.
 
 Public Hostinger support documentation only, fetched 2026-08-31:
 
-| Topic | URL |
-|---|---|
-| What is Hostinger Ecommerce | `/support/hostinger-ecommerce-what-is-hostinger-ecommerce/` |
-| Adding products | `/support/6538344-…-how-to-add-products/` |
-| Managing orders | `/support/6539027-…-how-to-manage-orders-in-the-online-store/` |
-| Store settings | `/support/6538340-…-how-to-access-the-online-store-settings/` |
-| Manual/offline payments | `/support/6538417-…-how-to-enable-manual-offline-payments/` |
-| Shipping setup | `/support/6538842-…-how-to-set-up-shipping/` |
-| Discount codes | `/support/6539054-…-how-to-create-discount-codes-in-the-online-store/` |
+| Topic                       | URL                                                                    |
+| --------------------------- | ---------------------------------------------------------------------- |
+| What is Hostinger Ecommerce | `/support/hostinger-ecommerce-what-is-hostinger-ecommerce/`            |
+| Adding products             | `/support/6538344-…-how-to-add-products/`                              |
+| Managing orders             | `/support/6539027-…-how-to-manage-orders-in-the-online-store/`         |
+| Store settings              | `/support/6538340-…-how-to-access-the-online-store-settings/`          |
+| Manual/offline payments     | `/support/6538417-…-how-to-enable-manual-offline-payments/`            |
+| Shipping setup              | `/support/6538842-…-how-to-set-up-shipping/`                           |
+| Discount codes              | `/support/6539054-…-how-to-create-discount-codes-in-the-online-store/` |
 
 **No Hostinger account was accessed, no authentication was attempted, and no
 private interface was inspected.** Everything below comes from documentation
@@ -50,8 +50,8 @@ customer.
 
 **Manual payments are two fields and a toggle**: a customer-facing method name,
 free-text instructions shown at checkout and in the confirmation email, and
-"enable at checkout". Orders land in *Awaiting*; a merchant changes the status
-to *Paid* by hand.
+"enable at checkout". Orders land in _Awaiting_; a merchant changes the status
+to _Paid_ by hand.
 
 **Product creation is one long form**, not a wizard: type, basics, pricing,
 inventory, options, categories. Variants are a unified "options" system, up to
@@ -68,34 +68,34 @@ conditions.
 
 ## 3. Adopted
 
-| Pattern | Why it earns its place here |
-|---|---|
-| **Computed setup checklist** | A shopkeeper opening an empty admin needs a next action, not a blank canvas. Ours is *derived from data*, never stored booleans — see §7. |
-| **Status tabs as saved views** | A merchant thinks "show me what needs paying", not "add filter → status → equals → awaiting". |
-| **Overview = metrics + what needs doing + recent orders** | The right shape for a daily open-the-laptop screen. |
-| **Private merchant notes on orders** | Genuinely needed, and we already separate internal from customer-visible notes in the schema. |
-| **Manual payments: method name + instructions + enable toggle** | Exactly the right minimum. We keep it and add the parts that protect the merchant. |
-| **Discount fields** (code, internal name, scope, cap, minimum, schedule, status) | A well-shaped model; ours matches it and adds a server-side snapshot on the order. |
-| **Shipping: zones → options → flat rate + conditions** | Simple and sufficient for one Italian shop. |
-| **Settings consolidated into one destination** | Rather than scattered across pages. |
-| **Empty states that teach** | Instead of an empty table. |
+| Pattern                                                                          | Why it earns its place here                                                                                                               |
+| -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **Computed setup checklist**                                                     | A shopkeeper opening an empty admin needs a next action, not a blank canvas. Ours is _derived from data_, never stored booleans — see §7. |
+| **Status tabs as saved views**                                                   | A merchant thinks "show me what needs paying", not "add filter → status → equals → awaiting".                                             |
+| **Overview = metrics + what needs doing + recent orders**                        | The right shape for a daily open-the-laptop screen.                                                                                       |
+| **Private merchant notes on orders**                                             | Genuinely needed, and we already separate internal from customer-visible notes in the schema.                                             |
+| **Manual payments: method name + instructions + enable toggle**                  | Exactly the right minimum. We keep it and add the parts that protect the merchant.                                                        |
+| **Discount fields** (code, internal name, scope, cap, minimum, schedule, status) | A well-shaped model; ours matches it and adds a server-side snapshot on the order.                                                        |
+| **Shipping: zones → options → flat rate + conditions**                           | Simple and sufficient for one Italian shop.                                                                                               |
+| **Settings consolidated into one destination**                                   | Rather than scattered across pages.                                                                                                       |
+| **Empty states that teach**                                                      | Instead of an empty table.                                                                                                                |
 
 ---
 
 ## 4. Rejected
 
-| Pattern | Why it is refused |
-|---|---|
-| **"AI will generate the product details from the uploaded images"** | This is the single most dangerous idea in the source material for *this* shop. Generated text becomes a specification, and a specification becomes a compatibility claim. A hallucinated "compatible with iPhone 16 Pro" costs a return, a refund and a review. Any AI assistance here stays a visibly-marked draft suggestion, and may never produce specifications, compatibility, or certifications. |
-| **Single long product form** | Our product carries variants, device compatibility with verification provenance, category-specific specifications, GPSR safety data and dual-language content. One page would be a wall. A six-step wizard with autosave is the honest shape for this data. |
-| **"Change payment status to Paid" from a dropdown** | This is the crux. Marking money received is a claim about the outside world, so ours requires `payment.verify`, a consumed step-up, the amount actually seen, a transaction reference or a written reason, and it writes an immutable audit row. A dropdown is not a control. |
-| **Automatic 24-hour inventory reservation as hidden behaviour** | Ours is explicit, configurable per payment method, shown to the customer as a real deadline, and released by an idempotent sweeper. |
-| **Product types we do not sell** | Digital, appointments, donations, gift cards, print-on-demand. Every unused type is a field a shopkeeper has to ignore forever. |
-| **Email-marketing dashboard** | No email provider is configured, and a marketing surface that cannot send is a lie. |
-| **Sales-channel switcher** | One channel. |
-| **Sparkline charts on every metric** | With a handful of orders a day, a sparkline is decoration that implies a trend the data cannot support. |
-| **Purple** | We have our own art direction. Copying a palette is the laziest form of imitation and would make the product look like a clone of something it is not. |
-| **Print-on-demand / TikTok Shop / Printful integrations** | Out of scope, and each would be an integration card that never connects. |
+| Pattern                                                             | Why it is refused                                                                                                                                                                                                                                                                                                                                                                                       |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **"AI will generate the product details from the uploaded images"** | This is the single most dangerous idea in the source material for _this_ shop. Generated text becomes a specification, and a specification becomes a compatibility claim. A hallucinated "compatible with iPhone 16 Pro" costs a return, a refund and a review. Any AI assistance here stays a visibly-marked draft suggestion, and may never produce specifications, compatibility, or certifications. |
+| **Single long product form**                                        | Our product carries variants, device compatibility with verification provenance, category-specific specifications, GPSR safety data and dual-language content. One page would be a wall. A six-step wizard with autosave is the honest shape for this data.                                                                                                                                             |
+| **"Change payment status to Paid" from a dropdown**                 | This is the crux. Marking money received is a claim about the outside world, so ours requires `payment.verify`, a consumed step-up, the amount actually seen, a transaction reference or a written reason, and it writes an immutable audit row. A dropdown is not a control.                                                                                                                           |
+| **Automatic 24-hour inventory reservation as hidden behaviour**     | Ours is explicit, configurable per payment method, shown to the customer as a real deadline, and released by an idempotent sweeper.                                                                                                                                                                                                                                                                     |
+| **Product types we do not sell**                                    | Digital, appointments, donations, gift cards, print-on-demand. Every unused type is a field a shopkeeper has to ignore forever.                                                                                                                                                                                                                                                                         |
+| **Email-marketing dashboard**                                       | No email provider is configured, and a marketing surface that cannot send is a lie.                                                                                                                                                                                                                                                                                                                     |
+| **Sales-channel switcher**                                          | One channel.                                                                                                                                                                                                                                                                                                                                                                                            |
+| **Sparkline charts on every metric**                                | With a handful of orders a day, a sparkline is decoration that implies a trend the data cannot support.                                                                                                                                                                                                                                                                                                 |
+| **Purple**                                                          | We have our own art direction. Copying a palette is the laziest form of imitation and would make the product look like a clone of something it is not.                                                                                                                                                                                                                                                  |
+| **Print-on-demand / TikTok Shop / Printful integrations**           | Out of scope, and each would be an integration card that never connects.                                                                                                                                                                                                                                                                                                                                |
 
 ---
 
@@ -112,7 +112,7 @@ counter and a stockroom.
 
 - **No Hostinger source code, markup, CSS, images, icons, fonts or copy is
   present in this repository.** Nothing was downloaded from their product.
-- Only *public support documentation* was read, and only for interaction
+- Only _public support documentation_ was read, and only for interaction
   concepts — the same way one reads a book about shop layout.
 - Colours, type, spacing, radii and component shapes come from the existing
   Italian Tech Atelier token set, which predates this research.
@@ -182,6 +182,6 @@ repository — which also means there is nothing to accidentally ship.
 file, brand element or copy text ships in this product, in this repository, or
 in any build artefact.**
 
-The research informed *what problems the interface should solve and in what
-order*. Every line of the implementation is original work built on this
+The research informed _what problems the interface should solve and in what
+order_. Every line of the implementation is original work built on this
 project's own design system and domain model.

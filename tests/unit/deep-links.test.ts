@@ -3,6 +3,8 @@ import { buildActionCentre, type ActionSnapshot } from "~/domain/content/action-
 import { computeSetupSteps, type SetupSnapshot } from "~/domain/content/setup-steps";
 import { SETTING_KEYS } from "~/domain/content/gates";
 import { PRODUCT_VIEW_SLUGS } from "~/lib/product-views";
+import { ORDER_VIEW_SLUGS, PAYMENT_VIEW_SLUGS, ORDER_DELIVERY_FACET } from "~/lib/order-views";
+import { INVENTORY_VIEW_SLUGS } from "~/lib/inventory-views";
 
 /**
  * Deep links are a contract between three files that do not import each other.
@@ -66,44 +68,82 @@ const ALL_PERMISSIONS = [
   "settings.read",
 ];
 
-/** Every `?vista=` value any screen links to, with where it came from. */
-function productViewsLinkedFrom(hrefs: { source: string; href: string }[]) {
+/**
+ * The lists that accept a `?vista=`, and the slugs each one actually declares.
+ *
+ * `/admin/personale` and `/admin/compatibilita` are absent on purpose: their
+ * saved views are not built yet, so there is nothing to check them against.
+ * They are listed in KNOWN_UNBUILT below so that this omission is a recorded
+ * decision rather than something that quietly fell out of the test.
+ */
+const LIST_VIEWS: Record<string, readonly string[]> = {
+  "/admin/prodotti": PRODUCT_VIEW_SLUGS,
+  "/admin/ordini": ORDER_VIEW_SLUGS,
+  "/admin/pagamenti": PAYMENT_VIEW_SLUGS,
+  "/admin/inventario": INVENTORY_VIEW_SLUGS,
+};
+
+const KNOWN_UNBUILT = ["/admin/personale", "/admin/compatibilita"];
+
+/** Every `?vista=` a screen links to, paired with where it came from. */
+function viewsLinkedFrom(hrefs: { source: string; href: string }[]) {
   return hrefs
-    .filter(({ href }) => href.startsWith("/admin/prodotti?"))
-    .map(({ source, href }) => ({
-      source,
-      view: new URL(href, "https://example.invalid").searchParams.get("vista"),
-    }))
-    .filter((entry): entry is { source: string; view: string } => entry.view !== null);
+    .map(({ source, href }) => {
+      const url = new URL(href, "https://example.invalid");
+      return { source, href, path: url.pathname, params: url.searchParams };
+    })
+    .filter((entry) => entry.params.has("vista"));
+}
+
+function expectViewsResolve(linked: ReturnType<typeof viewsLinkedFrom>) {
+  // If this is zero the test has quietly stopped testing anything.
+  expect(linked.length).toBeGreaterThan(0);
+
+  for (const { source, href, path, params } of linked) {
+    const declared = LIST_VIEWS[path];
+    if (declared === undefined) {
+      // A link into a list with no saved views yet is fine, but only for the
+      // screens we have consciously not built.
+      expect(KNOWN_UNBUILT, `"${source}" links to ${path}, which declares no views`).toContain(
+        path,
+      );
+      continue;
+    }
+    expect(declared, `"${source}" links to ${href}`).toContain(params.get("vista"));
+  }
 }
 
 describe("product deep links resolve to real saved views", () => {
   it("from the action centre", () => {
-    const linked = productViewsLinkedFrom(
-      buildActionCentre(BUSY, ALL_PERMISSIONS).map((i) => ({ source: i.id, href: i.href })),
+    expectViewsResolve(
+      viewsLinkedFrom(
+        buildActionCentre(BUSY, ALL_PERMISSIONS).map((i) => ({ source: i.id, href: i.href })),
+      ),
     );
+  });
 
-    // If this is zero the test has stopped testing anything.
-    expect(linked.length).toBeGreaterThan(0);
+  it("uses the parameter name the lists actually parse", () => {
+    // This test exists because the first version of the action centre linked to
+    // `?stato=da-verificare` while the payments screen read `?vista=`. Nothing
+    // failed: the page loaded, showed the default view, and looked correct.
+    for (const item of buildActionCentre(BUSY, ALL_PERMISSIONS)) {
+      const params = new URL(item.href, "https://example.invalid").searchParams;
+      expect([...params.keys()], item.id).not.toContain("stato");
+    }
+  });
 
-    for (const { source, view } of linked) {
-      expect(
-        PRODUCT_VIEW_SLUGS,
-        `action centre item "${source}" links to ?vista=${view}`,
-      ).toContain(view);
+  it("only uses declared facet values", () => {
+    for (const item of buildActionCentre(BUSY, ALL_PERMISSIONS)) {
+      const consegna = new URL(item.href, "https://example.invalid").searchParams.get("consegna");
+      if (consegna === null) continue;
+      expect(Object.keys(ORDER_DELIVERY_FACET), item.id).toContain(consegna);
     }
   });
 
   it("from the setup centre", () => {
-    const linked = productViewsLinkedFrom(
-      computeSetupSteps(EMPTY_SETUP).map((s) => ({ source: s.id, href: s.href })),
+    expectViewsResolve(
+      viewsLinkedFrom(computeSetupSteps(EMPTY_SETUP).map((s) => ({ source: s.id, href: s.href }))),
     );
-
-    expect(linked.length).toBeGreaterThan(0);
-
-    for (const { source, view } of linked) {
-      expect(PRODUCT_VIEW_SLUGS, `setup step "${source}" links to ?vista=${view}`).toContain(view);
-    }
   });
 });
 

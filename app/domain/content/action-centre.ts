@@ -113,7 +113,7 @@ export function buildActionCentre(
         "Il cliente ha inviato una ricevuta e sta aspettando. Nessun ordine avanza finché una persona non controlla.",
       count: s.paymentsToVerify,
       severity: "blocking",
-      href: "/admin/pagamenti?stato=da-verificare",
+      href: "/admin/pagamenti?vista=da-verificare",
       permission: "payment.read",
     },
     {
@@ -123,7 +123,7 @@ export function buildActionCentre(
         "Il cliente ha ordinato ma non ha ancora ricevuto le istruzioni di pagamento su WhatsApp.",
       count: s.ordersAwaitingContact,
       severity: "blocking",
-      href: "/admin/ordini?stato=da-contattare",
+      href: "/admin/ordini?vista=da-contattare",
       permission: "order.read",
     },
     {
@@ -132,7 +132,7 @@ export function buildActionCentre(
       detail: "Qualcuno ha aperto la verifica e non l'ha chiusa. Il cliente resta in attesa.",
       count: s.paymentsUnderVerification,
       severity: "attention",
-      href: "/admin/pagamenti?stato=in-verifica",
+      href: "/admin/pagamenti?vista=in-verifica",
       permission: "payment.read",
     },
     {
@@ -141,7 +141,7 @@ export function buildActionCentre(
       detail: "Pagati e da mettere da parte prima che il cliente si presenti in negozio.",
       count: s.pickupsToPrepare,
       severity: "attention",
-      href: "/admin/ordini?consegna=ritiro&stato=da-preparare",
+      href: "/admin/ordini?vista=da-preparare&consegna=ritiro",
       permission: "order.read",
     },
     {
@@ -150,7 +150,7 @@ export function buildActionCentre(
       detail: "Pagati e in attesa di partire.",
       count: s.ordersToShip,
       severity: "attention",
-      href: "/admin/ordini?consegna=spedizione&stato=da-preparare",
+      href: "/admin/ordini?vista=da-preparare&consegna=spedizione",
       permission: "order.read",
     },
     {

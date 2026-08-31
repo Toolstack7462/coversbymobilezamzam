@@ -4,6 +4,11 @@ import { cloudflareContext } from "../../../workers/app";
 import { requireStaff } from "~/infrastructure/auth/session.server";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
 import { availabilityState } from "~/domain/inventory/availability";
+import { parseTableParams, paginate, orderByClause, type TableSpec } from "~/lib/table-params";
+import { INVENTORY_VIEWS, INVENTORY_VIEW_SLUGS } from "~/lib/inventory-views";
+import { breadcrumbsFor } from "~/lib/admin-nav";
+import { PageHeader } from "~/components/admin/admin-shell";
+import { Link } from "react-router";
 
 /**
  * Inventory.
@@ -24,38 +29,97 @@ const REASONS = [
   ["other", "Altro"],
 ] as const;
 
+/**
+ * The stock list keeps its per-row adjustment form rather than becoming a
+ * DataTable: an adjustment needs a quantity, a reason and a note beside the
+ * current count, and a table row cannot hold that honestly.
+ *
+ * It shares the URL-state convention so the action centre's links land on the
+ * right filter, and it now pages, because a shop with 800 variants was
+ * previously served a silently truncated list of 200.
+ */
+const SPEC: TableSpec = {
+  views: INVENTORY_VIEW_SLUGS,
+  sortable: ["available", "product", "sku"],
+  defaultSort: { key: "available", direction: "asc" },
+  perPage: 50,
+};
+
+const SORT_COLUMNS: Record<string, string> = {
+  available: "(il.on_hand - il.reserved)",
+  product: "pt.name",
+  sku: "v.sku",
+};
+
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
   const actor = await requireStaff(request, env, "inventory.read");
 
-  const { results } = await env.DB.prepare(
-    `SELECT il.id, il.variant_id, il.location_id, il.on_hand, il.reserved,
-            il.reorder_threshold, il.allow_backorder,
-            v.sku, v.variant_label, pt.name AS product_name, loc.name AS location_name
-       FROM inventory_levels il
+  const url = new URL(request.url);
+  const state = parseTableParams(url.searchParams, SPEC);
+  const view = INVENTORY_VIEWS.find((v) => v.slug === state.view) ?? INVENTORY_VIEWS[0]!;
+
+  const from = `FROM inventory_levels il
        JOIN product_variants v ON v.id = il.variant_id
        JOIN products p ON p.id = v.product_id
        LEFT JOIN product_translations pt ON pt.product_id = p.id AND pt.locale = 'it'
-       JOIN inventory_locations loc ON loc.id = il.location_id
-      WHERE v.archived_at IS NULL
-      ORDER BY (il.on_hand - il.reserved) ASC, pt.name ASC
-      LIMIT 200`,
-  ).all<{
-    id: string;
-    variant_id: string;
-    location_id: string;
-    on_hand: number;
-    reserved: number;
-    reorder_threshold: number | null;
-    allow_backorder: number;
-    sku: string;
-    variant_label: string | null;
-    product_name: string | null;
-    location_name: string;
-  }>();
+       JOIN inventory_locations loc ON loc.id = il.location_id`;
+
+  const conditions = [`v.archived_at IS NULL`, view.where];
+  const binds: unknown[] = [];
+
+  if (state.q) {
+    binds.push(`%${state.q.toLowerCase()}%`);
+    conditions.push(`(LOWER(v.sku) LIKE ?${binds.length} OR LOWER(pt.name) LIKE ?${binds.length})`);
+  }
+
+  const where = conditions.join(" AND ");
+  const orderBy = orderByClause(state.sort, SORT_COLUMNS, "(il.on_hand - il.reserved) ASC");
+
+  const [totalRow, listed, viewCounts] = await Promise.all([
+    env.DB.prepare(`SELECT COUNT(*) AS n ${from} WHERE ${where}`)
+      .bind(...binds)
+      .first<{ n: number }>(),
+
+    env.DB.prepare(
+      `SELECT il.id, il.variant_id, il.location_id, il.on_hand, il.reserved,
+            il.reorder_threshold, il.allow_backorder,
+            v.sku, v.variant_label, pt.name AS product_name, loc.name AS location_name
+       ${from}
+      WHERE ${where}
+      ORDER BY ${orderBy}, il.id
+      LIMIT ?${binds.length + 1} OFFSET ?${binds.length + 2}`,
+    )
+      .bind(...binds, state.perPage, (state.page - 1) * state.perPage)
+      .all<{
+        id: string;
+        variant_id: string;
+        location_id: string;
+        on_hand: number;
+        reserved: number;
+        reorder_threshold: number | null;
+        allow_backorder: number;
+        sku: string;
+        variant_label: string | null;
+        product_name: string | null;
+        location_name: string;
+      }>(),
+
+    env.DB.prepare(
+      `SELECT ${INVENTORY_VIEWS.map((v, i) => `SUM(CASE WHEN ${v.where} THEN 1 ELSE 0 END) AS v${i}`).join(", ")}
+         ${from} WHERE v.archived_at IS NULL`,
+    ).first<Record<string, number>>(),
+  ]);
 
   return {
-    levels: results.map((level) => ({
+    state,
+    pagination: paginate(state, totalRow?.n ?? 0),
+    views: INVENTORY_VIEWS.map((v, i) => ({
+      slug: v.slug,
+      label: v.label,
+      count: Number(viewCounts?.[`v${i}`] ?? 0),
+    })),
+    levels: listed.results.map((level) => ({
       ...level,
       available: Math.max(0, level.on_hand - level.reserved),
       state: availabilityState({
@@ -171,11 +235,32 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function AdminInventory({ loaderData, actionData }: Route.ComponentProps) {
-  const { levels, canAdjust } = loaderData;
+  const { levels, state, pagination, views, canAdjust } = loaderData;
 
   return (
-    <div className="stack">
-      <h1>Inventario</h1>
+    <>
+      <PageHeader
+        title="Inventario"
+        description="Disponibile = giacenza meno prenotato. Ogni rettifica richiede un motivo e resta registrata."
+        breadcrumbs={breadcrumbsFor("/admin/inventario")}
+      />
+
+      <nav className="ac-views" aria-label="Viste salvate">
+        <ul>
+          {views.map((v) => (
+            <li key={v.slug}>
+              <Link
+                to={v.slug === INVENTORY_VIEW_SLUGS[0] ? "?" : `?vista=${v.slug}`}
+                className={v.slug === state.view ? "ac-view ac-view--active" : "ac-view"}
+                aria-current={v.slug === state.view ? "page" : undefined}
+              >
+                {v.label}
+                {v.count > 0 ? <span className="ac-view__count numeric">{v.count}</span> : null}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
@@ -187,10 +272,6 @@ export default function AdminInventory({ loaderData, actionData }: Route.Compone
           {actionData.success}
         </p>
       ) : null}
-
-      <p className="small muted">
-        Disponibile = giacenza − prenotato. Ogni rettifica richiede un motivo e resta registrata.
-      </p>
 
       {levels.length === 0 ? (
         <div className="empty-state">
@@ -295,6 +376,39 @@ export default function AdminInventory({ loaderData, actionData }: Route.Compone
           </table>
         </div>
       )}
-    </div>
+
+      {levels.length > 0 ? (
+        <nav className="ac-pagination" aria-label="Paginazione">
+          <p className="small muted">
+            <span className="numeric">
+              {pagination.firstRow}–{pagination.lastRow}
+            </span>{" "}
+            di <span className="numeric">{pagination.total}</span>
+          </p>
+          <div className="cluster">
+            {pagination.hasPrevious ? (
+              <Link
+                className="btn btn--secondary"
+                to={`?vista=${state.view}&pagina=${pagination.page - 1}`}
+              >
+                Precedente
+              </Link>
+            ) : null}
+            <span className="small">
+              Pagina <span className="numeric">{pagination.page}</span> di{" "}
+              <span className="numeric">{pagination.totalPages}</span>
+            </span>
+            {pagination.hasNext ? (
+              <Link
+                className="btn btn--secondary"
+                to={`?vista=${state.view}&pagina=${pagination.page + 1}`}
+              >
+                Successiva
+              </Link>
+            ) : null}
+          </div>
+        </nav>
+      ) : null}
+    </>
   );
 }

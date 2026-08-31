@@ -7,6 +7,8 @@ import { money, format as formatMoney } from "~/domain/pricing/money";
 import { gateStatuses, type SettingsMap } from "~/domain/content/gates";
 import { buildActionCentre, isClear, type ActionItem } from "~/domain/content/action-centre";
 import { computeSetupSteps, summariseSetup } from "~/domain/content/setup-steps";
+import { ORDER_VIEWS, PAYMENT_VIEWS, ORDER_DELIVERY_FACET } from "~/lib/order-views";
+import { INVENTORY_VIEWS } from "~/lib/inventory-views";
 import { breadcrumbsFor } from "~/lib/admin-nav";
 import { PageHeader } from "~/components/admin/admin-shell";
 import { loadSetupSnapshot } from "./setup-centre";
@@ -20,6 +22,20 @@ import { loadSetupSnapshot } from "./setup-centre";
  * invites conclusions the sample cannot support. Every number here is a real
  * count someone can act on, and every one links to the screen where they act.
  */
+
+/**
+ * The metric and action-centre counts are built from the SAME clauses the
+ * saved views use, so a badge can never disagree with the list it opens.
+ */
+const clause = (views: readonly { slug: string; where: string }[], slug: string): string =>
+  views.find((v) => v.slug === slug)!.where;
+
+const TO_PREPARE = clause(ORDER_VIEWS, "da-preparare");
+const TO_CONTACT = clause(ORDER_VIEWS, "da-contattare");
+const TO_VERIFY = clause(PAYMENT_VIEWS, "da-verificare");
+const UNDER_VERIFICATION = clause(PAYMENT_VIEWS, "in-verifica");
+const LOW_STOCK = clause(INVENTORY_VIEWS, "scorte-basse");
+const OUT_OF_STOCK = clause(INVENTORY_VIEWS, "esauriti");
 
 export function meta() {
   return [{ title: "Panoramica" }, { name: "robots", content: "noindex, nofollow" }];
@@ -47,21 +63,22 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         (SELECT COALESCE(SUM(p.amount_received), 0) FROM order_payments p
           WHERE p.status = 'verified' AND p.verified_at > ?1) AS verified_today,
 
-        (SELECT COUNT(*) FROM order_payments
-          WHERE status IN ('proof_received','under_verification')) AS to_verify,
-        (SELECT COUNT(*) FROM order_payments
-          WHERE status = 'under_verification') AS under_verification,
-        (SELECT COUNT(*) FROM orders WHERE status = 'awaiting_customer_contact') AS awaiting_contact,
+        (SELECT COUNT(*) FROM order_payments op WHERE ${TO_VERIFY}) AS to_verify,
+        (SELECT COUNT(*) FROM order_payments op WHERE ${UNDER_VERIFICATION}) AS under_verification,
+        (SELECT COUNT(*) FROM orders o WHERE ${TO_CONTACT}) AS awaiting_contact,
 
+        -- Built FROM the saved-view definitions rather than restated here. A
+        -- badge reading 4 that opens a list of 7 is read as broken software,
+        -- and it is the merchant left to reconcile the difference. Deriving
+        -- both from one source makes that drift impossible rather than merely
+        -- unlikely.
         (SELECT COUNT(*) FROM orders o
-          WHERE o.status = 'processing' AND o.delivery_method = 'pickup') AS pickups_to_prepare,
+          WHERE ${TO_PREPARE} AND ${ORDER_DELIVERY_FACET["ritiro"]}) AS pickups_to_prepare,
         (SELECT COUNT(*) FROM orders o
-          WHERE o.status = 'processing' AND o.delivery_method = 'shipping') AS orders_to_ship,
+          WHERE ${TO_PREPARE} AND ${ORDER_DELIVERY_FACET["spedizione"]}) AS orders_to_ship,
 
-        (SELECT COUNT(*) FROM inventory_levels
-          WHERE reorder_threshold IS NOT NULL AND (on_hand - reserved) <= reorder_threshold
-            AND (on_hand - reserved) > 0) AS low_stock,
-        (SELECT COUNT(*) FROM inventory_levels WHERE (on_hand - reserved) <= 0) AS out_of_stock,
+        (SELECT COUNT(*) FROM inventory_levels il WHERE ${LOW_STOCK}) AS low_stock,
+        (SELECT COUNT(*) FROM inventory_levels il WHERE ${OUT_OF_STOCK}) AS out_of_stock,
         (SELECT COUNT(*) FROM stock_reservations
           WHERE status = 'active' AND expires_at < ?2) AS overdue_reservations`,
     )
@@ -251,14 +268,14 @@ export default function AdminDashboard({ loaderData }: Route.ComponentProps) {
               <Metric
                 label="Pagamenti da verificare"
                 value={metrics.toVerify}
-                to="/admin/pagamenti?stato=da-verificare"
+                to="/admin/pagamenti?vista=da-verificare"
               />
             </>
           ) : null}
           <Metric
             label="Ritiri da preparare"
             value={metrics.pickupsToPrepare}
-            to="/admin/ordini?consegna=ritiro&stato=da-preparare"
+            to="/admin/ordini?vista=da-preparare&consegna=ritiro"
           />
           <Metric
             label="Scorte in esaurimento"

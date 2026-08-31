@@ -12,6 +12,11 @@ import { systemClock, cryptoIds } from "~/infrastructure/primitives";
 import { money, format as formatMoney } from "~/domain/pricing/money";
 import { formatDateTime } from "~/lib/i18n";
 import { verifyPayment, VerifyPaymentInput } from "~/application/commands/verify-payment";
+import { parseTableParams, type TableSpec } from "~/lib/table-params";
+import { PAYMENT_VIEWS, PAYMENT_VIEW_SLUGS } from "~/lib/order-views";
+import { breadcrumbsFor } from "~/lib/admin-nav";
+import { PageHeader } from "~/components/admin/admin-shell";
+import { Link } from "react-router";
 
 /**
  * The verification queue.
@@ -24,13 +29,34 @@ import { verifyPayment, VerifyPaymentInput } from "~/application/commands/verify
  * against the real bank account or merchant app (invariant 6).
  */
 
+/**
+ * The queue keeps its card layout rather than becoming a DataTable.
+ *
+ * Verification is a judgement, not a row edit: expected, claimed and received
+ * amounts, the reference, the duplicate check and the reservation clock all
+ * have to be visible at the moment of deciding. Collapsing that into a table
+ * row would hide exactly the facts the decision rests on.
+ *
+ * It does share the URL-state convention, so `?vista=da-verificare` from the
+ * action centre lands on the right filter.
+ */
+const SPEC: TableSpec = {
+  views: PAYMENT_VIEW_SLUGS,
+  sortable: [],
+};
+
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
   const actor = await requireStaff(request, env, "payment.read");
   const now = systemClock.now();
 
-  const { results } = await env.DB.prepare(
-    `SELECT op.id, op.status, op.amount_expected, op.amount_claimed, op.amount_received,
+  const url = new URL(request.url);
+  const state = parseTableParams(url.searchParams, SPEC);
+  const view = PAYMENT_VIEWS.find((v) => v.slug === state.view) ?? PAYMENT_VIEWS[0]!;
+
+  const [{ results }, viewCounts] = await Promise.all([
+    env.DB.prepare(
+      `SELECT op.id, op.status, op.amount_expected, op.amount_claimed, op.amount_received,
             op.currency, op.transaction_reference, op.created_at,
             o.order_number, o.customer_first_name, o.customer_last_name,
             o.reservation_expires_at, o.status AS order_status,
@@ -43,32 +69,46 @@ export async function loader({ request, context }: Route.LoaderArgs) {
        FROM order_payments op
        JOIN orders o ON o.id = op.order_id
        LEFT JOIN payment_methods pm ON pm.id = op.payment_method_id
-      WHERE op.status IN ('awaiting_payment','proof_received','under_verification','partially_paid','overpaid')
+      WHERE ${view.where}
+      -- Oldest reservation clock first inside each urgency band: the customer
+      -- closest to losing their stock is the one to deal with next.
       ORDER BY
         CASE op.status WHEN 'proof_received' THEN 0 WHEN 'under_verification' THEN 1 ELSE 2 END,
         o.reservation_expires_at ASC
       LIMIT 100`,
-  ).all<{
-    id: string;
-    status: string;
-    amount_expected: number;
-    amount_claimed: number | null;
-    amount_received: number | null;
-    currency: string;
-    transaction_reference: string | null;
-    created_at: number;
-    order_number: string;
-    customer_first_name: string;
-    customer_last_name: string;
-    reservation_expires_at: number | null;
-    order_status: string;
-    method_name: string | null;
-    proof_count: number;
-    duplicate_count: number;
-  }>();
+    ).all<{
+      id: string;
+      status: string;
+      amount_expected: number;
+      amount_claimed: number | null;
+      amount_received: number | null;
+      currency: string;
+      transaction_reference: string | null;
+      created_at: number;
+      order_number: string;
+      customer_first_name: string;
+      customer_last_name: string;
+      reservation_expires_at: number | null;
+      order_status: string;
+      method_name: string | null;
+      proof_count: number;
+      duplicate_count: number;
+    }>(),
+
+    env.DB.prepare(
+      `SELECT ${PAYMENT_VIEWS.map((v, i) => `SUM(CASE WHEN ${v.where} THEN 1 ELSE 0 END) AS v${i}`).join(", ")}
+         FROM order_payments op`,
+    ).first<Record<string, number>>(),
+  ]);
 
   return {
     rows: results,
+    state,
+    views: PAYMENT_VIEWS.map((v, i) => ({
+      slug: v.slug,
+      label: v.label,
+      count: Number(viewCounts?.[`v${i}`] ?? 0),
+    })),
     canVerify: actor.permissions.includes("payment.verify"),
     // Drives whether the form asks for a password first.
     stepUpActive: actor.permissions.includes("payment.verify")
@@ -164,11 +204,32 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function AdminPayments({ loaderData, actionData }: Route.ComponentProps) {
-  const { rows, canVerify, stepUpActive, now } = loaderData;
+  const { rows, state, views, canVerify, stepUpActive, now } = loaderData;
 
   return (
-    <div className="stack">
-      <h1>Verifica pagamenti</h1>
+    <>
+      <PageHeader
+        title="Verifica pagamenti"
+        description="Ogni riga è un cliente che sta aspettando. Le più urgenti sono in cima."
+        breadcrumbs={breadcrumbsFor("/admin/pagamenti")}
+      />
+
+      <nav className="ac-views" aria-label="Viste salvate">
+        <ul>
+          {views.map((v) => (
+            <li key={v.slug}>
+              <Link
+                to={v.slug === PAYMENT_VIEW_SLUGS[0] ? "?" : `?vista=${v.slug}`}
+                className={v.slug === state.view ? "ac-view ac-view--active" : "ac-view"}
+                aria-current={v.slug === state.view ? "page" : undefined}
+              >
+                {v.label}
+                {v.count > 0 ? <span className="ac-view__count numeric">{v.count}</span> : null}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
 
       {/*
         The rule, stated on the screen where it applies. Staff are the control,
@@ -367,6 +428,6 @@ export default function AdminPayments({ loaderData, actionData }: Route.Componen
           </table>
         </div>
       )}
-    </div>
+    </>
   );
 }

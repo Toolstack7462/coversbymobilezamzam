@@ -11,6 +11,20 @@ import {
   isOrderStatus,
   type OrderStatus,
 } from "~/domain/orders/status";
+import { parseTableParams, paginate, orderByClause, type TableSpec } from "~/lib/table-params";
+import {
+  ORDER_VIEWS,
+  ORDER_VIEW_SLUGS,
+  ORDER_DELIVERY_FACET,
+  ORDER_STATUS_LABELS,
+  PAYMENT_STATUS_LABELS,
+  DELIVERY_LABELS,
+  orderStatusTone,
+  paymentStatusTone,
+} from "~/lib/order-views";
+import { breadcrumbsFor } from "~/lib/admin-nav";
+import { PageHeader } from "~/components/admin/admin-shell";
+import { DataTable, type Column } from "~/components/admin/data-table";
 
 /**
  * Orders.
@@ -18,48 +32,113 @@ import {
  * The status dropdown offers exactly the transitions the state machine allows
  * from the current status — not every status. A UI that offers a move the
  * domain will reject is a bug in front of staff.
+ *
+ * Statuses are shown in Italian throughout. The database stores English
+ * snake_case, which is correct; showing `awaiting_customer_contact` to a
+ * shopkeeper is not. The translation lives in one map so three screens cannot
+ * end up disagreeing about what a status is called.
  */
+
+export function meta() {
+  return [{ title: "Ordini" }, { name: "robots", content: "noindex, nofollow" }];
+}
+
+const SPEC: TableSpec = {
+  views: ORDER_VIEW_SLUGS,
+  sortable: ["number", "customer", "total", "status", "created"],
+  defaultSort: { key: "created", direction: "desc" },
+  facets: { consegna: Object.keys(ORDER_DELIVERY_FACET) },
+};
+
+const SORT_COLUMNS: Record<string, string> = {
+  number: "o.order_number",
+  customer: "o.customer_last_name",
+  total: "o.grand_total",
+  status: "o.status",
+  created: "o.created_at",
+};
+
+interface OrderRow {
+  id: string;
+  order_number: string;
+  status: string;
+  grand_total: number;
+  delivery_method: string;
+  customer_first_name: string;
+  customer_last_name: string;
+  created_at: number;
+  reservation_expires_at: number | null;
+  payment_status: string | null;
+}
+
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
   const actor = await requireStaff(request, env, "order.read");
 
   const url = new URL(request.url);
-  const status = url.searchParams.get("stato") ?? "";
+  const state = parseTableParams(url.searchParams, SPEC);
+  const view = ORDER_VIEWS.find((v) => v.slug === state.view) ?? ORDER_VIEWS[0]!;
 
-  const where = status ? "WHERE o.status = ?1" : "";
-  const binds = status ? [status] : [];
+  const conditions: string[] = [view.where];
+  const binds: unknown[] = [];
 
-  const { results } = await env.DB.prepare(
-    `SELECT o.id, o.order_number, o.status, o.grand_total, o.delivery_method,
-            o.customer_first_name, o.customer_last_name, o.created_at,
-            o.reservation_expires_at, op.status AS payment_status
-       FROM orders o
-       LEFT JOIN order_payments op ON op.order_id = o.id
-       ${where}
-      ORDER BY o.created_at DESC
-      LIMIT 100`,
-  )
-    .bind(...binds)
-    .all<{
-      id: string;
-      order_number: string;
-      status: string;
-      grand_total: number;
-      delivery_method: string;
-      customer_first_name: string;
-      customer_last_name: string;
-      created_at: number;
-      reservation_expires_at: number | null;
-      payment_status: string | null;
-    }>();
+  const delivery = state.filters["consegna"];
+  if (delivery && ORDER_DELIVERY_FACET[delivery]) {
+    conditions.push(ORDER_DELIVERY_FACET[delivery]!);
+  }
+
+  if (state.q) {
+    // Order number, surname or email: the three things a customer says on the
+    // phone. Matched case-insensitively because none of them will be typed the
+    // way they were stored.
+    binds.push(`%${state.q.toLowerCase()}%`);
+    conditions.push(`(LOWER(o.order_number) LIKE ?${binds.length}
+                      OR LOWER(o.customer_last_name) LIKE ?${binds.length}
+                      OR LOWER(o.customer_first_name) LIKE ?${binds.length}
+                      OR LOWER(o.customer_email) LIKE ?${binds.length})`);
+  }
+
+  const where = conditions.join(" AND ");
+  const from = `FROM orders o
+       LEFT JOIN order_payments op ON op.order_id = o.id`;
+  const orderBy = orderByClause(state.sort, SORT_COLUMNS, "o.created_at DESC");
+
+  const [totalRow, page, viewCounts] = await Promise.all([
+    env.DB.prepare(`SELECT COUNT(*) AS n ${from} WHERE ${where}`)
+      .bind(...binds)
+      .first<{ n: number }>(),
+
+    env.DB.prepare(
+      `SELECT o.id, o.order_number, o.status, o.grand_total, o.delivery_method,
+              o.customer_first_name, o.customer_last_name, o.created_at,
+              o.reservation_expires_at, op.status AS payment_status
+         ${from}
+        WHERE ${where}
+        ORDER BY ${orderBy}, o.id
+        LIMIT ?${binds.length + 1} OFFSET ?${binds.length + 2}`,
+    )
+      .bind(...binds, state.perPage, (state.page - 1) * state.perPage)
+      .all<OrderRow>(),
+
+    env.DB.prepare(
+      `SELECT ${ORDER_VIEWS.map((v, i) => `SUM(CASE WHEN ${v.where} THEN 1 ELSE 0 END) AS v${i}`).join(", ")}
+         FROM orders o`,
+    ).first<Record<string, number>>(),
+  ]);
 
   return {
-    orders: results.map((order) => ({
+    rows: page.results.map((order) => ({
       ...order,
       // Computed server-side from the domain, so the UI cannot drift from it.
       allowed: isOrderStatus(order.status) ? allowedTransitions(order.status) : [],
     })),
-    filter: status,
+    state,
+    pagination: paginate(state, totalRow?.n ?? 0),
+    views: ORDER_VIEWS.map((v, i) => ({
+      slug: v.slug,
+      label: v.label,
+      count: Number(viewCounts?.[`v${i}`] ?? 0),
+    })),
     canWrite: actor.permissions.includes("order.write"),
   };
 }
@@ -157,24 +236,102 @@ export async function action({ request, context }: Route.ActionArgs) {
   return { success: `Ordine aggiornato: ${to}.` };
 }
 
-const FILTERS = [
-  "",
-  "awaiting_payment",
-  "payment_under_review",
-  "paid",
-  "processing",
-  "ready_for_pickup",
-  "shipped",
-  "cancelled",
-  "expired",
-];
+type Row = OrderRow & { allowed: readonly OrderStatus[] };
 
 export default function AdminOrders({ loaderData, actionData }: Route.ComponentProps) {
-  const { orders, filter, canWrite } = loaderData;
+  const { rows, state, pagination, views, canWrite } = loaderData;
+
+  const columns: Column<Row>[] = [
+    {
+      key: "number",
+      header: "Ordine",
+      numeric: true,
+      render: (row) => <Link to={`/admin/ordini/${row.id}`}>{row.order_number}</Link>,
+    },
+    {
+      key: "customer",
+      header: "Cliente",
+      render: (row) => `${row.customer_first_name} ${row.customer_last_name}`.trim() || "—",
+    },
+    {
+      key: "total",
+      header: "Totale",
+      numeric: true,
+      render: (row) => formatMoney(money(row.grand_total)),
+    },
+    {
+      key: "delivery",
+      header: "Consegna",
+      secondary: true,
+      render: (row) => DELIVERY_LABELS[row.delivery_method] ?? row.delivery_method,
+    },
+    {
+      key: "status",
+      header: "Stato",
+      render: (row) => (
+        <span className={`badge ${orderStatusTone(row.status)}`}>
+          {isOrderStatus(row.status) ? ORDER_STATUS_LABELS[row.status] : row.status}
+        </span>
+      ),
+    },
+    {
+      key: "payment",
+      header: "Pagamento",
+      secondary: true,
+      render: (row) =>
+        row.payment_status === null ? (
+          <span className="muted">—</span>
+        ) : (
+          <span className={`badge ${paymentStatusTone(row.payment_status)}`}>
+            {PAYMENT_STATUS_LABELS[row.payment_status as keyof typeof PAYMENT_STATUS_LABELS] ??
+              row.payment_status}
+          </span>
+        ),
+    },
+    {
+      key: "created",
+      header: "Creato",
+      secondary: true,
+      render: (row) => <span className="small">{formatDateTime(row.created_at, "it")}</span>,
+    },
+    {
+      key: "move",
+      header: "Sposta a",
+      render: (row) =>
+        canWrite && row.allowed.length > 0 ? (
+          <Form method="post" className="cluster">
+            <input type="hidden" name="orderId" value={row.id} />
+            <label className="visually-hidden" htmlFor={`st-${row.id}`}>
+              Nuovo stato per l&apos;ordine {row.order_number}
+            </label>
+            <select id={`st-${row.id}`} name="status" className="input">
+              {/* Exactly the legal transitions, minus `paid`, which only the
+                  verification queue can set (invariant 6). */}
+              {row.allowed
+                .filter((s) => s !== "paid")
+                .map((s) => (
+                  <option key={s} value={s}>
+                    {ORDER_STATUS_LABELS[s]}
+                  </option>
+                ))}
+            </select>
+            <button type="submit" className="btn btn--secondary btn--small">
+              Applica
+            </button>
+          </Form>
+        ) : (
+          <span className="muted small">—</span>
+        ),
+    },
+  ];
 
   return (
-    <div className="stack">
-      <h1>Ordini</h1>
+    <>
+      <PageHeader
+        title="Ordini"
+        description="Ogni vista è una domanda pratica: chi devo contattare, cosa devo preparare."
+        breadcrumbs={breadcrumbsFor("/admin/ordini")}
+      />
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
@@ -187,83 +344,20 @@ export default function AdminOrders({ loaderData, actionData }: Route.ComponentP
         </p>
       ) : null}
 
-      <nav className="cluster" aria-label="Filtra per stato">
-        {FILTERS.map((value) => (
-          <Link
-            key={value || "all"}
-            to={value ? `/admin/ordini?stato=${value}` : "/admin/ordini"}
-            className="chip"
-            aria-pressed={filter === value}
-          >
-            {value || "Tutti"}
-          </Link>
-        ))}
-      </nav>
-
-      {orders.length === 0 ? (
-        <div className="empty-state">
-          <p>Nessun ordine{filter ? ` con stato "${filter}"` : ""}.</p>
-        </div>
-      ) : (
-        <div className="admin-table-wrap">
-          <table className="admin-table">
-            <caption className="visually-hidden">Elenco ordini</caption>
-            <thead>
-              <tr>
-                <th scope="col">Ordine</th>
-                <th scope="col">Cliente</th>
-                <th scope="col">Totale</th>
-                <th scope="col">Consegna</th>
-                <th scope="col">Stato</th>
-                <th scope="col">Pagamento</th>
-                <th scope="col">Creato</th>
-                <th scope="col">Azione</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((order) => (
-                <tr key={order.id}>
-                  <td className="numeric">{order.order_number}</td>
-                  <td>
-                    {order.customer_first_name} {order.customer_last_name}
-                  </td>
-                  <td className="numeric">{formatMoney(money(order.grand_total))}</td>
-                  <td className="small">{order.delivery_method}</td>
-                  <td className="small">{order.status}</td>
-                  <td className="small">{order.payment_status ?? "—"}</td>
-                  <td className="small">{formatDateTime(order.created_at, "it")}</td>
-                  <td>
-                    {canWrite && order.allowed.length > 0 ? (
-                      <Form method="post" className="cluster">
-                        <input type="hidden" name="orderId" value={order.id} />
-                        <label className="visually-hidden" htmlFor={`st-${order.id}`}>
-                          Nuovo stato
-                        </label>
-                        <select id={`st-${order.id}`} name="status" className="input">
-                          {/* Exactly the legal transitions, minus `paid`,
-                              which only the verification queue can set. */}
-                          {order.allowed
-                            .filter((s: OrderStatus) => s !== "paid")
-                            .map((s: OrderStatus) => (
-                              <option key={s} value={s}>
-                                {s}
-                              </option>
-                            ))}
-                        </select>
-                        <button type="submit" className="btn btn--secondary">
-                          Applica
-                        </button>
-                      </Form>
-                    ) : (
-                      <span className="muted small">—</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+      <DataTable
+        state={state}
+        spec={SPEC}
+        pagination={pagination}
+        columns={columns}
+        rows={rows}
+        rowKey={(row) => row.id}
+        views={views}
+        searchLabel="Cerca per numero, cognome o email"
+        emptyState={{
+          title: "Nessun ordine",
+          body: "Quando un cliente completa un ordine sul sito compare qui, insieme alle istruzioni di pagamento da inviargli.",
+        }}
+      />
+    </>
   );
 }

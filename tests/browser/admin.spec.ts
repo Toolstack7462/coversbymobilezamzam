@@ -70,6 +70,8 @@ test.describe("the signed-in admin", () => {
     { path: "/admin/sistema", heading: /stato del sistema/i, name: "system health" },
     { path: "/admin/registro", heading: /attivit|registro/i, name: "audit log" },
     { path: "/admin/importazioni", heading: /importa ed esporta/i, name: "import/export" },
+    { path: "/admin/clienti", heading: /clienti/i, name: "customers" },
+    { path: "/admin/sconti", heading: /sconti/i, name: "discounts" },
   ];
 
   for (const screen of SCREENS) {

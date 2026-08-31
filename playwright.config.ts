@@ -35,9 +35,22 @@ const BASE_URL = `http://127.0.0.1:${PORT}`;
 
 export default defineConfig({
   testDir: "tests/browser",
-  // Every spec here asserts on rendered output; none mutate shared state, so
-  // they can run together.
   fullyParallel: true,
+
+  /*
+   * Two workers, not the six Playwright picks by default.
+   *
+   * Everything behind this suite is ONE `wrangler dev` process backed by ONE
+   * SQLite file. Six browsers hammering it does not test the application; it
+   * tests the harness, and it lost: the server died partway through a run and
+   * Playwright reported "50 passed" while quietly not running thirty-seven
+   * tests, plus a spurious 500 from a route that passes in isolation.
+   *
+   * A summary that says "passed" while a third of the suite never ran is worse
+   * than a slow suite. Two workers finish in about three minutes and finish
+   * every time.
+   */
+  workers: 2,
 
   // A test that only passes on the third attempt is a flaky test, and a flaky
   // test that is allowed to retry locally is a flaky test nobody ever fixes.

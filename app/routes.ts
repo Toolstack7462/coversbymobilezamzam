@@ -80,6 +80,8 @@ export default [
     route("admin/pagamenti", "routes/admin/payments.tsx"),
     route("admin/ordini", "routes/admin/orders.tsx"),
     route("admin/ordini/:orderId", "routes/admin/order-detail.tsx"),
+    route("admin/clienti", "routes/admin/customers.tsx"),
+    route("admin/sconti", "routes/admin/discounts.tsx"),
     route("admin/prodotti", "routes/admin/products.tsx"),
     route("admin/prodotti/nuovo", "routes/admin/product-new.tsx"),
     route("admin/prodotti/:productId", "routes/admin/product-detail.tsx"),

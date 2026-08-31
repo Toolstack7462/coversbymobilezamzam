@@ -89,7 +89,8 @@ export const ADMIN_NAV: NavGroup[] = [
         flag: "fulfilment",
       },
       { label: "Resi", to: "/admin/resi", permission: "order.read", flag: "fulfilment" },
-      { label: "Clienti", to: "/admin/clienti", permission: "customer.read", flag: "customers" },
+      // No flag: built. Derived from orders rather than a separate table.
+      { label: "Clienti", to: "/admin/clienti", permission: "customer.read" },
     ],
   },
   {
@@ -158,7 +159,9 @@ export const ADMIN_NAV: NavGroup[] = [
   {
     label: "Promozione",
     items: [
-      { label: "Sconti", to: "/admin/sconti", permission: "price.write", flag: "promotions" },
+      // No flag: built. Order-level coupons only — product price reductions
+      // go through the product editor, where price_history is written.
+      { label: "Sconti", to: "/admin/sconti", permission: "price.read" },
       {
         label: "Promozioni",
         to: "/admin/promozioni",

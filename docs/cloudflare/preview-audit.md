@@ -24,10 +24,23 @@ all. Fixed in the same change, via `public/_headers`.
 
 ---
 
-## 1. The cron is registered and has not been seen to run
+## 1. The cron took 82 minutes to start firing
 
-`scheduled_job_runs` is **empty**, 54 minutes and four firing windows after
-deployment (19:15, 19:30, 19:45, 20:00 UTC). A continuously running
+**It works.** First observed run at **20:30:10 UTC** — `expire_reservations`,
+`completed`, 582ms, nothing to release. But the Worker was first deployed with
+its schedule at 19:08, and five windows passed with nothing at all:
+
+| Window    | Result           |
+| --------- | ---------------- |
+| 19:15     | did not fire     |
+| 19:30     | did not fire     |
+| 19:45     | did not fire     |
+| 20:00     | did not fire     |
+| 20:15     | did not fire     |
+| **20:30** | **fired, 582ms** |
+
+For most of that period this looked like a broken cron, and it was investigated
+as one. `scheduled_job_runs` was empty 54 minutes in, and a continuously running
 `wrangler tail` captured 84 HTTP invocations and **zero** scheduled ones.
 
 This is not an inference from silence. `expireReservations` writes a `running`
@@ -48,12 +61,23 @@ confirms the schedule on every deploy:
 
 So: handler correct, schedule accepted, execution never observed.
 
-**Next step**, in order: re-apply the triggers with
-`npx wrangler triggers deploy --env preview`, then watch for one interval. If it
-is still silent, this is a platform-side question for Cloudflare rather than a
-code defect — but it must be resolved before launch, because the sweeper is what
-releases stock held by orders that were never paid. Silently not running means
-stock stays reserved forever and the shop shows items as out of stock while they
+So the conclusion is not "the cron is broken" but something more useful, and
+easy to mistake for a fault: **a newly created Worker's Cron Trigger is not
+reliably active for over an hour**, even though Cloudflare accepts and echoes the
+schedule on every deploy. Nothing needed re-applying and nothing was changed to
+make it start.
+
+Worth writing down because the natural reaction — redeploy, then redeploy again,
+then start editing the handler — makes it worse rather than better, and because
+the same silence would look identical to a genuinely broken sweeper. The way to
+tell them apart is `scheduled_job_runs`: the sweeper writes its `running` row
+before it reads anything, so a run that started and failed still leaves a trace.
+No trace at all means it never started.
+
+**Before launch**, confirm the schedule is firing on the production Worker after
+its first deploy rather than assuming it inherited a working one. The sweeper is
+what releases stock held by orders that were never paid; silently not running
+means stock stays reserved and the shop shows items as out of stock while they
 are not.
 
 ---

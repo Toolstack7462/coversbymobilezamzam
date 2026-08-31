@@ -172,7 +172,13 @@ than an obviously empty page.
 - [ ] Independent accessibility audit including screen-reader testing — axe
       finds roughly a third of WCAG issues, so a clean automated run is a
       floor, not a pass
-- [ ] Cron confirmed running in production (`scheduled_job_runs`)
+- [ ] Cron confirmed running in production (`scheduled_job_runs`). **Give it an
+      hour before concluding anything.** On the preview the schedule was
+      accepted and echoed by every deploy but did not actually fire for 82
+      minutes and five missed windows. The natural reaction — redeploy, then
+      redeploy again, then start editing the handler — makes it worse. The row
+      in `scheduled_job_runs` is the only reliable signal, because the sweeper
+      writes it before it reads anything: no row at all means it never started.
 - [ ] **Cron CPU measured with a real backlog.** A Cron Trigger gets the same
       10ms as a page render on the free plan, and the sweeper batches up to 100
       reservations. On an empty preview it finishes in 16ms of wall time, which

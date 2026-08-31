@@ -13,6 +13,16 @@ const PER_PAGE = 24;
  * filtered view is shareable, and the no-JavaScript path is real pagination
  * rather than an inert button.
  */
+export function meta() {
+  return [
+    { title: "Tutti gli accessori" },
+    {
+      name: "description",
+      content: "Cover, cavi, caricabatterie e pellicole per smartphone.",
+    },
+  ];
+}
+
 export async function loader({ context, request }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
   const url = new URL(request.url);

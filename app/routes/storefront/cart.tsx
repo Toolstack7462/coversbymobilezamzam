@@ -16,6 +16,12 @@ import {
 
 const VAT_BASIS_POINTS = 2200;
 
+export function meta() {
+  // noindex: a cart page is per-visitor and has nothing to offer a search
+  // engine, and an indexed one leaks nothing useful but wastes crawl budget.
+  return [{ title: "Carrello" }, { name: "robots", content: "noindex, follow" }];
+}
+
 export async function loader({ context, request }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
   const token = await readCartToken(request, env.BETTER_AUTH_SECRET);

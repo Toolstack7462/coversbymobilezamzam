@@ -134,13 +134,25 @@ than an obviously empty page.
 - [x] Payment verification proven to require permission AND step-up, with the
       step-up consumed so it cannot be replayed
 - [x] Proof upload proven not to change payment status
-- [x] Bundle budgets met (118.9 KB JS / 2.4 KB CSS gzipped)
-- [ ] Browser tests written and passing
+- [x] Bundle budgets met — 121.3 KB storefront JS, 28.6 KB admin JS, 5.3 KB CSS
+      (gzipped, `npm run budgets`)
+- [x] Browser tests written and passing — 33 passing, 1 skipped by viewport,
+      across Desktop Chrome and Pixel 7 (`npm run test:e2e`). They found four
+      real WCAG 2.4.2 failures on their first run: the collection, device
+      finder, cart and store pages shipped no `<title>`. Fixed in the same
+      change.
+- [ ] Browser coverage extended to signed-in admin screens — the current specs
+      cover the public storefront and the login page only, because no test
+      fixture creates an authenticated staff session yet. The admin table's
+      sorting, paging and card layout are therefore proven by integration tests
+      and by reading, not in a browser.
 - [ ] **Backup restore actually performed** against a disposable database — a
       backup nobody has restored is not a backup
 - [ ] **Core Web Vitals measured on a deployed preview** — localhost is not
       evidence
-- [ ] Independent accessibility audit including screen-reader testing
+- [ ] Independent accessibility audit including screen-reader testing — axe
+      finds roughly a third of WCAG issues, so a clean automated run is a
+      floor, not a pass
 - [ ] Cron confirmed running in production (`scheduled_job_runs`)
 - [ ] Alerting configured for a stopped sweeper
 

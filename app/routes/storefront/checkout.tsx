@@ -11,6 +11,10 @@ import { canOfferPickup, canOfferShipping, type SettingsMap } from "~/domain/con
 
 const VAT_BASIS_POINTS = 2200;
 
+export function meta() {
+  return [{ title: "Completa l'ordine" }, { name: "robots", content: "noindex, nofollow" }];
+}
+
 export async function loader({ context, request }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
 

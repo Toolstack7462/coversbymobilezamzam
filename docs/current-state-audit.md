@@ -125,6 +125,9 @@ The browser figure is zero. Playwright is installed and `playwright.config.ts`
 does not exist yet; no `.spec` file is present anywhere under `tests/`. The
 earlier report's claim that browser tests were missing is **confirmed**.
 
+> Since this audit: `playwright.config.ts` and `tests/browser/` now exist and
+> 33 browser tests pass. See `docs/launch-checklist.md`.
+
 ### Bundle budgets
 
     PASS  client JavaScript (all routes): 130.4 KB / 160.0 KB (82%)

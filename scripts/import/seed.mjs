@@ -20,6 +20,18 @@ const dbIndex = args.indexOf("--db");
 const DB = dbIndex >= 0 ? args[dbIndex + 1] : "ita-commerce";
 const REMOTE = args.includes("--remote");
 
+/**
+ * An alternate local D1 directory, so a throwaway database — the browser-test
+ * one — can be seeded without touching the developer's own local data.
+ */
+const persistIndex = args.indexOf("--persist-to");
+const PERSIST_TO = persistIndex >= 0 ? args[persistIndex + 1] : null;
+
+if (REMOTE && PERSIST_TO) {
+  console.error("--persist-to is a local-only option; it cannot be combined with --remote.");
+  process.exit(1);
+}
+
 const now = Date.now();
 const statements = [];
 const sql = (text) => statements.push(text);
@@ -232,7 +244,10 @@ METHODS.forEach(([code, type, nameIt, nameEn, minutes], index) => {
 
 // ── Apply ────────────────────────────────────────────────────────────────────
 
-console.log(`Seeding ${DB} (${REMOTE ? "remote" : "local"}) — ${statements.length} statements`);
+console.log(
+  `Seeding ${DB} (${REMOTE ? "remote" : "local"}${PERSIST_TO ? ` in ${PERSIST_TO}` : ""}) — ` +
+    `${statements.length} statements`,
+);
 
 try {
   execFileSync(
@@ -243,6 +258,7 @@ try {
       "execute",
       DB,
       REMOTE ? "--remote" : "--local",
+      ...(PERSIST_TO ? ["--persist-to", PERSIST_TO] : []),
       "--command",
       statements.join(";\n"),
     ],

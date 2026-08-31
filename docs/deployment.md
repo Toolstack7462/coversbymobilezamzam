@@ -1,8 +1,20 @@
 # Deployment
 
-**Nothing here has been run against a real Cloudflare account.** No resources
-were created, no secret was set, and no deployment was performed. These are the
-exact commands, in order, for whoever does it.
+**A PREVIEW has been deployed. Production has not, and must not be.**
+
+What exists on Cloudflare today is one isolated preview environment — a Worker,
+one D1 database, two EU R2 buckets and a disposable restore-test database — on a
+temporary `workers.dev` address, carrying demo data and marked `noindex`
+throughout. It is described in [`cloudflare/`](./cloudflare/), and
+[`cloudflare/preview-deployment.md`](./cloudflare/preview-deployment.md) is the
+page to read before deploying anything.
+
+    https://italian-tech-atelier-commerce-preview.genzdigitaltools7462.workers.dev
+
+Production has no Worker, no database, no bucket, no domain and no route. The
+`production` and `staging` blocks in `wrangler.jsonc` still carry **placeholder
+database ids**, and that is load-bearing: it is what makes a mistyped deploy
+fail instead of quietly succeeding against the wrong data.
 
 `git push` and a Cloudflare deploy are **separate actions**. Neither implies the
 other, and production deployment requires explicit authorisation every time
@@ -12,27 +24,23 @@ other, and production deployment requires explicit authorisation every time
 
 ## 1. GitHub — current status
 
-**`gh` is installed (2.95.0) but NOT authenticated.** `gh auth status` reports no
-logged-in host, so no remote is configured and nothing has been pushed.
+A remote is configured and reachable:
 
-Under the brief's rules no remote may be invented and no credentials requested.
-All work is committed locally.
+    origin  https://github.com/Toolstack7462/coversbymobilezamzam.git
 
-### To push, once authenticated
+Pushes work through the Windows Credential Manager. No token is stored in this
+repository, and none should ever be pasted into a chat, a file or a command — a
+token that has been shown to anyone is a token to revoke, not to reuse.
 
-    gh auth login
-    cd C:\Users\User\italian-tech-atelier-commerce
+### Before every push
+
     npm run verify                    # must pass
     npm run secret-scan               # must be clean
     git status --porcelain            # must be empty
 
-    gh repo create italian-tech-atelier-commerce \
-      --private --source . --remote origin --push
-
 Then confirm it actually happened, rather than assuming:
 
-    git remote -v
-    git ls-remote --heads origin main
+    git ls-remote --heads origin <branch>
 
 **This is a NEW repository, deliberately.** It is not pushed into
 `Toolstack7462/coversbymobiile`, which holds the Shopify theme: a theme only

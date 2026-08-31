@@ -24,6 +24,24 @@ after checking the real account. See `docs/adr/0006-manual-payments.md`.
 
 ---
 
+## There is a live preview
+
+    https://italian-tech-atelier-commerce-preview.genzdigitaltools7462.workers.dev
+
+**It is not the shop.** Every product, price, stock level and compatibility
+record on it is invented test data, no payment method is connected, and no real
+order can be placed. Every page says so, and the whole site is `noindex`.
+
+It is an isolated environment — its own Worker, its own D1 database, its own EU
+R2 buckets — on a temporary address, and nothing about it touches production,
+which does not exist. Start at [`docs/cloudflare/`](docs/cloudflare/).
+
+The first administrator has not been created yet: only the merchant can do that,
+because the password must be one only they know. The steps are in
+[`docs/cloudflare/first-admin-setup.md`](docs/cloudflare/first-admin-setup.md).
+
+---
+
 ## Quick start
 
     npm install
@@ -53,23 +71,25 @@ default account and no public admin registration.
 | `npm run db:migrate:local` | Apply migrations locally                      |
 | `npm run backup`           | Export the database (FTS-safe; see the doc)   |
 | `npm run restore:test`     | Restore into a disposable database and verify |
+| `npm run smoke:preview`    | 60 checks against the deployed preview        |
 | **`npm run verify`**       | **Everything. The only gate that counts.**    |
 
 ## Documentation
 
 Start with `CLAUDE.md` — the operating contract — then:
 
-| Read                             | For                                                   |
-| -------------------------------- | ----------------------------------------------------- |
-| `docs/architecture.md`           | How the layers fit                                    |
-| `docs/invariants.md`             | The fourteen rules that must hold                     |
-| `docs/adr/`                      | Why each major choice was made, and what was rejected |
-| `docs/admin-guide.md`            | Running the shop, no code                             |
-| `docs/admin-user-flows.md`       | The jobs the shop does, screen by screen              |
-| `docs/operations-runbook.md`     | When something is wrong                               |
-| `docs/backup-and-fts-restore.md` | Taking a backup that can actually be restored         |
-| `docs/launch-checklist.md`       | What must be true before going live                   |
-| `docs/known-limitations.md`      | What is missing and what is not built                 |
+| Read                             | For                                                    |
+| -------------------------------- | ------------------------------------------------------ |
+| `docs/architecture.md`           | How the layers fit                                     |
+| `docs/invariants.md`             | The fourteen rules that must hold                      |
+| `docs/adr/`                      | Why each major choice was made, and what was rejected  |
+| `docs/admin-guide.md`            | Running the shop, no code                              |
+| `docs/admin-user-flows.md`       | The jobs the shop does, screen by screen               |
+| `docs/operations-runbook.md`     | When something is wrong                                |
+| `docs/backup-and-fts-restore.md` | Taking a backup that can actually be restored          |
+| `docs/cloudflare/`               | The deployed preview: resources, secrets, deploys, CPU |
+| `docs/launch-checklist.md`       | What must be true before going live                    |
+| `docs/known-limitations.md`      | What is missing and what is not built                  |
 
 Building on the admin:
 

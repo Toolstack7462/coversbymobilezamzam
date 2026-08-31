@@ -45,6 +45,9 @@ export default [
     ...prefix("en", storefrontRoutes("-en")),
   ]),
 
+  // Product images from R2, used when no CDN base URL is configured.
+  route("media/*", "routes/media.tsx"),
+
   // Better Auth owns everything under /api/auth.
   route("api/auth/*", "routes/api/auth.tsx"),
 

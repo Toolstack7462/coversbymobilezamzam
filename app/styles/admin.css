@@ -883,3 +883,45 @@ a.ac-pick:hover {
   background: var(--color-surface-sunken);
   border-radius: var(--radius-chip);
 }
+
+/* ── Image thumbnails ──────────────────────────────────────────────────── */
+/* Each thumb reserves its own aspect ratio from the stored dimensions, so the
+   grid does not reflow as the photos arrive. */
+
+.ac-thumbs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
+}
+
+.ac-thumb {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+
+/* No explicit aspect-ratio: browsers derive it from the width and height
+   ATTRIBUTES on the element, which the loader supplies from the stored
+   dimensions. `attr()` is not supported outside `content`, so writing it here
+   would have been a no-op that looked like it was doing the work. */
+.ac-thumb img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-control);
+}
+
+.ac-thumb__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}

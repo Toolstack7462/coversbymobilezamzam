@@ -6,6 +6,13 @@ import { systemClock, cryptoIds } from "~/infrastructure/primitives";
 import { money, format as formatMoney, parseAmountToMinorUnits } from "~/domain/pricing/money";
 import { isCompatibilityLevel, COMPATIBILITY_LEVELS } from "~/domain/compatibility/resolve";
 import {
+  inspectImage,
+  hashImage,
+  imageObjectKey,
+  ACCEPTED_IMAGE_TYPES,
+  MAX_IMAGE_BYTES,
+} from "~/domain/media/image";
+import {
   COMPATIBILITY_LABELS,
   COMPATIBILITY_MEANING,
   compatibilityTone,
@@ -212,6 +219,10 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
 
   return {
     ...data,
+    // Where images are served from on this deployment. With a CDN configured
+    // the storefront links straight there; without one, the Worker serves
+    // them. The admin has to know which, or it renders broken thumbnails.
+    mediaBaseUrl: env.PUBLIC_MEDIA_BASE_URL?.replace(/\/$/, "") ?? "/media",
     canWrite: actor.permissions.includes("product.write"),
     canArchive: actor.permissions.includes("product.archive"),
     canPrice: actor.permissions.includes("price.write"),
@@ -373,6 +384,167 @@ export async function action({ request, params, context }: Route.ActionArgs) {
         ? `Prezzo aggiornato: ${formatMoney(money(current.amount))} → ${formatMoney(money(amount))}.`
         : `Prezzo impostato: ${formatMoney(money(amount))}.`,
     };
+  }
+
+  if (intent === "upload-image") {
+    const actor = await requireStaff(request, env, "product.write");
+    const file = form.get("image");
+
+    if (!(file instanceof File) || file.size === 0) {
+      return { error: "Nessun file selezionato." };
+    }
+
+    const buffer = await file.arrayBuffer();
+
+    // Validated from the file's own bytes, never from the browser-supplied
+    // type: a file claiming to be a PNG while containing something else must
+    // not be stored under a name that lies about it.
+    const check = inspectImage(buffer);
+    if (!check.ok) return { error: check.error };
+
+    const hash = await hashImage(buffer);
+    const key = imageObjectKey(productId, hash, check.facts.extension);
+
+    // The key contains the content hash, so re-uploading the same photo is a
+    // no-op on storage rather than a second copy. The database row is still
+    // checked separately, because the same file could legitimately be attached
+    // to two different products.
+    const duplicate = await env.DB.prepare(
+      `SELECT id FROM product_images WHERE product_id = ?1 AND object_key = ?2`,
+    )
+      .bind(productId, key)
+      .first<{ id: string }>();
+    if (duplicate) {
+      return { error: "Questa immagine è già caricata su questo prodotto." };
+    }
+
+    const existingCount = await env.DB.prepare(
+      `SELECT COUNT(*) AS n FROM product_images WHERE product_id = ?1`,
+    )
+      .bind(productId)
+      .first<{ n: number }>();
+
+    // R2 first, then the row. If the upload succeeds and the insert fails we
+    // are left with an unreferenced object, which costs a fraction of a cent
+    // and is invisible. The other order would leave a row pointing at nothing,
+    // which renders a broken image on the shop.
+    await env.MEDIA.put(key, buffer, {
+      httpMetadata: {
+        contentType: check.facts.type,
+        cacheControl: "public, max-age=31536000, immutable",
+      },
+    });
+
+    const id = cryptoIds.generate();
+    await env.DB.batch([
+      env.DB.prepare(
+        `INSERT INTO product_images
+           (id, product_id, object_key, alt_it, width, height, mime_type, file_size, file_hash,
+            is_primary, sort_order, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)`,
+      ).bind(
+        id,
+        productId,
+        key,
+        String(form.get("alt") ?? "").trim() || null,
+        check.facts.width,
+        check.facts.height,
+        check.facts.type,
+        check.facts.bytes,
+        hash,
+        // The first image uploaded becomes the primary one. Making the merchant
+        // choose when there is only one candidate is a question with one answer.
+        (existingCount?.n ?? 0) === 0 ? 1 : 0,
+        existingCount?.n ?? 0,
+        now,
+      ),
+      audit(actor.userId, actor.displayName, "product.image.add", "product_image", id, null, {
+        productId,
+        key,
+        width: check.facts.width,
+        height: check.facts.height,
+      }),
+    ]);
+
+    return {
+      success: `Immagine caricata (${check.facts.width}×${check.facts.height}).`,
+    };
+  }
+
+  if (intent === "set-primary-image") {
+    const actor = await requireStaff(request, env, "product.write");
+    const id = String(form.get("imageId") ?? "");
+
+    await env.DB.batch([
+      env.DB.prepare(`UPDATE product_images SET is_primary = 0 WHERE product_id = ?1`).bind(
+        productId,
+      ),
+      env.DB.prepare(
+        `UPDATE product_images SET is_primary = 1 WHERE id = ?1 AND product_id = ?2`,
+      ).bind(id, productId),
+      audit(actor.userId, actor.displayName, "product.image.primary", "product_image", id, null, {
+        productId,
+      }),
+    ]);
+
+    return { success: "Immagine principale aggiornata." };
+  }
+
+  if (intent === "delete-image") {
+    const actor = await requireStaff(request, env, "product.write");
+    const id = String(form.get("imageId") ?? "");
+
+    const image = await env.DB.prepare(
+      `SELECT object_key, is_primary FROM product_images WHERE id = ?1 AND product_id = ?2`,
+    )
+      .bind(id, productId)
+      .first<{ object_key: string; is_primary: number }>();
+    if (!image) return { error: "Immagine non trovata." };
+
+    // The same object may be referenced by another product, since the key is a
+    // content hash. Only remove the bytes when this was the last reference —
+    // otherwise deleting one product's photo would blank another's.
+    const otherReferences = await env.DB.prepare(
+      `SELECT COUNT(*) AS n FROM product_images WHERE object_key = ?1 AND id <> ?2`,
+    )
+      .bind(image.object_key, id)
+      .first<{ n: number }>();
+
+    await env.DB.batch([
+      env.DB.prepare(`DELETE FROM product_images WHERE id = ?1`).bind(id),
+      audit(
+        actor.userId,
+        actor.displayName,
+        "product.image.delete",
+        "product_image",
+        id,
+        {
+          key: image.object_key,
+        },
+        null,
+      ),
+    ]);
+
+    if ((otherReferences?.n ?? 0) === 0) {
+      await env.MEDIA.delete(image.object_key);
+    }
+
+    // Promote another image rather than leaving the product with none marked
+    // primary, which would render no photo at all on the storefront.
+    if (image.is_primary === 1) {
+      const next = await env.DB.prepare(
+        `SELECT id FROM product_images WHERE product_id = ?1 ORDER BY sort_order LIMIT 1`,
+      )
+        .bind(productId)
+        .first<{ id: string }>();
+      if (next) {
+        await env.DB.prepare(`UPDATE product_images SET is_primary = 1 WHERE id = ?1`)
+          .bind(next.id)
+          .run();
+      }
+    }
+
+    return { success: "Immagine eliminata." };
   }
 
   if (intent === "add-compatibility") {
@@ -566,6 +738,7 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
     brands,
     categories,
     deviceModels,
+    mediaBaseUrl,
     canWrite,
     canArchive,
     canPrice,
@@ -871,6 +1044,126 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
           </ul>
         </section>
       ) : null}
+
+      {/* ── Images ────────────────────────────────────────────────────────── */}
+      <section className="panel stack">
+        <h2>Foto</h2>
+        <p className="small muted">
+          La prima foto è quella che compare negli elenchi. Le dimensioni vengono lette dal file:
+          servono al sito per riservare lo spazio prima che l&apos;immagine arrivi, così la pagina
+          non &ldquo;salta&rdquo; mentre carica.
+        </p>
+
+        {images.length === 0 ? (
+          <div className="empty-state">
+            <p>
+              <strong>Nessuna foto</strong>
+            </p>
+            <p className="small muted">
+              Sul sito compare un riquadro vuoto al posto dell&apos;immagine.
+            </p>
+          </div>
+        ) : (
+          <ul className="ac-thumbs">
+            {images.map((image) => (
+              <li key={image.id} className="ac-thumb">
+                <img
+                  src={`${mediaBaseUrl}/${image.object_key}`}
+                  alt={image.alt_it ?? ""}
+                  width={image.width}
+                  height={image.height}
+                  loading="lazy"
+                  decoding="async"
+                />
+                <div className="ac-thumb__meta">
+                  <span className="caption numeric">
+                    {image.width}×{image.height}
+                  </span>
+                  {image.is_primary === 1 ? (
+                    <span className="badge badge--success">principale</span>
+                  ) : null}
+                  {image.alt_it === null ? (
+                    <span
+                      className="badge badge--warning"
+                      title="Chi usa un lettore di schermo non sa cosa mostra questa foto"
+                    >
+                      senza descrizione
+                    </span>
+                  ) : null}
+                </div>
+
+                {canWrite ? (
+                  <div className="cluster">
+                    {image.is_primary === 0 ? (
+                      <Form method="post">
+                        <input type="hidden" name="intent" value="set-primary-image" />
+                        <input type="hidden" name="imageId" value={image.id} />
+                        <button type="submit" className="btn btn--ghost btn--small">
+                          Rendi principale
+                        </button>
+                      </Form>
+                    ) : null}
+                    <Form method="post">
+                      <input type="hidden" name="intent" value="delete-image" />
+                      <input type="hidden" name="imageId" value={image.id} />
+                      <button type="submit" className="btn btn--ghost btn--small">
+                        Elimina
+                      </button>
+                    </Form>
+                  </div>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {canWrite ? (
+          <Form method="post" encType="multipart/form-data" className="stack">
+            <input type="hidden" name="intent" value="upload-image" />
+
+            <div className="field">
+              <label className="field__label" htmlFor="image">
+                Aggiungi una foto
+              </label>
+              <input
+                id="image"
+                name="image"
+                type="file"
+                className="input"
+                accept={ACCEPTED_IMAGE_TYPES.join(",")}
+                required
+                aria-describedby="image-help"
+              />
+              <span className="field__hint" id="image-help">
+                JPG, PNG o WebP, fino a {MAX_IMAGE_BYTES / (1024 * 1024)} MB e almeno 200 pixel per
+                lato. Una foto scattata col telefono va benissimo. I file SVG non sono accettati.
+              </span>
+            </div>
+
+            <div className="field">
+              <label className="field__label" htmlFor="alt">
+                Descrizione della foto
+              </label>
+              <input
+                id="alt"
+                name="alt"
+                className="input"
+                maxLength={200}
+                placeholder="Cover trasparente vista di fronte"
+                aria-describedby="alt-help"
+              />
+              <span className="field__hint" id="alt-help">
+                Cosa si vede nella foto, per chi non può vederla — chi usa un lettore di schermo, e
+                chiunque quando l&apos;immagine non carica. Una riga basta.
+              </span>
+            </div>
+
+            <button type="submit" className="btn btn--secondary">
+              Carica foto
+            </button>
+          </Form>
+        ) : null}
+      </section>
 
       {/* ── Compatibility ─────────────────────────────────────────────────── */}
       <section className="panel stack">

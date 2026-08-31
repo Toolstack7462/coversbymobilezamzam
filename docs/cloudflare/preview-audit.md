@@ -9,13 +9,18 @@ over real HTTPS, in a real browser, with no code changed during the audit.
 Two things need fixing before this goes in front of the merchant, and one
 question needs answering. Everything else passed.
 
-| #   | Finding                                                | Severity |
-| --- | ------------------------------------------------------ | -------- |
-| 1   | The deployed cron has never been observed to run       | High     |
-| 2   | No security response headers at all                    | High     |
-| 3   | No `Cache-Control` on any page, including admin        | Medium   |
-| 4   | `Content-Type: text/html` with no charset              | Low      |
-| 5   | No product images exist, so image delivery is unproven | Low      |
+| #   | Finding                                                | Severity | Status                         |
+| --- | ------------------------------------------------------ | -------- | ------------------------------ |
+| 1   | The deployed cron has never been observed to run       | High     | **Open**                       |
+| 2   | No security response headers at all                    | High     | **Fixed** — version `3a7d05ef` |
+| 3   | No `Cache-Control` on any page, including admin        | Medium   | **Fixed** — version `3a7d05ef` |
+| 4   | `Content-Type: text/html` with no charset              | Low      | Open                           |
+| 5   | No product images exist, so image delivery is unproven | Low      | Open                           |
+
+A sixth was found while fixing 2 and 3: **no static asset had ever carried the
+`noindex` header**, despite a comment in `workers/app.ts` claiming the Worker
+covered them. Cloudflare serves `build/client` without invoking the Worker at
+all. Fixed in the same change, via `public/_headers`.
 
 ---
 
@@ -69,7 +74,26 @@ here: the admin can verify a payment and change the bank details customers are
 told to pay into, and without it those pages can be framed. `nosniff` and a
 `Referrer-Policy` are cheap and should not be left out.
 
-Not fixed during this audit, which was read-only by instruction.
+### Fixed
+
+Deployed in version `3a7d05ef`. Every Worker response now carries a CSP,
+`X-Frame-Options: DENY`, `nosniff`, `strict-origin-when-cross-origin`, a
+`Permissions-Policy` denying eleven features the shop does not use,
+`same-origin` COOP, and HSTS (one year, `includeSubDomains`, deliberately **not**
+`preload` — preloading is submitted to a browser-maintained list and is slow to
+undo).
+
+`script-src` keeps `'unsafe-inline'`, and the code says why: streaming SSR has
+React emitting inline scripts to deliver each chunk of loader data — five on the
+homepage — and without it the page renders and never hydrates. Removing it needs
+a nonce, and the streaming chunks take theirs from `renderToReadableStream`,
+which means owning `app/entry.server.tsx`, a file this project does not have.
+That is a deliberate change, not a side effect of adding headers. The policy
+still refuses any cross-origin script source, which is the more common half of
+the same attack.
+
+Verified on the deployed site: 76/76 smoke checks, and a real browser reports no
+console errors and no CSP violations on any page.
 
 ---
 
@@ -80,7 +104,20 @@ should be `no-store`: they render order details, customer names and payment
 state, and without a directive the browser's back/forward cache and any
 intermediary decide the policy instead.
 
-`/api/health` is the exception and is correct: `no-store`.
+`/api/health` was the only exception and was already correct: `no-store`.
+
+### Fixed
+
+Also in `3a7d05ef`. Everything the Worker returns is now `private` — the
+load-bearing word, since these pages vary by the session cookie and `public`
+would let a shared cache hand one customer's basket to whoever asked for the
+same URL next. Admin and API responses are `no-store`; storefront HTML is
+`private, no-cache, must-revalidate`.
+
+Fingerprinted assets went the other way, to `public, max-age=31536000,
+immutable`. Cloudflare's default of `max-age=0, must-revalidate` had the browser
+re-checking all fourteen bundles on every page load, for files whose names
+contain a hash of their own contents and which cannot go stale.
 
 ## 4. Charset
 

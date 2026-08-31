@@ -62,6 +62,12 @@ export default [
    * required one could never be reached.
    */
   route("admin/sicurezza/2fa/verifica", "routes/admin/security-2fa-verify.tsx"),
+  /**
+   * Invitation acceptance is PUBLIC by necessity: the invitee has no account
+   * yet. The token is the only credential, which is why it is single-use,
+   * expiring, scoped to one address and stored hashed.
+   */
+  route("admin/personale/invito/:token", "routes/admin/staff-accept.tsx"),
   route("admin/esci", "routes/admin/logout.tsx"),
 
   layout("routes/admin/layout.tsx", [
@@ -72,6 +78,8 @@ export default [
     route("admin/inventario", "routes/admin/inventory.tsx"),
     route("admin/impostazioni", "routes/admin/settings.tsx"),
     route("admin/registro", "routes/admin/audit.tsx"),
+    route("admin/personale", "routes/admin/staff.tsx"),
+    route("admin/personale/:staffId", "routes/admin/staff-detail.tsx"),
 
     // Own-account security. These sit on the pre-enrolment allowlist, because
     // a page that required enrolment in order to enrol would be a locked door

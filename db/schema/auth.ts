@@ -124,7 +124,19 @@ export const staffProfiles = sqliteTable(
       .references(() => user.id, { onDelete: "restrict" }),
     displayName: text("display_name").notNull(),
     jobTitle: text("job_title"),
+    /**
+     * invited | active | suspended | disabled | archived
+     *
+     * `active` (below) remains the authorisation check, so existing behaviour
+     * is unchanged; this records WHY an account is or is not usable. Suspension
+     * and disablement look identical to the access check and completely
+     * different to a human reading the staff list.
+     */
+    status: text("status").notNull().default("active"),
     active: bool("active").notNull().default(true),
+    suspendedAt: ts("suspended_at"),
+    suspendedBy: text("suspended_by"),
+    suspendedReason: text("suspended_reason"),
     lastLoginAt: ts("last_login_at"),
     ...stamps(),
     ...archivable(),
@@ -217,4 +229,45 @@ export const stepUpSessions = sqliteTable(
     createdAt: ts("created_at").notNull(),
   },
   (t) => [index("step_up_user_purpose_idx").on(t.userId, t.purpose, t.expiresAt)],
+);
+
+/**
+ * Staff invitations.
+ *
+ * There is no public staff registration and no "create user" form. A colleague
+ * is invited, and the invitation is what grants them the ability to set a
+ * password — not an administrator typing one on their behalf, which would mean
+ * an administrator briefly knows a colleague's credentials.
+ *
+ * The token is stored HASHED. An invitation token is a bearer credential: it
+ * grants staff access to whoever holds it, so the database must not contain a
+ * usable copy. A leaked backup of this table gives an attacker nothing.
+ */
+export const staffInvitations = sqliteTable(
+  "staff_invitations",
+  {
+    id: pk(),
+    /** The invitation is scoped to this address and no other. */
+    email: text("email").notNull(),
+    /** JSON array of role ids the invitee will receive on acceptance. */
+    roleIds: text("role_ids").notNull(),
+    invitedBy: text("invited_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    /** SHA-256 of the token. The plaintext is shown once and never stored. */
+    tokenHash: text("token_hash").notNull(),
+    /** pending | accepted | revoked | expired */
+    status: text("status").notNull().default("pending"),
+    expiresAt: ts("expires_at").notNull(),
+    acceptedAt: ts("accepted_at"),
+    acceptedByUserId: text("accepted_by_user_id"),
+    revokedAt: ts("revoked_at"),
+    revokedBy: text("revoked_by"),
+    ...stamps(),
+  },
+  (t) => [
+    uniqueIndex("staff_invitations_token_unique").on(t.tokenHash),
+    index("staff_invitations_email_idx").on(t.email, t.status),
+    index("staff_invitations_status_idx").on(t.status, t.expiresAt),
+  ],
 );

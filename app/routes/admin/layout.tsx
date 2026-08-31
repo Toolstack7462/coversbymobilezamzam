@@ -23,6 +23,7 @@ const NAV = [
   { to: "/admin/ordini", label: "Ordini", permission: "order.read" },
   { to: "/admin/prodotti", label: "Prodotti", permission: "product.read" },
   { to: "/admin/inventario", label: "Inventario", permission: "inventory.read" },
+  { to: "/admin/personale", label: "Personale", permission: "staff.read" },
   { to: "/admin/impostazioni", label: "Impostazioni", permission: "settings.read" },
   { to: "/admin/registro", label: "Registro attività", permission: "audit.read" },
 ] as const;

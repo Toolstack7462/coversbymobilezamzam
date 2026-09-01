@@ -157,7 +157,29 @@ export function createAuth(env: Env) {
         // Login, reset and the 2FA challenge are the brute-force surfaces.
         "/sign-in/email": { window: 60, max: 5 },
         "/forget-password": { window: 60, max: 3 },
-        "/two-factor/verify-totp": { window: 60, max: 5 },
+
+        /*
+         * Ten a minute, raised from five.
+         *
+         * Five is tight for a code that expires while it is being typed. A
+         * person who mistypes once, waits for a fresh code, mistypes again and
+         * retries is at the limit — and the response is a 429, which this
+         * screen can only render as "your code is wrong". Being told a correct
+         * code is invalid, with no way to tell the two apart, is a worse
+         * outcome than the marginal exposure below.
+         *
+         * The arithmetic: a TOTP is one of 10^6 codes and lives about ninety
+         * seconds. Ten attempts a minute gives roughly fifteen guesses inside a
+         * code's life — about 0.0015% per window, against 0.00075% at five. The
+         * protection here is the code space and the window, not the rate limit,
+         * and `two_factor.failed_verification_count` and `locked_until` are the
+         * real lockout underneath.
+         */
+        "/two-factor/verify-totp": { window: 60, max: 10 },
+
+        // Backup codes stay at three: they are static strings on paper, they do
+        // not rotate, and nobody mistypes one because nobody types one from
+        // memory.
         "/two-factor/verify-backup-code": { window: 60, max: 3 },
       },
     },

@@ -48,6 +48,54 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return null;
 }
 
+/**
+ * What the customer is told, whatever actually happened.
+ *
+ * A single constant so the four failure paths cannot drift into four subtly
+ * different sentences — which is how a "which message did you get?" question
+ * starts leaking the distinction this is here to hide.
+ */
+const WRONG_CODE = "Codice non valido o scaduto.";
+
+/**
+ * Records WHY a challenge failed, where only staff can see it.
+ *
+ * Failures are logged; successes already were. A 429 here means the account hit
+ * the five-per-minute limit on `/two-factor/verify-totp` and the code was very
+ * possibly correct — the single most confusing failure this screen can produce,
+ * and previously invisible.
+ *
+ * No user id: at this point in the flow there is no session, and the two-factor
+ * cookie identifies a challenge rather than a person. The row is about the
+ * attempt, not the actor.
+ */
+async function recordFailure(
+  env: Env,
+  now: number,
+  mode: string,
+  status: number,
+  detail: string | null,
+): Promise<void> {
+  await env.DB.prepare(
+    `INSERT INTO audit_logs
+       (id, actor_id, actor_label, action, entity_type, entity_id, after_value, created_at)
+     VALUES (?1, '', '', 'auth.2fa_challenge_failed', 'user', '', ?2, ?3)`,
+  )
+    .bind(
+      cryptoIds.generate(),
+      JSON.stringify({
+        method: mode === "backup" ? "backup_code" : "totp",
+        status,
+        // 429 is the one worth naming: it is the case where the code may well
+        // have been right.
+        rateLimited: status === 429,
+        detail,
+      }),
+      now,
+    )
+    .run();
+}
+
 export async function action({ request, context }: Route.ActionArgs) {
   const { env } = context.get(cloudflareContext);
   const form = await request.formData();
@@ -81,15 +129,32 @@ export async function action({ request, context }: Route.ActionArgs) {
         asResponse: true,
       });
     }
-  } catch {
-    return { error: "Codice non valido o scaduto." };
+  } catch (error) {
+    await recordFailure(env, now, mode, 0, String(error).slice(0, 120));
+    return { error: WRONG_CODE };
   }
 
   if (!response.ok) {
-    // Deliberately identical for a wrong TOTP, a wrong backup code, a replayed
-    // backup code and a locked account. Anything more specific tells an
-    // attacker which of those they achieved.
-    return { error: "Codice non valido o scaduto." };
+    /*
+     * One message, four causes — and now a record of which.
+     *
+     * The message stays deliberately identical for a wrong TOTP, a wrong backup
+     * code, a replayed backup code and a rate-limited account: anything more
+     * specific tells an attacker which of those they achieved.
+     *
+     * The cost of that was paid by the merchant. A correct code submitted once
+     * too often inside the sixty-second window comes back 429, which is
+     * `!ok`, and the person holding the right phone is told their code is
+     * wrong — with nothing anywhere to say otherwise. "It says my code is
+     * invalid" and "I am being throttled" looked identical from the outside,
+     * including to whoever was asked to debug it.
+     *
+     * So the STATUS is written to the audit log, which only staff can read.
+     * Same opacity to an attacker, and the next time this happens the answer is
+     * one query away instead of an afternoon of inference.
+     */
+    await recordFailure(env, now, mode, response.status, null);
+    return { error: WRONG_CODE };
   }
 
   // Every cookie: answering the challenge both establishes the session and

@@ -62,12 +62,31 @@ const ADMIN_ROUTES_DIR = "app/routes/admin";
  * restores it to about the same tightness 130 had before those sections
  * existed.
  *
- * THE NEXT LEVER, measured and not yet pulled: `app/lib/i18n.ts` statically
- * imports BOTH locale files, so every Italian visitor downloads the English
- * strings and vice versa — about 24 KB raw, 6.9 KB gzipped, for two copies of
- * something only one of which is ever read. Splitting it is worth roughly half
- * that, and it is a hydration change rather than a one-line one, which is why
- * it is written down here instead of done in a hurry.
+ * THE LEVER THAT LOOKED OBVIOUS, AND THE MEASUREMENT THAT KILLED IT.
+ *
+ * `app/lib/i18n.ts` statically imports BOTH locale files, so an Italian visitor
+ * downloads the English strings and vice versa: 24 KB raw, 6.9 KB gzipped, for
+ * two copies of something only one of which is read. Splitting it looked like
+ * free money and was written down here as the next win.
+ *
+ * It is not, and this note is the correction. The saving is about 3.4 KB — two
+ * and a half percent of the bundle — and it costs either:
+ *
+ *   - dynamic import, which makes `translator(locale)` asynchronous at twelve
+ *     synchronous call sites and puts a hydration mismatch between the server's
+ *     markup and the client's first render, or
+ *   - moving the strings into the loader payload, which takes them OUT of a
+ *     JavaScript chunk the browser caches once and puts them into every HTML
+ *     and .data response instead. On any visitor who sees more than three
+ *     pages, that is a net loss.
+ *
+ * A file check confirmed there is no cheaper version of the win: all sixteen
+ * groups in the locale files are storefront strings, so there is no admin
+ * dictionary hiding in the customer's bundle to split out.
+ *
+ * The right time to revisit is when a third locale is added — at that point the
+ * static import ships three dictionaries to read one, and the arithmetic
+ * changes.
  *
  * Note this is still tighter on the customer than the single 160 KB all-chunks
  * limit it replaces, because that one let admin weight eat the customer's

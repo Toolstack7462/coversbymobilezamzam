@@ -13,6 +13,7 @@ import {
   SETTING_KEYS,
   type SettingsMap,
 } from "~/domain/content/gates";
+import { storefrontBrand } from "~/domain/content/brand";
 import { SiteHeader } from "~/components/storefront/site-header";
 import { SiteFooter } from "~/components/storefront/site-footer";
 import { MobileNav } from "~/components/storefront/mobile-nav";
@@ -171,7 +172,15 @@ export async function loader({ context, request }: Route.LoaderArgs) {
       whatsapp: canShowWhatsApp(settings),
       legal: canShowLegalIdentity(settings),
     },
-    brandName: settingValue(settings, SETTING_KEYS.brandName),
+    /*
+     * The brand, resolved once for every surface that names the shop.
+     *
+     * The header and footer used to each build this from their own copy of the
+     * fallback chain. `shopName` stays because the footer's store block and the
+     * colophon use the name over the door specifically, which is not the same
+     * question as "what is this shop called".
+     */
+    brand: storefrontBrand(settings, translator(locale)("common.shop")),
     shopName: settingValue(settings, SETTING_KEYS.shopName),
   };
 }
@@ -183,11 +192,24 @@ export default function StorefrontLayout({ loaderData }: Route.ComponentProps) {
 
   return (
     <>
+      {/*
+        The brand, for anything that quotes the site rather than the page.
+
+        Rendered here rather than in a `meta` export because a child route's
+        meta REPLACES its parent's, so a tag defined up here would vanish on
+        every page that sets its own title. React 19 hoists these into <head>
+        from wherever they are rendered, which lets one component own the
+        brand for every storefront page at once — the same object the header
+        and footer draw their wordmark from.
+      */}
+      <meta property="og:site_name" content={loaderData.brand.full} />
+      <meta property="og:type" content="website" />
+      <meta property="og:locale" content={locale === "en" ? "en_GB" : "it_IT"} />
+
       <SiteHeader
         t={t}
         locale={locale}
-        brandName={loaderData.brandName}
-        shopName={loaderData.shopName}
+        brand={loaderData.brand}
         navigation={loaderData.navigation}
         extraNav={loaderData.extraNav.filter((i) => i.menu === "header_extra")}
       />
@@ -202,6 +224,7 @@ export default function StorefrontLayout({ loaderData }: Route.ComponentProps) {
         navigation={loaderData.navigation}
         pages={loaderData.pages}
         year={loaderData.year}
+        brand={loaderData.brand}
         extraNav={loaderData.extraNav.filter((i) => i.menu === "footer_extra")}
         legal={loaderData.legal}
       />

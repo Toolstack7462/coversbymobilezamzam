@@ -3250,3 +3250,86 @@ a.chip:hover {
   border-block-start: var(--border-width) solid var(--color-on-deep-border);
   color: var(--color-on-deep-secondary);
 }
+
+/* ── Brand lockup ───────────────────────────────────────────────────────────
+ *
+ * Two lines that read as one mark: a trading name with a store identity under
+ * it. The second line is set in small caps with wide tracking rather than
+ * simply smaller body text — at the same letterform as the first it reads as a
+ * subtitle somebody forgot to style, which is the failure this is avoiding.
+ *
+ * The pair is tight on purpose. A brand block in a header competes with the
+ * search field and the navigation for a fixed strip of vertical space, so the
+ * two lines together stay under the height of a single control.
+ */
+.brand-lockup {
+  display: inline-grid;
+  gap: 1px;
+  text-decoration: none;
+  color: inherit;
+  line-height: 1;
+}
+
+.brand-lockup__primary {
+  font-family: var(--font-heading);
+  font-weight: var(--weight-bold);
+  /* Tight, but nowhere near the point where letters touch. */
+  letter-spacing: -0.018em;
+  line-height: 1.1;
+}
+
+/*
+ * The second line.
+ *
+ * Small caps, wide tracking, muted — three signals that it is subordinate, so
+ * none of them has to be strong. Tested against the alternative (same case,
+ * simply smaller): at title case it read as a second shop name rather than as
+ * part of one mark.
+ */
+.brand-lockup__secondary {
+  font-family: var(--font-heading);
+  font-size: 0.6875rem;
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  color: var(--color-text-secondary);
+}
+
+.brand-lockup--header .brand-lockup__primary {
+  font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
+}
+
+/* Optical alignment: uppercase tracking pushes the last letter's sidebearing
+   out, so the block looks shifted right without this. */
+.brand-lockup__secondary {
+  margin-inline-end: -0.16em;
+}
+
+.brand-lockup--footer .brand-lockup__primary {
+  font-size: var(--text-h3);
+  line-height: var(--text-h3-lh);
+  color: var(--color-on-deep);
+}
+
+.brand-lockup--footer .brand-lockup__secondary {
+  color: var(--color-on-deep-secondary);
+}
+
+.brand-lockup:hover .brand-lockup__primary {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* On a phone the wordmark shares the top strip with the menu and the cart, so
+   it holds one line and the second sits under it without adding height. */
+@media (max-width: 30rem) {
+  .brand-lockup--header .brand-lockup__primary {
+    font-size: 1rem;
+  }
+
+  .brand-lockup--header .brand-lockup__secondary {
+    font-size: 0.625rem;
+    letter-spacing: 0.14em;
+  }
+}

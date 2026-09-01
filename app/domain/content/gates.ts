@@ -35,6 +35,12 @@ export function settingValue(settings: SettingsMap, key: string): string | null 
 
 export const SETTING_KEYS = {
   brandName: "business.brand_name",
+  /**
+   * The line under the wordmark — a store identity beneath the trading name.
+   * Optional: most shops have one name, and an empty second line is worse than
+   * none. See app/domain/content/brand.ts.
+   */
+  brandSecondary: "business.brand_secondary",
   shopName: "store.name",
   tagline: "business.tagline",
   legalName: "business.legal_name",

@@ -1,5 +1,7 @@
 import { Link } from "react-router";
 import { localePath, DEFAULT_LOCALE, type Locale, type Translator } from "~/lib/i18n";
+import type { StorefrontBrand } from "~/domain/content/brand";
+import { BrandLockup } from "./brand-lockup";
 import { settingValue, SETTING_KEYS, type SettingsMap } from "~/domain/content/gates";
 
 /**
@@ -32,6 +34,8 @@ interface Props {
   extraNav: { label: string; url: string }[];
   /** Published legal documents. Empty until a professional has written them. */
   legal: { code: string; name: string }[];
+  /** The same resolved brand the header renders. One rule, one place. */
+  brand: StorefrontBrand;
 }
 
 export function SiteFooter({
@@ -44,6 +48,7 @@ export function SiteFooter({
   year,
   extraNav,
   legal,
+  brand,
 }: Props) {
   const path = (p: string) => localePath(locale, p);
 
@@ -56,7 +61,6 @@ export function SiteFooter({
   const email = settingValue(settings, SETTING_KEYS.email);
   const whatsapp = settingValue(settings, SETTING_KEYS.whatsappNumber);
   const directions = settingValue(settings, SETTING_KEYS.storeDirectionsUrl);
-  const shopName = settingValue(settings, SETTING_KEYS.shopName);
   const tagline = settingValue(settings, SETTING_KEYS.tagline);
 
   return (
@@ -74,12 +78,10 @@ export function SiteFooter({
         Rendered only when the merchant has supplied a name — never a
         placeholder, and never this project's own.
       */}
-      {shopName ? (
-        <div className="page site-footer__masthead">
-          <p className="site-footer__wordmark">{shopName}</p>
-          {tagline ? <p className="site-footer__tagline">{tagline}</p> : null}
-        </div>
-      ) : null}
+      <div className="page site-footer__masthead">
+        <BrandLockup brand={brand} locale={locale} variant="footer" />
+        {tagline ? <p className="site-footer__tagline">{tagline}</p> : null}
+      </div>
 
       <div className="page site-footer__inner">
         {/*
@@ -302,7 +304,7 @@ export function SiteFooter({
         </nav>
 
         <p>
-          © {year} {shopName ?? t("common.shop")}
+          © {year} {brand.full}
         </p>
         <p>
           {t("footer.made_by")}{" "}

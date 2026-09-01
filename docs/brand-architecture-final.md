@@ -16,7 +16,27 @@ its documentation, and the two GitHub repository names.
 | **Legal / business identity**    | **Not established**                                                          | `business_legal_name`, `business_vat`, `business_registration` all exist in the schema and are all EMPTY                                          | Footer legal line, invoices, D.Lgs. 70/2003 trader identification |
 | **Internal project name**        | **Italian Tech Atelier**                                                     | `package.json`, code comments, theme token defaults. This project's own README calls it "Internal project name. It is not the public brand name." | Repository, code, documentation. **Never the storefront.**        |
 
-### "Zam Zam" is not part of the brand
+### "Zam Zam" — the merchant has since confirmed it (2026-09-02)
+
+**Resolved.** The section below was written when no artefact in the project
+supported "Zam Zam", and it closed with "unless the merchant says otherwise".
+The merchant has now said otherwise, explicitly and in writing: the
+customer-facing presentation is
+
+    Covers by Mobile
+    Zam Zam
+
+as a primary trading name with a store identity beneath it. It renders in the
+header and footer lockup, in the document title and in `og:site_name`, all from
+one source — `business.brand_name` and `business.brand_secondary` in
+`store_settings`, resolved by `app/domain/content/brand.ts`. No component
+hardcodes either line.
+
+The investigation below stands as the record of what was and was not evidence
+at the time, and why the question was put to the merchant rather than guessed.
+The answer was theirs to give, and they gave it.
+
+### What the evidence showed before they were asked
 
 It appears in the two GitHub repository names (`coversbymobiile`,
 `coversbymobilezamzam`) and **nowhere else**. A case-insensitive search across
@@ -25,8 +45,8 @@ merchant's own theme returns exactly one hit, and that hit is a coincidental
 base64 fragment inside `package-lock.json`.
 
 A repository name is chosen by whoever ran `git init`. It is not evidence of a
-trading name. **Unless the merchant says otherwise, "Zam Zam" does not go on the
-storefront.**
+trading name — which is exactly why it was raised as a question instead of being
+adopted or discarded on a guess. See the resolution above.
 
 ### The direct quotation that settles it
 

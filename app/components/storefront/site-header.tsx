@@ -1,5 +1,7 @@
 import { Link, Form } from "react-router";
 import { localePath, type Locale, type Translator } from "~/lib/i18n";
+import type { StorefrontBrand } from "~/domain/content/brand";
+import { BrandLockup } from "./brand-lockup";
 
 /**
  * Header.
@@ -12,10 +14,13 @@ import { localePath, type Locale, type Translator } from "~/lib/i18n";
 interface Props {
   t: Translator;
   locale: Locale;
-  /** `business.brand_name` — a marketing name, if the merchant uses one. */
-  brandName: string | null;
-  /** `store.name` — the name over the door. Nothing is invented (invariant 12). */
-  shopName: string | null;
+  /**
+   * The resolved brand, from app/domain/content/brand.ts.
+   *
+   * Not the raw settings: the header used to assemble the wordmark itself and
+   * the footer assembled it again, which is one naming rule kept in two places.
+   */
+  brand: StorefrontBrand;
   /**
    * The categories the shop actually has, in the merchant's order, already
    * translated. Loaded once in the storefront layout and shared with the
@@ -31,28 +36,13 @@ interface Props {
   extraNav: { label: string; url: string }[];
 }
 
-export function SiteHeader({ t, locale, brandName, shopName, navigation, extraNav }: Props) {
+export function SiteHeader({ t, locale, brand, navigation, extraNav }: Props) {
   const path = (p: string) => localePath(locale, p);
 
   return (
     <header className="site-header">
       <div className="page site-header__inner">
-        <Link to={path("/")} className="site-header__brand">
-          {/*
-            The merchant's name, and never this project's.
-
-            The fallback used to be "Italian Tech Atelier", which is the
-            INTERNAL project name — and with no brand configured, that is what
-            every customer saw in the header of a real shop. A developer's
-            working title presented as a wordmark is worse than no wordmark:
-            it looks deliberate, so nobody reports it.
-
-            Order: a marketing brand name if one is used, otherwise the name
-            over the door, otherwise the generic word — which says nothing
-            false and is obviously unfinished to the merchant.
-          */}
-          {brandName ?? shopName ?? t("common.shop")}
-        </Link>
+        <BrandLockup brand={brand} locale={locale} variant="header" />
 
         <Form method="get" action={path("/shop")} role="search" className="site-header__search">
           <label htmlFor="q" className="visually-hidden">

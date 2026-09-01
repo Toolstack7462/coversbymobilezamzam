@@ -15,7 +15,18 @@ import {
 import { ProductCard, type ProductCardData } from "~/components/storefront/product-card";
 import { availabilityState } from "~/domain/inventory/availability";
 
-export function meta() {
+export function meta({ matches }: Route.MetaArgs) {
+  /*
+   * The brand comes from the layout's loader, not a second constant.
+   *
+   * `matches` is the only way a child route can read an ancestor's data from
+   * `meta`, and it is worth the awkwardness: the alternative is the shop's name
+   * written out again here, which is how the tab title and the wordmark end up
+   * disagreeing after somebody renames the shop in one of them.
+   */
+  const shell = matches.find((m) => m?.id?.startsWith("routes/storefront/layout"));
+  const brand = (shell?.loaderData as { brand?: { full: string } } | undefined)?.brand;
+
   // Deliberately generic until the merchant supplies a brand name. A title
   // naming a shop that has not been named is an invention.
   //
@@ -25,7 +36,10 @@ export function meta() {
   // shipping without one, so search engines were composing that line from
   // whatever they scraped.
   return [
-    { title: "Accessori per smartphone" },
+    // "Page — Brand", the convention every browser tab and search result
+    // expects. Without a brand configured it stays the page name alone rather
+    // than trailing an empty dash.
+    { title: brand ? `Accessori per smartphone — ${brand.full}` : "Accessori per smartphone" },
     {
       name: "description",
       content:

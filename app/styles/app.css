@@ -1564,8 +1564,15 @@ a.chip:hover {
  * primary blue: #2457ff on a near-black scrim is under 4.5:1, and the accent
  * exists for exactly this ground.
  */
+/*
+ * The third verb goes back to the primary blue.
+ *
+ * It took the lime accent while the fold was dark, because #2457ff on
+ * near-black is under the contrast floor. On a light fold the reverse is true —
+ * lime on near-white is far under it — so the blue returns.
+ */
 .hero--with-media .hero__statement span:last-child {
-  color: var(--color-accent);
+  color: var(--color-primary);
 }
 
 .hero__lead {
@@ -2340,8 +2347,9 @@ a.chip:hover {
   display: grid;
   align-items: end;
   min-block-size: min(78vh, 42rem);
-  border-block-end: 0;
-  color: var(--color-on-deep);
+  border-block-end: var(--border-width) solid var(--color-border);
+  /* Ink on a light fold, not white on a dark one. */
+  color: var(--color-ink);
   overflow: hidden;
 }
 
@@ -2375,15 +2383,46 @@ a.chip:hover {
   position: absolute;
   inset: 0;
   z-index: -1;
+  /*
+   * A light scrim — the same guarantee, inverted.
+   *
+   * The fold was a dark photograph with white type; it is a bright one with ink
+   * type now. So the scrim has to protect DARK text against a photograph that
+   * might be dark, which is the same problem the other way round and needs the
+   * same treatment: the gradient carries the contrast floor by itself rather
+   * than trusting whichever picture is uploaded next. At the text end it is
+   * opaque enough for ink to clear 4.5:1 over a BLACK photograph.
+   */
   background-image:
     linear-gradient(
       100deg,
-      rgb(6 11 20 / 0.92) 0%,
-      rgb(6 11 20 / 0.75) 34%,
-      rgb(6 11 20 / 0.25) 62%,
-      rgb(6 11 20 / 0.1) 100%
+      rgb(250 249 246 / 0.94) 0%,
+      rgb(250 249 246 / 0.82) 36%,
+      rgb(250 249 246 / 0.3) 64%,
+      rgb(250 249 246 / 0.08) 100%
     ),
-    linear-gradient(0deg, rgb(6 11 20 / 0.55) 0%, rgb(6 11 20 / 0) 55%);
+    linear-gradient(0deg, rgb(250 249 246 / 0.5) 0%, rgb(250 249 246 / 0) 52%);
+}
+
+/*
+ * On a phone the wash is flatter, because the text is not in a column any more.
+ *
+ * The desktop scrim fades left to right: the headline sits in the dense end and
+ * the photograph stays visible in the clear one. At 390px the text spans the
+ * whole width, so its right-hand half was landing on the clear part — legible,
+ * and sitting across a watch strap, which reads as an accident rather than a
+ * composition. Automated checks do not catch this: axe cannot see text over a
+ * photograph. It was caught by looking at the phone screenshot.
+ */
+@media (max-width: 48rem) {
+  .hero--with-media::before {
+    background-image: linear-gradient(
+      180deg,
+      rgb(250 249 246 / 0.55) 0%,
+      rgb(250 249 246 / 0.86) 42%,
+      rgb(250 249 246 / 0.95) 100%
+    );
+  }
 }
 
 /*
@@ -2419,24 +2458,18 @@ a.chip:hover {
 }
 
 .hero--with-media .hero__lead {
-  color: var(--color-on-deep-secondary);
+  color: var(--color-text-secondary);
 }
 
-/* On the deep ground the secondary button needs its own treatment; the
-   light-surface one disappears. */
+/* On a light fold the secondary button is the ordinary one again. */
 .hero--with-media .btn--secondary {
-  background: transparent;
-  color: var(--color-on-deep);
-  border-color: rgb(255 255 255 / 0.45);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  border-color: var(--color-border-strong);
 }
 
 .hero--with-media .btn--secondary:hover {
-  background: rgb(255 255 255 / 0.12);
-  border-color: var(--color-on-deep);
-}
-
-.hero--with-media :focus-visible {
-  outline-color: var(--color-on-deep);
+  border-color: var(--color-ink);
 }
 
 /* Without a photograph the hero stays what it was: a statement on the surface
@@ -3597,20 +3630,35 @@ a.chip:hover {
  * either, it flickers.
  */
 
-/* The dark one, under the featured photography. */
+/*
+ * The featured band, light.
+ *
+ * It was navy: product photography reads well on dark, and it broke the long
+ * white run. The merchant looked at it and did not want it — their brand, their
+ * call — so the band keeps its job of changing the ground and does it in a
+ * cool tint instead of ink.
+ *
+ * Blue-tinted rather than the warm stone the services band uses, so the two
+ * changes of ground are still distinguishable from each other and from the page.
+ */
 .section--deep {
-  background-color: var(--color-ink-deep);
-  background-image: linear-gradient(180deg, #0c1426 0%, var(--color-ink-deep) 58%);
-  color: var(--color-on-deep);
+  background-color: var(--color-primary-surface);
+  background-image: linear-gradient(
+    180deg,
+    var(--color-primary-surface) 0%,
+    var(--color-canvas) 100%
+  );
+  color: var(--color-ink);
+  border-block: var(--border-width) solid var(--color-border);
   padding-block: clamp(var(--space-7), 7vw, var(--space-9));
 }
 
 .section--deep h2 {
-  color: var(--color-on-deep);
+  color: var(--color-ink);
 }
 
 .section--deep .section__more {
-  color: var(--color-on-deep);
+  color: var(--color-primary);
 }
 
 /*
@@ -3620,19 +3668,20 @@ a.chip:hover {
  * band is that the photographs sit in it. So the card is a lift of the ground
  * itself, and the border is a highlight rather than a line.
  */
+/* On a light ground the card is a card again: a real surface with a real
+   border, lifted off the tint rather than dissolved into it. */
 .section--deep .editorial {
-  background: rgb(255 255 255 / 0.045);
-  border-color: rgb(255 255 255 / 0.11);
-  color: var(--color-on-deep);
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-ink);
 }
 
 .section--deep .editorial:hover {
-  border-color: rgb(255 255 255 / 0.28);
-  background: rgb(255 255 255 / 0.07);
+  border-color: var(--color-ink);
 }
 
 .section--deep .editorial__media {
-  background: rgb(255 255 255 / 0.05);
+  background: var(--color-surface-sunken);
 }
 
 /*
@@ -3644,16 +3693,20 @@ a.chip:hover {
  * second place: small, repeated four times, and on a ground where lime reads at
  * about 13.9:1 rather than fighting a white page, where it would be unreadable.
  */
+/*
+ * The eyebrow loses the lime.
+ *
+ * The accent was put here because it reads at 13.9:1 on near-black. On this
+ * tint it is around 1.4:1 — invisible. A colour that only works on one ground
+ * cannot follow that ground when it changes, so the eyebrow goes back to
+ * secondary ink and the accent waits for a dark surface to exist again.
+ */
 .section--deep .editorial__eyebrow {
-  color: var(--color-accent);
+  color: var(--color-text-secondary);
 }
 
 .section--deep .editorial__note {
-  color: var(--color-on-deep-secondary);
-}
-
-.section--deep :focus-visible {
-  outline-color: var(--color-on-deep);
+  color: var(--color-text-secondary);
 }
 
 /*

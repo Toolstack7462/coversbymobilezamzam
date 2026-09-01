@@ -69,7 +69,7 @@ const BUCKET = ENVIRONMENT === "preview" ? "ita-commerce-preview-media" : "ita-c
 const IMAGES = [
   {
     slot: "setting:media.hero_image",
-    id: "54VhxmlxJiI",
+    id: "4lrS2PuN_2g",
     /*
      * 2000px, against 1440 for the previous hero.
      *
@@ -81,9 +81,10 @@ const IMAGES = [
     width: 2000,
     quality: 74,
     note:
-      "A phone in a case with a magnetic ring, held up against a coastal sunset. " +
-      "Product in a hand rather than a product shot, no third-party marks, and a " +
-      "composition with room on the left for the headline.",
+      "A white flat lay: phone, earbuds, case, stylus and watch. Replaced the " +
+      "coastal sunset shot at the merchant's request — they wanted the fold " +
+      "light rather than dark. Bright, an accessories composition rather than a " +
+      "single object, and a wide empty area on the left for the headline.",
   },
   {
     slot: "setting:media.store_image",

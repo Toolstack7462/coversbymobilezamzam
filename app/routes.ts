@@ -114,6 +114,7 @@ export default [
     route("admin/inventario/prenotazioni", "routes/admin/inventory-reservations.tsx"),
     route("admin/contenuti/homepage", "routes/admin/homepage.tsx"),
     route("admin/contenuti/pagine", "routes/admin/pages.tsx"),
+    route("admin/contenuti/seo", "routes/admin/seo.tsx"),
     route("admin/contenuti/legale", "routes/admin/legal-documents.tsx"),
     route("admin/impostazioni", "routes/admin/settings.tsx"),
     route("admin/importazioni", "routes/admin/imports.tsx"),

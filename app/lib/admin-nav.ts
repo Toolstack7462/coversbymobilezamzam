@@ -44,14 +44,44 @@ export interface NavGroup {
  * scattered through the tree.
  */
 export const ADMIN_FEATURES = {
-  catalogueAdmin: false,
+  /*
+   * Order fulfilment: pickups, shipments, returns.
+   *
+   * Still flagged, and it should be. The tables exist but NOTHING writes them —
+   * the checkout does not create a shipment or a pickup, and both
+   * `shipping.enabled` and `pickup.enabled` are off. Revealing three screens
+   * that list a table nothing populates is not shipping a feature, it is
+   * shipping three permanently empty pages and calling the admin complete.
+   * The flag comes off when the order flow fills them.
+   */
+  fulfilment: false,
+
+  // Shipped. The flags stay so the shape of "what is not built" is still one
+  // readable list rather than an absence.
   inventoryDetail: true,
   promotions: true,
-  content: false,
-  customers: false,
+  content: true,
+  customers: true,
+  importExport: true,
+
+  /*
+   * Retired, not pending.
+   *
+   * catalogueAdmin covered a "product families" screen, and `reviews` a review
+   * moderation queue. Neither is coming:
+   *
+   *   - product_families has no reader and no writer anywhere, and the job
+   *     people expect it to do — "does this fit my phone?" — is already done
+   *     properly by product_compatibility.
+   *   - there is no reviews table at all. A moderation screen would have needed
+   *     a schema, a collection flow and a policy on who may write one; a nav
+   *     entry promising it was the cheapest part by a wide margin.
+   *
+   * Both are kept here as `false` rather than deleted so that a future reader
+   * finds the decision instead of wondering whether they were forgotten.
+   */
+  catalogueAdmin: false,
   reviews: false,
-  importExport: false,
-  fulfilment: false,
 } as const;
 
 export type AdminFeature = keyof typeof ADMIN_FEATURES;
@@ -100,18 +130,11 @@ export const ADMIN_NAV: NavGroup[] = [
       // Brands and categories share one screen: they are the same kind of
       // thing, and a merchant sets both up in one sitting.
       { label: "Marchi e categorie", to: "/admin/marchi", permission: "product.read" },
-      {
-        label: "Famiglie prodotto",
-        to: "/admin/famiglie",
-        permission: "product.write",
-        flag: "catalogueAdmin",
-      },
       // No flag: built. Compatibility depends on it, so it is the one catalogue
       // screen that had to come first.
       { label: "Dispositivi", to: "/admin/dispositivi", permission: "product.read" },
       // No flag: this screen is built. The rest of the catalogue group is not.
       { label: "Compatibilità", to: "/admin/compatibilita", permission: "product.read" },
-      { label: "Recensioni", to: "/admin/recensioni", permission: "content.read", flag: "reviews" },
     ],
   },
   {
@@ -177,23 +200,9 @@ export const ADMIN_NAV: NavGroup[] = [
         to: "/admin/contenuti/homepage",
         permission: "content.write",
       },
-      {
-        label: "Menu e navigazione",
-        to: "/admin/contenuti/menu",
-        permission: "content.write",
-        flag: "content",
-      },
-      // No flag: built.
       { label: "Pagine", to: "/admin/contenuti/pagine", permission: "content.read" },
-      {
-        label: "Guide",
-        to: "/admin/contenuti/guide",
-        permission: "content.write",
-        flag: "content",
-      },
-      // No flag: built. The rest of the content group is not.
       { label: "Documenti legali", to: "/admin/contenuti/legale", permission: "content.read" },
-      { label: "SEO", to: "/admin/contenuti/seo", permission: "content.write", flag: "content" },
+      { label: "SEO", to: "/admin/contenuti/seo", permission: "content.read" },
     ],
   },
   {

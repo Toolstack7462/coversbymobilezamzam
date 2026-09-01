@@ -183,6 +183,66 @@ export interface GateStatus {
  * Drives the admin's "what is still hidden, and why" panel. The merchant should
  * be able to see the reason a feature is absent without reading source.
  */
+/**
+ * What each gate actually switches off, in the merchant's words.
+ *
+ * The dashboard used to print the gate CODE and the raw setting keys —
+ * "legal_identity — mancano: business.legal_name, business.vat_number". That is
+ * developer output on a shop owner's screen: it names an internal identifier
+ * and three database keys, and answers none of "what is missing, where does it
+ * show, and does it matter?".
+ *
+ * The labels live here, beside the checks they describe, so a gate cannot be
+ * added without somewhere to say what it does.
+ */
+export const GATE_LABELS: Record<string, { what: string; where: string }> = {
+  legal_identity: {
+    what: "Dati dell'azienda",
+    where: "La riga legale in fondo al sito, obbligatoria per vendere online",
+  },
+  store_section: {
+    what: "Il negozio fisico",
+    where: "La fascia «vieni a trovarci» e la pagina negozio",
+  },
+  opening_hours: { what: "Orari di apertura", where: "Pagina negozio e piè di pagina" },
+  structured_hours: {
+    what: "Orari per i motori di ricerca",
+    where: "La scheda che Google mostra accanto al negozio",
+  },
+  whatsapp: { what: "Contatto WhatsApp", where: "Piè di pagina e pagina contatti" },
+  phone: { what: "Numero di telefono", where: "Piè di pagina, pagina negozio e contatti" },
+  email: { what: "Indirizzo email", where: "Piè di pagina e pagina contatti" },
+  pickup: { what: "Ritiro in negozio", where: "La scelta alla cassa e i tempi di preparazione" },
+  local_business_schema: {
+    what: "Posizione sulla mappa",
+    where: "Indicazioni stradali e risultati di ricerca locali",
+  },
+};
+
+/**
+ * The settings themselves, named as the merchant sees them in Impostazioni.
+ *
+ * A key with no entry falls back to the key, which is ugly on purpose: it is
+ * how a missing label announces itself rather than hiding.
+ */
+export const SETTING_LABELS: Record<string, string> = {
+  [SETTING_KEYS.legalName]: "ragione sociale",
+  [SETTING_KEYS.vatNumber]: "partita IVA",
+  [SETTING_KEYS.reaNumber]: "numero REA",
+  [SETTING_KEYS.storeStreet]: "via e numero civico",
+  [SETTING_KEYS.storePostcode]: "CAP",
+  [SETTING_KEYS.storeCity]: "comune",
+  [SETTING_KEYS.shopName]: "nome del negozio",
+  [SETTING_KEYS.storeHoursDisplay]: "orari di apertura",
+  [SETTING_KEYS.storeHoursStructured]: "orari in formato strutturato",
+  [SETTING_KEYS.whatsappNumber]: "numero WhatsApp",
+  [SETTING_KEYS.phone]: "telefono",
+  [SETTING_KEYS.email]: "email",
+  [SETTING_KEYS.pickupPreparationTime]: "tempo di preparazione del ritiro",
+  [SETTING_KEYS.storeLatitude]: "latitudine",
+  [SETTING_KEYS.storeLongitude]: "longitudine",
+};
+
 export function gateStatuses(settings: SettingsMap): readonly GateStatus[] {
   const check = (feature: string, keys: readonly string[]): GateStatus => ({
     feature,

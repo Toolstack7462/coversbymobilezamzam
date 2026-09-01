@@ -4,7 +4,12 @@ import { cloudflareContext } from "../../../workers/app";
 import { requireStaff } from "~/infrastructure/auth/session.server";
 import { systemClock } from "~/infrastructure/primitives";
 import { money, format as formatMoney } from "~/domain/pricing/money";
-import { gateStatuses, type SettingsMap } from "~/domain/content/gates";
+import {
+  gateStatuses,
+  type SettingsMap,
+  GATE_LABELS,
+  SETTING_LABELS,
+} from "~/domain/content/gates";
 import { buildActionCentre, isClear, type ActionItem } from "~/domain/content/action-centre";
 import { computeSetupSteps, summariseSetup } from "~/domain/content/setup-steps";
 import { ORDER_VIEWS, PAYMENT_VIEWS, ORDER_DELIVERY_FACET } from "~/lib/order-views";
@@ -149,11 +154,14 @@ function Metric({
   value,
   note,
   to,
+  variant,
 }: {
   label: string;
   value: string | number;
   note?: string;
   to?: string;
+  /** `headline` is one of the two figures the page exists for. */
+  variant?: "headline";
 }) {
   const body = (
     <>
@@ -163,11 +171,14 @@ function Metric({
     </>
   );
   return to ? (
-    <Link to={to} className="ac-metric ac-metric--link">
+    <Link
+      to={to}
+      className={`ac-metric ac-metric--link${variant === "headline" ? " ac-metric--headline" : ""}`}
+    >
       {body}
     </Link>
   ) : (
-    <div className="ac-metric">{body}</div>
+    <div className={`ac-metric${variant === "headline" ? " ac-metric--headline" : ""}`}>{body}</div>
   );
 }
 
@@ -250,14 +261,32 @@ export default function AdminDashboard({ loaderData }: Route.ComponentProps) {
       {/* ── What happened ─────────────────────────────────────────────────── */}
       <section className="stack" style={{ marginBlockStart: "var(--space-6)" }}>
         <h2>Ultime 24 ore</h2>
-        <div className="ac-metrics">
-          <Metric label="Ordini ricevuti" value={metrics.ordersToday} to="/admin/ordini" />
+
+        {/*
+          Two figures, then the counters.
+          
+          Six equal cards asked the reader to rank them, every time. Money and
+          order count are what a shop owner opens this page for; the rest are
+          work queues, and a queue is a number you check rather than read. The
+          split is the hierarchy — same data, one decision made in advance.
+        */}
+        <div className="ac-headline">
           <Metric
+            variant="headline"
+            label="Ordini ricevuti"
+            value={metrics.ordersToday}
+            to="/admin/ordini"
+          />
+          <Metric
+            variant="headline"
             label="Valore degli ordini"
             value={formatMoney(money(metrics.valueToday))}
             // Calling this "incasso" would be a lie: most of it is not paid yet.
             note="Ordini creati, non incassati"
           />
+        </div>
+
+        <div className="ac-metrics">
           {canSeePayments ? (
             <>
               <Metric
@@ -300,13 +329,28 @@ export default function AdminDashboard({ loaderData }: Route.ComponentProps) {
             Queste parti del sito non vengono mostrate perché mancano i dati. Non viene inventato
             nulla: un campo vuoto non produce un segnaposto.
           </p>
-          <ul className="stack small">
-            {gates.map((gate) => (
-              <li key={gate.feature}>
-                <strong>{gate.feature}</strong> — mancano:{" "}
-                <code>{gate.missingKeys.join(", ")}</code>
-              </li>
-            ))}
+          {/*
+            Named, not coded.
+
+            This printed the gate identifier and the raw setting keys —
+            "legal_identity — mancano: business.legal_name, business.vat_number".
+            Three database keys and an internal name, on the screen of somebody
+            who runs a phone shop. The labels come from the gates module, beside
+            the checks they describe.
+          */}
+          <ul className="ac-gates">
+            {gates.map((gate) => {
+              const label = GATE_LABELS[gate.feature];
+              return (
+                <li className="ac-gate" key={gate.feature}>
+                  <span className="ac-gate__what">{label?.what ?? gate.feature}</span>
+                  {label ? <span className="ac-gate__where">{label.where}</span> : null}
+                  <span className="ac-gate__missing">
+                    Manca: {gate.missingKeys.map((k) => SETTING_LABELS[k] ?? k).join(", ")}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
           <p>
             <Link className="btn btn--secondary" to="/admin/impostazioni">

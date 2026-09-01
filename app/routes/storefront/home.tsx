@@ -594,6 +594,18 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 </li>
               ))}
             </ul>
+
+            {/*
+              One call to action for the three of them, and it goes to the store
+              page — which exists. Three buttons would imply three destinations,
+              and there is no repairs page to send anybody to. A link per service
+              would be three links to nowhere dressed as choice.
+            */}
+            <p className="service-cta">
+              <Link className="btn btn--secondary" to={path("/negozio")}>
+                {t("store.title")}
+              </Link>
+            </p>
           </section>
         ) : null}
       </>

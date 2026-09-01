@@ -1,0 +1,68 @@
+[
+  {
+    "slot": "setting:media.hero_image",
+    "key": "lifestyle/YjDYlIK9BGA-840a09622e.jpg",
+    "id": "YjDYlIK9BGA",
+    "photographer": "Todd Jiang",
+    "profile": "https://unsplash.com/@toddjiang",
+    "page": "https://unsplash.com/photos/green-phone-case-with-a-camera-lens-YjDYlIK9BGA",
+    "description": "Green phone case with a camera lens",
+    "note": "Green textured case on tan leather, side light. Warm, tactile, modern device.",
+    "bytes": 386037
+  },
+  {
+    "slot": "setting:media.store_image",
+    "key": "lifestyle/WEer-k_jhE4-dd98c60dca.jpg",
+    "id": "WEer-k_jhE4",
+    "photographer": "Gabriella Clare Marino",
+    "profile": "https://unsplash.com/@gabiontheroad",
+    "page": "https://unsplash.com/photos/a-city-street-lined-with-tall-buildings-and-stone-steps-WEer-k_jhE4",
+    "description": "a city street lined with tall buildings and stone steps",
+    "note": "Sulmona: the church steps, the confetti shop, the Abruzzo mountains. The actual town.",
+    "bytes": 607526
+  },
+  {
+    "slot": "category:demo-cover",
+    "key": "lifestyle/QM4RRxp29rE-f6e66b0ceb.jpg",
+    "id": "QM4RRxp29rE",
+    "photographer": "Barnaby Woodrow",
+    "profile": "https://unsplash.com/@cranky_bear",
+    "page": "https://unsplash.com/photos/brown-phone-case-on-a-wooden-desk-with-keyboard-QM4RRxp29rE",
+    "description": "Brown phone case on a wooden desk with keyboard",
+    "note": "Brown leather case on a wooden desk.",
+    "bytes": 95647
+  },
+  {
+    "slot": "category:demo-cavi",
+    "key": "lifestyle/b5NYQOMOcYw-8f92a6d118.jpg",
+    "id": "b5NYQOMOcYw",
+    "photographer": "Pham Nhat",
+    "profile": "https://unsplash.com/@ph4minhat",
+    "page": "https://unsplash.com/photos/three-white-charging-cables-on-a-light-blue-background-b5NYQOMOcYw",
+    "description": "Three white charging cables on a light blue background",
+    "note": "Three white charging cables on light blue.",
+    "bytes": 48933
+  },
+  {
+    "slot": "category:demo-caricabatterie",
+    "key": "lifestyle/G_GaeDNyMe8-83120b821b.jpg",
+    "id": "G_GaeDNyMe8",
+    "photographer": "Rebecca Aldama",
+    "profile": "https://unsplash.com/@rebapocket",
+    "page": "https://unsplash.com/photos/white-power-adapter-G_GaeDNyMe8",
+    "description": "white power adapter",
+    "note": "White power adapter on leather.",
+    "bytes": 64158
+  },
+  {
+    "slot": "category:demo-powerbank",
+    "key": "lifestyle/XvSiM0xsFuE-a2ebcba141.jpg",
+    "id": "XvSiM0xsFuE",
+    "photographer": "Behnam Norouzi",
+    "profile": "https://unsplash.com/@behy_studio",
+    "page": "https://unsplash.com/photos/a-blue-power-bank-charges-a-smartphone-on-white-background-XvSiM0xsFuE",
+    "description": "A blue power bank charges a smartphone on white background",
+    "note": "Blue power bank charging a phone, plain white ground.",
+    "bytes": 44074
+  }
+]

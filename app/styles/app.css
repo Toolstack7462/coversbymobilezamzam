@@ -1383,10 +1383,26 @@ a.chip:hover {
   font-size: var(--text-ui);
   line-height: var(--text-ui-lh);
   font-weight: var(--weight-semibold);
-  /* A rule above rather than an icon: an icon set would need to be invented,
-     and a wrong icon is worse than none. */
+  /*
+   * A short accent rule rather than an icon: an icon set would have to be
+   * invented, and a wrong icon is worse than none.
+   *
+   * Deliberately short. Run to the full width of the item and it reads as a
+   * stray horizontal line that stops in the middle of the page — which is
+   * exactly how it looked at 32rem.
+   */
   padding-block-start: var(--space-3);
-  border-block-start: 2px solid var(--color-ink);
+  position: relative;
+}
+
+.trust__title::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  inline-size: 2.5rem;
+  block-size: 2px;
+  background: var(--color-primary);
 }
 
 .trust__body {
@@ -2116,14 +2132,22 @@ a.chip:hover {
   isolation: isolate;
 }
 
+/*
+ * z-index 0, not -1.
+ *
+ * `isolation: isolate` on the band creates a stacking context, and a negative
+ * z-index inside one paints behind the parent's CONTENT but not behind the
+ * parent's own background — which here is opaque near-black. The photograph was
+ * uploaded, served, and completely invisible.
+ */
 .store-band__image {
   position: absolute;
   inset: 0;
   inline-size: 100%;
   block-size: 100%;
   object-fit: cover;
-  opacity: 0.28;
-  z-index: -1;
+  opacity: 0.3;
+  z-index: 0;
 }
 
 /* The band is already near-black; the image sits behind the text at low opacity
@@ -2131,6 +2155,7 @@ a.chip:hover {
    how bright the photograph happens to be. */
 .store-band--media .store-band__inner {
   position: relative;
+  z-index: 1;
 }
 
 /* ── Hero reveal ──────────────────────────────────────────────────────────────
@@ -2151,13 +2176,28 @@ a.chip:hover {
  * and costs nothing in the bundle — which matters on a Worker already spending
  * 4-7ms of a 10ms CPU budget.
  */
+/*
+ * Transform only. No opacity, at any point.
+ *
+ * The first version animated from `opacity: 0.001` to protect LCP — the pixels
+ * are painted, so the browser counts the element as rendered. That worked, and
+ * introduced a different fault: while the animation runs, the text and the
+ * primary button are partially transparent, so their EFFECTIVE contrast against
+ * the background is below the threshold. axe caught it on the hero CTA, and it
+ * failed intermittently depending on whether the check landed mid-animation.
+ *
+ * A transient contrast failure is still a contrast failure — the person reading
+ * the page during those 400ms is the person the rule exists for.
+ *
+ * So nothing fades. The elements move a short distance into place at full
+ * opacity: LCP is still protected, contrast is never reduced, and the reveal
+ * reads the same.
+ */
 @keyframes hero-settle {
   from {
-    opacity: 0.001;
-    transform: translate3d(0, 0.4em, 0);
+    transform: translate3d(0, 0.5em, 0);
   }
   to {
-    opacity: 1;
     transform: none;
   }
 }

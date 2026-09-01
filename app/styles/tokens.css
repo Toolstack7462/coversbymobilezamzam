@@ -212,6 +212,27 @@
      read, and no amount of good type fixes it. */
   --measure: 46rem;
   --gutter: var(--space-4);
+  /* ── Stacking ──────────────────────────────────────────────────────────
+   *
+   * A named ladder, so a new overlay never has to guess and never reaches for
+   * 999. The values are spaced ten apart to leave room between rungs without
+   * anyone inventing 41.
+   *
+   * `skip` is deliberately the top: a keyboard user's escape hatch must never
+   * be covered by the bars it exists to skip past.
+   *
+   * This ladder is for elements that stack against the PAGE. A 0/1/2 inside a
+   * component that has its own stacking context — a scrim over a tile, an image
+   * behind its own copy — is local and correct; giving it a global token would
+   * say it competes with the header, which it does not.
+   */
+  --z-raised: 1;
+  --z-sticky: 20;
+  --z-bar: 40;
+  --z-overlay: 60;
+  --z-modal: 80;
+  --z-skip: 100;
+
   --header-height: 64px;
   --utility-bar-height: 36px;
 

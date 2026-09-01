@@ -65,6 +65,23 @@ select {
   color: inherit;
 }
 
+/*
+ * Removes the ~300ms tap delay some mobile browsers still hold in case the tap
+ * turns into a double-tap-to-zoom. Scoped to controls, so pinch-zoom on the
+ * page and on product photography is untouched — disabling that would fail
+ * WCAG 1.4.4 and make the site unusable for anyone who magnifies.
+ */
+a,
+button,
+[role="button"],
+label,
+summary,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
 h1,
 h2,
 h3,
@@ -151,7 +168,7 @@ a {
   position: absolute;
   inset-inline-start: var(--space-4);
   inset-block-start: calc(var(--space-4) * -4);
-  z-index: 100;
+  z-index: var(--z-skip);
   padding: var(--space-3) var(--space-4);
   background: var(--color-ink);
   color: var(--color-surface);
@@ -1665,7 +1682,7 @@ a.chip:hover {
     position: fixed;
     inset-inline: 0;
     inset-block-end: 0;
-    z-index: 40;
+    z-index: var(--z-bar);
     background: var(--color-surface);
     border-block-start: var(--border-width) solid var(--color-border);
     /* Clear of the home indicator on a modern phone. */
@@ -1800,7 +1817,8 @@ a.chip:hover {
     position: fixed;
     inset-inline: 0;
     inset-block-end: calc(3.25rem + env(safe-area-inset-bottom, 0px));
-    z-index: 39;
+    /* One rung below the navigation it sits above. */
+    z-index: calc(var(--z-bar) - 1);
     align-items: center;
     justify-content: space-between;
     gap: var(--space-3);

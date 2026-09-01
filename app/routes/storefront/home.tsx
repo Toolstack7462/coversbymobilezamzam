@@ -241,6 +241,25 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         */}
         {loaderData.heroImage ? (
           <div className="hero__media" aria-hidden="true">
+            {/*
+              Preloaded, because this image IS the LCP element on desktop.
+
+              Without it the browser cannot know the URL until it has parsed the
+              HTML and reached this tag — measured at 440ms, against ~50ms for a
+              preload in the head. `fetchPriority` alone does not fix that: it
+              reorders the queue once the request is known, it does not make the
+              request happen sooner.
+
+              React 19 hoists this into <head> from here, so the URL stays with
+              the element it belongs to rather than being duplicated in a route
+              module that would have to be kept in step with it.
+            */}
+            <link
+              rel="preload"
+              as="image"
+              href={`${loaderData.mediaBaseUrl}/${loaderData.heroImage}`}
+              fetchPriority="high"
+            />
             <img
               src={`${loaderData.mediaBaseUrl}/${loaderData.heroImage}`}
               alt=""

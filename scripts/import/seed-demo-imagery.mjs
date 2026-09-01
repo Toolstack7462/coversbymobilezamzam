@@ -48,44 +48,59 @@ const BUCKET = ENVIRONMENT === "preview" ? "ita-commerce-preview-media" : "ita-c
 /**
  * The selection.
  *
- * `width` is the delivered size: a hero is seen large, a category tile is
- * ~11rem tall and would waste bandwidth at hero resolution.
+ * `width` is the delivered size, and it is chosen from the slot's ACTUAL
+ * display size at 2x density — not from "big is safer".
+ *
+ * Format alone did almost nothing here: switching JPEG to WebP took the hero
+ * from 386KB to 368KB, because Unsplash's JPEG encoder is already good. The
+ * saving is in dimensions. The hero occupies half of a 1440px page, so it is
+ * displayed around 720px wide and 1440 covers it at 2x; 2000 was shipping
+ * pixels no screen resolves.
+ *
+ * `quality` drops for the store image because it sits behind text at 30%
+ * opacity, where compression artefacts are invisible by construction.
  */
 const IMAGES = [
   {
     slot: "setting:media.hero_image",
     id: "YjDYlIK9BGA",
-    width: 2000,
+    width: 1440,
+    quality: 78,
     note: "Green textured case on tan leather, side light. Warm, tactile, modern device.",
   },
   {
     slot: "setting:media.store_image",
     id: "WEer-k_jhE4",
-    width: 2000,
+    width: 1600,
+    quality: 62,
     note: "Sulmona: the church steps, the confetti shop, the Abruzzo mountains. The actual town.",
   },
   {
     slot: "category:demo-cover",
     id: "QM4RRxp29rE",
-    width: 1200,
+    width: 800,
+    quality: 76,
     note: "Brown leather case on a wooden desk.",
   },
   {
     slot: "category:demo-cavi",
     id: "b5NYQOMOcYw",
-    width: 1200,
+    width: 800,
+    quality: 76,
     note: "Three white charging cables on light blue.",
   },
   {
     slot: "category:demo-caricabatterie",
     id: "G_GaeDNyMe8",
-    width: 1200,
+    width: 800,
+    quality: 76,
     note: "White power adapter on leather.",
   },
   {
     slot: "category:demo-powerbank",
     id: "XvSiM0xsFuE",
-    width: 1200,
+    width: 800,
+    quality: 76,
     note: "Blue power bank charging a phone, plain white ground.",
   },
 ];
@@ -121,11 +136,20 @@ for (const image of IMAGES) {
     })
   ).json();
 
-  const url = `${meta.urls.raw}&w=${image.width}&q=78&fm=jpg&fit=crop`;
+  /*
+   * WebP, not JPEG.
+   *
+   * The hero is the LCP element on desktop and was shipping 386KB of JPEG.
+   * Nothing negotiates format here — `/media/*` serves the key it is asked
+   * for — so the format has to be decided at upload. WebP is accepted by the
+   * media validator, supported by every browser that can run this app, and
+   * roughly 40% smaller at the same visual quality.
+   */
+  const url = `${meta.urls.raw}&w=${image.width}&q=${image.quality}&fm=webp&fit=crop`;
   const bytes = Buffer.from(await (await fetch(url)).arrayBuffer());
   const hash = createHash("sha256").update(bytes).digest("hex");
-  const key = `lifestyle/${image.id}-${hash.slice(0, 10)}.jpg`;
-  const file = join(work, `${image.id}.jpg`);
+  const key = `lifestyle/${image.id}-${hash.slice(0, 10)}.webp`;
+  const file = join(work, `${image.id}.webp`);
   writeFileSync(file, bytes);
 
   wrangler([
@@ -136,7 +160,7 @@ for (const image of IMAGES) {
     "--file",
     file,
     "--content-type",
-    "image/jpeg",
+    "image/webp",
     "--jurisdiction",
     "eu",
     REMOTE ? "--remote" : "--local",

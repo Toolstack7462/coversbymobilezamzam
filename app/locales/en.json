@@ -163,7 +163,12 @@
     "filtered_by_device": "Compatible with {{device}}",
     "clear_device": "show all",
     "filter_device": "Filter by device",
-    "filter_category": "Filter by category"
+    "filter_category": "Filter by category",
+    "sort_apply": "Apply",
+    "clear_all": "Clear filters",
+    "more_categories": "Also look at",
+    "help_title": "Not finding what you need?",
+    "help_body": "Come in with the phone: working out what you need beats describing it."
   },
   "cart": {
     "title": "Your cart",
@@ -281,5 +286,9 @@
     "categories": "Categories",
     "information": "Information",
     "made_by": "Site by"
+  },
+  "guides": {
+    "more": "More guides",
+    "read": "Read"
   }
 }

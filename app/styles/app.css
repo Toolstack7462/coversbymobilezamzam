@@ -155,10 +155,29 @@ a {
 
 /* Logical properties throughout, so an RTL locale mirrors correctly from the
    `dir` attribute alone rather than needing a second stylesheet. */
+/*
+ * Two products per row on a phone, not one.
+ *
+ * At a 15rem floor a 390px screen fits exactly one column, so each accessory
+ * took a full screen — a category of twelve became twelve screens of scrolling,
+ * with a square image and three short lines in each. These are small objects;
+ * two side by side is how they are seen in a shop and how they compare.
+ *
+ * The floor drops to 9.5rem below 30rem and returns to 15rem above it, so a
+ * desktop row is still four cards of a readable size rather than eight cramped
+ * ones.
+ */
 .grid-products {
   display: grid;
-  gap: var(--space-4);
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 9.5rem), 1fr));
+}
+
+@media (min-width: 30rem) {
+  .grid-products {
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  }
 }
 
 .visually-hidden {
@@ -3332,4 +3351,235 @@ a.chip:hover {
     font-size: 0.625rem;
     letter-spacing: 0.14em;
   }
+}
+
+/* ── Collection header ──────────────────────────────────────────────────────
+ *
+ * A department, not a filtered list. Every category already carries a
+ * photograph — the homepage tiles have shown them since they were added — and
+ * this page was the one place a customer arrived at a category and saw none.
+ */
+/*
+ * The banner overrides the reading measure it inherits.
+ *
+ * `.collection-head` caps itself at `--measure` (46rem), which is right for a
+ * heading and a sentence and wrong for a photograph — the banner came out 736px
+ * of a 1440px page with the image cropped to a letterbox. The measure moves to
+ * the text inside it instead, where it belongs.
+ */
+.collection-head--media {
+  max-inline-size: none;
+  align-self: stretch;
+  inline-size: 100%;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  align-items: end;
+  min-block-size: clamp(13rem, 26vw, 19rem);
+  margin-block-end: var(--space-5);
+  padding: var(--space-6) var(--space-6) var(--space-5);
+  border-radius: var(--radius-editorial);
+  overflow: hidden;
+  color: var(--color-on-deep);
+}
+
+.collection-head__image {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+/*
+ * The same guaranteed floor as the homepage tiles, and for the same reason:
+ * the merchant chooses the photograph, so the contrast cannot depend on which
+ * one is there today. Dark enough at the text end for white to clear 4.5:1
+ * against a white image.
+ */
+.collection-head--media::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: linear-gradient(
+    0deg,
+    rgb(6 11 20 / 0.86) 0%,
+    rgb(6 11 20 / 0.66) 42%,
+    rgb(6 11 20 / 0.2) 74%,
+    rgb(6 11 20 / 0.08) 100%
+  );
+}
+
+.collection-head--media .collection-head__lead,
+.collection-head--media .collection-head__device {
+  color: var(--color-on-deep-secondary);
+}
+
+.collection-head--media .eyebrow {
+  color: var(--color-on-deep-secondary);
+}
+
+.collection-head__body {
+  max-inline-size: 40rem;
+}
+
+/* ── Collection toolbar ─────────────────────────────────────────────────────
+ *
+ * How many, in what order, and a way out — on one line. These were scattered:
+ * the count under the description, the sort control adrift in the middle of the
+ * page, and its submit labelled "Continua".
+ */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-4);
+  padding-block: var(--space-3);
+  margin-block-end: var(--space-5);
+  border-block: var(--border-width) solid var(--color-border);
+}
+
+.toolbar__count {
+  margin: 0;
+  font-size: var(--text-ui);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+}
+
+.toolbar__sort {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.toolbar__label {
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-lh);
+  color: var(--color-text-secondary);
+}
+
+/*
+ * `.input` is `width: 100%`, which is right in a form column and wrong in a
+ * toolbar: the sort control stretched to a third of the page and pushed the
+ * label and the button onto their own lines.
+ */
+.toolbar__select {
+  inline-size: auto;
+  min-inline-size: 12rem;
+  max-inline-size: 16rem;
+  min-block-size: var(--target-min);
+  padding-block: 0;
+}
+
+/* The sort group stays on one line down to the point where it genuinely cannot,
+   rather than wrapping the moment the select is wide. */
+.toolbar__sort {
+  flex-wrap: nowrap;
+}
+
+@media (max-width: 34rem) {
+  .toolbar {
+    align-items: stretch;
+  }
+
+  .toolbar__sort {
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+}
+
+.toolbar__reset {
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
+/* ── Thin category helper ───────────────────────────────────────────────────
+   Somewhere to look when a department has little in it, instead of a field of
+   empty page between the last card and the footer. */
+.thin-help {
+  display: grid;
+  gap: var(--space-5);
+  margin-block-start: var(--space-6);
+  padding: var(--space-5);
+  background: linear-gradient(180deg, var(--color-surface) 0%, var(--color-canvas) 100%);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+}
+
+.thin-help__title {
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-lh);
+  margin-block-end: var(--space-3);
+}
+
+.thin-help__body {
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin-block-end: var(--space-3);
+  text-wrap: pretty;
+}
+
+/* ── Prose pages: guides and information ────────────────────────────────────
+ *
+ * A guide is READING, so it is treated as reading rather than as a document
+ * dump: a warm banded header, a standfirst that is allowed to be a sentence,
+ * and a measure that does not run the width of a monitor.
+ */
+.prose-page__head {
+  padding: clamp(var(--space-6), 6vw, var(--space-8)) 0 clamp(var(--space-5), 4vw, var(--space-6));
+  margin-block-end: clamp(var(--space-5), 4vw, var(--space-6));
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+/* The first paragraph carries the piece, so it is set larger than the rest and
+   not merely "muted body text with a bigger font-size". */
+.prose > p:first-of-type {
+  font-size: clamp(1.0625rem, 1rem + 0.35vw, 1.1875rem);
+  line-height: 1.6;
+}
+
+/* A rule above each subheading, so a long guide has visible joints when it is
+   scanned rather than read. */
+.prose h2 {
+  padding-block-start: var(--space-4);
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+.prose h2:first-child {
+  padding-block-start: 0;
+  border-block-start: 0;
+}
+
+/* ── Prose pages: centre the column ─────────────────────────────────────────
+ *
+ * The measure was left-aligned inside a full-width page, so a guide filled the
+ * left 47% of a 1440px screen and left the rest white. A reading page centres
+ * its column — the void was not restraint, it was an unset margin.
+ */
+.prose-page__head,
+.prose,
+.prose-next {
+  margin-inline: auto;
+}
+
+.prose-next {
+  max-width: var(--measure);
+  margin-block-start: clamp(var(--space-6), 6vw, var(--space-8));
+  padding-block-start: var(--space-5);
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+.prose-next__title {
+  font-size: var(--text-h3);
+  line-height: var(--text-h3-lh);
+  margin-block-end: var(--space-4);
+}
+
+.prose-next__cta {
+  margin-block-start: var(--space-5);
 }

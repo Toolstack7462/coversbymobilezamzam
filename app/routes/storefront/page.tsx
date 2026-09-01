@@ -1,7 +1,7 @@
-import { data } from "react-router";
+import { data, Link, useLocation } from "react-router";
 import type { Route } from "./+types/page";
 import { cloudflareContext } from "../../../workers/app";
-import { parseLocalePath } from "~/lib/i18n";
+import { parseLocalePath, localePath, translator } from "~/lib/i18n";
 import { parsePageBody } from "~/domain/content/page-body";
 
 /**
@@ -39,7 +39,7 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
    * week cannot be read early by anyone who guesses the slug.
    */
   const row = await env.DB.prepare(
-    `SELECT p.slug,
+    `SELECT p.slug, p.page_type,
             COALESCE(t.title, fallback.title)                     AS title,
             COALESCE(t.excerpt, fallback.excerpt)                 AS excerpt,
             COALESCE(t.body, fallback.body)                       AS body,
@@ -56,6 +56,7 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
     .bind(params.slug, locale, Date.now())
     .first<{
       slug: string;
+      page_type: string;
       title: string | null;
       excerpt: string | null;
       body: string | null;
@@ -69,7 +70,35 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
     throw data({ message: "Pagina non trovata" }, { status: 404 });
   }
 
+  /*
+   * The other guides, for the end of this one.
+   *
+   * Only for a guide, and only the others: a page that ends in nothing is a
+   * dead end, and "read the thing you are already reading" is worse than
+   * nothing. Derived from `page_type`, so publishing a fourth guide puts it
+   * here without anyone editing a list.
+   */
+  const siblings =
+    row.page_type === "guide"
+      ? await env.DB.prepare(
+          `SELECT p.slug, COALESCE(t.title, fallback.title) AS title, t.excerpt
+             FROM pages p
+             LEFT JOIN page_translations t        ON t.page_id = p.id AND t.locale = ?2
+             LEFT JOIN page_translations fallback ON fallback.page_id = p.id AND fallback.locale = 'it'
+            WHERE p.page_type = 'guide'
+              AND p.status = 'published'
+              AND p.archived_at IS NULL
+              AND p.slug <> ?1
+              AND (p.publish_at IS NULL OR p.publish_at <= ?3)
+            ORDER BY p.sort_order
+            LIMIT 3`,
+        )
+          .bind(params.slug, locale, Date.now())
+          .all<{ slug: string; title: string | null; excerpt: string | null }>()
+      : null;
+
   return {
+    related: (siblings?.results ?? []).filter((r) => r.title),
     page: {
       slug: row.slug,
       title: row.title,
@@ -82,7 +111,9 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
 }
 
 export default function ContentPage({ loaderData }: Route.ComponentProps) {
-  const { page } = loaderData;
+  const { page, related } = loaderData;
+  const { locale } = parseLocalePath(useLocation().pathname);
+  const t = translator(locale);
 
   return (
     <article className="page prose-page">
@@ -108,6 +139,39 @@ export default function ContentPage({ loaderData }: Route.ComponentProps) {
           return <p key={key}>{block.text}</p>;
         })}
       </div>
+
+      {/*
+        Where to go next.
+
+        A guide that ends mid-sentence at the footer is a page that answered a
+        question and then abandoned the person who asked it. Both destinations
+        here are real: the other published guides, and the catalogue. Nothing
+        invented, and no link to a page that does not exist.
+      */}
+      {related.length > 0 ? (
+        <aside className="prose-next">
+          <h2 className="prose-next__title">{t("guides.more")}</h2>
+          <ul className="guide-grid">
+            {related.map((item) => (
+              <li key={item.slug}>
+                <Link className="guide" to={localePath(locale, `/pagine/${item.slug}`)}>
+                  <h3 className="guide__title">{item.title}</h3>
+                  {item.excerpt ? <p className="guide__body">{item.excerpt}</p> : null}
+                  <span className="guide__more" aria-hidden="true">
+                    {t("guides.read")}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+
+          <p className="prose-next__cta">
+            <Link className="btn btn--secondary" to={localePath(locale, "/shop")}>
+              {t("common.shop")}
+            </Link>
+          </p>
+        </aside>
+      ) : null}
     </article>
   );
 }

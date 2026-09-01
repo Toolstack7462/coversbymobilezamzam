@@ -1,4 +1,4 @@
-import { Link, Form, useLocation } from "react-router";
+import { Link, Form, useLocation, useRouteLoaderData } from "react-router";
 import type { Route } from "./+types/collection";
 import { categoryMembershipSql } from "~/domain/catalogue/category-membership";
 import { cloudflareContext } from "../../../workers/app";
@@ -170,13 +170,13 @@ export async function loader({ context, request }: Route.LoaderArgs) {
     // the merchant. Absent description renders nothing rather than filler.
     categoria
       ? env.DB.prepare(
-          `SELECT ct.name, ct.description
+          `SELECT ct.name, ct.description, c.image_key
              FROM categories c
              JOIN category_translations ct ON ct.category_id = c.id AND ct.locale = 'it'
             WHERE c.slug = ?1 AND c.visible = 1 AND c.archived_at IS NULL`,
         )
           .bind(categoria)
-          .first<{ name: string; description: string | null }>()
+          .first<{ name: string; description: string | null; image_key: string | null }>()
       : null,
 
     // The device the customer is filtering by, so the page can say so in words
@@ -255,6 +255,17 @@ export async function loader({ context, request }: Route.LoaderArgs) {
 }
 
 export default function Collection({ loaderData }: Route.ComponentProps) {
+  /*
+   * The store gate, from the layout that already computed it.
+   *
+   * Not a second settings query: the shell loads the snapshot once per request
+   * and every gate on the page answers from it. Optional by type, so a render
+   * outside the layout degrades to "no counter" rather than crashing.
+   */
+  const shell = useRouteLoaderData("routes/storefront/layout") as
+    { gates?: { store?: boolean } } | undefined;
+  const showStore = shell?.gates?.store === true;
+
   const { pathname, search } = useLocation();
   const { locale } = parseLocalePath(pathname);
   const t = translator(locale);
@@ -304,33 +315,58 @@ export default function Collection({ loaderData }: Route.ComponentProps) {
         category they have not written about renders a heading alone rather
         than filler prose.
       */}
-      <header className="collection-head">
-        {activeCategory ? <p className="eyebrow">{t("common.shop")}</p> : null}
-        <h1 className="collection-head__title">
-          {filters.q
-            ? `${t("common.search")}: ${filters.q}`
-            : (activeCategory?.name ?? t("common.shop"))}
-        </h1>
+      {/*
+        A banner when the category has a photograph, a heading when it does not.
 
-        {activeCategory?.description ? (
-          <p className="collection-head__lead">{activeCategory.description}</p>
+        The image already exists — every category carries one, and the homepage
+        tiles have shown them since they were added. This page was the only
+        place a customer arrived at a category and saw no picture of it, which
+        made a category page look like a filtered list rather than a department.
+
+        The scrim is the same guaranteed floor the homepage tiles use: the
+        merchant can change the photograph, so contrast cannot depend on which
+        one is there today.
+      */}
+      <header
+        className={`collection-head${activeCategory?.image_key ? " collection-head--media" : ""}`}
+      >
+        {activeCategory?.image_key ? (
+          <img
+            className="collection-head__image"
+            src={`${loaderData.mediaBaseUrl}/${activeCategory.image_key}`}
+            alt=""
+            /* Decorative: the category is named in the heading over it, and
+               describing the photograph again would make a screen reader read
+               the department twice. */
+            aria-hidden="true"
+            fetchPriority="high"
+          />
         ) : null}
 
-        {/* The device filter said in words. A query string is not a sentence. */}
-        {activeDevice ? (
-          <p className="collection-head__device">
-            {t("collection.filtered_by_device", {
-              device: `${activeDevice.brand_name} ${activeDevice.name}`,
-            })}{" "}
-            <Link className="collection-head__clear" to={clearedHref("dispositivo")}>
-              {t("collection.clear_device")}
-            </Link>
-          </p>
-        ) : null}
+        <div className="collection-head__body">
+          {activeCategory ? <p className="eyebrow">{t("common.shop")}</p> : null}
+          <h1 className="collection-head__title">
+            {filters.q
+              ? `${t("common.search")}: ${filters.q}`
+              : (activeCategory?.name ?? t("common.shop"))}
+          </h1>
 
-        <p className="muted" role="status">
-          {plural(t, "collection.results", total)}
-        </p>
+          {activeCategory?.description ? (
+            <p className="collection-head__lead">{activeCategory.description}</p>
+          ) : null}
+
+          {/* The device filter said in words. A query string is not a sentence. */}
+          {activeDevice ? (
+            <p className="collection-head__device">
+              {t("collection.filtered_by_device", {
+                device: `${activeDevice.brand_name} ${activeDevice.name}`,
+              })}{" "}
+              <Link className="collection-head__clear" to={clearedHref("dispositivo")}>
+                {t("collection.clear_device")}
+              </Link>
+            </p>
+          ) : null}
+        </div>
       </header>
 
       {/*
@@ -385,31 +421,63 @@ export default function Collection({ loaderData }: Route.ComponentProps) {
         </section>
       ) : null}
 
-      {/* A real GET form: sorting works without JavaScript and the result is a
-          shareable URL. */}
-      <Form method="get" action={path("/shop")} className="cluster">
-        {filters.q ? <input type="hidden" name="q" value={filters.q} /> : null}
-        {filters.categoria ? (
-          <input type="hidden" name="categoria" value={filters.categoria} />
-        ) : null}
-        {filters.dispositivo ? (
-          <input type="hidden" name="dispositivo" value={filters.dispositivo} />
-        ) : null}
-        <div className="field">
-          <label className="field__label" htmlFor="ordina">
+      {/*
+        The toolbar: how many results, how they are ordered, and a way out.
+
+        These three were scattered — the count sat under the description at the
+        top of the page, the sort control floated alone in the middle, and its
+        submit button said "Continua". That is the generic `common.continue`
+        string, reused because it was there; it told the customer they were
+        continuing to somewhere, when the button re-sorts a list they are
+        already looking at. It says "Applica" now, from its own key.
+
+        Still a real GET form, so sorting works with no JavaScript and produces
+        a shareable URL.
+      */}
+      <div className="toolbar">
+        <p className="toolbar__count" role="status">
+          {plural(t, "collection.results", total)}
+        </p>
+
+        <Form method="get" action={path("/shop")} className="toolbar__sort">
+          {filters.q ? <input type="hidden" name="q" value={filters.q} /> : null}
+          {filters.categoria ? (
+            <input type="hidden" name="categoria" value={filters.categoria} />
+          ) : null}
+          {filters.dispositivo ? (
+            <input type="hidden" name="dispositivo" value={filters.dispositivo} />
+          ) : null}
+
+          <label className="toolbar__label" htmlFor="ordina">
             {t("collection.sort")}
           </label>
-          <select id="ordina" name="ordina" className="input" defaultValue={filters.sort}>
+          <select
+            id="ordina"
+            name="ordina"
+            className="input toolbar__select"
+            defaultValue={filters.sort}
+          >
             <option value="relevance">{t("collection.sort_relevance")}</option>
             <option value="price_asc">{t("collection.sort_price_asc")}</option>
             <option value="price_desc">{t("collection.sort_price_desc")}</option>
             <option value="newest">{t("collection.sort_newest")}</option>
           </select>
-        </div>
-        <button type="submit" className="btn btn--secondary">
-          {t("common.continue")}
-        </button>
-      </Form>
+          <button type="submit" className="btn btn--secondary toolbar__apply">
+            {t("collection.sort_apply")}
+          </button>
+
+          {/*
+            Only when something is actually filtered. A permanent "clear
+            filters" control on an unfiltered list is a button that does
+            nothing, and the customer has to read it to find that out.
+          */}
+          {filters.categoria || filters.dispositivo || filters.q ? (
+            <Link className="toolbar__reset" to={path("/shop")}>
+              {t("collection.clear_all")}
+            </Link>
+          ) : null}
+        </Form>
+      </div>
 
       {products.length === 0 ? (
         <div className="empty-state">
@@ -434,6 +502,51 @@ export default function Collection({ loaderData }: Route.ComponentProps) {
           ))}
         </div>
       )}
+
+      {/*
+        A thin category does not get to end in white space.
+
+        Two products in a category left about two hundred pixels of empty page
+        between the last card and the footer — which reads as a page that failed
+        to load rather than a department the shop is still building. When there
+        is little to show, the useful thing is somewhere else to look: the other
+        departments, and the fact that a person in Sulmona will answer.
+
+        Only below a full row, and never on an empty result — an empty search
+        already has its own state above, and stacking a second one under it
+        would be two apologies for the same thing.
+      */}
+      {products.length > 0 && products.length < 4 && loaderData.categoryOptions.length > 1 ? (
+        <aside className="thin-help">
+          <div className="thin-help__block">
+            <h2 className="thin-help__title">{t("collection.more_categories")}</h2>
+            <ul className="cluster">
+              {loaderData.categoryOptions
+                .filter((c) => c.slug !== filters.categoria)
+                .slice(0, 6)
+                .map((c) => (
+                  <li key={c.slug}>
+                    <Link className="chip" to={withParam("categoria", c.slug)}>
+                      {c.name}
+                    </Link>
+                  </li>
+                ))}
+            </ul>
+          </div>
+
+          {/* Gated on the shop being configured, like every other mention of
+              the counter. No address, no promise. */}
+          {showStore ? (
+            <div className="thin-help__block">
+              <h2 className="thin-help__title">{t("collection.help_title")}</h2>
+              <p className="thin-help__body">{t("collection.help_body")}</p>
+              <Link className="btn btn--secondary" to={path("/negozio")}>
+                {t("store.title")}
+              </Link>
+            </div>
+          ) : null}
+        </aside>
+      ) : null}
 
       {/* Real pagination links, not infinite scroll: back works, and the page
           is reachable without JavaScript. */}

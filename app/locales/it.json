@@ -163,7 +163,12 @@
     "filtered_by_device": "Compatibile con {{device}}",
     "clear_device": "mostra tutti",
     "filter_device": "Filtra per dispositivo",
-    "filter_category": "Filtra per categoria"
+    "filter_category": "Filtra per categoria",
+    "sort_apply": "Applica",
+    "clear_all": "Azzera i filtri",
+    "more_categories": "Guarda anche",
+    "help_title": "Non trovi quello che cerchi?",
+    "help_body": "Passa in negozio con il telefono: capire cosa serve è più veloce che descriverlo."
   },
   "cart": {
     "title": "Il tuo carrello",
@@ -281,5 +286,9 @@
     "categories": "Categorie",
     "information": "Informazioni",
     "made_by": "Sito realizzato da"
+  },
+  "guides": {
+    "more": "Altre guide",
+    "read": "Leggi"
   }
 }

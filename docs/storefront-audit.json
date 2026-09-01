@@ -40,7 +40,7 @@
     "lang": "it",
     "hasDescription": true,
     "noindex": false,
-    "mainChars": 2224,
+    "mainChars": 2223,
     "mainLinks": 40,
     "images": 24,
     "imagesNoAlt": 0,
@@ -520,8 +520,8 @@
     "lang": "it",
     "hasDescription": true,
     "noindex": false,
-    "mainChars": 872,
-    "mainLinks": 0,
+    "mainChars": 1109,
+    "mainLinks": 3,
     "images": 0,
     "imagesNoAlt": 0,
     "overflow390": false,
@@ -535,12 +535,14 @@
       "H2:Cosa facciamo invece",
       "H2:I tre casi",
       "H2:Se il tuo modello non c'è",
+      "H2:Altre guide",
+      "H3:Come scegliere il caricatore",
+      "H3:Come scegliere la protezione",
       "H2:Categorie",
       "H2:Acquista",
       "H2:Servizi",
       "H2:Informazioni",
-      "H2:Indirizzo",
-      "H2:Assistenza"
+      "H2:Indirizzo"
     ]
   },
   {
@@ -551,8 +553,8 @@
     "lang": "it",
     "hasDescription": true,
     "noindex": false,
-    "mainChars": 1321,
-    "mainLinks": 0,
+    "mainChars": 1547,
+    "mainLinks": 3,
     "images": 0,
     "imagesNoAlt": 0,
     "overflow390": false,
@@ -567,12 +569,13 @@
       "H2:Il cavo fa parte del caricatore",
       "H2:Le sigle",
       "H2:In pratica",
+      "H2:Altre guide",
+      "H3:Come scegliere la protezione",
+      "H3:Come verifichiamo la compatibilità",
       "H2:Categorie",
       "H2:Acquista",
       "H2:Servizi",
-      "H2:Informazioni",
-      "H2:Indirizzo",
-      "H2:Assistenza"
+      "H2:Informazioni"
     ]
   },
   {
@@ -583,8 +586,8 @@
     "lang": "it",
     "hasDescription": true,
     "noindex": false,
-    "mainChars": 1183,
-    "mainLinks": 0,
+    "mainChars": 1431,
+    "mainLinks": 3,
     "images": 0,
     "imagesNoAlt": 0,
     "overflow390": false,
@@ -599,12 +602,13 @@
       "H2:La misura è del modello, non della famiglia",
       "H2:Materiali",
       "H2:L'applicazione",
+      "H2:Altre guide",
+      "H3:Come scegliere il caricatore",
+      "H3:Come verifichiamo la compatibilità",
       "H2:Categorie",
       "H2:Acquista",
       "H2:Servizi",
-      "H2:Informazioni",
-      "H2:Indirizzo",
-      "H2:Assistenza"
+      "H2:Informazioni"
     ]
   },
   {
@@ -1197,7 +1201,7 @@
     "lang": "en",
     "hasDescription": true,
     "noindex": false,
-    "mainChars": 2134,
+    "mainChars": 2131,
     "mainLinks": 40,
     "images": 24,
     "imagesNoAlt": 0,
@@ -1555,8 +1559,8 @@
     "lang": "en",
     "hasDescription": true,
     "noindex": false,
-    "mainChars": 818,
-    "mainLinks": 0,
+    "mainChars": 1064,
+    "mainLinks": 3,
     "images": 0,
     "imagesNoAlt": 0,
     "overflow390": false,
@@ -1570,12 +1574,14 @@
       "H2:What we do instead",
       "H2:The three cases",
       "H2:If your model is not listed",
+      "H2:More guides",
+      "H3:How to choose a charger",
+      "H3:How to choose protection",
       "H2:Categories",
       "H2:Shop",
       "H2:Services",
       "H2:Information",
-      "H2:Address",
-      "H2:Support"
+      "H2:Address"
     ]
   },
   {
@@ -1586,8 +1592,8 @@
     "lang": "en",
     "hasDescription": true,
     "noindex": false,
-    "mainChars": 1240,
-    "mainLinks": 0,
+    "mainChars": 1476,
+    "mainLinks": 3,
     "images": 0,
     "imagesNoAlt": 0,
     "overflow390": false,
@@ -1602,12 +1608,13 @@
       "H2:The cable is part of the charger",
       "H2:The acronyms",
       "H2:In practice",
+      "H2:More guides",
+      "H3:How to choose protection",
+      "H3:How we check compatibility",
       "H2:Categories",
       "H2:Shop",
       "H2:Services",
-      "H2:Information",
-      "H2:Address",
-      "H2:Support"
+      "H2:Information"
     ]
   },
   {
@@ -1618,8 +1625,8 @@
     "lang": "en",
     "hasDescription": true,
     "noindex": false,
-    "mainChars": 1146,
-    "mainLinks": 0,
+    "mainChars": 1371,
+    "mainLinks": 3,
     "images": 0,
     "imagesNoAlt": 0,
     "overflow390": false,
@@ -1634,12 +1641,13 @@
       "H2:The fit belongs to the model, not the family",
       "H2:Materials",
       "H2:Fitting",
+      "H2:More guides",
+      "H3:How to choose a charger",
+      "H3:How we check compatibility",
       "H2:Categories",
       "H2:Shop",
       "H2:Services",
-      "H2:Information",
-      "H2:Address",
-      "H2:Support"
+      "H2:Information"
     ]
   },
   {

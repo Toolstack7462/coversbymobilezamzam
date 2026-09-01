@@ -63,7 +63,18 @@
     "trust_help": "Help in Italian",
     "trust_help_body": "You are answered by the people who work in the shop, not an outsourced desk.",
     "shop_by_device_count": "accessories",
-    "store_title_city": "Come and see us in {{city}}."
+    "store_title_city": "Come and see us in {{city}}.",
+    "services_title": "At the counter, not only online",
+    "service_repairs": "Repairs",
+    "service_repairs_body": "Screens, batteries, connectors. We tell you first whether it is worth repairing.",
+    "service_fitting": "Screen protection fitting",
+    "service_fitting_body": "We fit it, straight and without bubbles. Included if you buy it here.",
+    "service_advice": "Device assistance",
+    "service_advice_body": "Bring the phone in: working out what you need beats describing it.",
+    "guides_title": "How to choose",
+    "guides_more": "All the guides",
+    "guides_read": "Read",
+    "featured_title": "Our picks"
   },
   "device": {
     "finder_title": "Find accessories for your device",

@@ -30,6 +30,8 @@ interface Props {
   year: number;
   /** Merchant-added links for the shop column. */
   extraNav: { label: string; url: string }[];
+  /** Published legal documents. Empty until a professional has written them. */
+  legal: { code: string; name: string }[];
 }
 
 export function SiteFooter({
@@ -41,6 +43,7 @@ export function SiteFooter({
   pages,
   year,
   extraNav,
+  legal,
 }: Props) {
   const path = (p: string) => localePath(locale, p);
 
@@ -205,6 +208,27 @@ export function SiteFooter({
               ) : null}
             </ul>
           </section>
+        ) : null}
+
+        {/*
+          Legal.
+
+          Rendered only for documents that actually have a published version
+          with text in it. A footer that lists "Privacy" and links to nothing is
+          worse than one that does not mention it: the link is itself a claim
+          that the document exists.
+        */}
+        {legal.length > 0 ? (
+          <nav className="site-footer__column" aria-label={t("footer.legal")}>
+            <h2 className="site-footer__heading">{t("footer.legal")}</h2>
+            <ul>
+              {legal.map((doc) => (
+                <li key={doc.code}>
+                  <Link to={path(`/legale/${doc.code}`)}>{doc.name}</Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
         ) : null}
 
         <section className="site-footer__column">

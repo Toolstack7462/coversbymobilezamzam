@@ -1397,6 +1397,15 @@ a.chip:hover {
   color: var(--color-primary);
 }
 
+/*
+ * On the photograph, the third verb takes the lime accent rather than the
+ * primary blue: #2457ff on a near-black scrim is under 4.5:1, and the accent
+ * exists for exactly this ground.
+ */
+.hero--with-media .hero__statement span:last-child {
+  color: var(--color-accent);
+}
+
 .hero__lead {
   max-inline-size: var(--measure);
   font-size: var(--text-h3);
@@ -1595,12 +1604,20 @@ a.chip:hover {
  * and a hairline that fills on hover. When category photography arrives it
  * drops behind the name without the layout changing.
  */
+/*
+ * Four across on a wide screen, not seven.
+ *
+ * At 11rem the eight categories laid out seven-across and left one orphan on a
+ * second row — a shape that reads as a nav bar with pictures rather than
+ * merchandising, and crops every photograph to a letterbox too small to show
+ * what is in it. `auto-fit` with a wider floor gives four and four.
+ */
 .category-grid {
   list-style: none;
   padding-inline-start: 0;
   display: grid;
   gap: var(--space-3);
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
 }
 
 .category-tile {
@@ -2101,27 +2118,124 @@ a.chip:hover {
   padding-block-end: var(--space-6);
 }
 
-@media (min-width: 62rem) {
-  .hero--with-media {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    align-items: center;
-    gap: var(--space-6);
-  }
+/*
+ * The fold: a photograph, with the words on it.
+ *
+ * It used to be a headline in the left column and a picture in the right. Every
+ * one of the six storefronts benchmarked leads with a full-bleed photograph
+ * instead, and the reason is legible in the numbers: they carry 70-256 images
+ * per homepage against our 18, and ONE of ours was above the fold. A split hero
+ * gives a photograph half a screen and asks the type to do the rest.
+ */
+.hero--with-media {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  align-items: end;
+  min-block-size: min(78vh, 42rem);
+  border-block-end: 0;
+  color: var(--color-on-deep);
+  overflow: hidden;
+}
 
-  /* The container already centres the page; inside a grid column it must not
-     centre again or the text drifts away from the left margin every other
-     section aligns to. */
-  .hero--with-media .hero__inner {
-    margin-inline-start: auto;
-    margin-inline-end: 0;
-    max-inline-size: calc(var(--page-width) / 2);
-    padding-inline-end: var(--space-6);
+.hero--with-media .hero__media {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+}
+
+.hero--with-media .hero__media img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+/*
+ * The scrim, and why it is this heavy.
+ *
+ * The hero image is MERCHANT-EDITABLE. A scrim tuned to the photograph that
+ * happens to be there today is a contrast failure waiting for the day somebody
+ * uploads a bright one, and it would fail silently — the text does not
+ * disappear, it just becomes hard to read for everyone.
+ *
+ * So the gradient guarantees the floor on its own: at the text end it is dark
+ * enough for white body copy to clear 4.5:1 against a WHITE photograph. The
+ * picture then lightens it, rather than the picture being relied upon to darken
+ * it.
+ */
+.hero--with-media::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(
+      100deg,
+      rgb(6 11 20 / 0.92) 0%,
+      rgb(6 11 20 / 0.75) 34%,
+      rgb(6 11 20 / 0.25) 62%,
+      rgb(6 11 20 / 0.1) 100%
+    ),
+    linear-gradient(0deg, rgb(6 11 20 / 0.55) 0%, rgb(6 11 20 / 0) 55%);
+}
+
+/*
+ * The words start at the page gutter, like everything else.
+ *
+ * `.hero__inner` is a `.page`, so it already centres itself at the page width.
+ * Capping it at 42rem centred that narrower box instead, pushing the headline
+ * into the middle of the photograph — over the hand holding the phone — and
+ * out of line with the navigation and every section below it. The measure
+ * belongs on the text, not on the container.
+ */
+.hero--with-media .hero__inner {
+  padding-block: clamp(var(--space-7), 9vw, var(--space-9));
+  inline-size: 100%;
+}
+
+.hero--with-media .hero__statement,
+.hero--with-media .hero__lead {
+  max-inline-size: 34rem;
+}
+
+/*
+ * On a wide screen the subject is nudged right, out from under the type.
+ *
+ * The scrim already guarantees the contrast; this is about composition — a
+ * headline sitting across somebody's hand is legible and still looks like an
+ * accident.
+ */
+@media (min-width: 62rem) {
+  .hero--with-media .hero__media img {
+    object-position: 68% center;
   }
 }
 
+.hero--with-media .hero__lead {
+  color: var(--color-on-deep-secondary);
+}
+
+/* On the deep ground the secondary button needs its own treatment; the
+   light-surface one disappears. */
+.hero--with-media .btn--secondary {
+  background: transparent;
+  color: var(--color-on-deep);
+  border-color: rgb(255 255 255 / 0.45);
+}
+
+.hero--with-media .btn--secondary:hover {
+  background: rgb(255 255 255 / 0.12);
+  border-color: var(--color-on-deep);
+}
+
+.hero--with-media :focus-visible {
+  outline-color: var(--color-on-deep);
+}
+
+/* Without a photograph the hero stays what it was: a statement on the surface
+   colour. A shop that has not uploaded an image gets a finished fold, not a
+   grey box. */
 .hero__media {
-  aspect-ratio: 4 / 3;
   overflow: hidden;
 }
 
@@ -2134,8 +2248,13 @@ a.chip:hover {
 /* ── Category tiles with imagery ──────────────────────────────────────────── */
 
 .category-tile--media {
-  min-block-size: 11rem;
+  min-block-size: 15rem;
   color: var(--color-on-deep);
+}
+
+.category-tile--media .category-tile__name {
+  font-size: var(--text-h3);
+  line-height: var(--text-h3-lh);
 }
 
 .category-tile__image {
@@ -2148,11 +2267,24 @@ a.chip:hover {
 }
 
 /*
- * A scrim, not a blanket.
+ * A scrim that guarantees the floor, worked out rather than eyeballed.
  *
- * Text over a photograph is unreadable at some point in every photograph. This
- * darkens only the lower third, where the name sits, so the image is still an
- * image and the label still passes contrast.
+ * The previous gradient ran 0.78 at the bottom edge to 0.15 at 45% height, and
+ * its comment claimed the label passed contrast. It did not. The label sits
+ * about 40px up a 176px tile — roughly 23% — where that ramp had fallen to
+ * ~0.46 alpha. Composited over a WHITE photograph that is rgb(140 142 146),
+ * and white text on it is **3.3:1**. Under the 4.5:1 floor, and invisible as a
+ * bug because it only fails on pale images: "Cavi" and "Power bank" are pale
+ * images.
+ *
+ * The arithmetic, so the next person can check it rather than trust it. For
+ * white text to reach 4.5:1 the background must have relative luminance ≤0.183,
+ * which for a neutral is sRGB ≤119. Compositing this ink over white gives
+ * 255 − 243a, so a ≥ 0.56 at the text's height. The ramp below holds ~0.73
+ * there — headroom, because the merchant chooses the photograph and the next
+ * one may be brighter than any of these.
+ *
+ * The top stays clear, so it is still a photograph and not a dark rectangle.
  */
 .category-tile--media::before {
   content: "";
@@ -2160,9 +2292,10 @@ a.chip:hover {
   inset: 0;
   background: linear-gradient(
     to top,
-    rgb(6 11 20 / 0.78) 0%,
-    rgb(6 11 20 / 0.15) 45%,
-    transparent 70%
+    rgb(6 11 20 / 0.84) 0%,
+    rgb(6 11 20 / 0.66) 40%,
+    rgb(6 11 20 / 0.2) 72%,
+    transparent 92%
   );
   z-index: 1;
 }
@@ -2643,4 +2776,185 @@ a.chip:hover {
 .review__body {
   line-height: 1.65;
   text-wrap: pretty;
+}
+
+/* ── Services ───────────────────────────────────────────────────────────────
+   What happens at the counter. Not cards: three short claims that belong to
+   the same sentence, separated by a rule rather than boxed away from each
+   other. */
+.service-grid {
+  display: grid;
+  gap: var(--space-5);
+  padding: 0;
+  list-style: none;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+}
+
+.service {
+  padding-block-start: var(--space-4);
+  border-block-start: 2px solid var(--color-ink);
+}
+
+.service__title {
+  font-size: var(--text-h3);
+  line-height: var(--text-h3-lh);
+  margin-block-end: var(--space-2);
+}
+
+.service__body {
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+/* ── Buying guides ──────────────────────────────────────────────────────────
+   The one section on the homepage not trying to sell in the next click, so it
+   is allowed to look like reading rather than merchandising. */
+.guide-grid {
+  display: grid;
+  gap: var(--space-4);
+  padding: 0;
+  list-style: none;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+}
+
+.guide {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  block-size: 100%;
+  padding: var(--space-5);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  text-decoration: none;
+  color: inherit;
+  transition:
+    border-color var(--duration-fast) var(--ease),
+    transform var(--duration-fast) var(--ease);
+}
+
+.guide:hover {
+  border-color: var(--color-ink);
+  /* Transform only. Animating a box-shadow or a border-width on hover repaints
+     the whole card; this composites. */
+  transform: translateY(-2px);
+}
+
+.guide__title {
+  font-size: var(--text-h3);
+  line-height: var(--text-h3-lh);
+}
+
+.guide__body {
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+/* Pushed to the bottom so the cards' links align across a row of uneven text. */
+.guide__more {
+  margin-block-start: auto;
+  padding-block-start: var(--space-2);
+  font-weight: var(--weight-semibold);
+  color: var(--color-primary);
+}
+
+.guide:hover .guide__more::after {
+  content: " →";
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guide {
+    transition: none;
+  }
+
+  .guide:hover {
+    transform: none;
+  }
+}
+
+/* ── Editorial band ─────────────────────────────────────────────────────────
+   Four products at a size where the photograph does the selling. Two up on a
+   wide screen rather than four, because the point of this section is that each
+   one gets room — a four-across row of the same thing is the product grid. */
+.editorial-grid {
+  display: grid;
+  gap: var(--space-4);
+  padding: 0;
+  list-style: none;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 21rem), 1fr));
+}
+
+.editorial {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  block-size: 100%;
+  overflow: hidden;
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  text-decoration: none;
+  color: inherit;
+}
+
+.editorial__media {
+  display: block;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: var(--color-surface-sunken);
+}
+
+.editorial__media img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  transition: transform var(--duration-slow) var(--ease);
+}
+
+/* The image moves, the card does not. A card that lifts AND a picture that
+   zooms is two animations answering one hover. */
+.editorial:hover .editorial__media img {
+  transform: scale(1.03);
+}
+
+.editorial__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4) var(--space-5) var(--space-5);
+}
+
+.editorial__eyebrow {
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-lh);
+  letter-spacing: var(--text-eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.editorial__title {
+  font-family: var(--font-heading);
+  font-size: var(--text-h3);
+  line-height: var(--text-h3-lh);
+  font-weight: var(--weight-bold);
+  text-wrap: balance;
+}
+
+.editorial__note {
+  color: var(--color-text-secondary);
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.editorial:hover {
+  border-color: var(--color-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .editorial__media img,
+  .editorial:hover .editorial__media img {
+    transition: none;
+    transform: none;
+  }
 }

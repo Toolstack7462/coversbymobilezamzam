@@ -63,6 +63,22 @@ const SECTION_TYPES = [
     describe: "I prodotti contrassegnati in evidenza. Vuoto se non ce ne sono.",
   },
   {
+    type: "featured_collection",
+    label: "Scelti da noi",
+    describe: "I prodotti contrassegnati «in evidenza», in formato editoriale.",
+  },
+  {
+    type: "services",
+    label: "Servizi al banco",
+    describe:
+      "Riparazioni, applicazione pellicole, assistenza. Compare solo se il negozio è configurato.",
+  },
+  {
+    type: "guides",
+    label: "Guide all'acquisto",
+    describe: "Le pagine di tipo «guida» pubblicate. Vuoto se non ne hai.",
+  },
+  {
     type: "store",
     label: "Il negozio",
     describe: "La fascia scura con l'indirizzo e gli orari.",

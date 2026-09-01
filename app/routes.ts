@@ -45,6 +45,15 @@ function storefrontRoutes(idSuffix: string): RouteConfigEntry[] {
      * or archived 404s rather than lingering at a URL somebody has bookmarked.
      */
     route("pagine/:slug", "routes/storefront/page.tsx", id("page")),
+
+    /*
+     * Legal documents: privacy, terms of sale, withdrawal, warranty.
+     *
+     * Separate from `pagine` because these are versioned and an order
+     * references the version it was placed under. A page can be rewritten; a
+     * set of terms somebody agreed to cannot.
+     */
+    route("legale/:code", "routes/storefront/legal.tsx", id("legal")),
   ];
 }
 

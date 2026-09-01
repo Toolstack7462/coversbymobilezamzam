@@ -63,7 +63,18 @@
     "trust_help": "Assistenza in italiano",
     "trust_help_body": "Ti risponde chi lavora in negozio, non un servizio esterno.",
     "shop_by_device_count": "accessori",
-    "store_title_city": "Vieni a trovarci a {{city}}."
+    "store_title_city": "Vieni a trovarci a {{city}}.",
+    "services_title": "Al banco, non solo online",
+    "service_repairs": "Riparazioni",
+    "service_repairs_body": "Schermi, batterie, connettori. Ti diciamo prima se conviene ripararlo.",
+    "service_fitting": "Applicazione pellicole",
+    "service_fitting_body": "La montiamo noi, dritta e senza bolle. Se la acquisti qui è compresa.",
+    "service_advice": "Assistenza sul dispositivo",
+    "service_advice_body": "Portaci il telefono: capire cosa serve è più veloce che descriverlo.",
+    "guides_title": "Come si sceglie",
+    "guides_more": "Tutte le guide",
+    "guides_read": "Leggi",
+    "featured_title": "Scelti da noi"
   },
   "device": {
     "finder_title": "Trova accessori per il tuo dispositivo",

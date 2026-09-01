@@ -118,8 +118,28 @@ export async function loader({ context, request }: Route.LoaderArgs) {
       ORDER BY m.code, i.sort_order`,
   ).all<{ label_it: string; label_en: string; url: string; menu_code: string }>();
 
+  /*
+   * Published legal documents, for the footer.
+   *
+   * Only ones with a published version and a body. Nothing is invented and
+   * nothing is listed early: until a professional has written these, the
+   * column does not exist rather than linking to an empty page.
+   */
+  const { results: legalRows } = await env.DB.prepare(
+    `SELECT d.code,
+            CASE WHEN ?1 = 'en' THEN COALESCE(d.name_en, d.name_it) ELSE d.name_it END AS name
+       FROM legal_documents d
+       JOIN legal_document_versions v ON v.id = d.current_version_id
+      WHERE v.published_at IS NOT NULL
+        AND LENGTH(COALESCE(v.body_it, '')) > 0
+      ORDER BY d.code`,
+  )
+    .bind(locale)
+    .all<{ code: string; name: string | null }>();
+
   return {
     settings,
+    legal: legalRows.filter((r) => r.name).map((r) => ({ code: r.code, name: r.name as string })),
     extraNav: extraNav.map((item) => ({
       label: locale === "en" ? item.label_en : item.label_it,
       url: item.url,
@@ -183,6 +203,7 @@ export default function StorefrontLayout({ loaderData }: Route.ComponentProps) {
         pages={loaderData.pages}
         year={loaderData.year}
         extraNav={loaderData.extraNav.filter((i) => i.menu === "footer_extra")}
+        legal={loaderData.legal}
       />
 
       {/* Phones only — see mobile-nav.tsx. Last in the DOM so it is last in the

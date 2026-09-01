@@ -69,10 +69,21 @@ const BUCKET = ENVIRONMENT === "preview" ? "ita-commerce-preview-media" : "ita-c
 const IMAGES = [
   {
     slot: "setting:media.hero_image",
-    id: "YjDYlIK9BGA",
-    width: 1440,
-    quality: 78,
-    note: "Green textured case on tan leather, side light. Warm, tactile, modern device.",
+    id: "54VhxmlxJiI",
+    /*
+     * 2000px, against 1440 for the previous hero.
+     *
+     * The fold used to be a half-width image beside the headline; it is now
+     * full-bleed, so the delivered image has to cover a 1440px viewport and
+     * more on a wide monitor. This is the one place on the storefront where
+     * dimensions are driven by the layout rather than trimmed to the slot.
+     */
+    width: 2000,
+    quality: 74,
+    note:
+      "A phone in a case with a magnetic ring, held up against a coastal sunset. " +
+      "Product in a hand rather than a product shot, no third-party marks, and a " +
+      "composition with room on the left for the headline.",
   },
   {
     slot: "setting:media.store_image",

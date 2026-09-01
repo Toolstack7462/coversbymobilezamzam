@@ -189,8 +189,17 @@
      scale rather than inventing intermediate sizes. */
   /* A statement size. The old display topped out at 48px, close enough to
      h1 that a hero and a section heading carried the same weight. */
-  --text-display: clamp(2.5rem, 1.55rem + 4.2vw, 4.5rem); /* 40 → 72 */
-  --text-display-lh: clamp(2.75rem, 1.8rem + 4.2vw, 4.75rem); /* 44 → 76 */
+  /*
+   * Display, retuned down from a 72px ceiling.
+   *
+   * Measured against six reference storefronts (docs/premium-storefront-benchmark.md):
+   * the largest headline in the set is 56px, and the two most premium-positioned
+   * — Native Union at 30px and dbrand at 16px — are the SMALLEST. A 72px face at
+   * weight 800 is what a discounter does, because a shop confident in its
+   * photography does not need type to carry the page.
+   */
+  --text-display: clamp(2.25rem, 1.7rem + 2.4vw, 3rem); /* 36 → 48 */
+  --text-display-lh: clamp(2.5rem, 1.95rem + 2.4vw, 3.25rem); /* 40 → 52 */
   --text-h1: clamp(1.875rem, 1.5rem + 1.6vw, 2.5rem); /* 30 → 40 */
   --text-h1-lh: clamp(2.25rem, 1.9rem + 1.5vw, 3rem); /* 36 → 48 */
   --text-h2: clamp(1.5rem, 1.3rem + 0.9vw, 1.875rem); /* 24 → 30 */

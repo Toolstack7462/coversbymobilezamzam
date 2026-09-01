@@ -1697,6 +1697,29 @@ a.chip:hover {
   body {
     padding-block-end: calc(3.25rem + env(safe-area-inset-bottom, 0px));
   }
+
+  /*
+   * And room when the browser scrolls something into view.
+   *
+   * The padding above only protects the END of the document. Anything that
+   * lands at the bottom of the viewport mid-scroll — a button reached by
+   * keyboard, an anchor target, a link scrolled to by the browser — passes
+   * UNDER the fixed bar and stops being clickable, while still looking
+   * perfectly available.
+   *
+   * That is not hypothetical: it made a browser test fail with the bottom bar
+   * "intercepting pointer events" for a hero button the page had just scrolled
+   * into place. `scroll-padding` tells every scroll-into-view to stop short of
+   * the bar instead.
+   */
+  html {
+    scroll-padding-block-end: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Deeper still where the purchase bar is also present: two stacked bars. */
+  html:has(.buy-bar) {
+    scroll-padding-block-end: calc(8rem + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 /* ── Product card, premium ────────────────────────────────────────────────── */

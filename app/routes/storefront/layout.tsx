@@ -67,13 +67,21 @@ export default function StorefrontLayout({ loaderData }: Route.ComponentProps) {
       <main id="main">
         <Outlet />
       </main>
-      {loaderData.appEnv !== "production" ? <PreviewBanner env={loaderData.appEnv} /> : null}
-
       <SiteFooter t={t} locale={locale} settings={loaderData.settings} gates={loaderData.gates} />
 
       {/* Phones only — see mobile-nav.tsx. Last in the DOM so it is last in the
           tab order, where a persistent navigation bar belongs. */}
       <MobileNav t={t} locale={locale} />
+
+      {/*
+        Last thing in the document, and never in production.
+
+        It used to sit between the last section and the footer, where it
+        interrupted the page exactly as the dark footer was meant to close it.
+        A warning about the environment is not content; it belongs after the
+        content, quietly.
+      */}
+      {loaderData.appEnv !== "production" ? <PreviewBanner env={loaderData.appEnv} /> : null}
     </>
   );
 }
@@ -93,9 +101,11 @@ export default function StorefrontLayout({ loaderData }: Route.ComponentProps) {
 function PreviewBanner({ env }: { env: string }) {
   return (
     <aside className="preview-banner" role="note">
-      <strong>Ambiente di prova</strong> — questo non è il negozio. Prodotti, prezzi, disponibilità
-      e compatibilità sono inventati a scopo di test, e nessun ordine è reale.{" "}
-      <span className="caption">({env})</span>
+      <span className="preview-banner__dot" aria-hidden="true" />
+      <span>
+        <strong>Ambiente di prova</strong> {"·"} prodotti e prezzi non sono reali
+      </span>
+      <span className="preview-banner__env">{env}</span>
     </aside>
   );
 }

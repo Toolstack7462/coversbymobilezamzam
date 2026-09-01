@@ -18,7 +18,7 @@ interface Props {
   shopName: string | null;
 }
 
-const PRIMARY_NAV = [
+export const PRIMARY_NAV = [
   { key: "nav.cases", slug: "cover" },
   { key: "nav.screen_protection", slug: "protezione-schermo" },
   { key: "nav.chargers", slug: "caricatori" },

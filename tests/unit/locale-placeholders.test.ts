@@ -79,3 +79,29 @@ describe("placeholder parity between locales", () => {
     expect(mismatched).toEqual([]);
   });
 });
+
+describe.each([
+  ["it", it_ as unknown as Node],
+  ["en", en as unknown as Node],
+])("%s.json typography", (_locale, dictionary) => {
+  const strings = walk(dictionary);
+
+  it("contains no em dash or en dash", () => {
+    /*
+     * Every one of these is text a customer reads.
+     *
+     * The em dash is the single clearest signature of machine-written copy, and
+     * six of them had reached the shipped storefront: the hero eyebrow, a
+     * compatibility label, two footer legal separators and a payment
+     * description. None was deliberate; each was reached for where a full stop
+     * or a comma was the right mark.
+     *
+     * A hyphen in a compound word or a range is fine and is not matched here.
+     */
+    const offenders = strings
+      .filter((entry) => entry.value.includes("—") || entry.value.includes("–"))
+      .map((entry) => `${entry.key}: ${entry.value}`);
+
+    expect(offenders).toEqual([]);
+  });
+});

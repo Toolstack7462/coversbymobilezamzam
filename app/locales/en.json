@@ -57,7 +57,7 @@
     "hero_statement_1": "Protect.",
     "hero_statement_2": "Charge.",
     "hero_statement_3": "Connect.",
-    "hero_lead": "Accessories chosen for your exact model, with fit stated on every product. Collect in our Sulmona shop or have it delivered anywhere in Italy.",
+    "hero_lead": "Accessories chosen for your exact model. Collect in Sulmona, or delivered anywhere in Italy.",
     "shop_by_device": "Shop by device",
     "shop_by_device_intro": "Start from the phone in your hand.",
     "browse_all": "See all accessories",
@@ -70,7 +70,6 @@
     "trust_pickup_body": "Order online, collect in Sulmona with no delivery charge.",
     "trust_help": "Help in Italian",
     "trust_help_body": "You are answered by the people who work in the shop, not an outsourced desk.",
-    "hero_lead_eyebrow": "Italian Tech Atelier — Sulmona",
     "shop_by_device_count": "accessories",
     "store_title_city": "Come and see us in {{city}}."
   },
@@ -92,7 +91,7 @@
   "compatibility": {
     "exact": "Exact fit for {{device}}",
     "compatible": "Compatible with {{device}}",
-    "universal": "Universal accessory — check connector and power",
+    "universal": "Universal accessory. Check connector and power.",
     "adapter": "Compatible with an adapter",
     "mismatch": "This product is not listed as compatible with the selected device",
     "unverified": "Compatibility not verified",
@@ -263,6 +262,11 @@
     "support": "Support",
     "legal": "Legal",
     "language": "Language",
-    "whatsapp": "WhatsApp"
+    "whatsapp": "WhatsApp",
+    "services": "Services",
+    "repairs": "Repairs",
+    "screen_installation": "Screen protector fitting",
+    "device_assistance": "Device assistance",
+    "categories": "Categories"
   }
 }

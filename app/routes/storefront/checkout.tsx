@@ -332,7 +332,7 @@ export default function Checkout({ loaderData, actionData }: Route.ComponentProp
                 {locale === "it" ? method.name_it : method.name_en}
                 {(locale === "it" ? method.description_it : method.description_en) ? (
                   <span className="small muted">
-                    {" — "}
+                    {". "}
                     {locale === "it" ? method.description_it : method.description_en}
                   </span>
                 ) : null}

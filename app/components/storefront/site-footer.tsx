@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import { localePath, DEFAULT_LOCALE, type Locale, type Translator } from "~/lib/i18n";
 import { settingValue, SETTING_KEYS, type SettingsMap } from "~/domain/content/gates";
+import { PRIMARY_NAV } from "./site-header";
 
 /**
  * Footer.
@@ -56,6 +57,22 @@ export function SiteFooter({ t, locale, settings, gates }: Props) {
           </section>
         ) : null}
 
+        {/*
+          The full category list, from the SAME source as the header rail.
+          Two hand-maintained copies of a taxonomy drift, and the footer is the
+          copy nobody notices has drifted.
+        */}
+        <nav className="site-footer__column" aria-label={t("footer.categories")}>
+          <h2 className="site-footer__heading">{t("footer.categories")}</h2>
+          <ul>
+            {PRIMARY_NAV.map((item) => (
+              <li key={item.slug}>
+                <Link to={path(`/shop?categoria=${item.slug}`)}>{t(item.key)}</Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
         <nav className="site-footer__column" aria-label={t("footer.shop")}>
           <h2 className="site-footer__heading">{t("footer.shop")}</h2>
           <ul>
@@ -66,6 +83,25 @@ export function SiteFooter({ t, locale, settings, gates }: Props) {
               <Link to={path("/trova-dispositivo")}>{t("nav.find_by_device")}</Link>
             </li>
           </ul>
+
+          {/*
+            Services the shop performs at the counter, from the merchant's own
+            description of the business. They are not links: there is no page
+            behind any of them yet, and a link to nowhere is worse than plain
+            text. They point at the store page only once it exists.
+          */}
+          {gates.store ? (
+            <>
+              <h2 className="site-footer__heading site-footer__heading--spaced">
+                {t("footer.services")}
+              </h2>
+              <ul>
+                <li>{t("footer.repairs")}</li>
+                <li>{t("footer.screen_installation")}</li>
+                <li>{t("footer.device_assistance")}</li>
+              </ul>
+            </>
+          ) : null}
         </nav>
 
         {/* The address is known, so this renders. The shop NAME is not, so the
@@ -154,10 +190,10 @@ export function SiteFooter({ t, locale, settings, gates }: Props) {
       {gates.legal ? (
         <div className="page site-footer__legal small muted">
           <p>
-            {settingValue(settings, SETTING_KEYS.legalName)} — P.IVA{" "}
+            {settingValue(settings, SETTING_KEYS.legalName)}, P.IVA{" "}
             {settingValue(settings, SETTING_KEYS.vatNumber)}
             {settingValue(settings, SETTING_KEYS.reaNumber)
-              ? ` — REA ${settingValue(settings, SETTING_KEYS.reaNumber)}`
+              ? `, REA ${settingValue(settings, SETTING_KEYS.reaNumber)}`
               : ""}
           </p>
         </div>

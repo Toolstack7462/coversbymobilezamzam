@@ -57,7 +57,7 @@
     "hero_statement_1": "Proteggi.",
     "hero_statement_2": "Ricarica.",
     "hero_statement_3": "Connetti.",
-    "hero_lead": "Accessori scelti per il tuo modello esatto, con la compatibilità indicata su ogni prodotto. Ritiro in negozio a Sulmona o spedizione in tutta Italia.",
+    "hero_lead": "Accessori scelti per il tuo modello esatto. Ritiro in negozio a Sulmona o spedizione in tutta Italia.",
     "shop_by_device": "Acquista per dispositivo",
     "shop_by_device_intro": "Parti dal telefono che hai in mano.",
     "browse_all": "Vedi tutti gli accessori",
@@ -70,7 +70,6 @@
     "trust_pickup_body": "Ordina online, ritira a Sulmona senza spese di spedizione.",
     "trust_help": "Assistenza in italiano",
     "trust_help_body": "Ti risponde chi lavora in negozio, non un servizio esterno.",
-    "hero_lead_eyebrow": "Italian Tech Atelier — Sulmona",
     "shop_by_device_count": "accessori",
     "store_title_city": "Vieni a trovarci a {{city}}."
   },
@@ -92,7 +91,7 @@
   "compatibility": {
     "exact": "Compatibilità esatta con {{device}}",
     "compatible": "Compatibile con {{device}}",
-    "universal": "Accessorio universale — controlla connettore e potenza",
+    "universal": "Accessorio universale. Controlla connettore e potenza.",
     "adapter": "Compatibile tramite adattatore",
     "mismatch": "Questo prodotto non risulta compatibile con il dispositivo selezionato",
     "unverified": "Compatibilità non verificata",
@@ -263,6 +262,11 @@
     "support": "Assistenza",
     "legal": "Informazioni legali",
     "language": "Lingua",
-    "whatsapp": "WhatsApp"
+    "whatsapp": "WhatsApp",
+    "services": "Servizi",
+    "repairs": "Riparazioni",
+    "screen_installation": "Applicazione pellicole",
+    "device_assistance": "Assistenza dispositivi",
+    "categories": "Categorie"
   }
 }

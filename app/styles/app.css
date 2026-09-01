@@ -725,13 +725,59 @@ a {
    than the confusion it prevents. It sits after the footer, in the document
    flow, where it cannot obscure anything. */
 
+/*
+ * The environment notice.
+ *
+ * Deliberately the quietest thing on the page: a single small line at the very
+ * bottom, after the footer. It used to be a full-width peach band with an
+ * orange rule sitting between the last section and the footer, which made an
+ * operational warning the loudest element in the composition and cut the page
+ * in half exactly where it should have closed.
+ *
+ * It still says the same thing. It just stops shouting it.
+ */
 .preview-banner {
-  padding: var(--space-3) var(--space-4);
-  background: var(--color-warning-surface);
-  border-block-start: 3px solid var(--color-warning);
-  color: var(--color-warning-text);
-  font-size: var(--text-ui);
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--gutter);
+  background: var(--color-ink-deep);
+  color: var(--color-on-deep-secondary);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-lh);
+  border-block-start: var(--border-width) solid var(--color-on-deep-border);
+}
+
+.preview-banner strong {
+  color: var(--color-on-deep);
+  font-weight: var(--weight-semibold);
+}
+
+/* The one place a coloured dot earns its keep: it reports a real environment
+   state, which is exactly the exception the rule allows for. */
+.preview-banner__dot {
+  inline-size: 6px;
+  block-size: 6px;
+  border-radius: 50%;
+  background: var(--color-warning);
+  flex-shrink: 0;
+}
+
+/*
+ * No opacity on this text.
+ *
+ * `opacity: 0.7` on a 12px label took #9aa6b8 down to roughly #6d7686 against
+ * the near-black band, which is under 4.5:1 and axe caught it. This is the
+ * third time in this work that dimming text with opacity has broken contrast:
+ * the hero reveal, the scroll reveal, and now here.
+ *
+ * The rule that avoids all three: never reduce the opacity of text. If it
+ * should be quieter, give it a colour that is quieter and check that colour.
+ */
+.preview-banner__env {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-on-deep-secondary);
 }
 
 /* ══ STOREFRONT ═════════════════════════════════════════════════════════════
@@ -2277,5 +2323,98 @@ a.chip:hover {
 @media (min-width: 62rem) {
   .site-footer__brand {
     grid-column: span 2;
+  }
+}
+
+/* ── Footer heading spacing ───────────────────────────────────────────────── */
+
+.site-footer__heading--spaced {
+  margin-block-start: var(--space-4);
+}
+
+/* ── Depth, without decoration ─────────────────────────────────────────────
+ *
+ * Two gradients on the whole site, both doing structural work rather than
+ * ornament.
+ *
+ * The first lifts the hero away from the band below it: a single very soft
+ * vertical wash from canvas to page colour, about 3% of range. It is the
+ * difference between "a section with a background colour" and "a surface with
+ * light on it", and at this strength you notice it only when it is removed.
+ *
+ * No mesh, no blobs, no purple, no colour that is not already in the palette.
+ * A gradient that announces itself is the cheap kind.
+ */
+.hero {
+  background-image: linear-gradient(180deg, var(--color-surface) 0%, var(--color-canvas) 62%);
+}
+
+/*
+ * The second gives the dark bands a horizon rather than a flat fill, so the
+ * type sits on something. Same hue, two steps of luminance.
+ */
+.store-band,
+.site-footer {
+  background-image: linear-gradient(180deg, #0a1020 0%, var(--color-ink-deep) 55%);
+}
+
+/* ── Scroll reveal ────────────────────────────────────────────────────────────
+ *
+ * CSS scroll-driven animation. No JavaScript, no observer, no library, and
+ * nothing to hydrate.
+ *
+ * THE RULE THIS OBEYS: content is visible by default and the animation is an
+ * enhancement on top. The usual implementation sets `opacity: 0` and waits for
+ * a class, which means the section ships blank to every crawler, every
+ * headless renderer, every browser without the feature, and every visitor whose
+ * JavaScript failed. Here the default state is the final state; where
+ * `animation-timeline` is supported the section merely arrives from slightly
+ * below.
+ *
+ * `@supports` gates the whole thing, so unsupported browsers get the finished
+ * page rather than a broken one.
+ */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .section,
+    .trust-band__inner,
+    .store-band__inner {
+      animation: section-rise linear both;
+      animation-timeline: view();
+      /* Starts as the section's top edge enters, finishes well before the
+         middle of the viewport — so it is complete by the time it is being
+         read, never animating under the reader's eyes. */
+      animation-range: entry 0% entry 42%;
+    }
+
+    /*
+     * The hero is excluded on purpose. It holds the LCP element, and an
+     * element that begins transformed and transparent is not "rendered" for
+     * the purposes of that metric.
+     */
+    .hero .section {
+      animation: none;
+    }
+  }
+}
+
+/*
+ * Transform only. No opacity, for the second time.
+ *
+ * The hero reveal had exactly this bug and it was fixed there: while an element
+ * animates from a partial opacity, its EFFECTIVE contrast against the
+ * background is below the threshold, and axe catches it whenever the check
+ * lands mid-animation. It failed here on the device-finder eyebrow and intro.
+ *
+ * A transient contrast failure is still a failure. The rule, now applied
+ * everywhere: text never animates its opacity. Movement alone reads as a
+ * reveal, and it costs nothing.
+ */
+@keyframes section-rise {
+  from {
+    transform: translate3d(0, 1.5rem, 0);
+  }
+  to {
+    transform: none;
   }
 }

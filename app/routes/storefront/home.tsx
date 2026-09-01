@@ -211,7 +211,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       */}
       <section className={`hero${loaderData.heroImage ? " hero--with-media" : ""}`}>
         <div className="page hero__inner">
-          <p className="eyebrow">{t("home.hero_lead_eyebrow")}</p>
           <h1 className="hero__statement">
             <span>{t("home.hero_statement_1")}</span>
             <span>{t("home.hero_statement_2")}</span>

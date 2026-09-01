@@ -53,6 +53,7 @@ export default [
   // login cannot tell you the login is broken.
   route("api/health", "routes/api/health.tsx"),
   route("robots.txt", "routes/api/robots.tsx"),
+  route("sitemap.xml", "routes/api/sitemap.tsx"),
 
   // Better Auth owns everything under /api/auth.
   route("api/auth/*", "routes/api/auth.tsx"),

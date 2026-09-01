@@ -165,51 +165,66 @@ export async function loader({ context, request }: Route.LoaderArgs) {
    * already doing one query for products and one for the count, and these add
    * no round trip because they share the same batch.
    */
-  const [activeCategory, activeDevice, categoryOptions, deviceOptions] = await Promise.all([
-    // The editorial header: a category's own name and description, written by
-    // the merchant. Absent description renders nothing rather than filler.
-    categoria
-      ? env.DB.prepare(
-          `SELECT ct.name, ct.description, c.image_key
+  const [brandCount, activeCategory, activeDevice, categoryOptions, deviceOptions] =
+    await Promise.all([
+      /*
+       * How many brands the catalogue actually carries.
+       *
+       * A product card prints the maker as an eyebrow, which is useful in a
+       * shop that stocks several and pure noise in one that stocks one — the
+       * demo catalogue is entirely "Marchio generico", so every card repeated
+       * it. Counted rather than hardcoded: the day a second brand is added the
+       * eyebrow returns on its own.
+       */
+      env.DB.prepare(
+        `SELECT COUNT(DISTINCT p.brand_id) AS n
+           FROM products p
+          WHERE p.status = 'active' AND p.archived_at IS NULL AND p.brand_id IS NOT NULL`,
+      ).first<{ n: number }>(),
+      // The editorial header: a category's own name and description, written by
+      // the merchant. Absent description renders nothing rather than filler.
+      categoria
+        ? env.DB.prepare(
+            `SELECT ct.name, ct.description, c.image_key
              FROM categories c
              JOIN category_translations ct ON ct.category_id = c.id AND ct.locale = 'it'
             WHERE c.slug = ?1 AND c.visible = 1 AND c.archived_at IS NULL`,
-        )
-          .bind(categoria)
-          .first<{ name: string; description: string | null; image_key: string | null }>()
-      : null,
+          )
+            .bind(categoria)
+            .first<{ name: string; description: string | null; image_key: string | null }>()
+        : null,
 
-    // The device the customer is filtering by, so the page can say so in words
-    // rather than leaving a query string to be decoded.
-    dispositivo
-      ? env.DB.prepare(
-          `SELECT dm.name, db.name AS brand_name
+      // The device the customer is filtering by, so the page can say so in words
+      // rather than leaving a query string to be decoded.
+      dispositivo
+        ? env.DB.prepare(
+            `SELECT dm.name, db.name AS brand_name
              FROM device_models dm
              JOIN device_families df ON df.id = dm.device_family_id
              JOIN device_brands db ON db.id = df.device_brand_id
             WHERE dm.handle = ?1 AND dm.active = 1`,
-        )
-          .bind(dispositivo)
-          .first<{ name: string; brand_name: string }>()
-      : null,
+          )
+            .bind(dispositivo)
+            .first<{ name: string; brand_name: string }>()
+        : null,
 
-    env.DB.prepare(
-      `SELECT c.slug, ct.name
+      env.DB.prepare(
+        `SELECT c.slug, ct.name
          FROM categories c
          LEFT JOIN category_translations ct ON ct.category_id = c.id AND ct.locale = 'it'
         WHERE c.visible = 1 AND c.archived_at IS NULL AND c.depth = 0
         ORDER BY c.sort_order ASC LIMIT 12`,
-    ).all<{ slug: string; name: string | null }>(),
+      ).all<{ slug: string; name: string | null }>(),
 
-    /*
-     * Devices worth offering, ordered by how many products fit them.
-     *
-     * A device filter that leads to an empty grid is worse than no filter: it
-     * tells the customer the shop cannot help them when in fact the shop was
-     * never asked the right question.
-     */
-    env.DB.prepare(
-      `SELECT dm.handle, dm.name, db.name AS brand_name,
+      /*
+       * Devices worth offering, ordered by how many products fit them.
+       *
+       * A device filter that leads to an empty grid is worse than no filter: it
+       * tells the customer the shop cannot help them when in fact the shop was
+       * never asked the right question.
+       */
+      env.DB.prepare(
+        `SELECT dm.handle, dm.name, db.name AS brand_name,
               COUNT(DISTINCT pc.product_id) AS product_count
          FROM device_models dm
          JOIN device_families df ON df.id = dm.device_family_id
@@ -223,8 +238,8 @@ export async function loader({ context, request }: Route.LoaderArgs) {
        HAVING product_count > 0
         ORDER BY product_count DESC, dm.name ASC
         LIMIT 6`,
-    ).all<{ handle: string; name: string; brand_name: string; product_count: number }>(),
-  ]);
+      ).all<{ handle: string; name: string; brand_name: string; product_count: number }>(),
+    ]);
 
   return {
     // Where product images are served from. A CDN base if one is configured,
@@ -235,7 +250,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
       .map<ProductCardData>((r) => ({
         slug: r.slug,
         name: r.name ?? r.slug,
-        brandName: r.brand_name,
+        brandName: (brandCount?.n ?? 0) > 1 ? r.brand_name : null,
         priceAmount: r.price_amount!,
         imageKey: r.image_key,
         availability: availabilityFor(r),

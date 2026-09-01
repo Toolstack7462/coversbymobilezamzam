@@ -158,7 +158,20 @@ export async function loader({ context, params }: Route.LoaderArgs) {
     }>(),
   ]);
 
-  const [settingsResult, related, reviewRows, familyRows] = await Promise.all([
+  const [brandCount, settingsResult, related, reviewRows, familyRows] = await Promise.all([
+    /*
+     * How many brands the catalogue carries.
+     *
+     * The related rail prints the maker on each card, which is useful in a shop
+     * stocking several and noise in one stocking one. Counted, not hardcoded,
+     * so the eyebrow returns by itself the day a second brand is added — the
+     * same rule the collection grid uses.
+     */
+    env.DB.prepare(
+      `SELECT COUNT(DISTINCT p.brand_id) AS n
+         FROM products p
+        WHERE p.status = 'active' AND p.archived_at IS NULL AND p.brand_id IS NOT NULL`,
+    ).first<{ n: number }>(),
     env.DB.prepare(`SELECT key, value FROM store_settings`).all<{ key: string; value: string }>(),
 
     /*
@@ -309,7 +322,7 @@ export async function loader({ context, params }: Route.LoaderArgs) {
       .map<ProductCardData>((r) => ({
         slug: r.slug,
         name: r.name ?? r.slug,
-        brandName: r.brand_name,
+        brandName: (brandCount?.n ?? 0) > 1 ? r.brand_name : null,
         priceAmount: r.price_amount!,
         imageKey: r.image_key,
       })),

@@ -25,6 +25,14 @@ export interface ProductCardData {
   availability?: AvailabilityState | null;
   compatibility?: CompatibilityState;
   deviceName?: string | null;
+  /**
+   * The maker, when knowing it tells the customer something.
+   *
+   * Suppressed by the loader when the whole catalogue carries ONE brand: this
+   * shop's demo data is all "Marchio generico", and printing it on twenty-four
+   * cards is twenty-four repetitions of a word that distinguishes nothing. A
+   * label every row shares is not information, it is furniture.
+   */
   brandName?: string | null;
 }
 

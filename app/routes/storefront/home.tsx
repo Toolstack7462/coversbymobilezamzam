@@ -529,14 +529,30 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     featured_collection: () => (
       <>
         {loaderData.featured.length > 0 ? (
-          <section className="page section">
-            <div className="section__head">
+          /*
+            The one dark moment in the middle of the page.
+
+            Measured before changing anything: between the hero and the store
+            band the homepage ran 3 288px through six sections on the identical
+            warm white. Over three metres of scroll in one flat colour, which is
+            what "it doesn't look premium" was pointing at.
+
+            This section takes the navy because it is the one whose job is the
+            photographs — product shots read better on a dark ground, which is
+            what Native Union and dbrand both do with theirs — and because it
+            falls near the middle, so the run is broken where it is longest.
+
+            One dark band, not five. A page that changes ground at every section
+            has no rhythm either; it just flickers.
+          */
+          <section className="section section--deep">
+            <div className="page section__head">
               <h2>{t("home.featured_title")}</h2>
               <Link className="section__more" to={path("/shop")}>
                 {t("home.browse_all")}
               </Link>
             </div>
-            <ul className="editorial-grid">
+            <ul className="page editorial-grid">
               {loaderData.featured.map((item) => (
                 <li key={item.slug}>
                   <Link className="editorial" to={path(`/prodotti/${item.slug}`)}>
@@ -578,11 +594,13 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     services: () => (
       <>
         {loaderData.showStore ? (
-          <section className="page section">
-            <div className="section__head">
+          /* A tint, not a colour: enough to separate the counter services from
+             the guides below them without becoming a second dark band. */
+          <section className="section section--tint">
+            <div className="page section__head">
               <h2>{t("home.services_title")}</h2>
             </div>
-            <ul className="service-grid">
+            <ul className="page service-grid">
               {[
                 ["repairs", t("home.service_repairs"), t("home.service_repairs_body")],
                 ["fitting", t("home.service_fitting"), t("home.service_fitting_body")],
@@ -601,7 +619,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               and there is no repairs page to send anybody to. A link per service
               would be three links to nowhere dressed as choice.
             */}
-            <p className="service-cta">
+            <p className="page service-cta">
               <Link className="btn btn--secondary" to={path("/negozio")}>
                 {t("store.title")}
               </Link>

@@ -3588,3 +3588,94 @@ a.chip:hover {
 .service-cta {
   margin-block-start: var(--space-5);
 }
+
+/* ── Section grounds ────────────────────────────────────────────────────────
+ *
+ * The homepage ran 3 288px through six sections on one warm white between the
+ * hero and the store band. These are the two changes of ground that break it —
+ * two, deliberately: a page that changes surface at every section has no rhythm
+ * either, it flickers.
+ */
+
+/* The dark one, under the featured photography. */
+.section--deep {
+  background-color: var(--color-ink-deep);
+  background-image: linear-gradient(180deg, #0c1426 0%, var(--color-ink-deep) 58%);
+  color: var(--color-on-deep);
+  padding-block: clamp(var(--space-7), 7vw, var(--space-9));
+}
+
+.section--deep h2 {
+  color: var(--color-on-deep);
+}
+
+.section--deep .section__more {
+  color: var(--color-on-deep);
+}
+
+/*
+ * The cards become part of the dark ground rather than white rectangles on it.
+ *
+ * A white card on navy is a hole punched in the section; the point of the dark
+ * band is that the photographs sit in it. So the card is a lift of the ground
+ * itself, and the border is a highlight rather than a line.
+ */
+.section--deep .editorial {
+  background: rgb(255 255 255 / 0.045);
+  border-color: rgb(255 255 255 / 0.11);
+  color: var(--color-on-deep);
+}
+
+.section--deep .editorial:hover {
+  border-color: rgb(255 255 255 / 0.28);
+  background: rgb(255 255 255 / 0.07);
+}
+
+.section--deep .editorial__media {
+  background: rgb(255 255 255 / 0.05);
+}
+
+/*
+ * The accent, finally doing something.
+ *
+ * `--color-accent` has been in the palette all along and appeared exactly once
+ * on the whole site — one word in the hero. A brand colour used once is a brand
+ * colour nobody registers. The category eyebrow on the dark band is the right
+ * second place: small, repeated four times, and on a ground where lime reads at
+ * about 13.9:1 rather than fighting a white page, where it would be unreadable.
+ */
+.section--deep .editorial__eyebrow {
+  color: var(--color-accent);
+}
+
+.section--deep .editorial__note {
+  color: var(--color-on-deep-secondary);
+}
+
+.section--deep :focus-visible {
+  outline-color: var(--color-on-deep);
+}
+
+/*
+ * The quiet one, under the counter services.
+ *
+ * A tint rather than a colour — one step off the page, enough to say "this is a
+ * different subject" without asking for attention. The hairlines above each
+ * service need to darken with it or they vanish.
+ */
+.section--tint {
+  background-image: linear-gradient(
+    180deg,
+    var(--color-surface-sunken) 0%,
+    var(--color-canvas) 100%
+  );
+  border-block: var(--border-width) solid var(--color-border);
+  padding-block: clamp(var(--space-6), 6vw, var(--space-8));
+}
+
+/* A full-bleed section holds its own gutters, since the `.page` wrapper moved
+   inside it. */
+.section--deep,
+.section--tint {
+  display: block;
+}

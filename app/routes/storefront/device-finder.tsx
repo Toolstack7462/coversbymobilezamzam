@@ -123,7 +123,7 @@ export default function DeviceFinder({ loaderData }: Route.ComponentProps) {
                 <li key={brand.handle}>
                   <Link
                     className="chip"
-                    aria-pressed={selected.brand === brand.handle}
+                    aria-current={selected.brand === brand.handle ? "true" : undefined}
                     to={step({ marca: brand.handle })}
                   >
                     {brand.name}
@@ -144,7 +144,7 @@ export default function DeviceFinder({ loaderData }: Route.ComponentProps) {
                     <li key={family.handle}>
                       <Link
                         className="chip"
-                        aria-pressed={selected.family === family.handle}
+                        aria-current={selected.family === family.handle ? "true" : undefined}
                         to={step({ marca: selected.brand!, famiglia: family.handle })}
                       >
                         {family.name}

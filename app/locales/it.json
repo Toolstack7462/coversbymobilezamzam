@@ -71,7 +71,8 @@
     "trust_help": "Assistenza in italiano",
     "trust_help_body": "Ti risponde chi lavora in negozio, non un servizio esterno.",
     "hero_lead_eyebrow": "Italian Tech Atelier — Sulmona",
-    "shop_by_device_count": "accessori"
+    "shop_by_device_count": "accessori",
+    "store_title_city": "Vieni a trovarci a {{city}}."
   },
   "device": {
     "finder_title": "Trova accessori per il tuo dispositivo",
@@ -125,7 +126,8 @@
     "choose_variant": "Scegli un'opzione",
     "save_percent": "Risparmi il {{percent}}%",
     "prior_price_note": "Prezzo più basso applicato nei 30 giorni precedenti: {{price}}",
-    "view_n": "Vista {{n}}"
+    "view_n": "Vista {{n}}",
+    "gallery": "Immagini del prodotto"
   },
   "collection": {
     "results_one": "{{count}} prodotto",

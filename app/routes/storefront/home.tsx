@@ -3,10 +3,12 @@ import type { Route } from "./+types/home";
 import { cloudflareContext } from "../../../workers/app";
 import { parseLocalePath, translator, localePath } from "~/lib/i18n";
 import {
-  canShowStoreSection,
+  canShowStoreAddress,
   canOfferPickup,
   canShowPhone,
   canShowEmail,
+  settingValue,
+  SETTING_KEYS,
   type SettingsMap,
 } from "~/domain/content/gates";
 import { ProductCard, type ProductCardData } from "~/components/storefront/product-card";
@@ -144,7 +146,17 @@ export async function loader({ context }: Route.LoaderArgs) {
       })),
     categories: categories.results.filter((c) => c.name),
     devices: devices.results,
-    showStore: canShowStoreSection(settings) || canOfferPickup(settings),
+    /*
+     * The address is enough.
+     *
+     * This used to require a public shop NAME as well, so a shop with a real
+     * street, postcode and city rendered nothing at all — the one fact a
+     * marketplace cannot copy, hidden because a display name was missing. The
+     * heading falls back to the city, which is true whatever the shop ends up
+     * being called.
+     */
+    showStore: canShowStoreAddress(settings),
+    storeCity: settingValue(settings, SETTING_KEYS.storeCity),
     // Each trust claim is gated on the fact that makes it true. A promise of
     // in-store collection from a shop that has not configured collection is
     // the kind of copy that ends up in a complaint.
@@ -311,7 +323,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         <section className="store-band">
           <div className="page store-band__inner">
             <p className="eyebrow eyebrow--on-deep">{t("home.store_eyebrow")}</p>
-            <h2 className="store-band__title">{t("home.store_title")}</h2>
+            <h2 className="store-band__title">
+              {loaderData.storeCity
+                ? t("home.store_title_city", { city: loaderData.storeCity })
+                : t("home.store_title")}
+            </h2>
             <p className="store-band__body">{t("home.store_body")}</p>
             <Link className="btn btn--on-deep btn--lg" to={path("/negozio")}>
               {t("home.visit_store")}

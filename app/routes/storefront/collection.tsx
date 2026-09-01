@@ -350,7 +350,7 @@ export default function Collection({ loaderData }: Route.ComponentProps) {
                     to={
                       active ? clearedHref("dispositivo") : withParam("dispositivo", device.handle)
                     }
-                    aria-pressed={active}
+                    aria-current={active ? "true" : undefined}
                   >
                     {device.name}
                   </Link>
@@ -372,7 +372,7 @@ export default function Collection({ loaderData }: Route.ComponentProps) {
                   <Link
                     className="chip"
                     to={active ? clearedHref("categoria") : withParam("categoria", category.slug)}
-                    aria-pressed={active}
+                    aria-current={active ? "true" : undefined}
                   >
                     {category.name}
                   </Link>

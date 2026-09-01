@@ -98,6 +98,21 @@ export function ErrorBoundary() {
 
   return (
     <main id="main" className="page" style={{ paddingBlock: "var(--space-9)" }}>
+      {/*
+        An error page still needs a name.
+
+        `<Meta />` renders the matched route's metadata, and a route that threw
+        matched nothing — so every 404 and every 500 shipped with no <title> at
+        all, showing the raw URL in the browser tab and failing WCAG 2.4.2. It
+        is also the label that ends up in someone's history and bookmarks.
+
+        React 19 hoists these into <head> from wherever they are rendered, so
+        the boundary can supply its own without the route knowing.
+      */}
+      <title>{title}</title>
+      {/* An error page is never worth indexing, whatever the environment. */}
+      <meta name="robots" content="noindex" />
+
       <div className="panel stack" style={{ maxWidth: "36rem", marginInline: "auto" }}>
         <h1>{title}</h1>
         <p className="muted">{body}</p>

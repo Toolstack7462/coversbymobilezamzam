@@ -71,7 +71,8 @@
     "trust_help": "Help in Italian",
     "trust_help_body": "You are answered by the people who work in the shop, not an outsourced desk.",
     "hero_lead_eyebrow": "Italian Tech Atelier — Sulmona",
-    "shop_by_device_count": "accessories"
+    "shop_by_device_count": "accessories",
+    "store_title_city": "Come and see us in {{city}}."
   },
   "device": {
     "finder_title": "Find accessories for your device",
@@ -125,7 +126,8 @@
     "choose_variant": "Choose an option",
     "save_percent": "Save {{percent}}%",
     "prior_price_note": "Lowest price applied in the previous 30 days: {{price}}",
-    "view_n": "View {{n}}"
+    "view_n": "View {{n}}",
+    "gallery": "Product images"
   },
   "collection": {
     "results_one": "{{count}} product",

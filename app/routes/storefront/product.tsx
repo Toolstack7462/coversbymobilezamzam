@@ -219,7 +219,20 @@ export default function ProductPage({ loaderData }: Route.ComponentProps) {
           thumbnail under a single photograph is a control that does nothing.
         */}
         <div className="gallery">
-          <div className="gallery__stage">
+          {/*
+            The strip scrolls, so it must be reachable by keyboard.
+            A region that scrolls and cannot be focused is unusable without a
+            mouse — the browser gives arrow-key scrolling to a focusable
+            element, and to nothing else. `tabindex={0}` plus a name is the
+            documented remedy; axe flags its absence as
+            `scrollable-region-focusable`.
+          */}
+          <div
+            className="gallery__stage"
+            role="group"
+            aria-label={t("product.gallery")}
+            tabIndex={0}
+          >
             {images.length > 0 ? (
               images.map((img, index) => (
                 <figure key={img.object_key} className="gallery__slide" id={`vista-${index + 1}`}>

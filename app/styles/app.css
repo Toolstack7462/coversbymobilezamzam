@@ -334,13 +334,21 @@ a {
  * on — and one source of truth cannot disagree with itself. A `.chip--active`
  * class was briefly added alongside this and lost every time: (0,2,0) beats
  * (0,1,0), so the text went white on a background that stayed pale.
+ *
+ * `aria-current` for links, `aria-pressed` for buttons. Every chip in the
+ * storefront is a link to a filtered view, and `aria-pressed` is not valid on
+ * an anchor: axe flags it, and a screen reader announces a "pressed link",
+ * which is not a thing. The button form is kept for any chip that one day
+ * genuinely toggles.
  */
+.chip[aria-current="true"],
 .chip[aria-pressed="true"] {
   border-color: var(--color-ink);
   background: var(--color-ink);
   color: var(--color-surface);
 }
 
+.chip[aria-current="true"]:hover,
 .chip[aria-pressed="true"]:hover {
   background: var(--color-ink-deep);
   border-color: var(--color-ink-deep);
@@ -1908,5 +1916,29 @@ a.chip:hover {
 @media (prefers-reduced-motion: reduce) {
   .gallery__stage {
     scroll-behavior: auto;
+  }
+}
+
+/* ── Touch targets on phones ──────────────────────────────────────────────── */
+
+/*
+ * Inline text links in the footer and category rail render at 24px tall — the
+ * WCAG 2.2 AA minimum exactly, and uncomfortable to hit with a thumb.
+ *
+ * The padding is vertical only and the line-height is unchanged, so the visual
+ * rhythm of the list is the same and only the hit area grows. Applied on
+ * phones alone: on a desktop these are mouse targets and the extra height
+ * would just loosen the footer.
+ */
+@media (max-width: 47.99rem) {
+  .site-footer__column a,
+  .site-header__nav a {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 2.75rem;
+  }
+
+  .site-footer__column ul {
+    gap: 0;
   }
 }

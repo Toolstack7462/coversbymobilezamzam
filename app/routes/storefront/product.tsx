@@ -158,7 +158,7 @@ export async function loader({ context, params }: Route.LoaderArgs) {
     }>(),
   ]);
 
-  const [settingsResult, related] = await Promise.all([
+  const [settingsResult, related, reviewRows, familyRows] = await Promise.all([
     env.DB.prepare(`SELECT key, value FROM store_settings`).all<{ key: string; value: string }>(),
 
     /*
@@ -198,6 +198,66 @@ export async function loader({ context, params }: Route.LoaderArgs) {
         price_amount: number | null;
         image_key: string | null;
       }>(),
+
+    /*
+     * Published reviews only, newest first.
+     *
+     * Pending and rejected reviews are invisible here by construction rather
+     * than by a filter somebody has to remember: the storefront asks for
+     * `status = 'published'` and nothing else.
+     */
+    env.DB.prepare(
+      `SELECT id, provenance, author_name, rating, title, body, published_at
+         FROM product_reviews
+        WHERE product_id = ?1 AND status = 'published'
+        ORDER BY published_at DESC
+        LIMIT 20`,
+    )
+      .bind(product.id)
+      .all<{
+        id: string;
+        provenance: string;
+        author_name: string;
+        rating: number;
+        title: string | null;
+        body: string;
+        published_at: number | null;
+      }>(),
+
+    /*
+     * The rest of this product's family: the same item cut for other phones.
+     *
+     * Deliberately NOT the compatibility list. Compatibility says whether THIS
+     * product fits a given phone; a family says a different version exists for
+     * it. Showing one under the other's heading is how a customer is told a
+     * case for an iPhone fits a Galaxy.
+     */
+    env.DB.prepare(
+      `SELECT p.slug, COALESCE(pt.name, p.slug) AS name,
+              (SELECT amount FROM variant_prices vp
+                 JOIN product_variants v ON v.id = vp.variant_id
+                WHERE v.product_id = p.id ORDER BY vp.amount ASC LIMIT 1) AS price_amount,
+              (SELECT object_key FROM product_images pi
+                WHERE pi.product_id = p.id
+                ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS image_key
+         FROM product_family_members mine
+         JOIN product_family_members theirs
+           ON theirs.product_family_id = mine.product_family_id
+          AND theirs.product_id <> mine.product_id
+         JOIN products p ON p.id = theirs.product_id
+                        AND p.status = 'active' AND p.archived_at IS NULL
+         LEFT JOIN product_translations pt ON pt.product_id = p.id AND pt.locale = 'it'
+        WHERE mine.product_id = ?1
+        ORDER BY theirs.sort_order
+        LIMIT 12`,
+    )
+      .bind(product.id)
+      .all<{
+        slug: string;
+        name: string;
+        price_amount: number | null;
+        image_key: string | null;
+      }>(),
   ]);
 
   const settings: SettingsMap = Object.fromEntries(
@@ -227,6 +287,18 @@ export async function loader({ context, params }: Route.LoaderArgs) {
       .filter((r) => r.compatibility_level !== "incompatible")
       .map((r) => r.device_name),
     specs: specs.results.filter((s) => s.value_text !== null || s.value_number !== null),
+    reviews: reviewRows.results,
+    // Other phones the same item is made for. Empty is the common case.
+    family: familyRows.results,
+    /*
+     * The average is computed from what is PUBLISHED, which is the only set a
+     * visitor can check. Rounded to one decimal for display and never stored:
+     * 4.7 is not a rating anybody submitted.
+     */
+    reviewAverage:
+      reviewRows.results.length > 0
+        ? reviewRows.results.reduce((sum, r) => sum + r.rating, 0) / reviewRows.results.length
+        : null,
     // Each reassurance is gated on the setting that makes it true. A promise
     // of collection from a shop that has not configured collection is the
     // kind of copy that ends up in a complaint.
@@ -535,6 +607,105 @@ export default function ProductPage({ loaderData }: Route.ComponentProps) {
             ))}
           </ul>
         </details>
+      ) : null}
+
+      {/*
+        The same item, for other phones.
+
+        Above the reviews and below the detail, because the customer this helps
+        is the one who has just worked out that this particular one is not for
+        their model — and the worst place to learn that is the bottom of the
+        page.
+
+        This is NOT the compatibility list. Compatibility says whether THIS
+        product fits a phone; a family says a different version exists for it.
+      */}
+      {loaderData.family.length > 0 ? (
+        <section className="section">
+          <div className="section__head">
+            <h2>{t("product.family_title")}</h2>
+          </div>
+          <div className="grid-products">
+            {loaderData.family
+              .filter((item) => item.price_amount !== null)
+              .map((item) => (
+                <ProductCard
+                  key={item.slug}
+                  product={{
+                    slug: item.slug,
+                    name: item.name,
+                    priceAmount: item.price_amount!,
+                    imageKey: item.image_key,
+                    availability: null,
+                  }}
+                  locale={locale}
+                  t={t}
+                  mediaBaseUrl={mediaBaseUrl}
+                />
+              ))}
+          </div>
+        </section>
+      ) : null}
+
+      {/*
+        Reviews.
+
+        Two things are non-negotiable here, and both are legal rather than
+        aesthetic (D.Lgs. 26/2023):
+
+        1. Every review shows HOW it was obtained. "Acquisto verificato" is
+           backed by a real order line — the database will not let that label
+           exist without one — and "raccolta in negozio" is the honest weaker
+           claim, where the shop vouches for it and the software does not.
+        2. The page states how reviews are checked, in plain words, next to
+           them rather than in a policy nobody opens.
+
+        The average is over published reviews and is shown with the count, so
+        "4.8" is never floating free of the fact that it is four people.
+      */}
+      {loaderData.reviews.length > 0 ? (
+        <section className="section">
+          <div className="section__head">
+            <h2>{t("product.reviews_title")}</h2>
+            {loaderData.reviewAverage !== null ? (
+              <p className="review-summary">
+                <strong>{loaderData.reviewAverage.toFixed(1)}</strong>
+                <span aria-hidden="true"> ★ </span>
+                <span className="muted">
+                  {t("product.reviews_count", { count: String(loaderData.reviews.length) })}
+                </span>
+              </p>
+            ) : null}
+          </div>
+
+          <p className="small muted review-disclosure">{t("product.reviews_disclosure")}</p>
+
+          <ul className="review-list">
+            {loaderData.reviews.map((review) => (
+              <li className="review" key={review.id}>
+                <p className="review__head">
+                  <span className="review__rating">
+                    <span aria-hidden="true">
+                      {"★".repeat(review.rating)}
+                      <span className="review__rating-empty">{"★".repeat(5 - review.rating)}</span>
+                    </span>
+                    <span className="visually-hidden">
+                      {t("product.reviews_rating", { rating: String(review.rating) })}
+                    </span>
+                  </span>
+                  <span className="review__author">{review.author_name}</span>
+                  <span className="review__provenance">
+                    {review.provenance === "verified_purchase"
+                      ? t("product.reviews_verified")
+                      : t("product.reviews_in_store")}
+                  </span>
+                </p>
+                {review.title ? <p className="review__title">{review.title}</p> : null}
+                <p className="review__body">{review.body}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
       ) : null}
 
       {/* Related by COMPATIBILITY, not by category and not by a "customers also

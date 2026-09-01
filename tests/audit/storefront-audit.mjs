@@ -73,7 +73,35 @@ while ((paths.length > 0 || variants.length > 0) && report.length < 60) {
     });
     status = response?.status() ?? 0;
   } catch (error) {
-    report.push({ path, status: 0, error: String(error).slice(0, 140) });
+    /*
+     * A page that would not load at all.
+     *
+     * Recorded with the SAME shape as every other row rather than a bare
+     * {path, error}: the summary loop reads `consoleErrors.length` and friends
+     * on every row, and a differently-shaped one crashed the whole report —
+     * losing the other fifty-nine results to explain one failure.
+     */
+    report.push({
+      path,
+      status: 0,
+      title: "",
+      h1: 0,
+      lang: "",
+      hasDescription: false,
+      noindex: false,
+      mainChars: 0,
+      mainLinks: 0,
+      images: 0,
+      imagesNoAlt: 0,
+      imagesBroken: 0,
+      overflow390: false,
+      consoleErrors: [],
+      failedRequests: [],
+      transportFlakes: 0,
+      axe: [],
+      headings: [],
+      error: String(error).slice(0, 200),
+    });
     continue;
   }
 
@@ -222,7 +250,8 @@ console.log(`\n${report.length} pages crawled from ${BASE}\n`);
 console.log("PATH".padEnd(38) + "ST  H1  CHARS  IMG  OVR  A11Y            ISSUES");
 for (const r of report) {
   const issues = [];
-  if (r.status !== 200) issues.push(`status ${r.status}`);
+  if (r.error) issues.push(`LOAD FAILED: ${r.error.slice(0, 80)}`);
+  else if (r.status !== 200) issues.push(`status ${r.status}`);
   if (r.h1 !== 1) issues.push(`${r.h1} h1`);
   if (!r.hasDescription) issues.push("no meta description");
   if (r.mainChars < 200 && r.mainLinks < 5) issues.push("thin: no content and nowhere to go");

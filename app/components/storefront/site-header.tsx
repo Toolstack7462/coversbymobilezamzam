@@ -27,9 +27,11 @@ interface Props {
    * at a category that is not there.
    */
   navigation: { slug: string; name: string }[];
+  /** Merchant-added links, appended after the derived category rail. */
+  extraNav: { label: string; url: string }[];
 }
 
-export function SiteHeader({ t, locale, brandName, shopName, navigation }: Props) {
+export function SiteHeader({ t, locale, brandName, shopName, navigation, extraNav }: Props) {
   const path = (p: string) => localePath(locale, p);
 
   return (
@@ -85,6 +87,14 @@ export function SiteHeader({ t, locale, brandName, shopName, navigation }: Props
             {navigation.map((item) => (
               <li key={item.slug}>
                 <Link to={path(`/shop?categoria=${item.slug}`)}>{item.name}</Link>
+              </li>
+            ))}
+            {/* The merchant's own links, after the taxonomy rather than mixed
+                into it: these are not categories and should not look like one
+                more of them. */}
+            {extraNav.map((item) => (
+              <li key={item.url}>
+                <Link to={path(item.url)}>{item.label}</Link>
               </li>
             ))}
           </ul>

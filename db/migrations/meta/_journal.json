@@ -29,6 +29,13 @@
       "when": 1788166020673,
       "tag": "0003_staff_invitations",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1788264281860,
+      "tag": "0006_product_reviews",
+      "breakpoints": true
     }
   ]
 }

@@ -125,7 +125,14 @@
     "reassure_pickup_body": "Ordina online e ritira a Sulmona, senza spese di spedizione.",
     "reassure_help": "Assistenza in italiano",
     "reassure_help_body": "Ti risponde chi lavora in negozio.",
-    "related_title": "Compatibile con lo stesso dispositivo"
+    "related_title": "Compatibile con lo stesso dispositivo",
+    "reviews_title": "Recensioni",
+    "reviews_count": "su {{count}} recensioni",
+    "reviews_rating": "{{rating}} stelle su 5",
+    "reviews_verified": "Acquisto verificato",
+    "reviews_in_store": "Raccolta in negozio",
+    "reviews_disclosure": "Pubblichiamo solo recensioni di cui conosciamo la provenienza, e la indichiamo su ognuna: «acquisto verificato» significa che risulta un ordine, «raccolta in negozio» che ce l'ha lasciata un cliente al banco. Non modifichiamo il testo di una recensione.",
+    "family_title": "Lo stesso articolo per altri telefoni"
   },
   "collection": {
     "results_one": "{{count}} prodotto",

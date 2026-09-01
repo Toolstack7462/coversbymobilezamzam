@@ -1,4 +1,4 @@
-import { Form } from "react-router";
+import { Form, Link } from "react-router";
 import type { Route } from "./+types/pages";
 import { cloudflareContext } from "../../../workers/app";
 import { requireStaff } from "~/infrastructure/auth/session.server";
@@ -35,24 +35,45 @@ const LOCALES = [
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
+/**
+ * What kind of page this is.
+ *
+ * `pages.page_type` has been in the schema since the first migration and was
+ * always written as 'page'. Guides are pages — same table, same editor, same
+ * publishing rules — so a separate "Guide" screen would have been two screens
+ * writing one table, which is how they end up disagreeing. This is the
+ * distinction the nav entry points at instead.
+ */
+const PAGE_TYPES = [
+  { value: "page", label: "Pagina" },
+  { value: "guide", label: "Guida" },
+] as const;
+
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
   const actor = await requireStaff(request, env, "content.read");
 
+  // `?tipo=guide` narrows the list; the nav entry for Guide points here.
+  const typeFilter = new URL(request.url).searchParams.get("tipo") ?? "";
+
   const pages = await env.DB.prepare(
-    `SELECT id, slug, status, publish_at, sort_order, updated_at, archived_at
+    `SELECT id, slug, status, page_type, publish_at, sort_order, updated_at, archived_at
        FROM pages
       WHERE archived_at IS NULL
+        ${typeFilter ? "AND page_type = ?1" : ""}
       ORDER BY sort_order ASC, slug ASC`,
-  ).all<{
-    id: string;
-    slug: string;
-    status: string;
-    publish_at: number | null;
-    sort_order: number;
-    updated_at: number;
-    archived_at: number | null;
-  }>();
+  )
+    .bind(...(typeFilter ? [typeFilter] : []))
+    .all<{
+      id: string;
+      slug: string;
+      status: string;
+      page_type: string;
+      publish_at: number | null;
+      sort_order: number;
+      updated_at: number;
+      archived_at: number | null;
+    }>();
 
   const translations = await env.DB.prepare(
     `SELECT page_id, locale, title, excerpt, body, seo_title, seo_description
@@ -78,6 +99,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     })),
     canWrite: actor.permissions.includes("content.write"),
     canPublish: actor.permissions.includes("content.publish"),
+    typeFilter,
+    pageTypes: PAGE_TYPES,
   };
 }
 
@@ -93,7 +116,11 @@ export async function action({ request, context }: Route.ActionArgs) {
       .trim()
       .toLowerCase();
     const title = String(form.get("title") ?? "").trim();
+    const pageType = String(form.get("page_type") ?? "page");
 
+    if (!PAGE_TYPES.some((t) => t.value === pageType)) {
+      return { error: "Tipo di pagina non riconosciuto." };
+    }
     if (!SLUG_PATTERN.test(slug)) {
       return {
         error:
@@ -113,8 +140,8 @@ export async function action({ request, context }: Route.ActionArgs) {
       // creating it — the merchant writes it first and decides afterwards.
       env.DB.prepare(
         `INSERT INTO pages (id, slug, status, page_type, sort_order, created_at, updated_at)
-         VALUES (?1, ?2, 'draft', 'page', ?3, ?4, ?4)`,
-      ).bind(id, slug, 100, now),
+         VALUES (?1, ?2, 'draft', ?5, ?3, ?4, ?4)`,
+      ).bind(id, slug, 100, now, pageType),
       env.DB.prepare(
         `INSERT INTO page_translations (id, page_id, locale, title) VALUES (?1, ?2, 'it', ?3)`,
       ).bind(cryptoIds.generate(), id, title),
@@ -212,7 +239,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function AdminPages({ loaderData, actionData }: Route.ComponentProps) {
-  const { pages, canWrite, canPublish } = loaderData;
+  const { pages, canWrite, canPublish, typeFilter, pageTypes } = loaderData;
   const published = pages.filter((p) => p.status === "published").length;
 
   return (
@@ -246,6 +273,26 @@ export default function AdminPages({ loaderData, actionData }: Route.ComponentPr
         </p>
       </section>
 
+      <nav className="cluster" aria-label="Filtra per tipo">
+        <Link
+          className="chip"
+          to="/admin/contenuti/pagine"
+          aria-current={typeFilter === "" || undefined}
+        >
+          Tutte
+        </Link>
+        {pageTypes.map((t) => (
+          <Link
+            key={t.value}
+            className="chip"
+            to={`/admin/contenuti/pagine?tipo=${t.value}`}
+            aria-current={typeFilter === t.value || undefined}
+          >
+            {t.label}
+          </Link>
+        ))}
+      </nav>
+
       {canWrite ? (
         <section className="panel">
           <h2>Nuova pagina</h2>
@@ -254,6 +301,20 @@ export default function AdminPages({ loaderData, actionData }: Route.ComponentPr
             <label>
               Titolo
               <input name="title" required maxLength={120} />
+            </label>
+            <label>
+              Tipo
+              <select name="page_type" defaultValue={typeFilter || "page"}>
+                {pageTypes.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+              <span className="field-help">
+                Una guida è una pagina: stesso editor, stesse regole. Il tipo serve solo a
+                ritrovarla.
+              </span>
             </label>
             <label>
               Indirizzo
@@ -289,7 +350,12 @@ export default function AdminPages({ loaderData, actionData }: Route.ComponentPr
                 ) : (
                   <span className="badge badge--warning">bozza</span>
                 )}{" "}
-                <code className="small">/pagine/{page.slug}</code>
+                <code className="small">/pagine/{page.slug}</code>{" "}
+                {page.page_type !== "page" ? (
+                  <span className="badge">
+                    {pageTypes.find((t) => t.value === page.page_type)?.label ?? page.page_type}
+                  </span>
+                ) : null}
               </summary>
 
               {LOCALES.map((locale) => {

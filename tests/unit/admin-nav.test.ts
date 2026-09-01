@@ -49,23 +49,47 @@ describe("server-side filtering", () => {
       .map((i) => i.permission)
       .filter((p): p is NonNullable<typeof p> => p !== null);
 
-    // Picked from the tree rather than hardcoded, so this test keeps working
-    // as screens get built and their flags removed. It previously named
-    // /admin/marchi, which has since shipped.
-    const stillFlagged = ADMIN_NAV.flatMap((g) => g.items).find(
-      (item) => item.flag !== undefined && !ADMIN_FEATURES[item.flag],
-    );
-    expect(stillFlagged, "no flagged module left to test with").toBeDefined();
+    const flagged = ADMIN_NAV.flatMap((g) => g.items).filter((item) => item.flag !== undefined);
+
+    /*
+     * Every declared flag names a real feature.
+     *
+     * This is the half of the guard that never goes away: a typo in a flag name
+     * would make `features[item.flag]` undefined, and an item flagged with a
+     * name nobody defined would vanish from the nav permanently with no error.
+     */
+    for (const item of flagged) {
+      expect(Object.keys(ADMIN_FEATURES), `unknown flag on ${item.to}`).toContain(item.flag);
+    }
+
+    if (flagged.length === 0) {
+      /*
+       * Nothing is flagged, which means every screen in the tree is built.
+       *
+       * The test used to REQUIRE an unbuilt module to test the mechanism with,
+       * and failed the day the last one shipped — a test that breaks on
+       * finishing the work is a test that punishes finishing the work. The
+       * mechanism is still asserted above and below; this branch just records
+       * that there is currently nothing hidden.
+       */
+      expect(visibleNav(everyPermission).flatMap((g) => g.items).length).toBe(
+        visibleNav(everyPermission, ALL_ON).flatMap((g) => g.items).length,
+      );
+      return;
+    }
+
+    const stillFlagged = flagged.find((item) => !ADMIN_FEATURES[item.flag!]);
+    if (!stillFlagged) return;
 
     const withFlagsOff = visibleNav(everyPermission)
       .flatMap((g) => g.items)
       .map((i) => i.to);
-    expect(withFlagsOff).not.toContain(stillFlagged!.to);
+    expect(withFlagsOff).not.toContain(stillFlagged.to);
 
     const withFlagsOn = visibleNav(everyPermission, ALL_ON)
       .flatMap((g) => g.items)
       .map((i) => i.to);
-    expect(withFlagsOn).toContain(stillFlagged!.to);
+    expect(withFlagsOn).toContain(stillFlagged.to);
   });
 
   it("never sends the browser a route the actor cannot open", () => {

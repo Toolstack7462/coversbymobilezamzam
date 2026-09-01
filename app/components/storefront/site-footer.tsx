@@ -28,9 +28,20 @@ interface Props {
   pages: { slug: string; title: string }[];
   /** From the server's clock, not the visitor's. See the layout loader. */
   year: number;
+  /** Merchant-added links for the shop column. */
+  extraNav: { label: string; url: string }[];
 }
 
-export function SiteFooter({ t, locale, settings, gates, navigation, pages, year }: Props) {
+export function SiteFooter({
+  t,
+  locale,
+  settings,
+  gates,
+  navigation,
+  pages,
+  year,
+  extraNav,
+}: Props) {
   const path = (p: string) => localePath(locale, p);
 
   const street = settingValue(settings, SETTING_KEYS.storeStreet);
@@ -93,6 +104,11 @@ export function SiteFooter({ t, locale, settings, gates, navigation, pages, year
             <li>
               <Link to={path("/trova-dispositivo")}>{t("nav.find_by_device")}</Link>
             </li>
+            {extraNav.map((item) => (
+              <li key={item.url}>
+                <Link to={path(item.url)}>{item.label}</Link>
+              </li>
+            ))}
           </ul>
 
           {/*

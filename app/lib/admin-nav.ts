@@ -47,14 +47,16 @@ export const ADMIN_FEATURES = {
   /*
    * Order fulfilment: pickups, shipments, returns.
    *
-   * Still flagged, and it should be. The tables exist but NOTHING writes them —
-   * the checkout does not create a shipment or a pickup, and both
-   * `shipping.enabled` and `pickup.enabled` are off. Revealing three screens
-   * that list a table nothing populates is not shipping a feature, it is
-   * shipping three permanently empty pages and calling the admin complete.
-   * The flag comes off when the order flow fills them.
+   * Shipped. Each screen is a writer as well as a reader — a pickup is opened,
+   * marked ready and marked collected here; a shipment is recorded here; a
+   * return is opened and progressed here — so none of them depends on a
+   * checkout step that does not exist yet.
+   *
+   * They are empty until orders exist, and both `shipping.enabled` and
+   * `pickup.enabled` are currently off, which each screen says on its own face
+   * rather than looking broken.
    */
-  fulfilment: false,
+  fulfilment: true,
 
   // Shipped. The flags stay so the shape of "what is not built" is still one
   // readable list rather than an absence.
@@ -63,6 +65,10 @@ export const ADMIN_FEATURES = {
   content: true,
   customers: true,
   importExport: true,
+
+  // Shipped: a schema, a moderation queue, and public display with the
+  // provenance of every review stated on it.
+  reviews: true,
 
   /*
    * Retired, not pending.
@@ -80,8 +86,9 @@ export const ADMIN_FEATURES = {
    * Both are kept here as `false` rather than deleted so that a future reader
    * finds the decision instead of wondering whether they were forgotten.
    */
-  catalogueAdmin: false,
-  reviews: false,
+  // Shipped: families group the same item cut for different phones, and the
+  // product page reads them.
+  catalogueAdmin: true,
 } as const;
 
 export type AdminFeature = keyof typeof ADMIN_FEATURES;
@@ -109,16 +116,14 @@ export const ADMIN_NAV: NavGroup[] = [
         label: "Ritiri in negozio",
         to: "/admin/ritiri",
         permission: "order.read",
-        flag: "fulfilment",
         badgeKey: "pickupsToPrepare",
       },
       {
         label: "Spedizioni",
         to: "/admin/spedizioni",
         permission: "order.read",
-        flag: "fulfilment",
       },
-      { label: "Resi", to: "/admin/resi", permission: "order.read", flag: "fulfilment" },
+      { label: "Resi", to: "/admin/resi", permission: "order.read" },
       // No flag: built. Derived from orders rather than a separate table.
       { label: "Clienti", to: "/admin/clienti", permission: "customer.read" },
     ],
@@ -133,7 +138,7 @@ export const ADMIN_NAV: NavGroup[] = [
       // No flag: built. Compatibility depends on it, so it is the one catalogue
       // screen that had to come first.
       { label: "Dispositivi", to: "/admin/dispositivi", permission: "product.read" },
-      // No flag: this screen is built. The rest of the catalogue group is not.
+      { label: "Famiglie prodotto", to: "/admin/famiglie", permission: "product.read" },
       { label: "Compatibilità", to: "/admin/compatibilita", permission: "product.read" },
     ],
   },
@@ -180,6 +185,7 @@ export const ADMIN_NAV: NavGroup[] = [
       // No flag: built. Order-level coupons only — product price reductions
       // go through the product editor, where price_history is written.
       { label: "Sconti", to: "/admin/sconti", permission: "price.read" },
+      { label: "Recensioni", to: "/admin/recensioni", permission: "content.read" },
       {
         label: "Promozioni",
         to: "/admin/promozioni",
@@ -200,7 +206,15 @@ export const ADMIN_NAV: NavGroup[] = [
         to: "/admin/contenuti/homepage",
         permission: "content.write",
       },
+      { label: "Menu e navigazione", to: "/admin/contenuti/menu", permission: "content.read" },
       { label: "Pagine", to: "/admin/contenuti/pagine", permission: "content.read" },
+      // Guides ARE pages. Same table, same editor — this is a filtered view of it,
+      // because two screens writing one table is how they end up disagreeing.
+      {
+        label: "Guide",
+        to: "/admin/contenuti/pagine?tipo=guide",
+        permission: "content.read",
+      },
       { label: "Documenti legali", to: "/admin/contenuti/legale", permission: "content.read" },
       { label: "SEO", to: "/admin/contenuti/seo", permission: "content.read" },
     ],

@@ -88,8 +88,43 @@ export async function loader({ context, request }: Route.LoaderArgs) {
     .bind(locale, Date.now())
     .all<{ slug: string; title: string | null }>();
 
+  /*
+   * The merchant's extra menu links.
+   *
+   * Appended to the derived category rail, never replacing it. Each is checked
+   * against something that exists at RENDER time as well as at save time: a
+   * page unpublished after the link was made would otherwise stay in the menu
+   * pointing at a 404, which is precisely the class of bug the derived rail
+   * exists to prevent.
+   */
+  const { results: extraNav } = await env.DB.prepare(
+    `SELECT i.label_it, i.label_en, i.url, m.code AS menu_code
+       FROM navigation_items i
+       JOIN navigation_menus m ON m.id = i.menu_id
+      WHERE i.visible = 1
+        AND (
+          i.url IN ('/', '/shop', '/trova-dispositivo', '/negozio', '/carrello')
+          OR EXISTS (
+            SELECT 1 FROM pages p
+             WHERE p.status = 'published' AND p.archived_at IS NULL
+               AND i.url = '/pagine/' || p.slug
+          )
+          OR EXISTS (
+            SELECT 1 FROM categories c
+             WHERE c.visible = 1 AND c.archived_at IS NULL
+               AND i.url = '/shop?categoria=' || c.slug
+          )
+        )
+      ORDER BY m.code, i.sort_order`,
+  ).all<{ label_it: string; label_en: string; url: string; menu_code: string }>();
+
   return {
     settings,
+    extraNav: extraNav.map((item) => ({
+      label: locale === "en" ? item.label_en : item.label_it,
+      url: item.url,
+      menu: item.menu_code,
+    })),
     /*
      * The year for the footer, from the server's clock.
      *
@@ -134,6 +169,7 @@ export default function StorefrontLayout({ loaderData }: Route.ComponentProps) {
         brandName={loaderData.brandName}
         shopName={loaderData.shopName}
         navigation={loaderData.navigation}
+        extraNav={loaderData.extraNav.filter((i) => i.menu === "header_extra")}
       />
       <main id="main">
         <Outlet />
@@ -146,6 +182,7 @@ export default function StorefrontLayout({ loaderData }: Route.ComponentProps) {
         navigation={loaderData.navigation}
         pages={loaderData.pages}
         year={loaderData.year}
+        extraNav={loaderData.extraNav.filter((i) => i.menu === "footer_extra")}
       />
 
       {/* Phones only — see mobile-nav.tsx. Last in the DOM so it is last in the

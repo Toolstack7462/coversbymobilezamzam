@@ -12,4 +12,5 @@ export * from "./orders";
 export * from "./payments";
 export * from "./fulfilment";
 export * from "./content";
+export * from "./reviews";
 export * from "./system";

@@ -125,7 +125,14 @@
     "reassure_pickup_body": "Order online and collect in Sulmona, with no delivery charge.",
     "reassure_help": "Help in Italian",
     "reassure_help_body": "You are answered by the people who work in the shop.",
-    "related_title": "Also fits the same device"
+    "related_title": "Also fits the same device",
+    "reviews_title": "Reviews",
+    "reviews_count": "from {{count}} reviews",
+    "reviews_rating": "{{rating}} out of 5 stars",
+    "reviews_verified": "Verified purchase",
+    "reviews_in_store": "Collected in store",
+    "reviews_disclosure": "We publish only reviews whose origin we know, and we state it on each one: “verified purchase” means an order exists, “collected in store” means a customer left it at the counter. We do not edit the text of a review.",
+    "family_title": "The same item for other phones"
   },
   "collection": {
     "results_one": "{{count}} product",

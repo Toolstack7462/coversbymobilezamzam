@@ -127,7 +127,14 @@
     "save_percent": "Save {{percent}}%",
     "prior_price_note": "Lowest price applied in the previous 30 days: {{price}}",
     "view_n": "View {{n}}",
-    "gallery": "Product images"
+    "gallery": "Product images",
+    "reassure_fit": "Fit is stated",
+    "reassure_fit_body": "The models it is verified against are listed below.",
+    "reassure_pickup": "Collect in store",
+    "reassure_pickup_body": "Order online and collect in Sulmona, with no delivery charge.",
+    "reassure_help": "Help in Italian",
+    "reassure_help_body": "You are answered by the people who work in the shop.",
+    "related_title": "Also fits the same device"
   },
   "collection": {
     "results_one": "{{count}} product",

@@ -1942,3 +1942,44 @@ a.chip:hover {
     gap: 0;
   }
 }
+
+/* ── Reassurance, beside the buy button ───────────────────────────────────── */
+
+/*
+ * Three short answers where the decision is made.
+ *
+ * Placed inside the purchase panel rather than in a band further down, because
+ * the doubt that stops an accessories purchase — "will it fit, and what if it
+ * doesn't" — arrives at the moment the button is looked at, not at the footer.
+ */
+.reassure {
+  list-style: none;
+  padding-inline-start: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-block-start: var(--space-5);
+  padding-block-start: var(--space-4);
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+.reassure__item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-lh);
+}
+
+.reassure__item strong {
+  font-weight: var(--weight-semibold);
+}
+
+.reassure__item span {
+  color: var(--color-text-secondary);
+}
+
+/* Specification list, read as a table rather than a paragraph. */
+.spec-list dd {
+  font-variant-numeric: tabular-nums;
+}

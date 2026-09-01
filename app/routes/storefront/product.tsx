@@ -12,6 +12,13 @@ import {
 } from "~/domain/compatibility/resolve";
 import { availabilityState, availabilityLabelKey } from "~/domain/inventory/availability";
 import { CompatibilityBadge } from "~/components/storefront/compatibility-badge";
+import { ProductCard, type ProductCardData } from "~/components/storefront/product-card";
+import {
+  canOfferPickup,
+  canShowPhone,
+  canShowEmail,
+  type SettingsMap,
+} from "~/domain/content/gates";
 
 export function meta({ loaderData }: Route.MetaArgs) {
   // Falls back rather than inventing: an untranslated product still needs a
@@ -128,6 +135,52 @@ export async function loader({ context, params }: Route.LoaderArgs) {
     }>(),
   ]);
 
+  const [settingsResult, related] = await Promise.all([
+    env.DB.prepare(`SELECT key, value FROM store_settings`).all<{ key: string; value: string }>(),
+
+    /*
+     * Related accessories: other products that fit at least one of the same
+     * devices as this one.
+     *
+     * Related by COMPATIBILITY, never by category or by a "customers also
+     * bought" that has no orders behind it. On an accessories catalogue the
+     * useful adjacency is "this also fits your phone" — and it is the one
+     * relationship the data can actually prove.
+     */
+    env.DB.prepare(
+      `SELECT DISTINCT p.slug, pt.name, b.name AS brand_name,
+              (SELECT amount FROM variant_prices vp
+                 JOIN product_variants v ON v.id = vp.variant_id
+                WHERE v.product_id = p.id ORDER BY vp.amount ASC LIMIT 1) AS price_amount,
+              (SELECT object_key FROM product_images pi
+                WHERE pi.product_id = p.id
+                ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS image_key
+         FROM product_compatibility mine
+         JOIN product_compatibility theirs
+              ON theirs.device_model_id = mine.device_model_id
+             AND theirs.product_id <> mine.product_id
+             AND theirs.compatibility_level <> 'incompatible'
+         JOIN products p ON p.id = theirs.product_id
+                        AND p.status = 'active' AND p.archived_at IS NULL
+         LEFT JOIN product_translations pt ON pt.product_id = p.id AND pt.locale = 'it'
+         LEFT JOIN brands b ON b.id = p.brand_id
+        WHERE mine.product_id = ?1 AND mine.compatibility_level <> 'incompatible'
+        LIMIT 4`,
+    )
+      .bind(product.id)
+      .all<{
+        slug: string;
+        name: string | null;
+        brand_name: string | null;
+        price_amount: number | null;
+        image_key: string | null;
+      }>(),
+  ]);
+
+  const settings: SettingsMap = Object.fromEntries(
+    settingsResult.results.map((r) => [r.key, r.value]),
+  );
+
   return {
     product,
     images: images.results,
@@ -151,6 +204,20 @@ export async function loader({ context, params }: Route.LoaderArgs) {
       .filter((r) => r.compatibility_level !== "incompatible")
       .map((r) => r.device_name),
     specs: specs.results.filter((s) => s.value_text !== null || s.value_number !== null),
+    // Each reassurance is gated on the setting that makes it true. A promise
+    // of collection from a shop that has not configured collection is the
+    // kind of copy that ends up in a complaint.
+    canPickUp: canOfferPickup(settings),
+    canHelp: canShowPhone(settings) || canShowEmail(settings),
+    related: related.results
+      .filter((r) => r.price_amount !== null)
+      .map<ProductCardData>((r) => ({
+        slug: r.slug,
+        name: r.name ?? r.slug,
+        brandName: r.brand_name,
+        priceAmount: r.price_amount!,
+        imageKey: r.image_key,
+      })),
   };
 }
 
@@ -349,6 +416,33 @@ export default function ProductPage({ loaderData }: Route.ComponentProps) {
               {stock === "out_of_stock" ? t("product.sold_out") : t("product.add_to_cart")}
             </button>
           </Form>
+
+          {/*
+            The three doubts that stop an accessories purchase, answered where
+            the decision is made rather than in a footer nobody scrolls to.
+
+            Each is gated on the setting that makes it true, so a shop that has
+            not configured collection does not promise it. The first is always
+            true: it is a property of the catalogue, not a claim about service.
+          */}
+          <ul className="reassure">
+            <li className="reassure__item">
+              <strong>{t("product.reassure_fit")}</strong>
+              <span>{t("product.reassure_fit_body")}</span>
+            </li>
+            {loaderData.canPickUp ? (
+              <li className="reassure__item">
+                <strong>{t("product.reassure_pickup")}</strong>
+                <span>{t("product.reassure_pickup_body")}</span>
+              </li>
+            ) : null}
+            {loaderData.canHelp ? (
+              <li className="reassure__item">
+                <strong>{t("product.reassure_help")}</strong>
+                <span>{t("product.reassure_help_body")}</span>
+              </li>
+            ) : null}
+          </ul>
         </div>
       </div>
 
@@ -418,6 +512,28 @@ export default function ProductPage({ loaderData }: Route.ComponentProps) {
             ))}
           </ul>
         </details>
+      ) : null}
+
+      {/* Related by COMPATIBILITY, not by category and not by a "customers also
+          bought" with no orders behind it. On an accessories catalogue the
+          useful adjacency is "this also fits your phone". */}
+      {loaderData.related.length > 0 ? (
+        <section className="section">
+          <div className="section__head">
+            <h2>{t("product.related_title")}</h2>
+          </div>
+          <div className="grid-products">
+            {loaderData.related.map((item) => (
+              <ProductCard
+                key={item.slug}
+                product={item}
+                locale={locale}
+                t={t}
+                mediaBaseUrl={mediaBaseUrl}
+              />
+            ))}
+          </div>
+        </section>
       ) : null}
     </div>
   );

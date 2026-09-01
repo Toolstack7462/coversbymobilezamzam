@@ -127,7 +127,14 @@
     "save_percent": "Risparmi il {{percent}}%",
     "prior_price_note": "Prezzo più basso applicato nei 30 giorni precedenti: {{price}}",
     "view_n": "Vista {{n}}",
-    "gallery": "Immagini del prodotto"
+    "gallery": "Immagini del prodotto",
+    "reassure_fit": "Compatibilità indicata",
+    "reassure_fit_body": "I modelli su cui è verificato sono elencati qui sotto.",
+    "reassure_pickup": "Ritiro in negozio",
+    "reassure_pickup_body": "Ordina online e ritira a Sulmona, senza spese di spedizione.",
+    "reassure_help": "Assistenza in italiano",
+    "reassure_help_body": "Ti risponde chi lavora in negozio.",
+    "related_title": "Compatibile con lo stesso dispositivo"
   },
   "collection": {
     "results_one": "{{count}} prodotto",

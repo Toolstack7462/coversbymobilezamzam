@@ -113,26 +113,29 @@ export function SiteFooter({
               </li>
             ))}
           </ul>
-
-          {/*
-            Services the shop performs at the counter, from the merchant's own
-            description of the business. They are not links: there is no page
-            behind any of them yet, and a link to nowhere is worse than plain
-            text. They point at the store page only once it exists.
-          */}
-          {gates.store ? (
-            <>
-              <h2 className="site-footer__heading site-footer__heading--spaced">
-                {t("footer.services")}
-              </h2>
-              <ul>
-                <li>{t("footer.repairs")}</li>
-                <li>{t("footer.screen_installation")}</li>
-                <li>{t("footer.device_assistance")}</li>
-              </ul>
-            </>
-          ) : null}
         </nav>
+
+        {/*
+          Services, in a column of their own.
+
+          They used to be a second heading inside "Acquista", which made them
+          look like a subsection of shopping. They are the half of the business
+          that happens at a counter, and burying them under a shop heading was
+          the layout disagreeing with the positioning.
+
+          Still not links: there is no page behind any of them yet, and a link
+          to nowhere is worse than plain text.
+        */}
+        {gates.store ? (
+          <section className="site-footer__column">
+            <h2 className="site-footer__heading">{t("footer.services")}</h2>
+            <ul className="site-footer__plain">
+              <li>{t("footer.repairs")}</li>
+              <li>{t("footer.screen_installation")}</li>
+              <li>{t("footer.device_assistance")}</li>
+            </ul>
+          </section>
+        ) : null}
 
         {/*
           The merchant's own pages. Absent entirely when none are published —
@@ -167,7 +170,7 @@ export function SiteFooter({
                 <Link to={path("/negozio")}>{t("store.title")}</Link>
               </p>
             ) : null}
-            {hours ? <p className="small muted">{hours}</p> : null}
+            {hours ? <p className="small site-footer__hours">{hours}</p> : null}
             {directions ? (
               <p className="small">
                 {/* Opens a map application. `noreferrer` because the
@@ -230,22 +233,6 @@ export function SiteFooter({
             </ul>
           </nav>
         ) : null}
-
-        <section className="site-footer__column">
-          <h2 className="site-footer__heading">{t("footer.language")}</h2>
-          <ul className="small">
-            <li>
-              <Link to={localePath(DEFAULT_LOCALE, "/")} lang="it" hrefLang="it">
-                Italiano
-              </Link>
-            </li>
-            <li>
-              <Link to={localePath("en", "/")} lang="en" hrefLang="en">
-                English
-              </Link>
-            </li>
-          </ul>
-        </section>
       </div>
 
       {/*
@@ -280,6 +267,40 @@ export function SiteFooter({
         the most common way a site announces that nobody has touched it.
       */}
       <div className="page site-footer__colophon small">
+        {/*
+          The language switcher.
+
+          It used to be a column of two plain links under a heading, which read
+          as content rather than as a control — you had to notice "Lingua" and
+          then read two words to find out it was a choice.
+
+          A segmented control says "one of these is on" at a glance. They stay
+          LINKS rather than buttons because they navigate, and `aria-current`
+          rather than `aria-pressed` for the same reason: pressed describes a
+          toggle, current describes where you are. `hrefLang` and `lang` are on
+          each so a screen reader announces "English" in English.
+        */}
+        <nav className="lang-switch" aria-label={t("footer.language")}>
+          {(
+            [
+              [DEFAULT_LOCALE, "IT", "Italiano"],
+              ["en", "EN", "English"],
+            ] as const
+          ).map(([code, short, name]) => (
+            <Link
+              key={code}
+              to={localePath(code, "/")}
+              className="lang-switch__option"
+              lang={code}
+              hrefLang={code}
+              aria-current={locale === code ? "true" : undefined}
+            >
+              <span className="lang-switch__code">{short}</span>
+              <span className="lang-switch__name">{name}</span>
+            </Link>
+          ))}
+        </nav>
+
         <p>
           © {year} {shopName ?? t("common.shop")}
         </p>

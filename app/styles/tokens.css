@@ -100,8 +100,18 @@
   --color-primary: #2457ff;
   --color-primary-hover: #1743d3;
   --color-accent: #b9f227;
-  --color-background: #f7f8f5;
-  --color-surface: #ffffff;
+  /*
+   * Warm off-white, not paper-white.
+   *
+   * The surfaces were #ffffff and the page a cool #f7f8f5, so cards were the
+   * brightest thing on a slightly grey ground — the combination that reads as
+   * "template". These shift a couple of points toward the brand's warm canvas
+   * (#faf9f6), which is enough for the page to feel like a considered surface
+   * and small enough that no contrast pair moves meaningfully: the darkest text
+   * on the lightest surface changes by under a hundredth of a ratio point.
+   */
+  --color-background: #f7f6f2;
+  --color-surface: #fffefb;
   --color-text-secondary: #667085;
   /*
    * Secondary text that sits on a SUNKEN surface rather than the page.

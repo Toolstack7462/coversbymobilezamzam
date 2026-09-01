@@ -39,7 +39,18 @@ html {
   }
 }
 
+/*
+ * One structural gradient on the page itself: ivory at the top, settling to the
+ * page colour by the first fold. It gives the document a light source rather
+ * than a flat fill, and it is fixed so it does not travel with the scroll and
+ * band across a long page.
+ *
+ * `background-attachment: fixed` is skipped on touch, where it forces a repaint
+ * on every scroll frame for an effect nobody sees on a 6-inch screen.
+ */
 body {
+  background-image: linear-gradient(180deg, #fdfcf7 0%, var(--color-background) 46vh);
+  background-repeat: no-repeat;
   font-family: var(--font-body);
   font-size: var(--text-body);
   line-height: var(--text-body-lh);
@@ -754,6 +765,17 @@ a {
   font-weight: var(--weight-semibold);
 }
 
+/*
+ * Subordinate, deliberately.
+ *
+ * It is the last thing in the document, below the footer, in the footer's own
+ * ink at caption size. A preview warning that competes with the shop is a
+ * warning that has changed the thing it was meant to describe — and it renders
+ * only when APP_ENV is not production, read from the environment rather than
+ * guessed from the hostname, so attaching a custom domain cannot silently
+ * switch it off.
+ */
+
 /* The one place a coloured dot earns its keep: it reports a real environment
    state, which is exactly the exception the rule allows for. */
 .preview-banner__dot {
@@ -1084,14 +1106,88 @@ a {
   color: var(--color-on-deep);
 }
 
+/*
+ * Six columns, with the ragged bottoms made deliberate.
+ *
+ * The columns are naturally uneven — Categorie has eight links, Assistenza has
+ * three — and top-aligning them left a wide field of empty navy under the short
+ * ones that read as unfinished rather than as space.
+ *
+ * Hairline rules between the columns fix that: the emptiness below a short
+ * column is now obviously the inside of a column rather than a gap in the
+ * layout. The rule is on the inline start of each column and suppressed on the
+ * first of each row, which `grid-column: 1` cannot express — so the columns are
+ * a fixed count per breakpoint rather than auto-fit.
+ */
 .site-footer__inner {
   display: grid;
-  gap: clamp(var(--space-5), 4vw, var(--space-7)) var(--space-6);
+  gap: clamp(var(--space-5), 4vw, var(--space-6)) 0;
   padding-block: clamp(var(--space-6), 5vw, var(--space-8));
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
-  /* Columns size to their content and sit at the top of the row rather than
-     stretching to match the tallest one. */
-  align-items: start;
+  grid-template-columns: 1fr;
+  /*
+   * `stretch`, so the separators are all the same length.
+   *
+   * With `start` each column was only as tall as its own content, so the rule
+   * beside a three-link column was a third the length of the one beside an
+   * eight-link column — six different rule lengths reading as six accidents.
+   * Stretching the COLUMNS does not move the content, which stays top-aligned
+   * inside them; it only gives the rules a common height.
+   */
+  align-items: stretch;
+}
+
+@media (min-width: 40rem) {
+  .site-footer__inner {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .site-footer__column:not(:nth-child(2n + 1)) {
+    border-inline-start: var(--border-width) solid var(--color-on-deep-border);
+  }
+}
+
+@media (min-width: 60rem) {
+  .site-footer__inner {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .site-footer__column:not(:nth-child(2n + 1)) {
+    border-inline-start: 0;
+  }
+
+  .site-footer__column:not(:nth-child(3n + 1)) {
+    border-inline-start: var(--border-width) solid var(--color-on-deep-border);
+  }
+}
+
+@media (min-width: 78rem) {
+  .site-footer__inner {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .site-footer__column:not(:nth-child(3n + 1)) {
+    border-inline-start: 0;
+  }
+
+  .site-footer__column + .site-footer__column {
+    border-inline-start: var(--border-width) solid var(--color-on-deep-border);
+  }
+}
+
+.site-footer__column {
+  padding-inline: 0;
+  /* Content stays at the top even though the column now fills the row. */
+  align-content: start;
+}
+
+@media (min-width: 40rem) {
+  .site-footer__column {
+    padding-inline: var(--space-5);
+  }
+
+  .site-footer__column:first-child {
+    padding-inline-start: 0;
+  }
 }
 
 .site-footer__column {
@@ -1103,13 +1199,24 @@ a {
 /* These are <h2> for document structure — every footer group is a landmark
    with a name — but a footer heading is not a section title and must not
    compete with one. */
+/*
+ * The column headings.
+ *
+ * Every heading in this footer was the same weight, size and colour as every
+ * other, which is not a hierarchy — it is a list of six identical labels. These
+ * now sit at full ink strength with a rule beneath, so the eye lands on the
+ * headings first and reads the links as belonging to them.
+ */
 .site-footer__heading {
-  font-size: var(--text-eyebrow);
-  line-height: var(--text-ui-lh);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-lh);
   font-weight: var(--weight-semibold);
   text-transform: uppercase;
-  letter-spacing: var(--text-eyebrow-tracking);
-  color: var(--color-on-deep-secondary);
+  letter-spacing: 0.09em;
+  color: var(--color-on-deep);
+  padding-block-end: var(--space-2);
+  margin-block-end: var(--space-1);
+  border-block-end: var(--border-width) solid var(--color-on-deep-border);
 }
 
 .site-footer__column ul {
@@ -1124,10 +1231,46 @@ a {
   transition: color var(--duration-fast) var(--ease);
 }
 
+/*
+ * Hover moves the link, rather than only recolouring it.
+ *
+ * On a dark ground a colour change from "almost white" to "white" is close to
+ * invisible. A two-pixel shift is unmistakable and costs one composited
+ * property.
+ */
+.site-footer__column a {
+  display: inline-block;
+  color: var(--color-on-deep-secondary);
+  transition:
+    color var(--duration-fast) var(--ease),
+    transform var(--duration-fast) var(--ease);
+}
+
+.site-footer__column a:hover {
+  color: var(--color-on-deep);
+  transform: translateX(2px);
+  text-decoration: none;
+}
+
 .site-footer a:hover {
   color: #ffffff;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+}
+
+/* Items with no destination — the counter services — must not look clickable. */
+.site-footer__plain li {
+  color: var(--color-on-deep-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-footer__column a {
+    transition: none;
+  }
+
+  .site-footer__column a:hover {
+    transform: none;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
 }
 
 .site-footer address,
@@ -1558,40 +1701,85 @@ a.chip:hover {
 /* A device shortcut states the model AND how many accessories fit it. The count
    is the honest part: it sets the expectation before the click rather than
    after. */
+/*
+ * A device card, not a chip.
+ *
+ * Three facts in a fixed order — the brand it belongs to, the model, how much
+ * we have for it — and the middle one is the answer. The old version gave all
+ * three nearly the same weight, so the eye had to read the card rather than
+ * glance at it.
+ *
+ * The count sits apart at the bottom because it is the reason to click: a model
+ * with twenty-one accessories is a different proposition from one with two, and
+ * that is worth seeing before the click rather than after.
+ */
 .device-chip {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding: var(--space-3) var(--space-4);
-  background: var(--color-canvas);
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: 2px;
+  block-size: 100%;
+  padding: var(--space-3) var(--space-4) var(--space-3);
+  background: linear-gradient(180deg, var(--color-surface) 0%, var(--color-canvas) 100%);
   border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-control);
+  border-radius: var(--radius-card);
   text-decoration: none;
   transition:
     border-color var(--duration-fast) var(--ease),
-    background var(--duration-fast) var(--ease);
+    box-shadow var(--duration-fast) var(--ease),
+    transform var(--duration-fast) var(--ease);
 }
 
 .device-chip:hover {
-  background: var(--color-surface);
-  border-color: var(--color-ink);
+  border-color: var(--color-primary);
+  /* One shadow, tinted toward the brand hue rather than pure black — a black
+     shadow on a warm surface reads as dirt. */
+  box-shadow: 0 6px 16px -8px rgb(36 87 255 / 0.35);
+  transform: translateY(-2px);
+}
+
+.device-chip:focus-visible {
+  border-color: var(--color-primary);
 }
 
 .device-chip__brand {
-  font-size: var(--text-caption);
-  line-height: var(--text-caption-lh);
+  font-size: 0.6875rem;
+  line-height: 1.3;
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--color-text-secondary);
 }
 
 .device-chip__model {
-  font-weight: var(--weight-semibold);
-  line-height: var(--text-ui-lh);
+  font-family: var(--font-heading);
+  font-size: var(--text-ui);
+  font-weight: var(--weight-bold);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
 }
 
 .device-chip__count {
+  align-self: end;
+  margin-block-start: var(--space-2);
   font-size: var(--text-caption);
   line-height: var(--text-caption-lh);
+  font-variant-numeric: tabular-nums;
   color: var(--color-text-secondary);
+}
+
+.device-chip:hover .device-chip__count {
+  color: var(--color-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .device-chip {
+    transition: none;
+  }
+
+  .device-chip:hover {
+    transform: none;
+  }
 }
 
 /* ── Category tiles ───────────────────────────────────────────────────────── */
@@ -2957,4 +3145,108 @@ a.chip:hover {
     transition: none;
     transform: none;
   }
+}
+
+/* ── Language switcher ──────────────────────────────────────────────────────
+ *
+ * A segmented control, not two links under a heading. The old version made you
+ * notice the word "Lingua" and then read two words to discover it was a choice;
+ * this says "one of these is on" before it is read.
+ *
+ * The options are LINKS, because they navigate. `aria-current` marks the active
+ * one — pressed describes a toggle, current describes where you are — and the
+ * state is carried by weight, ink and a filled ground, so it survives greyscale.
+ */
+.lang-switch {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border: var(--border-width) solid var(--color-on-deep-border);
+  border-radius: var(--radius-chip);
+  background: rgb(255 255 255 / 0.04);
+}
+
+.lang-switch__option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 32px;
+  padding-inline: var(--space-3);
+  border-radius: var(--radius-chip);
+  font-size: var(--text-caption);
+  line-height: 1;
+  color: var(--color-on-deep-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color var(--duration-fast) var(--ease),
+    color var(--duration-fast) var(--ease);
+}
+
+.lang-switch__option:hover {
+  background: rgb(255 255 255 / 0.08);
+  color: var(--color-on-deep);
+  text-decoration: none;
+}
+
+.lang-switch__option[aria-current="true"] {
+  background: var(--color-on-deep);
+  color: var(--color-ink-deep);
+  font-weight: var(--weight-semibold);
+}
+
+/* The two-letter code is the glance; the name is the confirmation. Not a flag:
+   a flag names a country, and a language is not one — Italian is not Italy. */
+.lang-switch__code {
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.04em;
+}
+
+/* Below the smallest footer breakpoint the names drop and the codes carry it,
+   so the control stays one line instead of wrapping into two rows of pills. */
+@media (max-width: 26rem) {
+  .lang-switch__name {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lang-switch__option {
+    transition: none;
+  }
+}
+
+/* ── Footer colophon ────────────────────────────────────────────────────────
+   Three things on one line at the bottom: the switcher, the year, the maker. */
+.site-footer__colophon {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-5);
+  justify-content: space-between;
+  align-items: center;
+  padding-block: var(--space-4);
+}
+
+/* ── Address block ──────────────────────────────────────────────────────────
+   The address is read, not scanned, so it gets a line height that suits a
+   sentence and the hours sit apart from the street rather than under it in the
+   same grey. */
+.site-footer address {
+  line-height: 1.6;
+  color: var(--color-on-deep-secondary);
+}
+
+.site-footer__hours {
+  display: block;
+  margin-block-start: var(--space-2);
+  padding-block-start: var(--space-2);
+  border-block-start: var(--border-width) solid var(--color-on-deep-border);
+  color: var(--color-on-deep-secondary);
 }

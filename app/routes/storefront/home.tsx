@@ -422,7 +422,16 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                       <span className="device-chip__brand">{device.brand_name}</span>
                       <span className="device-chip__model">{device.name}</span>
                       <span className="device-chip__count">
-                        {device.product_count} {t("home.shop_by_device_count")}
+                        {/*
+                          "1 accessori" was wrong, and so was "1 accessories".
+                          The count and the noun were concatenated with no
+                          regard for number — invisible until a device had
+                          exactly one, which Moto G54 does.
+                        */}
+                        {device.product_count}{" "}
+                        {device.product_count === 1
+                          ? t("home.shop_by_device_count_one")
+                          : t("home.shop_by_device_count")}
                       </span>
                     </Link>
                   </li>

@@ -12,9 +12,32 @@
  */
 
 .ac {
-  --ac-sidebar: 248px;
-  --ac-sidebar-collapsed: 72px;
-  --ac-topbar: 64px;
+  --ac-sidebar: 244px;
+  --ac-sidebar-collapsed: 68px;
+  --ac-topbar: 56px;
+
+  /*
+   * The chrome is dark; the work is light.
+   *
+   * The admin used to be white chrome on a light page, which made the tool and
+   * its contents the same material — the eye had to re-find the boundary on
+   * every screen, and a full-bleed pale-blue block was doing the work of saying
+   * where you are.
+   *
+   * Dark chrome gives the tool a spine: the navigation is obviously furniture,
+   * the content is obviously the document, and the active item can be marked
+   * with something quiet because it now has contrast to sit against. It also
+   * ties the admin to the storefront's own dark surfaces, so the two read as
+   * one company rather than two products.
+   *
+   * These are the same on-deep tokens the storefront footer uses, so the
+   * contrast floor has already been checked there.
+   */
+  --ac-chrome: var(--color-chrome);
+  --ac-chrome-raised: var(--color-chrome-raised);
+  --ac-chrome-border: var(--color-chrome-border);
+  --ac-chrome-ink: var(--color-on-deep);
+  --ac-chrome-ink-muted: var(--color-on-deep-secondary);
 
   min-height: 100dvh;
   background: var(--color-background);
@@ -30,16 +53,30 @@
   align-items: center;
   gap: var(--space-3);
   height: var(--ac-topbar);
-  padding-inline: var(--space-4);
-  background: var(--color-surface);
-  border-block-end: var(--border-width) solid var(--color-border);
+  padding-inline: var(--space-3);
+  background: var(--ac-chrome);
+  color: var(--ac-chrome-ink);
+  border-block-end: var(--border-width) solid var(--ac-chrome-border);
+}
+
+.ac__topbar a:not(.btn) {
+  color: var(--ac-chrome-ink);
+}
+
+/* The focus ring is drawn against the page; on near-black the default vanishes. */
+.ac__topbar :focus-visible,
+.ac__sidebar :focus-visible {
+  outline-color: var(--ac-chrome-ink);
 }
 
 .ac__brand {
   font-family: var(--font-heading);
-  font-weight: var(--weight-bold);
+  font-size: var(--text-ui);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.01em;
   text-decoration: none;
   white-space: nowrap;
+  color: var(--ac-chrome-ink);
 }
 
 .ac__topbar-spacer {
@@ -56,6 +93,7 @@
   border-radius: var(--radius-control);
   background: transparent;
   border: var(--border-width) solid transparent;
+  color: inherit;
   cursor: pointer;
   list-style: none;
 }
@@ -132,35 +170,42 @@
 .ac__sidebar {
   position: sticky;
   inset-block-start: var(--ac-topbar);
-  max-height: calc(100dvh - var(--ac-topbar));
+  /* Fills the viewport rather than stopping under the last link: a rail that
+     ends mid-screen reads as content that ran out, not as furniture. */
+  height: calc(100dvh - var(--ac-topbar));
   overflow-y: auto;
-  background: var(--color-surface);
-  border-inline-end: var(--border-width) solid var(--color-border);
-  padding-block: var(--space-4);
+  overscroll-behavior: contain;
+  background: var(--ac-chrome);
+  color: var(--ac-chrome-ink);
+  border-inline-end: 0;
+  padding-block: var(--space-3) var(--space-6);
+  scrollbar-width: thin;
 }
 
 .ac__main {
   /* minmax(0, 1fr) above plus this keeps a wide table from stretching the
      grid and producing horizontal PAGE scroll. */
   min-width: 0;
-  padding: var(--space-5);
+  padding: var(--space-5) clamp(var(--space-4), 3vw, var(--space-6));
   max-width: 82rem;
 }
 
 /* ── Navigation ────────────────────────────────────────────────────────── */
 
 .ac__nav-group + .ac__nav-group {
-  margin-block-start: var(--space-5);
+  margin-block-start: var(--space-4);
+  padding-block-start: var(--space-4);
+  border-block-start: var(--border-width) solid var(--ac-chrome-border);
 }
 
 .ac__nav-heading {
-  font-size: var(--text-caption);
+  font-size: 0.6875rem;
   font-weight: var(--weight-semibold);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--color-text-secondary);
-  padding-inline: var(--space-5);
-  margin-block-end: var(--space-2);
+  letter-spacing: 0.08em;
+  color: var(--ac-chrome-ink-muted);
+  padding-inline: var(--space-4);
+  margin-block-end: var(--space-1);
 }
 
 .ac__nav-list {
@@ -169,26 +214,55 @@
   padding: 0;
 }
 
+/*
+ * A navigation row, not a paragraph.
+ *
+ * 40px tall on a pointer device and the full 44px target on touch: a rail of
+ * twenty entries at 44px each is a rail you scroll, and scrolling to find the
+ * thing you use hourly is the cost this saves.
+ */
 .ac__nav-link {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
-  min-height: var(--target-min);
-  padding: var(--space-2) var(--space-5);
+  min-height: 40px;
+  margin-inline: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-control);
   font-size: var(--text-ui);
+  line-height: 1.3;
+  color: var(--ac-chrome-ink-muted);
   text-decoration: none;
-  border-inline-start: 3px solid transparent;
+  transition:
+    background-color var(--duration-fast) var(--ease),
+    color var(--duration-fast) var(--ease);
+}
+
+@media (pointer: coarse) {
+  .ac__nav-link {
+    min-height: var(--target-min);
+  }
 }
 
 .ac__nav-link:hover {
-  background: var(--color-surface-sunken);
+  background: var(--ac-chrome-raised);
+  color: var(--ac-chrome-ink);
 }
 
+/*
+ * The current page.
+ *
+ * Marked by weight, full-strength ink and a raised ground — three signals, none
+ * of them colour alone, so it survives greyscale and a colour-vision
+ * difference. The old version painted a pale accent block that bled to both
+ * edges of a white rail, which read as a selected row in a spreadsheet.
+ */
 .ac__nav-link--active {
-  border-inline-start-color: var(--color-primary);
-  background: var(--color-primary-surface);
+  background: var(--ac-chrome-raised);
+  color: var(--ac-chrome-ink);
   font-weight: var(--weight-semibold);
+  box-shadow: inset 2px 0 0 var(--color-primary);
 }
 
 /*
@@ -210,8 +284,45 @@
 
 /* ── Page header ───────────────────────────────────────────────────────── */
 
+/*
+ * A tool's page title, not a storefront headline.
+ *
+ * The admin inherited the storefront's h1 — around 44px — so "Prodotti" arrived
+ * at the size of a marketing statement and pushed the first row of actual work
+ * below the fold. A screen somebody opens forty times a day should name itself
+ * and get out of the way.
+ */
 .ac__page-header {
   margin-block-end: var(--space-5);
+  padding-block-end: var(--space-4);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.ac__page-header h1 {
+  font-size: clamp(1.375rem, 1.2rem + 0.7vw, 1.75rem);
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+}
+
+.ac__page-header > .ac__page-title-row > div > p {
+  margin-block-start: var(--space-1);
+  max-width: 52ch;
+}
+
+/* Section headings inside a page sit a step below the page title, so a screen
+   has one loudest thing rather than four competing ones. */
+.ac__main h2 {
+  /* Section headings need air above them and little below: the gap is what
+     groups a heading with what it introduces rather than with what precedes it. */
+  margin-block-start: var(--space-6);
+  font-size: 1.0625rem;
+  line-height: 1.35;
+  letter-spacing: -0.005em;
+}
+
+.ac__main h3 {
+  font-size: 0.9375rem;
+  line-height: 1.4;
 }
 
 .ac__crumbs {
@@ -240,9 +351,19 @@
 
   .ac__sidebar {
     position: static;
+    /*
+     * `height` as well as `max-height`.
+     *
+     * The desktop rail is given a fixed viewport height so it reads as
+     * furniture rather than stopping under its last link. On a phone the rail
+     * becomes a closed drawer, and that same height reserved an entire black
+     * screen of nothing above the page — the drawer was shut and the space it
+     * would have needed was still there.
+     */
+    height: auto;
     max-height: none;
     border-inline-end: 0;
-    border-block-end: var(--border-width) solid var(--color-border);
+    border-block-end: var(--border-width) solid var(--ac-chrome-border);
     padding-block: 0;
   }
 
@@ -278,30 +399,46 @@
 
 .ac-metrics {
   display: grid;
-  gap: var(--space-3);
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
+  gap: var(--space-2);
+  /*
+   * 9rem, not 13rem.
+   *
+   * At 13rem a phone fits exactly one per row, so five figures became five
+   * full-width cards and a screen of scrolling. Two small numbers side by side
+   * are comparable; one number per screen is not, and comparing them is the
+   * entire reason they are grouped.
+   */
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 9rem), 1fr));
 }
 
 .ac-metric {
-  padding: var(--space-4);
+  padding: var(--space-3) var(--space-4);
   background: var(--color-surface);
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-card);
+  /* No drop shadow. A border and a shadow on the same element is the
+     "ghost card" pattern, and a grid of twelve of them is a grid of twelve
+     things asking to be noticed equally. */
 }
 
 .ac-metric__value {
   display: block;
   font-family: var(--font-heading);
-  font-size: var(--text-h2);
+  font-size: 1.625rem;
   font-weight: var(--weight-bold);
+  /* Tabular, always. A column of figures that shifts width as the numbers
+     change is a column you cannot compare down. */
   font-variant-numeric: tabular-nums;
-  line-height: 1.1;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
 }
 
 .ac-metric__label {
   display: block;
-  margin-block-start: var(--space-1);
-  font-size: var(--text-ui);
+  margin-block-end: var(--space-1);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-lh);
+  font-weight: var(--weight-medium);
   color: var(--color-text-secondary);
 }
 
@@ -336,30 +473,48 @@
   border-color: var(--color-border-strong);
 }
 
-/* Blocking items are bordered, not merely coloured: the border survives a
-   greyscale print and a colour-vision difference. */
+/*
+ * Severity, without a side stripe.
+ *
+ * These carried a 3px left border in a semantic colour. A thick coloured edge
+ * on one side of a card is decoration wearing the costume of meaning: it is the
+ * first thing an eye reads on the row and the last thing that tells it
+ * anything, and four of them stacked make a page look like a warning label.
+ *
+ * The whole border takes the colour instead. That keeps the property the old
+ * comment claimed — severity survives greyscale, because the count and the
+ * words carry it too — while letting the row read as one object.
+ */
 .ac-action--blocking {
-  border-inline-start: 3px solid var(--color-danger);
+  border-color: var(--color-danger);
   background: var(--color-danger-surface);
 }
 
+.ac-action--blocking .ac-action__count {
+  color: var(--color-danger-text);
+}
+
 .ac-action--warning {
-  border-inline-start: 3px solid var(--color-warning);
+  border-color: var(--color-warning);
   background: var(--color-warning-surface);
 }
 
+.ac-action--warning .ac-action__count {
+  color: var(--color-warning-text);
+}
+
 .ac-action--info {
-  border-inline-start: 3px solid var(--color-border-strong);
+  border-color: var(--color-border-strong);
 }
 
 /* The count sits first in the action centre and last on the system page. It is
    a leading badge in the first case and a trailing value in the second, so the
    auto margin is applied only when it is genuinely the last thing in the row. */
 .ac-action__count {
-  min-width: 2.5rem;
+  min-width: 2.25rem;
   font-variant-numeric: tabular-nums;
   font-weight: var(--weight-bold);
-  font-size: var(--text-h3);
+  font-size: 1.25rem;
   line-height: 1.1;
   text-align: center;
 }
@@ -564,7 +719,7 @@
 }
 
 .ac-table__sort:hover {
-  color: var(--color-text-primary);
+  color: var(--color-ink);
   text-decoration: underline;
 }
 
@@ -602,13 +757,13 @@
 }
 
 .ac-view:hover {
-  color: var(--color-text-primary);
+  color: var(--color-ink);
 }
 
 /* The active tab is marked by weight and an underline as well as colour, and
    carries aria-current so it does not depend on being seen at all. */
 .ac-view--active {
-  color: var(--color-text-primary);
+  color: var(--color-ink);
   font-weight: var(--weight-medium);
   border-block-end-color: var(--color-primary);
 }
@@ -761,7 +916,7 @@
 
 .badge--info {
   background: var(--color-primary-surface);
-  color: var(--color-primary-text, var(--color-text-primary));
+  color: var(--color-primary);
 }
 
 /* A checkbox and its label read as one control, so they share a row and one
@@ -957,4 +1112,127 @@ a.ac-pick:hover {
 .ac-step--blocking .ac-step__why,
 .ac-step--blocking .muted {
   color: var(--color-danger-text);
+}
+
+/* ── Tables ───────────────────────────────────────────────────────────────
+ *
+ * A staff table is read by somebody scanning down one column for one row. That
+ * makes the horizontal rules the important furniture and everything else noise:
+ * no zebra striping, no vertical rules, no shadow.
+ */
+.ac-table th,
+.ac-table td,
+.admin-table th,
+.admin-table td {
+  padding-block: var(--space-2);
+}
+
+.ac-table thead th,
+.admin-table thead th {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
+  background: var(--color-surface);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-lh);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+/* Every number in a table, not only the ones somebody remembered to mark.
+   Figures that change width as they change value cannot be compared down a
+   column, which is the only reason they are in a column. */
+.ac-table .numeric,
+.admin-table .numeric,
+.ac-table td:has(> code),
+.admin-table td:has(> code) {
+  font-variant-numeric: tabular-nums;
+}
+
+.ac-table tbody tr:hover,
+.admin-table tbody tr:hover {
+  background: var(--color-surface-sunken);
+}
+
+/* ── Panels ───────────────────────────────────────────────────────────────
+   Consistent internal rhythm, so a screen made of four panels does not have
+   four different paddings. */
+.ac__main .panel + .panel {
+  margin-block-start: var(--space-4);
+}
+
+.ac__main .panel > h2:first-child,
+.ac__main .panel > h3:first-child,
+.ac__main > :first-child h2 {
+  margin-block-start: 0;
+}
+
+/* ── Empty states ─────────────────────────────────────────────────────────
+   Bounded, rather than centred text floating in a screen-high void. The panel
+   is what says "this is a considered state and not a page that failed". */
+.ac__main .empty-state {
+  padding: var(--space-6) var(--space-5);
+  background: var(--color-surface);
+  border: var(--border-width) dashed var(--color-border-strong);
+  border-radius: var(--radius-card);
+  text-align: center;
+}
+
+.ac__main .empty-state > * + * {
+  margin-block-start: var(--space-3);
+}
+
+/* ── Forms ────────────────────────────────────────────────────────────────
+ *
+ * A label wrapping its control is the right markup — the association needs no
+ * `for`/`id` pair to get wrong — but a `<label>` is inline by default, so the
+ * text and the field ran together on one line and two adjacent fields read as
+ * one sentence: "Prodotto [select] Nome". Unreadable on a phone, which is where
+ * a shop assistant actually uses this.
+ */
+.ac__main label {
+  display: grid;
+  gap: var(--space-1);
+  font-size: var(--text-ui);
+  font-weight: var(--weight-medium);
+}
+
+/* The control itself is not bold just because its label is. */
+.ac__main label input,
+.ac__main label select,
+.ac__main label textarea {
+  font-weight: var(--weight-regular);
+}
+
+/* A hint belongs to the field above it, so it is not part of the label's
+   emphasis and does not inherit its weight. */
+.ac__main .field-help {
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-lh);
+  font-weight: var(--weight-regular);
+  color: var(--color-text-secondary);
+}
+
+/* Forms in the admin are read top to bottom, one field at a time. */
+.ac__main form.stack {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 34rem;
+}
+
+.ac__main form.stack button {
+  justify-self: start;
+}
+
+/* An inline row of controls — a filter, a row action — is the exception and
+   says so by class rather than by accident. */
+.ac__main form.cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-2);
+  max-width: none;
 }

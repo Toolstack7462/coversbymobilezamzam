@@ -79,6 +79,24 @@
 :root {
   /* ── Brand palette ────────────────────────────────────────────────────── */
   --color-ink: #0b1220;
+
+  /*
+   * Admin chrome.
+   *
+   * The tool's furniture — top bar and navigation rail — is dark, so the
+   * navigation reads as furniture and the content as the document. Defined here
+   * rather than in admin.css because that file's rule is that every colour is a
+   * token, and a rule with an exception in it is not a rule.
+   *
+   * `--color-chrome` is deliberately the same value as `--color-ink`: the
+   * darkest surface and the darkest text are the same colour in this palette,
+   * which is what makes the storefront's dark bands and this rail look like one
+   * material. Kept as its own name so the two can diverge without a search and
+   * replace through both stylesheets.
+   */
+  --color-chrome: #0b1220;
+  --color-chrome-raised: #131c2e;
+  --color-chrome-border: rgb(255 255 255 / 0.09);
   --color-primary: #2457ff;
   --color-primary-hover: #1743d3;
   --color-accent: #b9f227;

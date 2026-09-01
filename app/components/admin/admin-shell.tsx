@@ -56,13 +56,18 @@ export function AdminShell({ nav, badges, actor, environment, mustEnrol, childre
 
         <div className="ac__topbar-spacer" />
 
+        {/*
+          "Vedi il sito" stays; "Aggiungi prodotto" does not.
+
+          It used to sit here AND in the page header of the products screen, so
+          two identical primary buttons faced each other on the same page. A
+          global bar should carry what is true everywhere — the shop, the
+          account — and adding a product is not something you do from the
+          settings screen. It lives where its context is.
+        */}
         <a className="btn btn--ghost ac__hide-sm" href="/" target="_blank" rel="noreferrer">
           Vedi il sito
         </a>
-
-        <Link className="btn btn--primary ac__hide-sm" to="/admin/prodotti/nuovo">
-          Aggiungi prodotto
-        </Link>
 
         <details className="ac__menu">
           <summary className="ac__icon-btn">

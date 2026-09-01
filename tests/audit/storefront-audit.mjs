@@ -52,7 +52,17 @@ page.on("response", (r) => {
  * in the report and the combinatorics out of it.
  */
 const VARIANTS_PER_PATH = 2;
-const paths = ["/"];
+
+/*
+ * Seeded with more than the homepage.
+ *
+ * The queue grows from the links each page renders, so seeding only "/" made
+ * the whole audit depend on one navigation: the run before this one timed out
+ * there and reported "0/1 pages clean" for a site that was serving fine. These
+ * are the storefront's own top-level routes, so a flake on any single one
+ * costs that page rather than the report.
+ */
+const paths = ["/", "/shop", "/trova-dispositivo", "/negozio", "/carrello", "/en/"];
 const variants = [];
 const seen = new Set(paths);
 const variantCount = new Map();
@@ -67,10 +77,27 @@ while ((paths.length > 0 || variants.length > 0) && report.length < 60) {
 
   let status;
   try {
-    const response = await page.goto(new URL(path, origin).href, {
-      waitUntil: "networkidle",
-      timeout: 30000,
-    });
+    /*
+     * `networkidle` then `domcontentloaded`.
+     *
+     * Idle is the better signal — it waits for the images this audit counts —
+     * but it is also the flakier one: a single slow request keeps it waiting
+     * and a page that renders in a second reports a thirty-second timeout. So
+     * a timeout falls back to the weaker wait rather than being recorded as a
+     * failure, and only a page that cannot load either way is a finding.
+     */
+    let response;
+    try {
+      response = await page.goto(new URL(path, origin).href, {
+        waitUntil: "networkidle",
+        timeout: 25000,
+      });
+    } catch {
+      response = await page.goto(new URL(path, origin).href, {
+        waitUntil: "domcontentloaded",
+        timeout: 20000,
+      });
+    }
     status = response?.status() ?? 0;
   } catch (error) {
     /*

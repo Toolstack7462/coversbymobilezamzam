@@ -90,12 +90,12 @@ export async function loader({ context }: Route.LoaderArgs) {
       reorder_threshold: number | null;
     }>(),
     env.DB.prepare(
-      `SELECT c.slug, ct.name
+      `SELECT c.slug, c.image_key, ct.name
          FROM categories c
          LEFT JOIN category_translations ct ON ct.category_id = c.id AND ct.locale = 'it'
         WHERE c.visible = 1 AND c.archived_at IS NULL AND c.depth = 0
         ORDER BY c.sort_order ASC LIMIT 8`,
-    ).all<{ slug: string; name: string | null }>(),
+    ).all<{ slug: string; image_key: string | null; name: string | null }>(),
     /*
      * Shop by device.
      *
@@ -157,6 +157,10 @@ export async function loader({ context }: Route.LoaderArgs) {
      */
     showStore: canShowStoreAddress(settings),
     storeCity: settingValue(settings, SETTING_KEYS.storeCity),
+    // Media slots. Empty until the merchant fills them in; the sections
+    // below render their typographic form when they are.
+    heroImage: settingValue(settings, SETTING_KEYS.heroImage),
+    storeImage: settingValue(settings, SETTING_KEYS.storeImage),
     // Each trust claim is gated on the fact that makes it true. A promise of
     // in-store collection from a shop that has not configured collection is
     // the kind of copy that ends up in a complaint.
@@ -205,7 +209,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         shop does. It fits in one screen on a phone without pushing the products
         out of reach, which a full-viewport hero would.
       */}
-      <section className="hero">
+      <section className={`hero${loaderData.heroImage ? " hero--with-media" : ""}`}>
         <div className="page hero__inner">
           <p className="eyebrow">{t("home.hero_lead_eyebrow")}</p>
           <h1 className="hero__statement">
@@ -215,14 +219,36 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </h1>
           <p className="hero__lead">{t("home.hero_lead")}</p>
           <div className="cluster">
-            <Link className="btn btn--primary btn--lg" to={path("/shop")}>
-              {t("home.shop_now")}
-            </Link>
-            <Link className="btn btn--secondary btn--lg" to={path("/trova-dispositivo")}>
+            <Link className="btn btn--primary btn--lg" to={path("/trova-dispositivo")}>
               {t("home.find_device")}
+            </Link>
+            <Link className="btn btn--secondary btn--lg" to={path("/shop")}>
+              {t("home.shop_now")}
             </Link>
           </div>
         </div>
+
+        {/*
+          The hero image, when one exists.
+
+          `aria-hidden` and an empty alt: it is atmosphere, and the promise is
+          already in the heading beside it. Describing it again would make a
+          screen reader read the decoration twice.
+
+          Eager and high priority — on this page it IS the LCP element, and
+          lazy-loading the largest thing above the fold is the classic way to
+          lose the metric.
+        */}
+        {loaderData.heroImage ? (
+          <div className="hero__media" aria-hidden="true">
+            <img
+              src={`${loaderData.mediaBaseUrl}/${loaderData.heroImage}`}
+              alt=""
+              fetchPriority="high"
+              decoding="async"
+            />
+          </div>
+        ) : null}
       </section>
 
       {/* Immediately under the promise, before anything is asked of the
@@ -285,7 +311,19 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           <ul className="category-grid">
             {loaderData.categories.map((category) => (
               <li key={category.slug}>
-                <Link className="category-tile" to={path(`/shop?categoria=${category.slug}`)}>
+                <Link
+                  className={`category-tile${category.image_key ? " category-tile--media" : ""}`}
+                  to={path(`/shop?categoria=${category.slug}`)}
+                >
+                  {category.image_key ? (
+                    <img
+                      className="category-tile__image"
+                      src={`${loaderData.mediaBaseUrl}/${category.image_key}`}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  ) : null}
                   <span className="category-tile__name">{category.name}</span>
                 </Link>
               </li>
@@ -320,7 +358,16 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           that is the fact a marketplace cannot copy. Rendered only once the
           merchant has actually configured a shop to talk about. */}
       {loaderData.showStore ? (
-        <section className="store-band">
+        <section className={`store-band${loaderData.storeImage ? " store-band--media" : ""}`}>
+          {loaderData.storeImage ? (
+            <img
+              className="store-band__image"
+              src={`${loaderData.mediaBaseUrl}/${loaderData.storeImage}`}
+              alt=""
+              loading="lazy"
+              decoding="async"
+            />
+          ) : null}
           <div className="page store-band__inner">
             <p className="eyebrow eyebrow--on-deep">{t("home.store_eyebrow")}</p>
             <h2 className="store-band__title">

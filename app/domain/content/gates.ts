@@ -43,6 +43,8 @@ export const SETTING_KEYS = {
 
   storeStreet: "store.street",
   storePostcode: "store.postcode",
+  heroImage: "media.hero_image",
+  storeImage: "media.store_image",
   storeCity: "store.city",
   storeProvince: "store.province",
   storeCountry: "store.country",

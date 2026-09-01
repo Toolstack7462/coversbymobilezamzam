@@ -52,6 +52,20 @@ const esc = (value) => String(value).replace(/'/g, "''");
 /** [key, category, gatesFeature, value] — value is "" unless genuinely known. */
 const SETTINGS = [
   // Known from the brief. These are the ONLY non-empty values seeded.
+  /*
+   * Media slots.
+   *
+   * Each holds an R2 object key, or "" — and every one of them renders nothing
+   * until it is filled, so the typographic design stands on its own until real
+   * photography exists rather than showing a broken frame.
+   *
+   * They are ordinary settings on purpose: the admin settings screen reads and
+   * writes every row in this table generically, so changing the hero image is a
+   * field in an admin form, never a deploy.
+   */
+  ["media.hero_image", "media", 0, ""],
+  ["media.store_image", "media", 0, ""],
+
   ["store.street", "store", 1, "Viale della Repubblica 8a, Centro Il Nuovo Borgo, negozio 6"],
   ["store.postcode", "store", 1, "67039"],
   ["store.city", "store", 1, "Sulmona"],

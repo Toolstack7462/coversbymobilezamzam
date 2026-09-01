@@ -1983,3 +1983,190 @@ a.chip:hover {
 .spec-list dd {
   font-variant-numeric: tabular-nums;
 }
+
+/* ── Media slots ──────────────────────────────────────────────────────────────
+ *
+ * Every image on the homepage is optional and comes from a setting or a
+ * category row, never from the code. Absent, each section falls back to the
+ * typographic form above — which is designed to stand on its own rather than
+ * look like a page with the pictures missing.
+ */
+
+/* The hero becomes a two-column composition only when there is something to
+   compose with. Below 62rem the image sits under the words, where a photograph
+   competing with a display-size heading on a phone would just push the buttons
+   off the screen. */
+.hero--with-media .hero__inner {
+  padding-block-end: var(--space-6);
+}
+
+@media (min-width: 62rem) {
+  .hero--with-media {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: var(--space-6);
+  }
+
+  /* The container already centres the page; inside a grid column it must not
+     centre again or the text drifts away from the left margin every other
+     section aligns to. */
+  .hero--with-media .hero__inner {
+    margin-inline-start: auto;
+    margin-inline-end: 0;
+    max-inline-size: calc(var(--page-width) / 2);
+    padding-inline-end: var(--space-6);
+  }
+}
+
+.hero__media {
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+}
+
+.hero__media img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+/* ── Category tiles with imagery ──────────────────────────────────────────── */
+
+.category-tile--media {
+  min-block-size: 11rem;
+  color: var(--color-on-deep);
+}
+
+.category-tile__image {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  transition: transform var(--duration-slow) var(--ease);
+}
+
+/*
+ * A scrim, not a blanket.
+ *
+ * Text over a photograph is unreadable at some point in every photograph. This
+ * darkens only the lower third, where the name sits, so the image is still an
+ * image and the label still passes contrast.
+ */
+.category-tile--media::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgb(6 11 20 / 0.78) 0%,
+    rgb(6 11 20 / 0.15) 45%,
+    transparent 70%
+  );
+  z-index: 1;
+}
+
+.category-tile--media .category-tile__name {
+  position: relative;
+  z-index: 2;
+}
+
+@media (hover: hover) {
+  .category-tile--media:hover .category-tile__image {
+    transform: scale(1.04);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .category-tile__image {
+    transition: none;
+  }
+  .category-tile--media:hover .category-tile__image {
+    transform: none;
+  }
+}
+
+/* ── Store band with imagery ──────────────────────────────────────────────── */
+
+.store-band--media {
+  position: relative;
+  isolation: isolate;
+}
+
+.store-band__image {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  opacity: 0.28;
+  z-index: -1;
+}
+
+/* The band is already near-black; the image sits behind the text at low opacity
+   so the copy keeps the contrast it was designed with rather than depending on
+   how bright the photograph happens to be. */
+.store-band--media .store-band__inner {
+  position: relative;
+}
+
+/* ── Hero reveal ──────────────────────────────────────────────────────────────
+ *
+ * Three lines that settle into place, staggered.
+ *
+ * WHAT THIS DELIBERATELY DOES NOT DO: fade in from `opacity: 0`. The hero
+ * statement is the LCP element on the homepage. An element that starts
+ * transparent is not "rendered" as far as the metric is concerned, so the usual
+ * reveal — start invisible, animate to visible — hands back the 769ms LCP this
+ * page currently has in exchange for a flourish.
+ *
+ * So it animates from 0.001 opacity upward and travels a short distance: the
+ * text is painted from the first frame and merely arrives. LCP is unaffected
+ * because the pixels are there; the eye still reads it as a reveal.
+ *
+ * CSS animation, not JavaScript. It runs on the compositor, needs no hydration,
+ * and costs nothing in the bundle — which matters on a Worker already spending
+ * 4-7ms of a 10ms CPU budget.
+ */
+@keyframes hero-settle {
+  from {
+    opacity: 0.001;
+    transform: translate3d(0, 0.4em, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.hero__statement span {
+  animation: hero-settle var(--duration-slow) var(--ease) backwards;
+}
+
+.hero__statement span:nth-child(2) {
+  animation-delay: 70ms;
+}
+
+.hero__statement span:nth-child(3) {
+  animation-delay: 140ms;
+}
+
+.hero__lead,
+.hero__inner .cluster {
+  animation: hero-settle var(--duration-slow) var(--ease) 210ms backwards;
+}
+
+/*
+ * Removed outright, not shortened.
+ *
+ * The global reset takes every duration to 0.01ms, which still MOVES the
+ * element — and movement is the thing a vestibular disorder reacts to, however
+ * briefly. `animation: none` means it never starts.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .hero__statement span,
+  .hero__lead,
+  .hero__inner .cluster {
+    animation: none;
+  }
+}

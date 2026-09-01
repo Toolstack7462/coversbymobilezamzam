@@ -84,14 +84,30 @@ const CSP_DIRECTIVES = [
 ];
 
 /**
- * Development additionally needs a websocket to itself, for hot reload.
+ * Development needs two things production must never have.
  *
- * Browsers disagree about whether `'self'` covers `ws:` on the same host, and a
- * policy that breaks `npm run dev` would be deleted by the next person who hit
- * it rather than fixed.
+ * A websocket to itself, for hot reload — browsers disagree about whether
+ * `'self'` covers `ws:` on the same host, and a policy that breaks `npm run
+ * dev` gets deleted by the next person who hits it rather than fixed.
+ *
+ * And `localhost:8400`, which is where design tooling serves the client it
+ * injects into the page. Without it the script is refused and the only symptom
+ * is a console line nobody is looking at.
+ *
+ * Both are scoped to development and test. The deployed policy is unchanged and
+ * stays exactly as strict as it was: no external origin may serve script to a
+ * customer.
  */
+const DEV_ORIGIN = "http://localhost:8400";
+
 export const CSP_PRODUCTION = [...CSP_DIRECTIVES, "connect-src 'self'"].join("; ");
-export const CSP_DEVELOPMENT = [...CSP_DIRECTIVES, "connect-src 'self' ws: wss:"].join("; ");
+
+export const CSP_DEVELOPMENT = [
+  ...CSP_DIRECTIVES.map((directive) =>
+    directive.startsWith("script-src ") ? `${directive} ${DEV_ORIGIN}` : directive,
+  ),
+  `connect-src 'self' ws: wss: ${DEV_ORIGIN}`,
+].join("; ");
 
 /** Hardware and browser features this shop has no use for. */
 export const PERMISSIONS_POLICY = [

@@ -91,6 +91,17 @@ describe("content security policy", () => {
     expect(CSP_PRODUCTION).not.toMatch(/script-src[^;]*https?:/);
   });
 
+  it("never leaks the local tooling origin into production", () => {
+    /*
+     * Development allows http://localhost:8400 so injected design tooling can
+     * load. If that ever reaches the deployed policy it is an external origin
+     * permitted to serve script to a customer — the exact thing the policy
+     * exists to refuse.
+     */
+    expect(CSP_DEVELOPMENT).toContain("localhost:8400");
+    expect(CSP_PRODUCTION).not.toContain("localhost");
+  });
+
   it("opens the websocket exception in development only", () => {
     expect(CSP_DEVELOPMENT).toContain("connect-src 'self' ws: wss:");
     expect(CSP_PRODUCTION).toContain("connect-src 'self'");

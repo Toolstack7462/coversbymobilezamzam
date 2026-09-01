@@ -1200,6 +1200,34 @@ a.ac-pick:hover {
   font-weight: var(--weight-medium);
 }
 
+/*
+ * …except a tick box, which belongs BESIDE its words.
+ *
+ * The rule above stacks a label's text over its control, which is right for a
+ * text field and wrong for every checkbox and radio in the admin — those came
+ * out as a lone box with its sentence orphaned on the line below. It looked
+ * broken because it was.
+ *
+ * Matched by what the label CONTAINS rather than by a class somebody has to
+ * remember to add, so a checkbox added tomorrow is laid out correctly without
+ * anyone knowing this rule exists.
+ */
+.ac__main label:has(> input[type="checkbox"]),
+.ac__main label:has(> input[type="radio"]) {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: var(--weight-regular);
+}
+
+/* The box keeps its own size and does not stretch to the row. */
+.ac__main label > input[type="checkbox"],
+.ac__main label > input[type="radio"] {
+  flex: none;
+  inline-size: auto;
+  margin: 0;
+}
+
 /* The control itself is not bold just because its label is. */
 .ac__main label input,
 .ac__main label select,
@@ -1225,6 +1253,15 @@ a.ac-pick:hover {
 
 .ac__main form.stack button {
   justify-self: start;
+}
+
+/* The reading measure is for fields. A form that wraps a table or a grid of
+   its own is a layout, and squeezing it to 34rem would be worse than the
+   inconsistency. */
+.ac__main form.stack:has(table),
+.ac__main form.stack:has(.ac-metrics),
+.ac__main form.stack:has(.admin-table-wrap) {
+  max-width: none;
 }
 
 /* An inline row of controls — a filter, a row action — is the exception and

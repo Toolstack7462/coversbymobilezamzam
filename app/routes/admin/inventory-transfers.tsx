@@ -350,7 +350,14 @@ export default function InventoryTransfers({ loaderData, actionData }: Route.Com
           Un trasferimento sposta merce da una sede a un&apos;altra. Con una sede sola non c&apos;è
           niente da spostare — è per questo che le sedi si gestiscono da qui.
         </p>
-        <div className="admin-table-wrap">
+        <div
+          className="admin-table-wrap"
+          /* Focusable and labelled: a region that scrolls sideways and cannot
+             take focus is unscrollable without a mouse. */
+          tabIndex={0}
+          role="region"
+          aria-label="Tabella scorrevole"
+        >
           <table className="admin-table">
             <caption className="visually-hidden">Sedi di magazzino</caption>
             <thead>
@@ -467,7 +474,14 @@ export default function InventoryTransfers({ loaderData, actionData }: Route.Com
             </p>
           </div>
         ) : (
-          <div className="admin-table-wrap">
+          <div
+            className="admin-table-wrap"
+            /* Focusable and labelled: a region that scrolls sideways and cannot
+             take focus is unscrollable without a mouse. */
+            tabIndex={0}
+            role="region"
+            aria-label="Tabella scorrevole"
+          >
             <table className="admin-table">
               <caption className="visually-hidden">Trasferimenti, dal più recente</caption>
               <thead>

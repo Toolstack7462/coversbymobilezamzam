@@ -246,7 +246,14 @@ export default function AdminStaff({ loaderData, actionData }: Route.ComponentPr
         </section>
       ) : null}
 
-      <div className="admin-table-wrap">
+      <div
+        className="admin-table-wrap"
+        /* Focusable and labelled: a region that scrolls sideways and cannot
+             take focus is unscrollable without a mouse. */
+        tabIndex={0}
+        role="region"
+        aria-label="Tabella scorrevole"
+      >
         <table className="admin-table">
           <caption className="visually-hidden">Personale</caption>
           <thead>
@@ -349,7 +356,14 @@ export default function AdminStaff({ loaderData, actionData }: Route.ComponentPr
       {invitations.length > 0 ? (
         <section className="stack">
           <h2>Inviti in sospeso</h2>
-          <div className="admin-table-wrap">
+          <div
+            className="admin-table-wrap"
+            /* Focusable and labelled: a region that scrolls sideways and cannot
+             take focus is unscrollable without a mouse. */
+            tabIndex={0}
+            role="region"
+            aria-label="Tabella scorrevole"
+          >
             <table className="admin-table">
               <caption className="visually-hidden">Inviti in sospeso</caption>
               <thead>

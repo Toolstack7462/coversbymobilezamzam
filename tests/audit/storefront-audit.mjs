@@ -258,6 +258,42 @@ while ((paths.length > 0 || variants.length > 0) && report.length < 60) {
 }
 
 await browser.close();
+
+/*
+ * Is the site broken, or is this machine's network?
+ *
+ * A run reported "0/37 pages clean" for a storefront answering 200 in 1.2
+ * seconds: the laptop's DNS blipped and every navigation came back
+ * ERR_NAME_NOT_RESOLVED. An audit that reports a healthy site as entirely
+ * broken is worse than one that does not run, because the next real failure
+ * gets read as another false alarm.
+ *
+ * So a run in which pages failed to LOAD is checked against the origin itself
+ * before anything is reported. If the origin cannot be reached from here
+ * either, the finding is about the network — and the report is not overwritten,
+ * so the last meaningful one survives.
+ */
+const unreachable = report.filter((r) => r.error);
+if (unreachable.length > 0) {
+  let originOk;
+  try {
+    const probe = await fetch(origin, { redirect: "manual" });
+    originOk = probe.status > 0;
+  } catch {
+    originOk = false;
+  }
+
+  if (!originOk) {
+    console.error(
+      `\n${unreachable.length} of ${report.length} pages could not be loaded, and this machine ` +
+        `cannot reach ${origin} directly either.\n\n` +
+        `That is a network problem here, not a broken site. docs/storefront-audit.json ` +
+        `has NOT been overwritten, so the last meaningful report is still there.\n`,
+    );
+    process.exit(2);
+  }
+}
+
 writeFileSync("docs/storefront-audit.json", `${JSON.stringify(report, null, 2)}\n`, "utf8");
 
 // ── Summary ──────────────────────────────────────────────────────────────────

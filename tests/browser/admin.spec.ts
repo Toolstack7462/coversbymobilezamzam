@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { ADMIN_NAV } from "../../app/lib/admin-nav";
 import AxeBuilder from "@axe-core/playwright";
 import { ADMIN, STORAGE_STATE } from "./helpers/admin-session";
 
@@ -84,10 +85,77 @@ test.describe("the signed-in admin", () => {
     });
   }
 
+  /*
+   * Every destination the navigation offers, derived from the navigation.
+   *
+   * SCREENS above is hand-written and was eighteen entries long while the admin
+   * had grown to thirty-six, so half the tool — including every screen added in
+   * the last week — was swept by nothing. A list of routes maintained beside
+   * the routes is the same defect this project has now found in a nav constant,
+   * an artwork map and an assignment table: it drifts, silently.
+   *
+   * The specific headings above are still worth keeping, because they assert
+   * WHICH page loaded rather than that A page loaded. This adds the coverage.
+   */
+  const ALL_SCREENS = [
+    ...new Set(ADMIN_NAV.flatMap((g) => g.items).map((i) => i.to.split("?")[0] as string)),
+  ];
+
+  test("the hand-written list names only real destinations", () => {
+    // Guards the other direction: a screen renamed in the nav leaves a stale
+    // entry above, which would keep passing against a 404-free redirect.
+    for (const screen of SCREENS) {
+      if (screen.path === "/admin/prodotti/nuovo") continue; // reached from a button, not the nav
+      expect(ALL_SCREENS, `${screen.path} is not in ADMIN_NAV`).toContain(screen.path);
+    }
+  });
+
+  test("every screen in the navigation loads and is structurally sound", async ({ page }) => {
+    const problems: string[] = [];
+
+    for (const path of ALL_SCREENS) {
+      const response = await page.goto(path);
+      const status = response?.status() ?? 0;
+
+      const info = await page.evaluate(() => ({
+        h1: document.querySelectorAll("h1").length,
+        // A phone-width layout that scrolls sideways is a layout that broke.
+        overflow: document.documentElement.scrollWidth > window.innerWidth + 1,
+        /*
+         * A checkbox stacked above its own words rather than beside them.
+         *
+         * This is here because it actually happened: a rule that stacked every
+         * label over its control was right for text fields and wrong for every
+         * tick box in the admin, and it shipped.
+         */
+        stackedTickBoxes: [
+          ...document.querySelectorAll('label:has(> input[type="checkbox"])'),
+        ].filter((el) => getComputedStyle(el).display === "grid").length,
+        // A control rendered too short to hit or read.
+        collapsed: [...document.querySelectorAll("input, select, textarea, button")].filter(
+          (el) => {
+            const r = el.getBoundingClientRect();
+            return r.width > 0 && r.height > 0 && r.height < 12;
+          },
+        ).length,
+      }));
+
+      const issues: string[] = [];
+      if (status >= 400) issues.push(`status ${status}`);
+      if (info.h1 !== 1) issues.push(`${info.h1} h1 elements`);
+      if (info.overflow) issues.push("scrolls horizontally");
+      if (info.stackedTickBoxes) issues.push(`${info.stackedTickBoxes} stacked tick box(es)`);
+      if (info.collapsed) issues.push(`${info.collapsed} collapsed control(s)`);
+      if (issues.length) problems.push(`${path}: ${issues.join("; ")}`);
+    }
+
+    expect(problems, problems.join("\n")).toEqual([]);
+  });
+
   test("every screen is free of detectable accessibility violations", async ({ page }) => {
     // Public pages are covered in accessibility.spec.ts; these need a session,
     // and staff use them for hours a day.
-    for (const screen of SCREENS) {
+    for (const screen of ALL_SCREENS.map((path) => ({ path }))) {
       await page.goto(screen.path);
       const results = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])

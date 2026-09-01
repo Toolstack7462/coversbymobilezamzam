@@ -295,7 +295,14 @@ export default function AdminReturns({ loaderData, actionData }: Route.Component
           <p>Nessun reso.</p>
         </div>
       ) : (
-        <div className="admin-table-wrap">
+        <div
+          className="admin-table-wrap"
+          /* Focusable and labelled: a region that scrolls sideways and cannot
+             take focus is unscrollable without a mouse. */
+          tabIndex={0}
+          role="region"
+          aria-label="Tabella scorrevole"
+        >
           <table className="admin-table">
             <caption className="visually-hidden">Resi</caption>
             <thead>

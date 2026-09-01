@@ -147,7 +147,14 @@ export default function AdminFeatured({ loaderData, actionData }: Route.Componen
           </p>
         </div>
       ) : (
-        <div className="admin-table-wrap">
+        <div
+          className="admin-table-wrap"
+          /* Focusable and labelled: a region that scrolls sideways and cannot
+             take focus is unscrollable without a mouse. */
+          tabIndex={0}
+          role="region"
+          aria-label="Tabella scorrevole"
+        >
           <table className="admin-table">
             <caption className="visually-hidden">
               Prodotti attivi e i loro contrassegni di evidenza

@@ -1,5 +1,6 @@
 import { Link, Form, useLocation } from "react-router";
 import type { Route } from "./+types/collection";
+import { categoryMembershipSql } from "~/domain/catalogue/category-membership";
 import { cloudflareContext } from "../../../workers/app";
 import { parseLocalePath, translator, localePath, plural } from "~/lib/i18n";
 import { ProductCard, type ProductCardData } from "~/components/storefront/product-card";
@@ -56,12 +57,13 @@ export async function loader({ context, request }: Route.LoaderArgs) {
   const where: string[] = ["p.status = 'active'", "p.archived_at IS NULL"];
   const binds: unknown[] = [];
 
+  // Primary category OR an explicit assignment, and descendants count. The
+  // definition lives in one place because the listing and its own count must
+  // agree — see app/domain/catalogue/category-membership.ts, which also records
+  // why this query used to return nothing at all.
   if (categoria) {
     binds.push(categoria);
-    where.push(`EXISTS (
-      SELECT 1 FROM product_category_assignments pca
-        JOIN categories c ON c.id = pca.category_id
-       WHERE pca.product_id = p.id AND c.slug = ?${binds.length})`);
+    where.push(categoryMembershipSql(binds.length));
   }
 
   // Device filtering reads product_compatibility, never a title or a tag

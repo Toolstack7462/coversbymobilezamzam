@@ -23,7 +23,7 @@ import { MobileNav } from "~/components/storefront/mobile-nav";
  * gate answers from the same snapshot rather than each component querying
  * independently.
  */
-export async function loader({ context }: Route.LoaderArgs) {
+export async function loader({ context, request }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
 
   const { results } = await env.DB.prepare(`SELECT key, value FROM store_settings`).all<{
@@ -33,8 +33,68 @@ export async function loader({ context }: Route.LoaderArgs) {
 
   const settings: SettingsMap = Object.fromEntries(results.map((r) => [r.key, r.value]));
 
+  /*
+   * The navigation, read from the catalogue.
+   *
+   * It used to be a hardcoded list of eight slugs in site-header.tsx, and the
+   * catalogue held four categories under DIFFERENT slugs. Nothing matched, so
+   * every category link in the header led to a page reading "0 prodotti" — and
+   * the footer, built from the same constant, repeated all eight broken links.
+   * A shop whose own menu goes nowhere.
+   *
+   * The taxonomy has one home now: the categories table. A category that does
+   * not exist cannot appear in the menu, and one that is renamed is renamed in
+   * the menu at the same instant. That class of bug is gone rather than fixed.
+   *
+   * `visible` and `archived_at` are honoured here because the merchant's
+   * decision to hide a category has to mean it disappears from the navigation,
+   * not just from the listing.
+   */
+  const { locale } = parseLocalePath(new URL(request.url).pathname);
+
+  const { results: navRows } = await env.DB.prepare(
+    `SELECT c.slug, COALESCE(ct.name, ct_fallback.name) AS name
+       FROM categories c
+       LEFT JOIN category_translations ct
+         ON ct.category_id = c.id AND ct.locale = ?
+       LEFT JOIN category_translations ct_fallback
+         ON ct_fallback.category_id = c.id AND ct_fallback.locale = 'it'
+      WHERE c.visible = 1 AND c.archived_at IS NULL AND c.depth = 0
+      ORDER BY c.sort_order ASC, c.slug ASC`,
+  )
+    .bind(locale)
+    .all<{ slug: string; name: string | null }>();
+
+  /*
+   * The merchant's published pages, for the footer.
+   *
+   * Read rather than hardcoded for the same reason as the category rail: a
+   * footer listing pages a constant believes in is a footer that links to 404s
+   * the day one is unpublished. A page removed here disappears from the site
+   * the moment it is removed, which is what unpublishing has to mean.
+   */
+  const { results: pageRows } = await env.DB.prepare(
+    `SELECT p.slug, COALESCE(t.title, fallback.title) AS title
+       FROM pages p
+       LEFT JOIN page_translations t        ON t.page_id = p.id AND t.locale = ?1
+       LEFT JOIN page_translations fallback ON fallback.page_id = p.id AND fallback.locale = 'it'
+      WHERE p.status = 'published'
+        AND p.archived_at IS NULL
+        AND (p.publish_at IS NULL OR p.publish_at <= ?2)
+      ORDER BY p.sort_order ASC, p.slug ASC
+      LIMIT 12`,
+  )
+    .bind(locale, Date.now())
+    .all<{ slug: string; title: string | null }>();
+
   return {
     settings,
+    pages: pageRows.filter((r) => r.title).map((r) => ({ slug: r.slug, title: r.title as string })),
+    // A category with no name in any locale is not shown. Rendering a link
+    // labelled with a slug is worse than a shorter menu.
+    navigation: navRows
+      .filter((r) => r.name)
+      .map((r) => ({ slug: r.slug, name: r.name as string })),
     // Drives the preview banner. Read from the environment rather than guessed
     // from the hostname: a hostname check would silently stop working the day
     // a custom domain is attached to a preview.
@@ -63,11 +123,19 @@ export default function StorefrontLayout({ loaderData }: Route.ComponentProps) {
         locale={locale}
         brandName={loaderData.brandName}
         shopName={loaderData.shopName}
+        navigation={loaderData.navigation}
       />
       <main id="main">
         <Outlet />
       </main>
-      <SiteFooter t={t} locale={locale} settings={loaderData.settings} gates={loaderData.gates} />
+      <SiteFooter
+        t={t}
+        locale={locale}
+        settings={loaderData.settings}
+        gates={loaderData.gates}
+        navigation={loaderData.navigation}
+        pages={loaderData.pages}
+      />
 
       {/* Phones only — see mobile-nav.tsx. Last in the DOM so it is last in the
           tab order, where a persistent navigation bar belongs. */}

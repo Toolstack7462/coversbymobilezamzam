@@ -22,7 +22,7 @@
     "bytes": 370632
   },
   {
-    "slot": "category:demo-cover",
+    "slot": "category:cover",
     "key": "lifestyle/QM4RRxp29rE-0c5a7643aa.webp",
     "id": "QM4RRxp29rE",
     "photographer": "Barnaby Woodrow",
@@ -33,7 +33,7 @@
     "bytes": 41718
   },
   {
-    "slot": "category:demo-cavi",
+    "slot": "category:cavi",
     "key": "lifestyle/b5NYQOMOcYw-2c011b2f76.webp",
     "id": "b5NYQOMOcYw",
     "photographer": "Pham Nhat",
@@ -44,7 +44,7 @@
     "bytes": 17908
   },
   {
-    "slot": "category:demo-caricabatterie",
+    "slot": "category:caricatori",
     "key": "lifestyle/G_GaeDNyMe8-94cb030a9a.webp",
     "id": "G_GaeDNyMe8",
     "photographer": "Rebecca Aldama",
@@ -55,7 +55,7 @@
     "bytes": 25580
   },
   {
-    "slot": "category:demo-powerbank",
+    "slot": "category:power-bank",
     "key": "lifestyle/XvSiM0xsFuE-dc1501c8a2.webp",
     "id": "XvSiM0xsFuE",
     "photographer": "Behnam Norouzi",
@@ -64,5 +64,49 @@
     "description": "A blue power bank charges a smartphone on white background",
     "note": "Blue power bank charging a phone, plain white ground.",
     "bytes": 10852
+  },
+  {
+    "slot": "category:protezione-schermo",
+    "key": "lifestyle/J7xrBW_oYJc-9b5cd75419.webp",
+    "id": "J7xrBW_oYJc",
+    "photographer": "Lorenzo Rui",
+    "profile": "https://unsplash.com/@lorenzorui",
+    "page": "https://unsplash.com/photos/post-2017-iphone-J7xrBW_oYJc",
+    "description": "post-2017 iPhone",
+    "note": "A clean, unmarked screen face-up under low light. No cracked glass on a shop that sells protection.",
+    "bytes": 20382
+  },
+  {
+    "slot": "category:magsafe",
+    "key": "lifestyle/nsL8k1BC6Do-13647d7d33.webp",
+    "id": "nsL8k1BC6Do",
+    "photographer": "Karolina Grabowska",
+    "profile": "https://unsplash.com/@kaboompics",
+    "page": "https://unsplash.com/photos/hand-plugging-charging-cable-into-smartphone-and-from-power-bank-nsL8k1BC6Do",
+    "description": "Hand plugging charging cable into smartphone and from power bank",
+    "note": "A magnetic pack meeting the back of a phone, plain ground. The attach IS the category.",
+    "bytes": 23986
+  },
+  {
+    "slot": "category:audio",
+    "key": "lifestyle/Y7dlslcl-hI-efe66be168.webp",
+    "id": "Y7dlslcl-hI",
+    "photographer": "Koss Szilard",
+    "profile": "https://unsplash.com/@koss_szilard",
+    "page": "https://unsplash.com/photos/a-pair-of-ear-buds-sitting-on-top-of-a-table-Y7dlslcl-hI",
+    "description": "a pair of ear buds sitting on top of a table",
+    "note": "Earbuds and open case on black. No logo, no brand mark.",
+    "bytes": 12050
+  },
+  {
+    "slot": "category:supporti-auto",
+    "key": "lifestyle/7x5V13744KM-7024d1b037.webp",
+    "id": "7x5V13744KM",
+    "photographer": "Isaac Mehegan",
+    "profile": "https://unsplash.com/@isaacmehegan",
+    "page": "https://unsplash.com/photos/smartphone-turned-on-in-vehicle-mount-inside-vehicle-7x5V13744KM",
+    "description": "smartphone turned-on in vehicle mount inside vehicle",
+    "note": "Phone held in a vent mount, navigation running, road ahead. Shows the job, not the object.",
+    "bytes": 45832
   }
 ]

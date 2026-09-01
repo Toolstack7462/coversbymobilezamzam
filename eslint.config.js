@@ -59,14 +59,19 @@ export default tseslint.config(
     files: [
       "app/infrastructure/**/*.ts",
       "scripts/**/*.{ts,mjs,js}",
-      "tests/**/*.ts",
+      "tests/**/*.{ts,mjs}",
       "workers/**/*.ts",
     ],
     rules: { "no-restricted-syntax": "off" },
   },
   {
     // Node scripts and hooks: plain Node globals, not the Workers runtime.
-    files: ["scripts/**/*.mjs", ".claude/hooks/**/*.mjs", "*.config.{js,ts}"],
+    files: [
+      "scripts/**/*.mjs",
+      "tests/audit/**/*.mjs",
+      ".claude/hooks/**/*.mjs",
+      "*.config.{js,ts}",
+    ],
     languageOptions: {
       globals: {
         process: "readonly",
@@ -78,6 +83,17 @@ export default tseslint.config(
         // talk to a real HTTPS origin.
         fetch: "readonly",
         Response: "readonly",
+        /*
+         * The browser globals inside `page.evaluate()`.
+         *
+         * That callback is serialised and run in the PAGE, not in Node, so it
+         * legitimately reaches for `document` and `window` from a file that is
+         * otherwise a Node script. ESLint cannot see the boundary; declaring
+         * them here is more honest than disabling `no-undef` for the file and
+         * losing every real typo with it.
+         */
+        document: "readonly",
+        window: "readonly",
       },
     },
     rules: { "@typescript-eslint/no-explicit-any": "off" },

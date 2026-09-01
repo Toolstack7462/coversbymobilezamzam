@@ -2418,3 +2418,84 @@ a.chip:hover {
     transform: none;
   }
 }
+
+/* ── Content pages ──────────────────────────────────────────────────────────
+   The merchant's own pages: about, contact, guides.
+
+   A reading measure, not the catalogue's grid. These pages are the only place
+   on the storefront where somebody reads more than a sentence, so the column
+   is narrow enough to read and the rhythm is set by the text rather than by
+   the layout around it.
+*/
+.prose-page {
+  padding-block: clamp(3rem, 8vw, 6rem);
+}
+
+.prose-page__head {
+  max-width: var(--measure);
+  margin-block-end: clamp(2rem, 5vw, 3.5rem);
+}
+
+.prose-page__head h1 {
+  /* No font-size here on purpose: h1 is already sized by the base scale, and a
+     page-specific override is how a type system quietly stops being one. */
+  text-wrap: balance;
+}
+
+.prose-page__standfirst {
+  margin-block-start: 1rem;
+  font-size: clamp(1.0625rem, 0.95rem + 0.5vw, 1.3125rem);
+  line-height: 1.5;
+  /* A standfirst is a summary, not a caption: it stays at full contrast. Text
+     never carries reduced opacity on this storefront — that mistake has been
+     made three times here and caught three times. */
+  color: var(--color-text-secondary);
+  max-width: 38rem;
+  text-wrap: pretty;
+}
+
+.prose {
+  max-width: var(--measure);
+}
+
+.prose > * + * {
+  margin-block-start: 1.25rem;
+}
+
+.prose h2 {
+  margin-block-start: clamp(2.25rem, 5vw, 3rem);
+  text-wrap: balance;
+}
+
+.prose p {
+  line-height: 1.7;
+  text-wrap: pretty;
+}
+
+.prose ul {
+  display: grid;
+  gap: 0.6rem;
+  padding-inline-start: 1.15rem;
+}
+
+.prose li {
+  line-height: 1.6;
+}
+
+/* The routes offered from an empty cart. Not a card: this is a short list of
+   ways back into the shop, and a container around it would give it more weight
+   than the message it sits beneath. */
+.empty-state__routes {
+  margin-block-start: clamp(2.5rem, 6vw, 4rem);
+  padding-block-start: clamp(1.5rem, 4vw, 2.25rem);
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+.empty-state__heading {
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-lh);
+  letter-spacing: var(--text-eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  margin-block-end: 1rem;
+}

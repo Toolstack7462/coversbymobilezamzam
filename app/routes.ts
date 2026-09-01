@@ -36,6 +36,15 @@ function storefrontRoutes(idSuffix: string): RouteConfigEntry[] {
     ),
     route("traccia/:token", "routes/storefront/order-tracking.tsx", id("order-tracking")),
     route("negozio", "routes/storefront/store.tsx", id("store")),
+
+    /*
+     * Merchant-authored pages: about, contact, guides, policies.
+     *
+     * One route, any number of pages. The slugs live in the database, so the
+     * merchant adds a page without a deploy — and a page that is unpublished
+     * or archived 404s rather than lingering at a URL somebody has bookmarked.
+     */
+    route("pagine/:slug", "routes/storefront/page.tsx", id("page")),
   ];
 }
 
@@ -96,6 +105,7 @@ export default [
     route("admin/marchi", "routes/admin/catalogue-taxonomy.tsx"),
     route("admin/dispositivi", "routes/admin/devices.tsx"),
     route("admin/compatibilita", "routes/admin/compatibility.tsx"),
+    route("admin/contenuti/pagine", "routes/admin/pages.tsx"),
     route("admin/contenuti/legale", "routes/admin/legal-documents.tsx"),
     route("admin/impostazioni", "routes/admin/settings.tsx"),
     route("admin/importazioni", "routes/admin/imports.tsx"),

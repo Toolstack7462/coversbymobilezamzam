@@ -28,14 +28,6 @@
     "vat_included": "IVA inclusa"
   },
   "nav": {
-    "cases": "Cover",
-    "screen_protection": "Protezione schermo",
-    "chargers": "Caricatori",
-    "cables": "Cavi",
-    "power_banks": "Power Bank",
-    "magsafe": "MagSafe e magnetici",
-    "audio": "Audio",
-    "car_mounts": "Supporti Auto",
     "smartwatch": "Smartwatch",
     "tablet": "Accessori Tablet",
     "offers": "Offerte",
@@ -267,6 +259,7 @@
     "repairs": "Riparazioni",
     "screen_installation": "Applicazione pellicole",
     "device_assistance": "Assistenza dispositivi",
-    "categories": "Categorie"
+    "categories": "Categorie",
+    "information": "Informazioni"
   }
 }

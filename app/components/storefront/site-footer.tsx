@@ -1,7 +1,6 @@
 import { Link } from "react-router";
 import { localePath, DEFAULT_LOCALE, type Locale, type Translator } from "~/lib/i18n";
 import { settingValue, SETTING_KEYS, type SettingsMap } from "~/domain/content/gates";
-import { PRIMARY_NAV } from "./site-header";
 
 /**
  * Footer.
@@ -23,9 +22,13 @@ interface Props {
     whatsapp: boolean;
     legal: boolean;
   };
+  /** The same catalogue-derived list the header rail renders. */
+  navigation: { slug: string; name: string }[];
+  /** The merchant's published content pages, in their chosen order. */
+  pages: { slug: string; title: string }[];
 }
 
-export function SiteFooter({ t, locale, settings, gates }: Props) {
+export function SiteFooter({ t, locale, settings, gates, navigation, pages }: Props) {
   const path = (p: string) => localePath(locale, p);
 
   const street = settingValue(settings, SETTING_KEYS.storeStreet);
@@ -65,9 +68,9 @@ export function SiteFooter({ t, locale, settings, gates }: Props) {
         <nav className="site-footer__column" aria-label={t("footer.categories")}>
           <h2 className="site-footer__heading">{t("footer.categories")}</h2>
           <ul>
-            {PRIMARY_NAV.map((item) => (
+            {navigation.map((item) => (
               <li key={item.slug}>
-                <Link to={path(`/shop?categoria=${item.slug}`)}>{t(item.key)}</Link>
+                <Link to={path(`/shop?categoria=${item.slug}`)}>{item.name}</Link>
               </li>
             ))}
           </ul>
@@ -103,6 +106,23 @@ export function SiteFooter({ t, locale, settings, gates }: Props) {
             </>
           ) : null}
         </nav>
+
+        {/*
+          The merchant's own pages. Absent entirely when none are published —
+          a heading over an empty list is the thing this footer exists to avoid.
+        */}
+        {pages.length > 0 ? (
+          <nav className="site-footer__column" aria-label={t("footer.information")}>
+            <h2 className="site-footer__heading">{t("footer.information")}</h2>
+            <ul>
+              {pages.map((item) => (
+                <li key={item.slug}>
+                  <Link to={path(`/pagine/${item.slug}`)}>{item.title}</Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ) : null}
 
         {/* The address is known, so this renders. The shop NAME is not, so the
             store page link only appears once it is configured. */}

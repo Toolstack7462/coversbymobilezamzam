@@ -17,7 +17,21 @@ import { availabilityState } from "~/domain/inventory/availability";
 export function meta() {
   // Deliberately generic until the merchant supplies a brand name. A title
   // naming a shop that has not been named is an invention.
-  return [{ title: "Accessori per smartphone" }];
+  //
+  // The description says what the shop does and where it does it, and nothing
+  // it cannot back up — no superlatives, no counts, no delivery promise. It is
+  // the only text a search result shows beneath the title, and the homepage was
+  // shipping without one, so search engines were composing that line from
+  // whatever they scraped.
+  return [
+    { title: "Accessori per smartphone" },
+    {
+      name: "description",
+      content:
+        "Cover, pellicole, caricatori, cavi e power bank scelti per il tuo modello. " +
+        "Ordina online o ritira in negozio.",
+    },
+  ];
 }
 
 /**

@@ -193,6 +193,21 @@ export async function seed(db: D1Database, options: SeedOptions = {}): Promise<v
       )
       .bind(IDS.category, NOW),
 
+    /*
+     * A category with no name in any locale is not a state a real shop is ever
+     * in, and leaving the fixture in it hid a real question: what does the
+     * navigation do with an unnamed category? (It omits it — a link labelled
+     * with a raw slug is worse than a shorter menu. See
+     * tests/integration/storefront-navigation.test.ts.)
+     */
+    db
+      .prepare(
+        `INSERT INTO category_translations (id, category_id, locale, name)
+         VALUES ('cat_cover_it',?1,'it','Cover e custodie'),
+                ('cat_cover_en',?1,'en','Cases')`,
+      )
+      .bind(IDS.category),
+
     db
       .prepare(
         `INSERT INTO products (id, slug, status, brand_id, primary_category_id, accessory_type, is_featured, is_new, is_bestseller, published_at, created_at, updated_at)

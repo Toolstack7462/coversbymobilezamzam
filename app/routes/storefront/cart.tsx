@@ -1,4 +1,4 @@
-import { Link, Form, useLocation, redirect } from "react-router";
+import { Link, Form, useLocation, redirect, useRouteLoaderData } from "react-router";
 import type { Route } from "./+types/cart";
 import { cloudflareContext } from "../../../workers/app";
 import { parseLocalePath, translator, localePath } from "~/lib/i18n";
@@ -92,6 +92,17 @@ export async function action({ context, request }: Route.ActionArgs) {
 }
 
 export default function CartPage({ loaderData }: Route.ComponentProps) {
+  /*
+   * The storefront layout has already loaded the category taxonomy for the
+   * header and footer. Reading it here costs nothing and, more importantly,
+   * means the empty cart cannot offer a category the rest of the site does not
+   * have. Optional by type: a route rendered outside the layout would get
+   * undefined rather than a crash.
+   */
+  const shell = useRouteLoaderData("routes/storefront/layout") as
+    { navigation?: { slug: string; name: string }[] } | undefined;
+  const navigation = shell?.navigation ?? [];
+
   const { pathname } = useLocation();
   const { locale } = parseLocalePath(pathname);
   const t = translator(locale);
@@ -101,16 +112,45 @@ export default function CartPage({ loaderData }: Route.ComponentProps) {
   const { lines, totals } = loaderData;
 
   if (lines.length === 0) {
+    /*
+     * An empty cart is a dead end unless it offers somewhere to go.
+     *
+     * It used to be a sentence and one button — about a hundred characters on
+     * the whole page. That is not a page, it is a notice, and the customer's
+     * only options were the one button or the back arrow. The categories below
+     * come from the layout's loader, so this is the shop's real taxonomy rather
+     * than a second list that can drift from it.
+     */
     return (
       <div className="page section">
         <h1>{t("cart.title")}</h1>
         <div className="empty-state">
           <p>{t("cart.empty")}</p>
           <p>{t("cart.empty_help")}</p>
-          <Link className="btn btn--primary" to={path("/shop")}>
-            {t("cart.continue_shopping")}
-          </Link>
+          <div className="cluster">
+            <Link className="btn btn--primary" to={path("/shop")}>
+              {t("cart.continue_shopping")}
+            </Link>
+            <Link className="btn btn--ghost" to={path("/trova-dispositivo")}>
+              {t("nav.find_by_device")}
+            </Link>
+          </div>
         </div>
+
+        {navigation.length > 0 ? (
+          <nav className="empty-state__routes" aria-label={t("footer.categories")}>
+            <h2 className="empty-state__heading">{t("footer.categories")}</h2>
+            <ul className="cluster">
+              {navigation.map((category) => (
+                <li key={category.slug}>
+                  <Link className="chip" to={path(`/shop?categoria=${category.slug}`)}>
+                    {category.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ) : null}
       </div>
     );
   }

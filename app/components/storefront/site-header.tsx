@@ -16,20 +16,20 @@ interface Props {
   brandName: string | null;
   /** `store.name` — the name over the door. Nothing is invented (invariant 12). */
   shopName: string | null;
+  /**
+   * The categories the shop actually has, in the merchant's order, already
+   * translated. Loaded once in the storefront layout and shared with the
+   * footer.
+   *
+   * This was a hardcoded constant of eight slugs, and the catalogue held four
+   * under different names — so every link in the primary navigation went to a
+   * page reading "0 prodotti". The menu is the catalogue now; it cannot point
+   * at a category that is not there.
+   */
+  navigation: { slug: string; name: string }[];
 }
 
-export const PRIMARY_NAV = [
-  { key: "nav.cases", slug: "cover" },
-  { key: "nav.screen_protection", slug: "protezione-schermo" },
-  { key: "nav.chargers", slug: "caricatori" },
-  { key: "nav.cables", slug: "cavi" },
-  { key: "nav.power_banks", slug: "power-bank" },
-  { key: "nav.magsafe", slug: "magsafe" },
-  { key: "nav.audio", slug: "audio" },
-  { key: "nav.car_mounts", slug: "supporti-auto" },
-] as const;
-
-export function SiteHeader({ t, locale, brandName, shopName }: Props) {
+export function SiteHeader({ t, locale, brandName, shopName, navigation }: Props) {
   const path = (p: string) => localePath(locale, p);
 
   return (
@@ -82,9 +82,9 @@ export function SiteHeader({ t, locale, brandName, shopName }: Props) {
       <nav className="site-header__nav" aria-label={t("nav.find_by_device")}>
         <div className="page site-header__nav-inner">
           <ul className="cluster">
-            {PRIMARY_NAV.map((item) => (
+            {navigation.map((item) => (
               <li key={item.slug}>
-                <Link to={path(`/shop?categoria=${item.slug}`)}>{t(item.key)}</Link>
+                <Link to={path(`/shop?categoria=${item.slug}`)}>{item.name}</Link>
               </li>
             ))}
           </ul>

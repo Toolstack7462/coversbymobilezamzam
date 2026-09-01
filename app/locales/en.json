@@ -28,14 +28,6 @@
     "vat_included": "VAT included"
   },
   "nav": {
-    "cases": "Cases",
-    "screen_protection": "Screen protection",
-    "chargers": "Chargers",
-    "cables": "Cables",
-    "power_banks": "Power banks",
-    "magsafe": "MagSafe and magnetic",
-    "audio": "Audio",
-    "car_mounts": "Car mounts",
     "smartwatch": "Smartwatch",
     "tablet": "Tablet accessories",
     "offers": "Offers",
@@ -267,6 +259,7 @@
     "repairs": "Repairs",
     "screen_installation": "Screen protector fitting",
     "device_assistance": "Device assistance",
-    "categories": "Categories"
+    "categories": "Categories",
+    "information": "Information"
   }
 }

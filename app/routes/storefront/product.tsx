@@ -24,7 +24,30 @@ export function meta({ loaderData }: Route.MetaArgs) {
   // Falls back rather than inventing: an untranslated product still needs a
   // title, and its slug is a real fact about it where a made-up name is not.
   const name = loaderData?.product?.name ?? loaderData?.product?.slug ?? "Prodotto";
-  return [{ title: name }];
+
+  /*
+   * The description is the product's OWN summary, trimmed to the length a
+   * search result shows. Not a template with the name poured into it: a page
+   * per product, each describing itself with the same sentence in a different
+   * order, is what a search engine reads as a thin catalogue.
+   *
+   * A product with no summary yet gets no description tag at all, which is
+   * correct — an engine composing a line from the page beats a line the shop
+   * made up about a product it has not described.
+   */
+  const summary = loaderData?.product?.short_description?.trim();
+
+  return [
+    { title: name },
+    ...(summary
+      ? [
+          {
+            name: "description",
+            content: summary.length > 155 ? `${summary.slice(0, 152).trimEnd()}…` : summary,
+          },
+        ]
+      : []),
+  ];
 }
 
 export async function loader({ context, params }: Route.LoaderArgs) {

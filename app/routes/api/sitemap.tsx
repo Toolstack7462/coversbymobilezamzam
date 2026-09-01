@@ -77,11 +77,33 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       LIMIT 5000`,
   ).all<{ slug: string; updated_at: number | null }>();
 
+  /*
+   * The merchant's published pages. Same publication rules as the page route
+   * itself — a sitemap that advertises a scheduled or unpublished page sends
+   * a crawler to a 404 and teaches it the site is unreliable.
+   */
+  const pages = await env.DB.prepare(
+    `SELECT slug, updated_at
+       FROM pages
+      WHERE status = 'published' AND archived_at IS NULL
+        AND (publish_at IS NULL OR publish_at <= ?1)
+      ORDER BY sort_order ASC
+      LIMIT 200`,
+  )
+    .bind(Date.now())
+    .all<{ slug: string; updated_at: number | null }>();
+
   const entries: Entry[] = [
     { path: "/", changefreq: "daily", priority: "1.0" },
     { path: "/shop", changefreq: "daily", priority: "0.9" },
     { path: "/trova-dispositivo", changefreq: "weekly", priority: "0.8" },
     { path: "/negozio", changefreq: "monthly", priority: "0.7" },
+    ...pages.results.map((p: { slug: string; updated_at: number | null }) => ({
+      path: `/pagine/${p.slug}`,
+      lastmod: p.updated_at ? new Date(p.updated_at).toISOString().slice(0, 10) : null,
+      changefreq: "monthly" as const,
+      priority: "0.6",
+    })),
     ...products.results.map((p: { slug: string; updated_at: number | null }) => ({
       path: `/prodotti/${p.slug}`,
       lastmod: p.updated_at ? new Date(p.updated_at).toISOString().slice(0, 10) : null,

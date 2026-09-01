@@ -191,12 +191,8 @@ export const ADMIN_NAV: NavGroup[] = [
         permission: "content.write",
         flag: "content",
       },
-      {
-        label: "Pagine",
-        to: "/admin/contenuti/pagine",
-        permission: "content.write",
-        flag: "content",
-      },
+      // No flag: built.
+      { label: "Pagine", to: "/admin/contenuti/pagine", permission: "content.read" },
       {
         label: "Guide",
         to: "/admin/contenuti/guide",

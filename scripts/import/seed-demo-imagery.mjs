@@ -24,6 +24,12 @@
  * cracked screen (on a shop that sells protection), and a case photographed
  * beside a skull ornament.
  *
+ * The four added for the newly-stocked categories were chosen the same way, and
+ * their Unsplash ids were confirmed by hashing the bytes of the file that was
+ * opened against a fresh fetch — a search position is not a stable identifier,
+ * and recording the id of the photograph NEXT to the approved one is a mistake
+ * nobody would ever notice from the code.
+ *
  * ── Licence ──────────────────────────────────────────────────────────────────
  *
  * Unsplash License: free to use, commercial use permitted, no permission
@@ -76,40 +82,97 @@ const IMAGES = [
     note: "Sulmona: the church steps, the confetti shop, the Abruzzo mountains. The actual town.",
   },
   {
-    slot: "category:demo-cover",
+    slot: "category:cover",
     id: "QM4RRxp29rE",
     width: 800,
     quality: 76,
     note: "Brown leather case on a wooden desk.",
   },
   {
-    slot: "category:demo-cavi",
+    slot: "category:cavi",
     id: "b5NYQOMOcYw",
     width: 800,
     quality: 76,
     note: "Three white charging cables on light blue.",
   },
   {
-    slot: "category:demo-caricabatterie",
+    slot: "category:caricatori",
     id: "G_GaeDNyMe8",
     width: 800,
     quality: 76,
     note: "White power adapter on leather.",
   },
   {
-    slot: "category:demo-powerbank",
+    slot: "category:power-bank",
     id: "XvSiM0xsFuE",
     width: 800,
     quality: 76,
     note: "Blue power bank charging a phone, plain white ground.",
   },
+  {
+    slot: "category:protezione-schermo",
+    id: "J7xrBW_oYJc",
+    width: 800,
+    quality: 76,
+    note: "A clean, unmarked screen face-up under low light. No cracked glass on a shop that sells protection.",
+  },
+  {
+    slot: "category:magsafe",
+    id: "nsL8k1BC6Do",
+    width: 800,
+    quality: 76,
+    note: "A magnetic pack meeting the back of a phone, plain ground. The attach IS the category.",
+  },
+  {
+    slot: "category:audio",
+    id: "Y7dlslcl-hI",
+    width: 800,
+    quality: 76,
+    note: "Earbuds and open case on black. No logo, no brand mark.",
+  },
+  {
+    slot: "category:supporti-auto",
+    id: "7x5V13744KM",
+    width: 800,
+    quality: 76,
+    note: "Phone held in a vent mount, navigation running, road ahead. Shows the job, not the object.",
+  },
 ];
 
-function wrangler(extra) {
-  return execFileSync(process.execPath, ["node_modules/wrangler/bin/wrangler.js", ...extra], {
-    encoding: "utf8",
-    maxBuffer: 64 * 1024 * 1024,
-  });
+/**
+ * Run wrangler, retrying a TRANSIENT failure.
+ *
+ * This script makes around thirty network calls in a row — a fetch to Unsplash,
+ * an R2 upload and a D1 update per image — and a single blip anywhere in the
+ * middle kills it:
+ *
+ *     { "error": { "text": "fetch failed" } }
+ *
+ * which is what happened on the first real run. That is not a bug in the work,
+ * it is the network, and the cost of it is a half-applied run: some images
+ * uploaded and wired, others not, and no way to tell which from the outside.
+ *
+ * Retried three times with a widening pause. Only for failures that look like
+ * transport — a genuine error (bad bucket, SQL mistake, expired credentials)
+ * still fails immediately, because retrying those just delays the message that
+ * says what is actually wrong.
+ */
+function wrangler(extra, attempt = 1) {
+  try {
+    return execFileSync(process.execPath, ["node_modules/wrangler/bin/wrangler.js", ...extra], {
+      encoding: "utf8",
+      maxBuffer: 64 * 1024 * 1024,
+    });
+  } catch (error) {
+    const text = `${error.stdout ?? ""}${error.stderr ?? ""}${error.message ?? ""}`;
+    const transient =
+      /fetch failed|ECONNRESET|ETIMEDOUT|EAI_AGAIN|socket hang up|503|502|429/i.test(text);
+    if (!transient || attempt >= 3) throw error;
+    const pause = attempt * 2000;
+    console.log(`    transient failure, retrying in ${pause / 1000}s (attempt ${attempt + 1}/3)`);
+    execFileSync(process.execPath, ["-e", `setTimeout(() => {}, ${pause})`]);
+    return wrangler(extra, attempt + 1);
+  }
 }
 
 const d1 = (sql) =>

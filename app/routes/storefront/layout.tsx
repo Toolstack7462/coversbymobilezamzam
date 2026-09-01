@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from "react-router";
 import type { Route } from "./+types/layout";
 import { cloudflareContext } from "../../../workers/app";
+import { systemClock } from "~/infrastructure/primitives";
 import { parseLocalePath, translator } from "~/lib/i18n";
 import {
   canShowStoreSection,
@@ -89,6 +90,15 @@ export async function loader({ context, request }: Route.LoaderArgs) {
 
   return {
     settings,
+    /*
+     * The year for the footer, from the server's clock.
+     *
+     * Not `new Date()` in the component: that would read the VISITOR's clock,
+     * so a browser with the wrong date — or one an hour the other side of new
+     * year — would show a copyright line the shop never wrote. The year is a
+     * fact about the shop, so the shop's environment supplies it.
+     */
+    year: new Date(systemClock.now()).getFullYear(),
     pages: pageRows.filter((r) => r.title).map((r) => ({ slug: r.slug, title: r.title as string })),
     // A category with no name in any locale is not shown. Rendering a link
     // labelled with a slug is worse than a shorter menu.
@@ -135,6 +145,7 @@ export default function StorefrontLayout({ loaderData }: Route.ComponentProps) {
         gates={loaderData.gates}
         navigation={loaderData.navigation}
         pages={loaderData.pages}
+        year={loaderData.year}
       />
 
       {/* Phones only — see mobile-nav.tsx. Last in the DOM so it is last in the

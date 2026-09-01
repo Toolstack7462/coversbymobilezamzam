@@ -1086,9 +1086,12 @@ a {
 
 .site-footer__inner {
   display: grid;
-  gap: var(--space-6);
-  padding-block: clamp(var(--space-7), 6vw, var(--space-9));
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: clamp(var(--space-5), 4vw, var(--space-7)) var(--space-6);
+  padding-block: clamp(var(--space-6), 5vw, var(--space-8));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  /* Columns size to their content and sit at the top of the row rather than
+     stretching to match the tallest one. */
+  align-items: start;
 }
 
 .site-footer__column {
@@ -1313,11 +1316,6 @@ a.chip {
 a.chip:hover {
   text-decoration: underline;
   text-underline-offset: 2px;
-}
-
-.site-footer__legal {
-  padding-block: var(--space-4);
-  border-block-start: var(--border-width) solid var(--color-border);
 }
 
 /* ── Product imagery ──────────────────────────────────────────────────────── */
@@ -2313,17 +2311,26 @@ a.chip:hover {
   color: var(--color-on-deep);
 }
 
-/* Given room to breathe on a wide footer without stretching the link columns
-   beside it. */
-.site-footer__brand {
-  grid-column: span 1;
-  max-inline-size: 26rem;
+/*
+ * The masthead band.
+ *
+ * The name used to be the first cell of the link grid, spanning two columns —
+ * which meant the grid stretched it to the height of the tallest link column
+ * and left a void beneath the name roughly the size of a paragraph. A band
+ * cannot be stretched by its neighbours, because it has none.
+ */
+.site-footer__masthead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-5);
+  padding-block: clamp(var(--space-6), 5vw, var(--space-8)) var(--space-5);
+  border-block-end: var(--border-width) solid var(--color-on-deep-border);
 }
 
-@media (min-width: 62rem) {
-  .site-footer__brand {
-    grid-column: span 2;
-  }
+.site-footer__tagline {
+  max-inline-size: 34rem;
+  color: var(--color-on-deep-secondary);
 }
 
 /* ── Footer heading spacing ───────────────────────────────────────────────── */
@@ -2353,9 +2360,80 @@ a.chip:hover {
  * The second gives the dark bands a horizon rather than a flat fill, so the
  * type sits on something. Same hue, two steps of luminance.
  */
-.store-band,
-.site-footer {
+.store-band {
   background-image: linear-gradient(180deg, #0a1020 0%, var(--color-ink-deep) 55%);
+}
+
+/*
+ * The footer closes the page, so it gets the deeper treatment.
+ *
+ * Three layers, in paint order: a wide, very low-opacity wash of the brand hue
+ * near the top edge, so the footer looks lit from where the page ended rather
+ * than switched to black; a second, tighter wash on the opposite side to stop
+ * the first reading as a symmetrical vignette; and the vertical ramp underneath
+ * carrying the whole thing down to the deepest ink at the base.
+ *
+ * The washes top out at 0.10 alpha. Anything stronger starts competing with
+ * the text for attention, and the text on this surface is already at the
+ * contrast floor — the type is what must stay readable, not the gradient.
+ */
+.site-footer {
+  background-image:
+    radial-gradient(78rem 34rem at 18% -12%, rgb(37 99 235 / 0.1), transparent 62%),
+    radial-gradient(52rem 26rem at 92% 4%, rgb(56 189 248 / 0.07), transparent 58%),
+    linear-gradient(180deg, #0c1426 0%, #080e1c 46%, var(--color-ink-deep) 100%);
+}
+
+/*
+ * A hairline of light along the top edge.
+ *
+ * The join between the page and the footer was a hard colour change. This is
+ * the one-pixel highlight a physical edge would catch, and it does more for
+ * the sense of depth than another gradient stop would.
+ */
+.site-footer::before {
+  content: "";
+  display: block;
+  block-size: 1px;
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(255 255 255 / 0.14) 26%,
+    rgb(255 255 255 / 0.2) 50%,
+    rgb(255 255 255 / 0.14) 74%,
+    transparent 100%
+  );
+}
+
+/* ── Colophon ────────────────────────────────────────────────────────────────
+   The last line of the page: the year, and who built it. */
+.site-footer__colophon {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  justify-content: space-between;
+  align-items: baseline;
+  padding-block: var(--space-4);
+  border-block-start: var(--border-width) solid var(--color-on-deep-border);
+  color: var(--color-on-deep-secondary);
+}
+
+/*
+ * The maker's credit is a link, so it must not look like body text — but it is
+ * a credit, so it must not compete with the shop either. Underlined on the
+ * offset rather than coloured: it reads as a link without introducing a second
+ * accent into a footer that has one.
+ */
+.site-footer__maker {
+  color: var(--color-on-deep);
+  text-decoration: underline;
+  text-decoration-color: rgb(255 255 255 / 0.35);
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--duration-fast) var(--ease);
+}
+
+.site-footer__maker:hover {
+  text-decoration-color: currentcolor;
 }
 
 /* ── Scroll reveal ────────────────────────────────────────────────────────────

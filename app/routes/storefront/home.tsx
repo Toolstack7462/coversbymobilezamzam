@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { Link, useLocation } from "react-router";
 import type { Route } from "./+types/home";
 import { cloudflareContext } from "../../../workers/app";
@@ -61,7 +62,7 @@ function availabilityFor(row: {
 export async function loader({ context }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
 
-  const [settingsResult, newArrivals, categories, devices] = await Promise.all([
+  const [settingsResult, newArrivals, sectionRows, categories, devices] = await Promise.all([
     env.DB.prepare(`SELECT key, value FROM store_settings`).all<{
       key: string;
       value: string;
@@ -103,6 +104,20 @@ export async function loader({ context }: Route.LoaderArgs) {
       reserved: number | null;
       reorder_threshold: number | null;
     }>(),
+    /*
+     * The homepage composition the merchant chose, if any.
+     *
+     * Empty is a valid and common answer: an unconfigured shop falls back to
+     * the designed order rather than rendering nothing. See the component.
+     */
+    env.DB.prepare(
+      `SELECT s.section_type, t.heading, t.subheading
+         FROM homepage_sections s
+         LEFT JOIN homepage_section_translations t
+           ON t.section_id = s.id AND t.locale = 'it'
+        WHERE s.visible = 1
+        ORDER BY s.sort_order`,
+    ).all<{ section_type: string; heading: string | null; subheading: string | null }>(),
     env.DB.prepare(
       `SELECT c.slug, c.image_key, ct.name
          FROM categories c
@@ -160,6 +175,12 @@ export async function loader({ context }: Route.LoaderArgs) {
       })),
     categories: categories.results.filter((c) => c.name),
     devices: devices.results,
+    // The merchant's chosen composition. Empty means "use the designed order".
+    sections: sectionRows.results.map((row) => ({
+      type: row.section_type,
+      heading: row.heading,
+      subheading: row.subheading,
+    })),
     /*
      * The address is enough.
      *
@@ -215,205 +236,260 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     },
   ].filter((item) => item.show);
 
-  return (
-    <>
-      {/*
-        A statement, not a category label.
-        Three verbs, because those are the three things every accessory in this
-        shop does. It fits in one screen on a phone without pushing the products
-        out of reach, which a full-viewport hero would.
-      */}
-      <section className={`hero${loaderData.heroImage ? " hero--with-media" : ""}`}>
-        <div className="page hero__inner">
-          <h1 className="hero__statement">
-            <span>{t("home.hero_statement_1")}</span>
-            <span>{t("home.hero_statement_2")}</span>
-            <span>{t("home.hero_statement_3")}</span>
-          </h1>
-          <p className="hero__lead">{t("home.hero_lead")}</p>
-          <div className="cluster">
-            <Link className="btn btn--primary btn--lg" to={path("/trova-dispositivo")}>
-              {t("home.find_device")}
-            </Link>
-            <Link className="btn btn--secondary btn--lg" to={path("/shop")}>
-              {t("home.shop_now")}
-            </Link>
-          </div>
-        </div>
-
+  /*
+   * The homepage, assembled from named sections.
+   *
+   * These used to be six blocks written one after another in the JSX, which
+   * meant the order was a property of the source file — and the admin screen
+   * that offers to reorder them would have been a control that changed a row
+   * in a table nothing read. This project has now found that same defect three
+   * times (a nav constant, an artwork list, an assignment table with no
+   * writer), so a seventh block of hardcoded order was not going to be the one
+   * that got away with it.
+   *
+   * Each section keeps its own "render nothing when there is no data" rule.
+   * Ordering decides where a section goes, never whether it has anything to
+   * say.
+   */
+  const SECTIONS: Record<string, () => React.ReactNode> = {
+    hero: () => (
+      <>
         {/*
-          The hero image, when one exists.
+          A statement, not a category label.
 
-          `aria-hidden` and an empty alt: it is atmosphere, and the promise is
-          already in the heading beside it. Describing it again would make a
-          screen reader read the decoration twice.
-
-          Eager and high priority — on this page it IS the LCP element, and
-          lazy-loading the largest thing above the fold is the classic way to
-          lose the metric.
+          Three verbs, because those are the three things every accessory in this
+          shop does. It fits in one screen on a phone without pushing the products
+          out of reach, which a full-viewport hero would.
         */}
-        {loaderData.heroImage ? (
-          <div className="hero__media" aria-hidden="true">
-            {/*
-              Preloaded, because this image IS the LCP element on desktop.
-
-              Without it the browser cannot know the URL until it has parsed the
-              HTML and reached this tag — measured at 440ms, against ~50ms for a
-              preload in the head. `fetchPriority` alone does not fix that: it
-              reorders the queue once the request is known, it does not make the
-              request happen sooner.
-
-              React 19 hoists this into <head> from here, so the URL stays with
-              the element it belongs to rather than being duplicated in a route
-              module that would have to be kept in step with it.
-            */}
-            <link
-              rel="preload"
-              as="image"
-              href={`${loaderData.mediaBaseUrl}/${loaderData.heroImage}`}
-              fetchPriority="high"
-            />
-            <img
-              src={`${loaderData.mediaBaseUrl}/${loaderData.heroImage}`}
-              alt=""
-              fetchPriority="high"
-              decoding="async"
-            />
+        <section className={`hero${loaderData.heroImage ? " hero--with-media" : ""}`}>
+          <div className="page hero__inner">
+            <h1 className="hero__statement">
+              <span>{t("home.hero_statement_1")}</span>
+              <span>{t("home.hero_statement_2")}</span>
+              <span>{t("home.hero_statement_3")}</span>
+            </h1>
+            <p className="hero__lead">{t("home.hero_lead")}</p>
+            <div className="cluster">
+              <Link className="btn btn--primary btn--lg" to={path("/trova-dispositivo")}>
+                {t("home.find_device")}
+              </Link>
+              <Link className="btn btn--secondary btn--lg" to={path("/shop")}>
+                {t("home.shop_now")}
+              </Link>
+            </div>
           </div>
-        ) : null}
-      </section>
 
-      {/* Immediately under the promise, before anything is asked of the
-          customer: the reasons to believe it. */}
-      {trust.length > 0 ? (
-        <section className="trust-band">
-          <ul className="page trust-band__inner">
-            {trust.map((item) => (
-              <li key={item.key} className="trust">
-                <h2 className="trust__title">{item.title}</h2>
-                <p className="trust__body">{item.body}</p>
-              </li>
-            ))}
-          </ul>
+          {/*
+            The hero image, when one exists.
+
+            `aria-hidden` and an empty alt: it is atmosphere, and the promise is
+            already in the heading beside it. Describing it again would make a
+            screen reader read the decoration twice.
+
+            Eager and high priority — on this page it IS the LCP element, and
+            lazy-loading the largest thing above the fold is the classic way to
+            lose the metric.
+          */}
+          {loaderData.heroImage ? (
+            <div className="hero__media" aria-hidden="true">
+              {/*
+                Preloaded, because this image IS the LCP element on desktop.
+
+                Without it the browser cannot know the URL until it has parsed the
+                HTML and reached this tag — measured at 440ms, against ~50ms for a
+                preload in the head. `fetchPriority` alone does not fix that: it
+                reorders the queue once the request is known, it does not make the
+                request happen sooner.
+
+                React 19 hoists this into <head> from here, so the URL stays with
+                the element it belongs to rather than being duplicated in a route
+                module that would have to be kept in step with it.
+              */}
+              <link
+                rel="preload"
+                as="image"
+                href={`${loaderData.mediaBaseUrl}/${loaderData.heroImage}`}
+                fetchPriority="high"
+              />
+              <img
+                src={`${loaderData.mediaBaseUrl}/${loaderData.heroImage}`}
+                alt=""
+                fetchPriority="high"
+                decoding="async"
+              />
+            </div>
+          ) : null}
         </section>
-      ) : null}
+      </>
+    ),
+    trust: () => (
+      <>
+        {/* Immediately under the promise, before anything is asked of the
+            customer: the reasons to believe it. */}
+        {trust.length > 0 ? (
+          <section className="trust-band">
+            <ul className="page trust-band__inner">
+              {trust.map((item) => (
+                <li key={item.key} className="trust">
+                  <h2 className="trust__title">{item.title}</h2>
+                  <p className="trust__body">{item.body}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+      </>
+    ),
+    device_finder: () => (
+      <>
+        {/* The shop's one real advantage over a marketplace, given the space that
+            implies rather than a bordered notice with a link. */}
+        <section className="page section">
+          <div className="finder-callout">
+            <div className="finder-callout__body">
+              <p className="eyebrow">{t("home.shop_by_device")}</p>
+              <h2 className="finder-callout__title">{t("device.finder_title")}</h2>
+              <p className="finder-callout__intro">{t("device.finder_intro")}</p>
+              <Link className="btn btn--primary btn--lg" to={path("/trova-dispositivo")}>
+                {t("home.find_device")}
+              </Link>
+            </div>
 
-      {/* The shop's one real advantage over a marketplace, given the space that
-          implies rather than a bordered notice with a link. */}
-      <section className="page section">
-        <div className="finder-callout">
-          <div className="finder-callout__body">
-            <p className="eyebrow">{t("home.shop_by_device")}</p>
-            <h2 className="finder-callout__title">{t("device.finder_title")}</h2>
-            <p className="finder-callout__intro">{t("device.finder_intro")}</p>
-            <Link className="btn btn--primary btn--lg" to={path("/trova-dispositivo")}>
-              {t("home.find_device")}
-            </Link>
+            {/* Shortcuts, ordered by how many products actually fit. Rendered only
+                when the catalogue can answer for them. */}
+            {loaderData.devices.length > 0 ? (
+              <ul className="finder-callout__devices">
+                {loaderData.devices.map((device) => (
+                  <li key={device.handle}>
+                    <Link className="device-chip" to={path(`/shop?dispositivo=${device.handle}`)}>
+                      <span className="device-chip__brand">{device.brand_name}</span>
+                      <span className="device-chip__model">{device.name}</span>
+                      <span className="device-chip__count">
+                        {device.product_count} {t("home.shop_by_device_count")}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </div>
-
-          {/* Shortcuts, ordered by how many products actually fit. Rendered only
-              when the catalogue can answer for them. */}
-          {loaderData.devices.length > 0 ? (
-            <ul className="finder-callout__devices">
-              {loaderData.devices.map((device) => (
-                <li key={device.handle}>
-                  <Link className="device-chip" to={path(`/shop?dispositivo=${device.handle}`)}>
-                    <span className="device-chip__brand">{device.brand_name}</span>
-                    <span className="device-chip__model">{device.name}</span>
-                    <span className="device-chip__count">
-                      {device.product_count} {t("home.shop_by_device_count")}
-                    </span>
+        </section>
+      </>
+    ),
+    categories: () => (
+      <>
+        {/* Sections with no data render NOTHING — not an empty frame. */}
+        {loaderData.categories.length > 0 ? (
+          <section className="page section">
+            <div className="section__head">
+              <h2>{t("home.popular_categories")}</h2>
+              <Link className="section__more" to={path("/shop")}>
+                {t("home.browse_all")}
+              </Link>
+            </div>
+            <ul className="category-grid">
+              {loaderData.categories.map((category) => (
+                <li key={category.slug}>
+                  <Link
+                    className={`category-tile${category.image_key ? " category-tile--media" : ""}`}
+                    to={path(`/shop?categoria=${category.slug}`)}
+                  >
+                    {category.image_key ? (
+                      <img
+                        className="category-tile__image"
+                        src={`${loaderData.mediaBaseUrl}/${category.image_key}`}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : null}
+                    <span className="category-tile__name">{category.name}</span>
                   </Link>
                 </li>
               ))}
             </ul>
-          ) : null}
-        </div>
-      </section>
-
-      {/* Sections with no data render NOTHING — not an empty frame. */}
-      {loaderData.categories.length > 0 ? (
-        <section className="page section">
-          <div className="section__head">
-            <h2>{t("home.popular_categories")}</h2>
-            <Link className="section__more" to={path("/shop")}>
-              {t("home.browse_all")}
-            </Link>
-          </div>
-          <ul className="category-grid">
-            {loaderData.categories.map((category) => (
-              <li key={category.slug}>
-                <Link
-                  className={`category-tile${category.image_key ? " category-tile--media" : ""}`}
-                  to={path(`/shop?categoria=${category.slug}`)}
-                >
-                  {category.image_key ? (
-                    <img
-                      className="category-tile__image"
-                      src={`${loaderData.mediaBaseUrl}/${category.image_key}`}
-                      alt=""
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  ) : null}
-                  <span className="category-tile__name">{category.name}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      {loaderData.products.length > 0 ? (
-        <section className="page section">
-          <div className="section__head">
-            <h2>{t("home.new_arrivals")}</h2>
-            <Link className="section__more" to={path("/shop")}>
-              {t("home.browse_all")}
-            </Link>
-          </div>
-          <div className="grid-products">
-            {loaderData.products.map((product) => (
-              <ProductCard
-                key={product.slug}
-                product={product}
-                locale={locale}
-                t={t}
-                mediaBaseUrl={loaderData.mediaBaseUrl}
+          </section>
+        ) : null}
+      </>
+    ),
+    featured_products: () => (
+      <>
+        {loaderData.products.length > 0 ? (
+          <section className="page section">
+            <div className="section__head">
+              <h2>{t("home.new_arrivals")}</h2>
+              <Link className="section__more" to={path("/shop")}>
+                {t("home.browse_all")}
+              </Link>
+            </div>
+            <div className="grid-products">
+              {loaderData.products.map((product) => (
+                <ProductCard
+                  key={product.slug}
+                  product={product}
+                  locale={locale}
+                  t={t}
+                  mediaBaseUrl={loaderData.mediaBaseUrl}
+                />
+              ))}
+            </div>
+          </section>
+        ) : null}
+      </>
+    ),
+    store: () => (
+      <>
+        {/* The one dark band on the page. It carries the physical shop, because
+            that is the fact a marketplace cannot copy. Rendered only once the
+            merchant has actually configured a shop to talk about. */}
+        {loaderData.showStore ? (
+          <section className={`store-band${loaderData.storeImage ? " store-band--media" : ""}`}>
+            {loaderData.storeImage ? (
+              <img
+                className="store-band__image"
+                src={`${loaderData.mediaBaseUrl}/${loaderData.storeImage}`}
+                alt=""
+                loading="lazy"
+                decoding="async"
               />
-            ))}
-          </div>
-        </section>
-      ) : null}
+            ) : null}
+            <div className="page store-band__inner">
+              <p className="eyebrow eyebrow--on-deep">{t("home.store_eyebrow")}</p>
+              <h2 className="store-band__title">
+                {loaderData.storeCity
+                  ? t("home.store_title_city", { city: loaderData.storeCity })
+                  : t("home.store_title")}
+              </h2>
+              <p className="store-band__body">{t("home.store_body")}</p>
+              <Link className="btn btn--on-deep btn--lg" to={path("/negozio")}>
+                {t("home.visit_store")}
+              </Link>
+            </div>
+          </section>
+        ) : null}
+      </>
+    ),
+  };
 
-      {/* The one dark band on the page. It carries the physical shop, because
-          that is the fact a marketplace cannot copy. Rendered only once the
-          merchant has actually configured a shop to talk about. */}
-      {loaderData.showStore ? (
-        <section className={`store-band${loaderData.storeImage ? " store-band--media" : ""}`}>
-          {loaderData.storeImage ? (
-            <img
-              className="store-band__image"
-              src={`${loaderData.mediaBaseUrl}/${loaderData.storeImage}`}
-              alt=""
-              loading="lazy"
-              decoding="async"
-            />
-          ) : null}
-          <div className="page store-band__inner">
-            <p className="eyebrow eyebrow--on-deep">{t("home.store_eyebrow")}</p>
-            <h2 className="store-band__title">
-              {loaderData.storeCity
-                ? t("home.store_title_city", { city: loaderData.storeCity })
-                : t("home.store_title")}
-            </h2>
-            <p className="store-band__body">{t("home.store_body")}</p>
-            <Link className="btn btn--on-deep btn--lg" to={path("/negozio")}>
-              {t("home.visit_store")}
-            </Link>
-          </div>
-        </section>
-      ) : null}
+  /*
+   * The merchant's order if they have set one, otherwise the composition this
+   * page was designed with. An unconfigured shop gets a finished homepage
+   * rather than a blank one, which is what makes the admin screen optional
+   * instead of a step nobody was told about.
+   */
+  const order =
+    loaderData.sections.length > 0
+      ? loaderData.sections
+      : Object.keys(SECTIONS).map((type) => ({ type, heading: null, subheading: null }));
+
+  return (
+    <>
+      {order.map((section) => {
+        const render = SECTIONS[section.type];
+        // A row for a section this build does not know how to draw is skipped
+        // rather than crashing the homepage.
+        return render ? <Fragment key={section.type}>{render()}</Fragment> : null;
+      })}
     </>
   );
 }

@@ -26,9 +26,11 @@ interface Props {
   navigation: { slug: string; name: string }[];
   /** The merchant's published content pages, in their chosen order. */
   pages: { slug: string; title: string }[];
+  /** From the server's clock, not the visitor's. See the layout loader. */
+  year: number;
 }
 
-export function SiteFooter({ t, locale, settings, gates, navigation, pages }: Props) {
+export function SiteFooter({ t, locale, settings, gates, navigation, pages, year }: Props) {
   const path = (p: string) => localePath(locale, p);
 
   const street = settingValue(settings, SETTING_KEYS.storeStreet);
@@ -45,21 +47,27 @@ export function SiteFooter({ t, locale, settings, gates, navigation, pages }: Pr
 
   return (
     <footer className="site-footer">
+      {/*
+        Who this is, first — on its own tier.
+
+        A footer that opens with a link list assumes the reader already knows
+        whose shop they are on. This used to be the first cell of the link grid,
+        which stretched it to the height of the tallest column and left a void
+        under the name the size of a paragraph. It is a band now: the name gets
+        its own line, the columns start clean beneath it, and nothing is
+        stretched to fill space it does not want.
+
+        Rendered only when the merchant has supplied a name — never a
+        placeholder, and never this project's own.
+      */}
+      {shopName ? (
+        <div className="page site-footer__masthead">
+          <p className="site-footer__wordmark">{shopName}</p>
+          {tagline ? <p className="site-footer__tagline">{tagline}</p> : null}
+        </div>
+      ) : null}
+
       <div className="page site-footer__inner">
-        {/*
-          Who this is, first.
-
-          A footer that opens with a link list assumes the reader already knows
-          whose shop they are on. Rendered only when the merchant has supplied
-          a name — never a placeholder, and never this project's own.
-        */}
-        {shopName ? (
-          <section className="site-footer__column site-footer__brand">
-            <p className="site-footer__wordmark">{shopName}</p>
-            {tagline ? <p className="small">{tagline}</p> : null}
-          </section>
-        ) : null}
-
         {/*
           The full category list, from the SAME source as the header rail.
           Two hand-maintained copies of a taxonomy drift, and the footer is the
@@ -218,6 +226,35 @@ export function SiteFooter({ t, locale, settings, gates, navigation, pages }: Pr
           </p>
         </div>
       ) : null}
+
+      {/*
+        The closing line: the year, and who built it.
+
+        Separate from the legal block above on purpose. That block is a legal
+        obligation about the MERCHANT and renders all-or-nothing; this one is a
+        credit for the people who made the site, and the two must not be
+        mistaken for each other — a build credit sitting inside a trader
+        identification block reads as part of the disclosure.
+
+        The year is computed, not written. A footer that says 2026 forever is
+        the most common way a site announces that nobody has touched it.
+      */}
+      <div className="page site-footer__colophon small">
+        <p>
+          © {year} {shopName ?? t("common.shop")}
+        </p>
+        <p>
+          {t("footer.made_by")}{" "}
+          <a
+            className="site-footer__maker"
+            href="https://genzdigitalstore.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Gen Z Digital Store
+          </a>
+        </p>
+      </div>
     </footer>
   );
 }

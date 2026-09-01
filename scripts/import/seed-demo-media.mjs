@@ -38,13 +38,29 @@ const ENVIRONMENT = argOf("--env");
 const REMOTE = args.includes("--remote");
 const SIZE = 1000;
 
-/** Which illustration belongs to which demo product. */
-const ASSIGNMENTS = [
-  ["prod_demo_cover16pro", "case"],
-  ["prod_demo_carica25", "charger"],
-  ["prod_demo_cavo100", "cable"],
-  ["prod_demo_powerbank", "powerbank"],
-];
+/*
+ * Which illustration belongs to which product — asked, not assumed.
+ *
+ * This was a hardcoded list of four product ids. Every product added after it
+ * was written silently got no artwork, which on a shop is a grey rectangle in
+ * the grid rather than an error anyone would notice.
+ *
+ * It is the same defect as the category navigation constant that pointed at
+ * slugs the catalogue did not have: a constant naming rows in a database is a
+ * foreign key with nothing enforcing it. So the pairing is read from the
+ * catalogue, keyed on the accessory type the product already declares, and a
+ * product whose type has no drawing is REPORTED rather than skipped in silence.
+ */
+const ARTWORK_FOR_TYPE = {
+  case: "case",
+  charger: "charger",
+  cable: "cable",
+  powerbank: "powerbank",
+  screen_protector: "screen_protector",
+  magsafe: "magsafe",
+  audio: "audio",
+  car_mount: "car_mount",
+};
 
 const BUCKET = ENVIRONMENT === "preview" ? "ita-commerce-preview-media" : "ita-commerce-media";
 
@@ -72,6 +88,34 @@ const d1 = (sql) =>
   );
 
 // ── 1. Rasterise ────────────────────────────────────────────────────────────
+
+const catalogue = d1(
+  `SELECT p.id, COALESCE(p.accessory_type, c.accessory_type) AS accessory_type
+     FROM products p
+     LEFT JOIN categories c ON c.id = p.primary_category_id
+    WHERE p.status = 'active' AND p.archived_at IS NULL
+      AND NOT EXISTS (SELECT 1 FROM product_images pi WHERE pi.product_id = p.id)
+    ORDER BY p.created_at`,
+);
+
+const ASSIGNMENTS = [];
+const unmatched = [];
+for (const row of catalogue) {
+  const key = ARTWORK_FOR_TYPE[row.accessory_type];
+  if (key) ASSIGNMENTS.push([row.id, key]);
+  else unmatched.push(`${row.id} (${row.accessory_type ?? "no accessory type"})`);
+}
+
+if (unmatched.length > 0) {
+  console.log(`\n${unmatched.length} product(s) have no illustration for their type:`);
+  for (const row of unmatched) console.log(`  ${row}`);
+  console.log("Add one to scripts/import/demo-artwork.mjs, or give them real photographs." + "\n");
+}
+
+if (ASSIGNMENTS.length === 0) {
+  console.log("Every active product already has at least one image. Nothing to do.");
+  process.exit(0);
+}
 
 const work = mkdtempSync(join(tmpdir(), "ita-artwork-"));
 console.log(`Rasterising ${ASSIGNMENTS.length} illustrations at ${SIZE}×${SIZE}…`);

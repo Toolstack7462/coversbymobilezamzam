@@ -2,8 +2,8 @@
  * Placeholder artwork for the demo catalogue.
  *
  * ORIGINAL line illustrations, not photographs, and never presented as such:
- * the alt text says so in both languages, and every product they belong to is
- * prefixed `[DEMO]`. They exist so the grid can be judged at realistic density
+ * the alt text says so in both languages, in every locale the shop serves. They
+ * exist so the grid can be judged at realistic density
  * — a shop with four grey rectangles cannot be reviewed — and they are replaced
  * the moment the merchant supplies their own product shots.
  *
@@ -52,6 +52,42 @@ export const ARTWORK = {
       <rect x="23" y="18" width="18" height="7" rx="2"/>
       <path d="M23 33h12M23 39h16"/>
       <circle cx="40" cy="45" r="3.5"/>`,
+  },
+  screen_protector: {
+    it: "Illustrazione segnaposto: pellicola protettiva",
+    en: "Placeholder illustration: screen protector",
+    paths: `
+      <rect x="17" y="7" width="30" height="50" rx="7"/>
+      <path d="M27 13h10"/>
+      <path d="M23 21h18v26a2 2 0 0 1-2 2H31l-8-8z"/>
+      <path d="M31 49v-6a2 2 0 0 0-2-2h-6"/>`,
+  },
+  magsafe: {
+    it: "Illustrazione segnaposto: accessorio magnetico",
+    en: "Placeholder illustration: magnetic accessory",
+    paths: `
+      <rect x="8" y="13" width="25" height="38" rx="6"/>
+      <circle cx="43" cy="32" r="12"/>
+      <circle cx="43" cy="32" r="6"/>
+      <path d="M55 32h4"/>`,
+  },
+  audio: {
+    it: "Illustrazione segnaposto: cuffie",
+    en: "Placeholder illustration: headphones",
+    paths: `
+      <path d="M14 37v-6a18 18 0 0 1 36 0v6"/>
+      <rect x="9" y="34" width="10" height="17" rx="4"/>
+      <rect x="45" y="34" width="10" height="17" rx="4"/>`,
+  },
+  car_mount: {
+    it: "Illustrazione segnaposto: supporto da auto",
+    en: "Placeholder illustration: car mount",
+    paths: `
+      <rect x="21" y="8" width="22" height="32" rx="4"/>
+      <path d="M17 15v9a2 2 0 0 0 2 2h2"/>
+      <path d="M47 15v9a2 2 0 0 1-2 2h-2"/>
+      <path d="M32 40v8"/>
+      <rect x="21" y="48" width="22" height="6" rx="3"/>`,
   },
 };
 

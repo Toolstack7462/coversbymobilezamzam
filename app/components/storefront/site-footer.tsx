@@ -34,10 +34,28 @@ export function SiteFooter({ t, locale, settings, gates }: Props) {
   const hours = settingValue(settings, SETTING_KEYS.storeHoursDisplay);
   const phone = settingValue(settings, SETTING_KEYS.phone);
   const email = settingValue(settings, SETTING_KEYS.email);
+  const whatsapp = settingValue(settings, SETTING_KEYS.whatsappNumber);
+  const directions = settingValue(settings, SETTING_KEYS.storeDirectionsUrl);
+  const shopName = settingValue(settings, SETTING_KEYS.shopName);
+  const tagline = settingValue(settings, SETTING_KEYS.tagline);
 
   return (
     <footer className="site-footer">
       <div className="page site-footer__inner">
+        {/*
+          Who this is, first.
+
+          A footer that opens with a link list assumes the reader already knows
+          whose shop they are on. Rendered only when the merchant has supplied
+          a name — never a placeholder, and never this project's own.
+        */}
+        {shopName ? (
+          <section className="site-footer__column site-footer__brand">
+            <p className="site-footer__wordmark">{shopName}</p>
+            {tagline ? <p className="small">{tagline}</p> : null}
+          </section>
+        ) : null}
+
         <nav className="site-footer__column" aria-label={t("footer.shop")}>
           <h2 className="site-footer__heading">{t("footer.shop")}</h2>
           <ul>
@@ -67,6 +85,15 @@ export function SiteFooter({ t, locale, settings, gates }: Props) {
               </p>
             ) : null}
             {hours ? <p className="small muted">{hours}</p> : null}
+            {directions ? (
+              <p className="small">
+                {/* Opens a map application. `noreferrer` because the
+                    destination has no business knowing which page sent them. */}
+                <a href={directions} target="_blank" rel="noopener noreferrer">
+                  {t("store.directions")}
+                </a>
+              </p>
+            ) : null}
           </section>
         ) : null}
 
@@ -82,6 +109,18 @@ export function SiteFooter({ t, locale, settings, gates }: Props) {
               {email ? (
                 <li>
                   <a href={`mailto:${email}`}>{email}</a>
+                </li>
+              ) : null}
+              {gates.whatsapp && whatsapp ? (
+                <li>
+                  {/* wa.me takes digits only — no plus, no spaces. */}
+                  <a
+                    href={`https://wa.me/${whatsapp.replace(/\D/g, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {t("footer.whatsapp")}
+                  </a>
                 </li>
               ) : null}
             </ul>

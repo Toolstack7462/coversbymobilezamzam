@@ -12,8 +12,10 @@ import { localePath, type Locale, type Translator } from "~/lib/i18n";
 interface Props {
   t: Translator;
   locale: Locale;
-  /** Null until the merchant supplies it. Nothing is invented (invariant 12). */
+  /** `business.brand_name` — a marketing name, if the merchant uses one. */
   brandName: string | null;
+  /** `store.name` — the name over the door. Nothing is invented (invariant 12). */
+  shopName: string | null;
 }
 
 const PRIMARY_NAV = [
@@ -27,7 +29,7 @@ const PRIMARY_NAV = [
   { key: "nav.car_mounts", slug: "supporti-auto" },
 ] as const;
 
-export function SiteHeader({ t, locale, brandName }: Props) {
+export function SiteHeader({ t, locale, brandName, shopName }: Props) {
   const path = (p: string) => localePath(locale, p);
 
   return (
@@ -35,11 +37,19 @@ export function SiteHeader({ t, locale, brandName }: Props) {
       <div className="page site-header__inner">
         <Link to={path("/")} className="site-header__brand">
           {/*
-            The wordmark falls back to the internal project name only when the
-            merchant has not supplied a public brand name. It is deliberately
-            not a plausible-looking invented shop name.
+            The merchant's name, and never this project's.
+
+            The fallback used to be "Italian Tech Atelier", which is the
+            INTERNAL project name — and with no brand configured, that is what
+            every customer saw in the header of a real shop. A developer's
+            working title presented as a wordmark is worse than no wordmark:
+            it looks deliberate, so nobody reports it.
+
+            Order: a marketing brand name if one is used, otherwise the name
+            over the door, otherwise the generic word — which says nothing
+            false and is obviously unfinished to the merchant.
           */}
-          {brandName ?? "Italian Tech Atelier"}
+          {brandName ?? shopName ?? t("common.shop")}
         </Link>
 
         <Form method="get" action={path("/shop")} role="search" className="site-header__search">

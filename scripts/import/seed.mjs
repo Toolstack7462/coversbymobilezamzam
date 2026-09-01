@@ -14,6 +14,9 @@
  * Idempotent: safe to run repeatedly.
  */
 import { execFileSync } from "node:child_process";
+import { writeFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const args = process.argv.slice(2);
 const dbIndex = args.indexOf("--db");
@@ -63,6 +66,10 @@ const SETTINGS = [
    * writes every row in this table generically, so changing the hero image is a
    * field in an admin form, never a deploy.
    */
+  // One line describing the business, shown in the footer. Empty until the
+  // merchant writes it; the footer renders the name alone until then.
+  ["business.tagline", "business", 0, ""],
+
   ["media.hero_image", "media", 0, ""],
   ["media.store_image", "media", 0, ""],
 
@@ -274,6 +281,22 @@ console.log(
     `${statements.length} statements`,
 );
 
+/*
+ * A FILE, not `--command`.
+ *
+ * The statements used to be passed as one command-line argument, which works
+ * until the catalogue grows: Windows caps a command line at roughly 32k
+ * characters, and three additional settings rows was enough to cross it. The
+ * failure is `spawnSync ... ENAMETOOLONG`, which says nothing about SQL and
+ * took the entire browser suite down with it, because the suite seeds a fresh
+ * database before every run.
+ *
+ * A temp file has no such limit, and is what `d1 execute` expects for anything
+ * of size.
+ */
+const sqlFile = join(tmpdir(), `ita-seed-${process.pid}.sql`);
+writeFileSync(sqlFile, statements.join(";\n") + ";\n", "utf8");
+
 try {
   execFileSync(
     process.execPath,
@@ -285,12 +308,14 @@ try {
       REMOTE ? "--remote" : "--local",
       ...(ENVIRONMENT ? ["--env", ENVIRONMENT] : []),
       ...(PERSIST_TO ? ["--persist-to", PERSIST_TO] : []),
-      "--command",
-      statements.join(";\n"),
+      "--file",
+      sqlFile,
     ],
     { stdio: "inherit" },
   );
+  rmSync(sqlFile, { force: true });
 } catch (error) {
+  rmSync(sqlFile, { force: true });
   console.error("\nSeed FAILED.");
   console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);

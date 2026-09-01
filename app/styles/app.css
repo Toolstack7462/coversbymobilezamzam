@@ -2233,3 +2233,31 @@ a.chip:hover {
     animation: none;
   }
 }
+
+/* ── Footer brand column ──────────────────────────────────────────────────── */
+
+/*
+ * The name gets the heading font and a size the link lists do not, so the
+ * footer opens with who this is rather than with a list of destinations.
+ */
+.site-footer__wordmark {
+  font-family: var(--font-heading);
+  font-size: var(--text-h3);
+  line-height: var(--text-h3-lh);
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.015em;
+  color: var(--color-on-deep);
+}
+
+/* Given room to breathe on a wide footer without stretching the link columns
+   beside it. */
+.site-footer__brand {
+  grid-column: span 1;
+  max-inline-size: 26rem;
+}
+
+@media (min-width: 62rem) {
+  .site-footer__brand {
+    grid-column: span 2;
+  }
+}

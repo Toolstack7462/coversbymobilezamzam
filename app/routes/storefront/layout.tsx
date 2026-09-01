@@ -58,7 +58,12 @@ export default function StorefrontLayout({ loaderData }: Route.ComponentProps) {
 
   return (
     <>
-      <SiteHeader t={t} locale={locale} brandName={loaderData.brandName} />
+      <SiteHeader
+        t={t}
+        locale={locale}
+        brandName={loaderData.brandName}
+        shopName={loaderData.shopName}
+      />
       <main id="main">
         <Outlet />
       </main>

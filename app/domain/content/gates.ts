@@ -36,6 +36,7 @@ export function settingValue(settings: SettingsMap, key: string): string | null 
 export const SETTING_KEYS = {
   brandName: "business.brand_name",
   shopName: "store.name",
+  tagline: "business.tagline",
   legalName: "business.legal_name",
   vatNumber: "business.vat_number",
   reaNumber: "business.rea_number",

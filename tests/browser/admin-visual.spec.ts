@@ -46,6 +46,16 @@ const SCREENS = [
   { slug: "product-new", path: "/admin/prodotti/nuovo", heading: /prodotto/i },
   { slug: "inventory", path: "/admin/inventario", heading: /inventario/i },
   { slug: "orders", path: "/admin/ordini", heading: /ordini/i },
+  /*
+   * A specific order, by its seeded number.
+   *
+   * The detail workspace is where a merchant spends most of their time and
+   * it was invisible to this survey until the fixture created orders. A
+   * fixed id rather than "the first row": a survey whose target depends on
+   * sort order is a survey that silently changes what it is looking at.
+   */
+  { slug: "order-detail", path: "/admin/ordini/ord_demo_review", heading: /DEMO-0003/ },
+  { slug: "search", path: "/admin/cerca?q=cover", heading: /cerca/i },
   { slug: "payments", path: "/admin/pagamenti", heading: /pagamenti/i },
   { slug: "customers", path: "/admin/clienti", heading: /clienti/i },
   { slug: "devices", path: "/admin/dispositivi", heading: /dispositivi/i },

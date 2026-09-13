@@ -6,6 +6,7 @@ import { requireEnrolledStaff } from "~/infrastructure/auth/session.server";
 import { visibleNav } from "~/lib/admin-nav";
 import { AdminShell } from "~/components/admin/admin-shell";
 import adminStyles from "~/styles/admin.css?url";
+import { SETTING_KEYS, settingValue, type SettingsMap } from "~/domain/content/gates";
 
 /**
  * The admin shell route.
@@ -40,6 +41,33 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const canSeePayments = actor.permissions.includes("payment.read");
   const canSeeInventory = actor.permissions.includes("inventory.read");
 
+  /*
+   * The shop's name, for the top bar.
+   *
+   * Read from the same settings the storefront reads, through the same
+   * resolver, so the admin and the public site can never disagree about what
+   * the shop is called. `null` rather than a fallback here: the shell decides
+   * what to show when nothing is configured, and it must not be a guess.
+   */
+  const brandRows = await env.DB.prepare(
+    `SELECT key, value FROM store_settings WHERE key IN (?1, ?2, ?3)`,
+  )
+    .bind(SETTING_KEYS.brandName, SETTING_KEYS.shopName, SETTING_KEYS.brandSecondary)
+    .all<{ key: string; value: string | null }>();
+
+  // A setting row with a NULL value is one the merchant has not filled in, and
+  // `SettingsMap` holds present values only — an explicit null in the map would
+  // read as "set to nothing" rather than "not set".
+  const settings: SettingsMap = Object.fromEntries(
+    brandRows.results
+      .filter((r): r is { key: string; value: string } => r.value !== null)
+      .map((r) => [r.key, r.value]),
+  );
+  const configuredBrand =
+    settingValue(settings, SETTING_KEYS.brandName) ??
+    settingValue(settings, SETTING_KEYS.shopName) ??
+    null;
+
   const counts = await env.DB.prepare(
     `SELECT
        (SELECT COUNT(*) FROM order_payments
@@ -61,6 +89,17 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       lowStock: canSeeInventory ? (counts?.low_stock ?? 0) : 0,
     },
     environment: env.APP_ENV ?? "development",
+    brand: configuredBrand,
+    /*
+     * The search is offered only to someone who can read something it returns.
+     * Mirrored on the SERVER in routes/admin/search.tsx, which queries each
+     * section only for an actor holding that section's permission — this flag
+     * decides whether the box appears, not what it may find.
+     */
+    canSearch:
+      actor.permissions.includes("product.read") ||
+      actor.permissions.includes("order.read") ||
+      actor.permissions.includes("device.read"),
     mustEnrol,
   };
 }
@@ -72,6 +111,8 @@ export default function AdminLayout({ loaderData }: Route.ComponentProps) {
       badges={loaderData.badges}
       actor={loaderData.actor}
       environment={loaderData.environment}
+      brand={loaderData.brand}
+      canSearch={loaderData.canSearch}
       mustEnrol={loaderData.mustEnrol}
     >
       <Outlet />

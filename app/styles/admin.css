@@ -873,8 +873,18 @@
   }
 
   .ac-table thead {
-    /* Not display:none — that removes it from the accessibility tree too, and
-       the headers are what make the cells make sense. */
+    /* Visually hidden rather than `display: none`.
+
+       The original reason given here was that `display: none` would remove the
+       headers from the accessibility tree — which is true of the element, and
+       beside the point in this layout: the rule below sets `display: block` on
+       the table itself, and that strips the table's implicit ARIA roles
+       anyway. There is no header/cell association left to preserve.
+
+       It stays hidden this way regardless, for two reasons that DO hold: the
+       markup is identical at both widths so nothing has to be conditionally
+       rendered, and each cell announces its own label through the `data-label`
+       content below, which is what actually makes a card readable aloud. */
     position: absolute;
     width: 1px;
     height: 1px;
@@ -1523,5 +1533,300 @@ a.ac-pick:hover {
   .ac .ac-table__nowrap {
     max-inline-size: none;
     white-space: normal;
+  }
+}
+
+/* ── Shared patterns ────────────────────────────────────────────────────────
+   Styles for app/components/admin/patterns.tsx. Everything here is new; the
+   metric, action and empty-state classes those components render were already
+   defined above, which is why adopting them changes no pixels. */
+
+/* SectionPanel — a titled block of related controls. */
+.ac .ac-panel {
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--space-5);
+}
+
+.ac .ac-panel + .ac-panel {
+  margin-block-start: var(--space-5);
+}
+
+.ac .ac-panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: start;
+  justify-content: space-between;
+  margin-block-end: var(--space-4);
+}
+
+.ac .ac-panel__title {
+  font-size: var(--text-h3);
+  line-height: var(--text-h3-lh);
+  margin: 0;
+}
+
+.ac .ac-panel__body > * + * {
+  margin-block-start: var(--space-4);
+}
+
+/* FormField — label, hint, control, error. */
+.ac .ac-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.ac .ac-field > label {
+  font-size: var(--text-ui);
+  font-weight: var(--weight-medium);
+}
+
+/* The asterisk is a hint, not the message: the accessible name carries
+   "(obbligatorio)" so nothing depends on noticing a small mark. */
+.ac .ac-field__required {
+  color: var(--color-danger-text);
+}
+
+.ac .ac-field__error {
+  color: var(--color-danger-text);
+}
+
+/* The invalid state is a border AND the message beneath. Colour alone would
+   leave nothing for a reader who cannot distinguish it. */
+.ac .ac-field--invalid input,
+.ac .ac-field--invalid select,
+.ac .ac-field--invalid textarea {
+  border-color: var(--color-danger-text);
+}
+
+/* ErrorSummary — every problem, at the top, each one a link to its field. */
+.ac .ac-error-summary ul {
+  margin: var(--space-2) 0 0;
+  padding-inline-start: var(--space-5);
+}
+
+.ac .ac-error-summary a {
+  color: inherit;
+}
+
+/* SaveBar — sticky, because a long form's save button is otherwise off-screen
+   exactly when it is needed. */
+.ac .ac-savebar {
+  position: sticky;
+  inset-block-end: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+  margin-block-start: var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  /* Lifted off the content beneath it, so it reads as a bar over the page
+     rather than as the last row of the form. */
+  box-shadow: var(--shadow-menu);
+}
+
+.ac .ac-savebar__status {
+  min-height: 1.5em;
+}
+
+.ac .ac-savebar__error {
+  color: var(--color-danger-text);
+}
+
+/* ConfirmationDialog — a disclosure, so it is keyboard-operable with no script. */
+.ac .ac-confirm {
+  display: inline-block;
+}
+
+.ac .ac-confirm__panel {
+  margin-block-start: var(--space-3);
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface-sunken);
+  max-inline-size: 42ch;
+}
+
+.ac .ac-confirm--danger .ac-confirm__panel {
+  border-color: var(--color-danger-text);
+}
+
+.ac .ac-confirm__panel > * + * {
+  margin-block-start: var(--space-3);
+}
+
+/* ActivityTimeline — an ordered list, because the sequence carries meaning. */
+.ac .ac-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ac .ac-timeline__item {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-4);
+  padding-block: var(--space-3);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.ac .ac-timeline__item:last-child {
+  border-block-end: 0;
+}
+
+.ac .ac-timeline__when {
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.ac .ac-timeline__item p {
+  margin: 0;
+}
+
+/* Skeleton — used sparingly; everything here is server-rendered. */
+.ac .ac-skeleton__row {
+  display: block;
+  block-size: 1.25rem;
+  margin-block-end: var(--space-2);
+  border-radius: var(--radius-chip);
+  background: var(--color-surface-sunken);
+}
+
+/* A pulse that respects the reduced-motion preference. A loading placeholder
+   that keeps moving is the exact thing that setting exists to stop. */
+@media (prefers-reduced-motion: no-preference) {
+  .ac .ac-skeleton__row {
+    animation: ac-skeleton-pulse 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes ac-skeleton-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* Global search results. */
+.ac .ac-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+}
+
+.ac .ac-result {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.ac .ac-result:last-child {
+  border-block-end: 0;
+}
+
+.ac .ac-result__link {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  /* The whole row is the target, so the hit area is a row rather than a word —
+     which on a phone is the difference between tapping it and missing it. */
+  flex: 1 1 auto;
+  min-block-size: var(--target-min);
+  justify-content: center;
+}
+
+/* Global search in the top bar.
+
+   Sized so it is obviously a search field and not a page-wide input: a bar
+   control that stretches competes with the page's own content for attention
+   every time the merchant looks up. */
+.ac .ac__search {
+  flex: 0 1 26rem;
+  min-inline-size: 12rem;
+}
+
+.ac .ac__search input {
+  inline-size: 100%;
+  min-block-size: 36px;
+  padding-inline: var(--space-3);
+  font-size: var(--text-ui);
+  color: var(--ac-chrome-ink);
+  background: var(--ac-chrome-raised);
+  border: var(--border-width) solid var(--ac-chrome-border);
+  border-radius: var(--radius-control);
+}
+
+/* The placeholder has to survive on dark chrome. The secondary on-deep token
+   is the one already audited against this surface for the sidebar labels. */
+.ac .ac__search input::placeholder {
+  color: var(--ac-chrome-ink-muted);
+}
+
+.ac .ac__search input:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+/* ── Detail workspace ───────────────────────────────────────────────────────
+   The order screen: the order itself on the left, who to contact and what to
+   do next on the right.
+
+   It was one column of six stacked panels, which put the customer's phone
+   number below the fold beneath the line items and the full history — and
+   telephoning the customer is the most common thing anyone does on this screen.
+
+   Assignment is by CSS rather than by reordering the markup, so the SOURCE
+   order stays the phone order: what to do next, the items, then who to contact.
+   That is the right sequence stacked, and the grid rearranges it only when
+   there is room for two columns. */
+.ac .ac-workspace {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.ac .ac-workspace > * {
+  /* Reset the stack margin the panels carry when they are siblings in a
+     column; the grid gap owns the spacing here. */
+  margin-block-start: 0;
+}
+
+/* Panels stack inside each column with the same rhythm they had as siblings. */
+.ac .ac-workspace__main > * + *,
+.ac .ac-workspace__side > * + * {
+  margin-block-start: var(--space-5);
+}
+
+@media (min-width: 64rem) {
+  .ac .ac-workspace {
+    /* The side column is fixed-ish: a customer card and a set of actions do not
+       get more useful with more width, and the items table does. */
+    grid-template-columns: minmax(0, 1fr) 22rem;
+    align-items: start;
+  }
+
+  /* The side column is FIRST in the source, so the phone gets "what to do" and
+     "who to call" before the line items. On a desktop it belongs on the right,
+     and explicit placement is what lets the source order stay the phone order. */
+  .ac .ac-workspace__main {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .ac .ac-workspace__side {
+    grid-column: 2;
+    grid-row: 1;
   }
 }

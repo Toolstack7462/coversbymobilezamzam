@@ -315,264 +315,299 @@ export default function OrderDetail({ loaderData, actionData }: Route.ComponentP
         </p>
       ) : null}
 
-      {/* ── What to do now ────────────────────────────────────────────────── */}
-      <section className="panel stack">
-        <h2>Cosa fare adesso</h2>
+      {/*
+        The workspace: the order on the left, who and what next on the right.
 
-        <p className="cluster">
-          <span className={`badge ${orderStatusTone(status)}`}>
-            {isOrderStatus(status) ? ORDER_STATUS_LABELS[status] : status}
-          </span>
-          {paymentStatus ? (
-            <span className={`badge ${paymentStatusTone(paymentStatus)}`}>
-              Pagamento:{" "}
-              {PAYMENT_STATUS_LABELS[paymentStatus as keyof typeof PAYMENT_STATUS_LABELS] ??
-                paymentStatus}
-            </span>
-          ) : null}
-          <span className="badge badge--muted">
-            {DELIVERY_LABELS[String(order.delivery_method)] ?? String(order.delivery_method)}
-          </span>
-        </p>
+        It was one column of six stacked panels, so on a shop computer the
+        customer's phone number sat below the fold beneath the line items and
+        the history — and telephoning the customer is the single most common
+        thing anyone does on this screen.
 
-        {whatsappUrl ? (
-          <p className="stack">
-            <a className="btn btn--primary" href={whatsappUrl} target="_blank" rel="noreferrer">
-              Apri WhatsApp con il messaggio pronto
-            </a>
-            <span className="field__hint">
-              {whatsappIsCustomer
-                ? "Si apre una chat con il numero lasciato dal cliente, con il riepilogo già scritto. Potete modificarlo prima di inviarlo."
-                : "Il cliente non ha lasciato un numero, quindi si apre una chat con il numero del negozio: da lì potete inoltrare il messaggio."}{" "}
-              Il messaggio contiene solo numero d&apos;ordine, articoli e totale — mai
-              l&apos;indirizzo né codici interni, perché una chat viene inoltrata e salvata altrove.
-            </span>
-          </p>
-        ) : (
-          <p className="notice notice--warning small">
-            Nessun numero WhatsApp configurato e nessun numero lasciato dal cliente. Impostate il
-            numero del negozio nelle <Link to="/admin/impostazioni">impostazioni</Link>.
-          </p>
-        )}
+        The columns are assigned by CSS, not by moving the markup, so the
+        SOURCE order is the phone order: what to do next, then the items, then
+        who to contact. On a phone that is the right sequence, and on a desktop
+        the grid puts the two side panels in the second column.
+      */}
+      <div className="ac-workspace">
+        {/*
+          The side column, FIRST in the source.
 
-        {canWrite && allowed.length > 0 ? (
-          <Form method="post" className="cluster">
-            <input type="hidden" name="intent" value="set-status" />
-            <label className="field__label" htmlFor="next-status">
-              Sposta l&apos;ordine a
-            </label>
-            <select id="next-status" name="status" className="input">
-              {/* `paid` is absent on purpose: only the verification queue can
-                  set it, and only with step-up (invariant 6). */}
-              {allowed
-                .filter((s: OrderStatus) => s !== "paid")
-                .map((s: OrderStatus) => (
-                  <option key={s} value={s}>
-                    {ORDER_STATUS_LABELS[s]}
-                  </option>
-                ))}
-            </select>
-            <button type="submit" className="btn btn--secondary">
-              Applica
-            </button>
-          </Form>
-        ) : null}
+          Two real containers rather than CSS placement inside one grid: with
+          each panel placed into a column individually, the grid gave every
+          one its own row, so the items table started level with the bottom of
+          the taller actions panel and left a screen-high gap above it.
 
-        {canSeePayments && paymentStatus && paymentStatus !== "verified" ? (
-          <p>
-            <Link className="btn btn--secondary" to="/admin/pagamenti?vista=da-verificare">
-              Vai alla verifica pagamenti
-            </Link>
-          </p>
-        ) : null}
-      </section>
+          Source order is the phone order. On a narrow screen this stacks
+          first — what to do next, then who to call — which is the right
+          sequence when somebody is standing at the counter. The grid moves it
+          to the right-hand column only when there is room for two.
+        */}
+        <div className="ac-workspace__side">
+          {/* ── What to do now ────────────────────────────────────────────────── */}
+          <section className="panel stack ac-workspace__side">
+            <h2>Cosa fare adesso</h2>
 
-      {/* ── Items ─────────────────────────────────────────────────────────── */}
-      <section className="panel stack">
-        <h2>Articoli</h2>
-        <p className="small muted">
-          Questi valori sono la fotografia dell&apos;ordine al momento dell&apos;acquisto. Non
-          cambiano se il prodotto viene rinominato o se il prezzo cambia dopo.
-        </p>
+            <p className="cluster">
+              <span className={`badge ${orderStatusTone(status)}`}>
+                {isOrderStatus(status) ? ORDER_STATUS_LABELS[status] : status}
+              </span>
+              {paymentStatus ? (
+                <span className={`badge ${paymentStatusTone(paymentStatus)}`}>
+                  Pagamento:{" "}
+                  {PAYMENT_STATUS_LABELS[paymentStatus as keyof typeof PAYMENT_STATUS_LABELS] ??
+                    paymentStatus}
+                </span>
+              ) : null}
+              <span className="badge badge--muted">
+                {DELIVERY_LABELS[String(order.delivery_method)] ?? String(order.delivery_method)}
+              </span>
+            </p>
 
-        <div className="ac-table-scroll">
-          <table className="ac-table">
-            <caption className="visually-hidden">Articoli dell&apos;ordine</caption>
-            <thead>
-              <tr>
-                <th scope="col">Articolo</th>
-                <th scope="col">SKU</th>
-                <th scope="col" className="ac-table__numeric">
-                  Qtà
-                </th>
-                <th scope="col" className="ac-table__numeric">
-                  Prezzo
-                </th>
-                <th scope="col" className="ac-table__numeric">
-                  Totale
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item, i) => (
-                <tr key={i}>
-                  <td data-label="Articolo">
-                    {/* The snapshot name is what is shown. The link to the live
-                        product is an extra, and it is absent when the product
-                        has since been archived. */}
-                    {item.product_id ? (
-                      <Link to={`/admin/prodotti/${item.product_id}`}>{item.product_name}</Link>
-                    ) : (
-                      item.product_name
-                    )}
-                    {item.variant_label ? (
-                      <span className="muted small"> · {item.variant_label}</span>
-                    ) : null}
-                    {item.device_model_name ? (
-                      <>
-                        <br />
-                        <span className="caption muted">
-                          per {item.device_model_name}
-                          {item.compatibility_state ? ` · ${item.compatibility_state}` : ""}
-                        </span>
-                      </>
-                    ) : null}
-                  </td>
-                  <td data-label="SKU" className="numeric">
-                    {item.sku}
-                  </td>
-                  <td data-label="Qtà" className="ac-table__numeric numeric">
-                    {item.quantity}
-                  </td>
-                  <td data-label="Prezzo" className="ac-table__numeric numeric">
-                    {formatMoney(money(item.unit_price))}
-                  </td>
-                  <td data-label="Totale" className="ac-table__numeric numeric">
-                    {formatMoney(money(item.line_total))}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            {whatsappUrl ? (
+              <p className="stack">
+                <a className="btn btn--primary" href={whatsappUrl} target="_blank" rel="noreferrer">
+                  Apri WhatsApp con il messaggio pronto
+                </a>
+                <span className="field__hint">
+                  {whatsappIsCustomer
+                    ? "Si apre una chat con il numero lasciato dal cliente, con il riepilogo già scritto. Potete modificarlo prima di inviarlo."
+                    : "Il cliente non ha lasciato un numero, quindi si apre una chat con il numero del negozio: da lì potete inoltrare il messaggio."}{" "}
+                  Il messaggio contiene solo numero d&apos;ordine, articoli e totale — mai
+                  l&apos;indirizzo né codici interni, perché una chat viene inoltrata e salvata
+                  altrove.
+                </span>
+              </p>
+            ) : (
+              <p className="notice notice--warning small">
+                Nessun numero WhatsApp configurato e nessun numero lasciato dal cliente. Impostate
+                il numero del negozio nelle <Link to="/admin/impostazioni">impostazioni</Link>.
+              </p>
+            )}
 
-        <dl className="ac-totals">
-          <Total label="Subtotale" amount={Number(order.item_subtotal)} />
-          {Number(order.discount_total) > 0 ? (
-            <Total label="Sconto" amount={-Number(order.discount_total)} />
-          ) : null}
-          {Number(order.shipping_total) > 0 ? (
-            <Total label="Spedizione" amount={Number(order.shipping_total)} />
-          ) : null}
-          <Total label="di cui IVA" amount={Number(order.tax_total)} muted />
-          <Total label="Totale" amount={Number(order.grand_total)} strong />
-        </dl>
-      </section>
+            {canWrite && allowed.length > 0 ? (
+              <Form method="post" className="cluster">
+                <input type="hidden" name="intent" value="set-status" />
+                <label className="field__label" htmlFor="next-status">
+                  Sposta l&apos;ordine a
+                </label>
+                <select id="next-status" name="status" className="input">
+                  {/* `paid` is absent on purpose: only the verification queue can
+                    set it, and only with step-up (invariant 6). */}
+                  {allowed
+                    .filter((s: OrderStatus) => s !== "paid")
+                    .map((s: OrderStatus) => (
+                      <option key={s} value={s}>
+                        {ORDER_STATUS_LABELS[s]}
+                      </option>
+                    ))}
+                </select>
+                <button type="submit" className="btn btn--secondary">
+                  Applica
+                </button>
+              </Form>
+            ) : null}
 
-      {/* ── Customer ──────────────────────────────────────────────────────── */}
-      <section className="panel stack">
-        <h2>Cliente</h2>
-        <dl className="ac-facts">
-          <Fact label="Nome">
-            {order.customer_first_name} {order.customer_last_name}
-          </Fact>
-          <Fact label="Email">{String(order.customer_email)}</Fact>
-          {order.customer_phone ? (
-            <Fact label="Telefono">{String(order.customer_phone)}</Fact>
-          ) : null}
-          {address ? (
-            <Fact label="Indirizzo">
-              {address.street} {address.street_number ?? ""}
-              <br />
-              {address.postcode} {address.city} {address.province ? `(${address.province})` : ""}
-              <br />
-              {address.country}
-            </Fact>
-          ) : (
-            <Fact label="Indirizzo">
-              <span className="muted">Ritiro in negozio: nessun indirizzo di spedizione.</span>
-            </Fact>
-          )}
-          {order.customer_note ? (
-            <Fact label="Nota del cliente">{String(order.customer_note)}</Fact>
-          ) : null}
-        </dl>
-      </section>
+            {canSeePayments && paymentStatus && paymentStatus !== "verified" ? (
+              <p>
+                <Link className="btn btn--secondary" to="/admin/pagamenti?vista=da-verificare">
+                  Vai alla verifica pagamenti
+                </Link>
+              </p>
+            ) : null}
+          </section>
 
-      {/* ── Payment ───────────────────────────────────────────────────────── */}
-      {canSeePayments ? (
-        <section className="panel stack">
-          <h2>Pagamento</h2>
-          <dl className="ac-facts">
-            <Fact label="Metodo">{String(order.payment_method_name ?? "—")}</Fact>
-            <Fact label="Atteso">{formatMoney(money(Number(order.amount_expected ?? 0)))}</Fact>
-            <Fact label="Ricevuto">
-              {order.amount_received === null ? (
-                <span className="muted">non ancora verificato</span>
-              ) : (
-                formatMoney(money(Number(order.amount_received)))
-              )}
-            </Fact>
-            {order.transaction_reference ? (
-              <Fact label="Riferimento">
-                <span className="numeric">{String(order.transaction_reference)}</span>
+          {/* ── Customer ──────────────────────────────────────────────────────── */}
+          <section className="panel stack ac-workspace__side">
+            <h2>Cliente</h2>
+            <dl className="ac-facts">
+              <Fact label="Nome">
+                {order.customer_first_name} {order.customer_last_name}
               </Fact>
-            ) : null}
-            {order.verified_at ? (
-              <Fact label="Verificato il">{formatDateTime(Number(order.verified_at), "it")}</Fact>
-            ) : null}
-          </dl>
-        </section>
-      ) : null}
+              <Fact label="Email">{String(order.customer_email)}</Fact>
+              {order.customer_phone ? (
+                <Fact label="Telefono">{String(order.customer_phone)}</Fact>
+              ) : null}
+              {address ? (
+                <Fact label="Indirizzo">
+                  {address.street} {address.street_number ?? ""}
+                  <br />
+                  {address.postcode} {address.city}{" "}
+                  {address.province ? `(${address.province})` : ""}
+                  <br />
+                  {address.country}
+                </Fact>
+              ) : (
+                <Fact label="Indirizzo">
+                  <span className="muted">Ritiro in negozio: nessun indirizzo di spedizione.</span>
+                </Fact>
+              )}
+              {order.customer_note ? (
+                <Fact label="Nota del cliente">{String(order.customer_note)}</Fact>
+              ) : null}
+            </dl>
+          </section>
+        </div>
+        <div className="ac-workspace__main">
+          {/* ── Items ─────────────────────────────────────────────────────────── */}
+          <section className="panel stack ac-workspace__main">
+            <h2>Articoli</h2>
+            <p className="small muted">
+              Questi valori sono la fotografia dell&apos;ordine al momento dell&apos;acquisto. Non
+              cambiano se il prodotto viene rinominato o se il prezzo cambia dopo.
+            </p>
 
-      {/* ── History ───────────────────────────────────────────────────────── */}
-      <section className="panel stack">
-        <h2>Cronologia</h2>
-        {history.length === 0 ? (
-          <p className="small muted">Nessun cambio di stato registrato.</p>
-        ) : (
-          <ul className="stack small">
-            {history.map((row, i) => (
-              <li key={i}>
-                <span className="numeric">{formatDateTime(row.created_at, "it")}</span> —{" "}
-                {row.from_status && isOrderStatus(row.from_status)
-                  ? ORDER_STATUS_LABELS[row.from_status]
-                  : (row.from_status ?? "creato")}{" "}
-                →{" "}
-                <strong>
-                  {isOrderStatus(row.to_status)
-                    ? ORDER_STATUS_LABELS[row.to_status]
-                    : row.to_status}
-                </strong>
-                {row.reason ? <span className="muted"> · {row.reason}</span> : null}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {/* ── Internal note ─────────────────────────────────────────────────── */}
-      {canWrite ? (
-        <section className="panel stack">
-          <h2>Nota interna</h2>
-          <p className="small muted">
-            Visibile solo allo staff. Il cliente non la vede mai, e non compare nel messaggio
-            WhatsApp.
-          </p>
-          <Form method="post" className="stack">
-            <input type="hidden" name="intent" value="add-note" />
-            <div className="field">
-              <label className="visually-hidden" htmlFor="note">
-                Nota
-              </label>
-              <textarea id="note" name="note" className="input" rows={2} maxLength={1000} />
+            <div className="ac-table-scroll">
+              <table className="ac-table">
+                <caption className="visually-hidden">Articoli dell&apos;ordine</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Articolo</th>
+                    <th scope="col">SKU</th>
+                    <th scope="col" className="ac-table__numeric">
+                      Qtà
+                    </th>
+                    <th scope="col" className="ac-table__numeric">
+                      Prezzo
+                    </th>
+                    <th scope="col" className="ac-table__numeric">
+                      Totale
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item, i) => (
+                    <tr key={i}>
+                      <td data-label="Articolo">
+                        {/* The snapshot name is what is shown. The link to the live
+                          product is an extra, and it is absent when the product
+                          has since been archived. */}
+                        {item.product_id ? (
+                          <Link to={`/admin/prodotti/${item.product_id}`}>{item.product_name}</Link>
+                        ) : (
+                          item.product_name
+                        )}
+                        {item.variant_label ? (
+                          <span className="muted small"> · {item.variant_label}</span>
+                        ) : null}
+                        {item.device_model_name ? (
+                          <>
+                            <br />
+                            <span className="caption muted">
+                              per {item.device_model_name}
+                              {item.compatibility_state ? ` · ${item.compatibility_state}` : ""}
+                            </span>
+                          </>
+                        ) : null}
+                      </td>
+                      <td data-label="SKU" className="numeric">
+                        {item.sku}
+                      </td>
+                      <td data-label="Qtà" className="ac-table__numeric numeric">
+                        {item.quantity}
+                      </td>
+                      <td data-label="Prezzo" className="ac-table__numeric numeric">
+                        {formatMoney(money(item.unit_price))}
+                      </td>
+                      <td data-label="Totale" className="ac-table__numeric numeric">
+                        {formatMoney(money(item.line_total))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <button type="submit" className="btn btn--secondary">
-              Aggiungi nota
-            </button>
-          </Form>
-        </section>
-      ) : null}
+
+            <dl className="ac-totals">
+              <Total label="Subtotale" amount={Number(order.item_subtotal)} />
+              {Number(order.discount_total) > 0 ? (
+                <Total label="Sconto" amount={-Number(order.discount_total)} />
+              ) : null}
+              {Number(order.shipping_total) > 0 ? (
+                <Total label="Spedizione" amount={Number(order.shipping_total)} />
+              ) : null}
+              <Total label="di cui IVA" amount={Number(order.tax_total)} muted />
+              <Total label="Totale" amount={Number(order.grand_total)} strong />
+            </dl>
+          </section>
+
+          {/* ── Payment ───────────────────────────────────────────────────────── */}
+          {canSeePayments ? (
+            <section className="panel stack ac-workspace__main">
+              <h2>Pagamento</h2>
+              <dl className="ac-facts">
+                <Fact label="Metodo">{String(order.payment_method_name ?? "—")}</Fact>
+                <Fact label="Atteso">{formatMoney(money(Number(order.amount_expected ?? 0)))}</Fact>
+                <Fact label="Ricevuto">
+                  {order.amount_received === null ? (
+                    <span className="muted">non ancora verificato</span>
+                  ) : (
+                    formatMoney(money(Number(order.amount_received)))
+                  )}
+                </Fact>
+                {order.transaction_reference ? (
+                  <Fact label="Riferimento">
+                    <span className="numeric">{String(order.transaction_reference)}</span>
+                  </Fact>
+                ) : null}
+                {order.verified_at ? (
+                  <Fact label="Verificato il">
+                    {formatDateTime(Number(order.verified_at), "it")}
+                  </Fact>
+                ) : null}
+              </dl>
+            </section>
+          ) : null}
+
+          {/* ── History ───────────────────────────────────────────────────────── */}
+          <section className="panel stack ac-workspace__main">
+            <h2>Cronologia</h2>
+            {history.length === 0 ? (
+              <p className="small muted">Nessun cambio di stato registrato.</p>
+            ) : (
+              <ul className="stack small">
+                {history.map((row, i) => (
+                  <li key={i}>
+                    <span className="numeric">{formatDateTime(row.created_at, "it")}</span> —{" "}
+                    {row.from_status && isOrderStatus(row.from_status)
+                      ? ORDER_STATUS_LABELS[row.from_status]
+                      : (row.from_status ?? "creato")}{" "}
+                    →{" "}
+                    <strong>
+                      {isOrderStatus(row.to_status)
+                        ? ORDER_STATUS_LABELS[row.to_status]
+                        : row.to_status}
+                    </strong>
+                    {row.reason ? <span className="muted"> · {row.reason}</span> : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {/* ── Internal note ─────────────────────────────────────────────────── */}
+          {canWrite ? (
+            <section className="panel stack ac-workspace__main">
+              <h2>Nota interna</h2>
+              <p className="small muted">
+                Visibile solo allo staff. Il cliente non la vede mai, e non compare nel messaggio
+                WhatsApp.
+              </p>
+              <Form method="post" className="stack">
+                <input type="hidden" name="intent" value="add-note" />
+                <div className="field">
+                  <label className="visually-hidden" htmlFor="note">
+                    Nota
+                  </label>
+                  <textarea id="note" name="note" className="input" rows={2} maxLength={1000} />
+                </div>
+                <button type="submit" className="btn btn--secondary">
+                  Aggiungi nota
+                </button>
+              </Form>
+            </section>
+          ) : null}
+        </div>
+      </div>
     </>
   );
 }

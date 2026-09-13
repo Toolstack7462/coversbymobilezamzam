@@ -50,7 +50,25 @@ export default defineConfig({
    * than a slow suite. Two workers finish in about three minutes and finish
    * every time.
    */
-  workers: 2,
+  /*
+   * ONE worker.
+   *
+   * It was two, chosen over Playwright's default six because six killed the
+   * shared `wrangler dev` partway through a run and Playwright cheerfully
+   * reported "50 passed" for a run in which thirty-seven tests never executed.
+   *
+   * The suite has since grown — a visual survey, an order fixture, workflow
+   * tests — and two workers now reproduce the same collapse: sixty-eight
+   * failures that every one of them passes in isolation. That is not a flaky
+   * suite, it is a saturated server, and the two look identical from the
+   * outside, which is exactly what makes it worth writing down.
+   *
+   * Everything behind this is ONE process and ONE SQLite file. A suite that
+   * takes twelve minutes and is believable beats one that takes four and is
+   * not. It is deliberately not part of `npm run verify`, so the cost is paid
+   * where it belongs.
+   */
+  workers: 1,
 
   // A test that only passes on the third attempt is a flaky test, and a flaky
   // test that is allowed to retry locally is a flaky test nobody ever fixes.
@@ -184,6 +202,16 @@ export default defineConfig({
        * storefront keeps correctly hiding what depends on those.
        */
       `node scripts/import/seed-demo.mjs --db ${DB} --persist-to ${PERSIST_TO}`,
+      /*
+       * Orders, so the order and payment screens have something to show.
+       *
+       * None is paid and no payment is verified — verification is a human act
+       * against a real bank account, and a seeded `verified` row would make the
+       * one screen whose job is to be trustworthy lie. What it does create is
+       * the state a shop is in most of the time: orders waiting for money, one
+       * of them with an expired reservation for the sweeper to release.
+       */
+      `node scripts/import/seed-demo-orders.mjs --db ${DB} --persist-to ${PERSIST_TO}`,
       /*
        * Secrets are passed inline rather than through a .dev.vars file: there is
        * nothing to create before running the suite, nothing lands in git, and

@@ -103,3 +103,26 @@ export function formatDateTime(epochMs: number, locale: Locale): string {
     timeStyle: "short",
   }).format(new Date(epochMs));
 }
+
+/**
+ * The same instant, short enough for a table cell.
+ *
+ * `dateStyle: "long"` renders "24 agosto 2025 alle ore 01:46" — thirty
+ * characters, in a column beside seven others. In the orders list it forced
+ * every neighbouring column narrow enough that the status control truncated its
+ * own label, so the cell that mattered least was costing the one that mattered
+ * most.
+ *
+ * Still absolute and still Europe/Rome. NOT "3 ore fa": a shop reconciling a
+ * bank statement needs the time that is printed on the statement, and a
+ * relative label is also a value that silently goes stale in a cached page.
+ */
+export function formatDateTimeShort(epochMs: number, locale: Locale): string {
+  return new Intl.DateTimeFormat(locale === "it" ? "it-IT" : "en-GB", {
+    timeZone: "Europe/Rome",
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(epochMs));
+}

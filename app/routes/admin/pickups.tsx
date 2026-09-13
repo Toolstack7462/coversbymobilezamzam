@@ -241,7 +241,20 @@ export default function AdminPickups({ loaderData, actionData }: Route.Component
                   <Form method="post" className="cluster">
                     <input type="hidden" name="intent" value="start" />
                     <input type="hidden" name="orderId" value={o.id} />
-                    <select name="locationId" required>
+                    {/*
+                      A visually-hidden label rather than none.
+
+                      axe rated this critical: three of these render side by
+                      side, one per waiting order, and a screen reader announced
+                      each as an unnamed combo box — so the only way to tell
+                      which order a choice applied to was to have seen the
+                      screen. The order number is in the name because that is
+                      the thing that distinguishes them.
+                    */}
+                    <label className="visually-hidden" htmlFor={`pickup-loc-${o.id}`}>
+                      Punto di ritiro per l&apos;ordine {o.order_number}
+                    </label>
+                    <select id={`pickup-loc-${o.id}`} name="locationId" required>
                       {locations.map((l) => (
                         <option key={l.id} value={l.id}>
                           {l.name}

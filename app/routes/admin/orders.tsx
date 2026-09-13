@@ -4,7 +4,7 @@ import { appContext } from "~/runtime/context";
 import { requireStaff } from "~/infrastructure/auth/session.server";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
 import { money, format as formatMoney } from "~/domain/pricing/money";
-import { formatDateTime } from "~/lib/i18n";
+import { formatDateTime, formatDateTimeShort } from "~/lib/i18n";
 import {
   allowedTransitions,
   assertTransition,
@@ -291,9 +291,14 @@ export default function AdminOrders({ loaderData, actionData }: Route.ComponentP
     },
     {
       key: "created",
+      nowrap: true,
       header: "Creato",
       secondary: true,
-      render: (row) => <span className="small">{formatDateTime(row.created_at, "it")}</span>,
+      render: (row) => (
+        <span className="small numeric" title={formatDateTime(row.created_at, "it")}>
+          {formatDateTimeShort(row.created_at, "it")}
+        </span>
+      ),
     },
     {
       key: "move",

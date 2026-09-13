@@ -22,12 +22,36 @@ interface Props {
   badges: ShellBadges;
   actor: { displayName: string; roleCodes: readonly string[] };
   environment: string;
+  /**
+   * The shop's own name, from the merchant's settings.
+   *
+   * The bar used to read "Centro di controllo", which is what the tool is and
+   * not whose shop it is. A merchant who runs one shop does not need telling
+   * they are in an admin panel; they need to know WHICH shop they are about to
+   * change the prices of — and anyone who ever manages a second one needs it
+   * badly.
+   *
+   * Null when nothing is configured. It falls back to the tool's name rather
+   * than inventing a shop name, which is the same rule the storefront follows.
+   */
+  brand: string | null;
+  /** Whether this actor may use the global search at all. */
+  canSearch: boolean;
   /** Rendered when a privileged account has not yet enrolled in TOTP. */
   mustEnrol?: boolean | undefined;
   children: React.ReactNode;
 }
 
-export function AdminShell({ nav, badges, actor, environment, mustEnrol, children }: Props) {
+export function AdminShell({
+  nav,
+  badges,
+  actor,
+  environment,
+  brand,
+  canSearch,
+  mustEnrol,
+  children,
+}: Props) {
   return (
     <div className="ac">
       {/* The toggle is a real checkbox so collapse survives without script. */}
@@ -40,7 +64,7 @@ export function AdminShell({ nav, badges, actor, environment, mustEnrol, childre
         </label>
 
         <Link to="/admin" className="ac__brand">
-          Centro di controllo
+          {brand ?? "Centro di controllo"}
         </Link>
 
         {/*
@@ -52,6 +76,32 @@ export function AdminShell({ nav, badges, actor, environment, mustEnrol, childre
           <span className="ac__env" title={`Ambiente: ${environment}`}>
             {environment}
           </span>
+        ) : null}
+
+        {/*
+          Global search.
+
+          A GET form, so the result is a shareable URL and the back button
+          works — and so it functions before any script loads, like the rest of
+          this shell.
+
+          Absent entirely for an actor with no read permission on anything it
+          searches. Not disabled: a box that is visible and refuses is an
+          invitation to work out what is behind it.
+        */}
+        {canSearch ? (
+          <form className="ac__search ac__hide-sm" role="search" action="/admin/cerca" method="get">
+            <label className="visually-hidden" htmlFor="ac-topbar-q">
+              Cerca in tutto il pannello
+            </label>
+            <input
+              id="ac-topbar-q"
+              type="search"
+              name="q"
+              maxLength={64}
+              placeholder="Cerca ordine, SKU, cliente…"
+            />
+          </form>
         ) : null}
 
         <div className="ac__topbar-spacer" />

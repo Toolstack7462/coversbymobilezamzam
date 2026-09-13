@@ -134,6 +134,15 @@ export default [
     route("admin/impostazioni", "routes/admin/settings.tsx"),
     route("admin/importazioni", "routes/admin/imports.tsx"),
     route("admin/registro", "routes/admin/audit.tsx"),
+
+    /*
+     * One search box for the whole control centre.
+     *
+     * Every list had its own search and none of them crossed, so a customer
+     * ringing up with an order number required the merchant to know that
+     * order numbers live under Ordini before they could look it up.
+     */
+    route("admin/cerca", "routes/admin/search.tsx"),
     route("admin/personale", "routes/admin/staff.tsx"),
     route("admin/personale/:staffId", "routes/admin/staff-detail.tsx"),
 

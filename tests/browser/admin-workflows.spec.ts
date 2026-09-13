@@ -166,31 +166,47 @@ test.describe("inventory", () => {
     expect(await reservedInputs.count()).toBe(0);
   });
 
-  test("an adjustment requires a reason and survives a reload", async ({ page }) => {
+  test("an adjustment demands a reason, and the reason reaches the ledger", async ({ page }) => {
     await page.goto("/admin/inventario");
 
-    const adjust = page.getByRole("group").first();
-    if ((await adjust.count()) === 0) test.skip(true, "this actor cannot adjust stock");
+    /*
+     * Scoped to ONE disclosure, not to the page.
+     *
+     * Every row has its own adjustment form, so `.first()` and `.last()` across
+     * the page pick controls from different rows — which on the phone layout
+     * meant filling one product's quantity and pressing another product's save
+     * button, and the movement then never appeared under the note this test was
+     * looking for.
+     */
+    const panel = page
+      .locator("details", { has: page.locator("summary", { hasText: "Rettifica" }) })
+      .first();
+    if ((await panel.count()) === 0) test.skip(true, "this actor cannot adjust stock");
 
-    await page.locator("summary", { hasText: "Rettifica" }).first().click();
+    await panel.locator("summary").click();
 
-    const reason = page.locator("[name='reason']").first();
-    const delta = page.locator("[name='delta']").first();
-    if ((await reason.count()) === 0 || (await delta.count()) === 0) {
-      test.skip(true, "adjustment form not present in this build");
-    }
+    const onHand = panel.locator("[name='onHand']");
+    const note = panel.locator("[name='reasonNote']");
+    await expect(onHand).toBeVisible();
 
-    await delta.fill("2");
-    await reason.fill("Test automatico: carico");
-    await page
-      .getByRole("button", { name: /salva|applica|registra/i })
-      .first()
-      .click();
+    /*
+     * The note is `required`, so the browser refuses an empty submission before
+     * anything reaches the server. That is the point of the field: a stock
+     * figure that changed for no recorded reason is one nobody can reconcile
+     * against a shelf later.
+     */
+    await expect(note).toHaveAttribute("required", "");
+
+    const current = Number(await onHand.inputValue());
+    const marker = `Test automatico ${Date.now()}`;
+    await onHand.fill(String(current + 2));
+    await note.fill(marker);
+    await panel.getByRole("button").click();
     await page.waitForLoadState("networkidle");
 
     // The movement is recorded, which is what makes an adjustment auditable.
     await page.goto("/admin/inventario/movimenti");
-    await expect(page.getByText("Test automatico: carico").first()).toBeVisible();
+    await expect(page.getByText(marker).first()).toBeVisible();
   });
 });
 
@@ -253,5 +269,138 @@ test.describe("the product list can be scanned", () => {
     await page.goBack();
     await page.waitForLoadState("networkidle");
     await expect(page.getByText(/Caricatore|Cavo|Cover/).first()).toBeVisible();
+  });
+});
+
+test.describe("the product editor", () => {
+  test("jumps straight to a section without scrolling past the rest", async ({ page }) => {
+    await page.goto("/admin/prodotti");
+    await page.getByRole("link", { name: /Power bank/ }).click();
+
+    const nav = page.getByRole("navigation", { name: /sezioni del prodotto/i });
+    await expect(nav).toBeVisible();
+
+    await nav.getByRole("link", { name: /compatibilit/i }).click();
+    await expect(page).toHaveURL(/#sez-compatibilita$/);
+    await expect(page.locator("#sez-compatibilita")).toBeVisible();
+  });
+
+  test("refuses to publish a product with no price, and says why", async ({ page }) => {
+    // A product with no price renders a live page nobody can buy from.
+    await page.goto("/admin/prodotti?vista=senza-prezzo");
+
+    const first = page.locator("tbody tr a").first();
+    await expect(first).toBeVisible();
+
+    await first.click();
+    await page.waitForURL(/\/admin\/prodotti\/[^/]+$/);
+
+    const publish = page.getByRole("button", { name: /pubblica sul sito/i });
+    await expect(publish).toBeVisible();
+
+    await publish.click();
+    await page.waitForLoadState("networkidle");
+    await expect(page.getByRole("alert")).toContainText(/senza prezzo/i);
+
+    // And it is still a draft: the refusal refused.
+    await page.reload({ waitUntil: "networkidle" });
+    await expect(page.getByRole("button", { name: /pubblica sul sito/i })).toBeVisible();
+  });
+
+  test("a saved detail survives a reload", async ({ page }) => {
+    await page.goto("/admin/prodotti");
+    await page.getByRole("link", { name: /Caricatore/ }).click();
+    // Same race the conflict test hit: without this the assertions below run
+    // against the LIST, and the guard skips a test that should have run.
+    await page.waitForURL(/\/admin\/prodotti\/[^/]+$/);
+
+    const field = page.locator("#shortDescription");
+    await expect(field).toBeVisible();
+
+    const value = `Descrizione di prova ${Date.now()}`;
+    await field.fill(value);
+    await page.getByRole("button", { name: /salva dettagli/i }).click();
+    await page.waitForLoadState("networkidle");
+
+    // The server said so, and the server says so again after a reload.
+    await expect(page.getByText(/Salvato alle/)).toBeVisible();
+    await page.reload({ waitUntil: "networkidle" });
+    await expect(page.locator("#shortDescription")).toHaveValue(value);
+  });
+
+  /*
+   * Two sessions, one product. The second save must be REFUSED, not merged and
+   * not silently applied over the first.
+   *
+   * Simulated by editing the same form in two browser contexts, which is what
+   * two people at two counters actually are.
+   */
+  test("refuses a save from a form that was open while somebody else saved", async ({
+    browser,
+  }) => {
+    /*
+     * Longer than the default.
+     *
+     * Two browser contexts, four navigations and two round-trips through a
+     * single-worker `wrangler dev`. It timed out at thirty seconds and the
+     * timeout surfaced as "locator.fill: Test ended", which reads like a
+     * missing element rather than a slow one.
+     */
+    test.setTimeout(120_000);
+
+    const first = await browser.newContext({ storageState: STORAGE_STATE });
+    const second = await browser.newContext({ storageState: STORAGE_STATE });
+
+    try {
+      const a = await first.newPage();
+      const b = await second.newPage();
+
+      await a.goto("/admin/prodotti");
+      await a.getByRole("link", { name: /Cavo USB-C/ }).click();
+
+      /*
+       * Wait for the navigation before reading the URL.
+       *
+       * Without this, `a.url()` was still the list page, `b` opened the list,
+       * and the failure surfaced as "locator.fill: Test ended" waiting for a
+       * field that only exists on the editor — which reads like a slow page
+       * rather than the wrong one.
+       */
+      await a.waitForURL(/\/admin\/prodotti\/[^/]+$/);
+      await expect(a.locator("#shortDescription")).toBeVisible();
+      const url = a.url();
+
+      // Both have the product open, loaded from the same version.
+      await b.goto(url, { waitUntil: "networkidle" });
+      await expect(b.locator("#shortDescription")).toBeVisible();
+
+      // A saves first, and wins.
+      await a.locator("#shortDescription").fill("Modifica della prima sessione");
+      await a.getByRole("button", { name: /salva dettagli/i }).click();
+      await a.waitForLoadState("networkidle");
+      await expect(a.getByText(/Salvato alle/)).toBeVisible();
+
+      // B now saves a form that was rendered from the older version.
+      await b.locator("#shortDescription").fill("Modifica della seconda sessione");
+      await b.getByRole("button", { name: /salva dettagli/i }).click();
+      await b.waitForLoadState("networkidle");
+
+      await expect(b.getByRole("alert")).toContainText(/qualcun altro ha salvato/i);
+
+      /*
+       * And — the part that matters — A's work is still there.
+       *
+       * A conflict message that appeared while the write went through anyway
+       * would be worse than no message at all.
+       */
+      await a.reload({ waitUntil: "networkidle" });
+      await expect(a.locator("#shortDescription")).toHaveValue("Modifica della prima sessione");
+    } finally {
+      // Tolerant cleanup. A context that has already gone throws here, and that
+      // exception then MASKS whichever assertion actually failed — which is how
+      // a real failure reads as "browser has been closed" and tells you nothing.
+      await first.close().catch(() => {});
+      await second.close().catch(() => {});
+    }
   });
 });

@@ -294,6 +294,45 @@ for (const order of ORDERS) {
        ON CONFLICT(id) DO NOTHING`);
 }
 
+/*
+ * ── A product that is not ready ─────────────────────────────────────────────
+ *
+ * A draft with a variant and NO price.
+ *
+ * Every other demo product is complete, which meant three admin views —
+ * "Bozze", "Senza prezzo", and the publication refusal on the product editor —
+ * had nothing to show and could not be exercised at all. A fixture in which
+ * everything is finished only tests the happy path, and the publication guard
+ * is precisely the thing that must work: publishing a product with no price
+ * puts a page on the live site that nobody can buy from.
+ *
+ * It is a realistic state, not a contrived one. Half-entered products are what
+ * a catalogue looks like on any afternoon somebody is adding stock.
+ */
+sql(`INSERT INTO products (id, slug, brand_id, status, is_featured, created_at, updated_at)
+     SELECT 'prod_demo_incomplete', 'demo-supporto-auto-magnetico', b.id, 'draft', 0, ${NOW}, ${NOW}
+       FROM brands b WHERE b.slug = 'demo-generico'
+     ON CONFLICT(id) DO NOTHING`);
+
+sql(`INSERT INTO product_translations (id, product_id, locale, name, short_description)
+     VALUES ('pt_demo_incomplete', 'prod_demo_incomplete', 'it',
+             '[DEMO] Supporto auto magnetico', 'Bozza: prezzo e foto ancora da inserire.')
+     ON CONFLICT(product_id, locale) DO NOTHING`);
+
+sql(`INSERT INTO product_variants
+       (id, product_id, sku, variant_label, is_default, active, sort_order, created_at, updated_at)
+     VALUES ('var_demo_supporto', 'prod_demo_incomplete', 'DEMO-SUP-MAG-01', 'Nero',
+             1, 1, 0, ${NOW}, ${NOW})
+     ON CONFLICT(id) DO NOTHING`);
+
+/*
+ * Deliberately NO variant_prices row and NO inventory_levels row.
+ *
+ * Those absences are the fixture: "senza prezzo" and "non tracciato" are both
+ * states the admin has to render honestly, and neither can be tested with a
+ * catalogue where every product is finished.
+ */
+
 console.log(
   `Seeding DEMO orders into ${DB}` +
     `${ENVIRONMENT ? ` (env ${ENVIRONMENT})` : ""} ${REMOTE ? "remote" : "local"} — ` +

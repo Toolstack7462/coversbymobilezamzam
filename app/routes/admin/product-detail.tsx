@@ -273,6 +273,43 @@ export async function action({ request, params, context }: Route.ActionArgs) {
     const brandId = String(form.get("brandId") ?? "") || null;
     const categoryId = String(form.get("categoryId") ?? "") || null;
 
+    /*
+     * ── THE CONFLICT GUARD ──────────────────────────────────────────────────
+     *
+     * The form carries the `updated_at` the page was LOADED with. If the row
+     * has moved on since, somebody else saved while this form was open, and
+     * writing now would silently discard their work — the merchant on the
+     * other laptop would see their change vanish with no error anywhere.
+     *
+     * Two people editing one catalogue is not an exotic case in a shop with a
+     * counter and a back office; it is Tuesday.
+     *
+     * The write is refused rather than merged. A merge needs to know which
+     * field each person changed, and this form submits every field on every
+     * save — so "merging" would mean picking a winner per field with no basis
+     * for the choice. Refusing and saying so lets a person decide, which is
+     * the only party that can.
+     *
+     * Compared as a NUMBER: `updated_at` is epoch milliseconds, and a string
+     * comparison would quietly succeed for "1789000000000" versus
+     * 1789000000000 and defeat the whole check.
+     */
+    const loadedAt = Number(form.get("loadedUpdatedAt") ?? 0);
+    const current = await env.DB.prepare(`SELECT updated_at FROM products WHERE id = ?1`)
+      .bind(productId)
+      .first<{ updated_at: number }>();
+
+    if (!current) return { error: "Prodotto non trovato." };
+
+    if (Number.isFinite(loadedAt) && loadedAt > 0 && Number(current.updated_at) !== loadedAt) {
+      return {
+        conflict:
+          "Qualcun altro ha salvato questo prodotto mentre lo stavate modificando. " +
+          "Le vostre modifiche NON sono state salvate, e nemmeno sovrascritte le loro. " +
+          "Ricaricate la pagina per vedere la versione aggiornata, poi riapplicate le vostre modifiche.",
+      };
+    }
+
     await env.DB.batch([
       env.DB.prepare(
         `UPDATE products SET brand_id = ?1, primary_category_id = ?2, updated_at = ?3 WHERE id = ?4`,
@@ -296,7 +333,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
       }),
     ]);
 
-    return { success: "Dettagli salvati." };
+    return { success: "Dettagli salvati.", savedAt: now };
   }
 
   if (intent === "set-price") {
@@ -940,6 +977,29 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
         </p>
       ) : null}
 
+      {actionData && "conflict" in actionData && actionData.conflict ? (
+        /*
+          A conflict is its own notice, not an error.
+
+          An error invites "try again"; a conflict must NOT be retried blindly,
+          because the second attempt is what would overwrite the other person's
+          work. So it says what happened, what did not happen to either side,
+          and what to do — and it is focusable, because on a long form the
+          message would otherwise be off-screen above the save button that was
+          just pressed.
+        */
+        <p className="notice notice--warning ac-conflict" role="alert" tabIndex={-1}>
+          {actionData.conflict}{" "}
+          <button
+            type="button"
+            className="btn btn--secondary btn--small"
+            onClick={() => window.location.reload()}
+          >
+            Ricarica la pagina
+          </button>
+        </p>
+      ) : null}
+
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
           {actionData.error}
@@ -958,9 +1018,39 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
         </p>
       ) : null}
 
+      {/*
+        Section navigation.
+
+        §7 of the brief: a guided path for a new product, and DIRECT section
+        navigation for staff who already know what they are changing. This
+        screen is seven panels long, and a merchant fixing one price should not
+        scroll past the photo manager and the compatibility matrix to reach it.
+
+        Anchor links, not tabs. Tabs hide six sections behind a click and lose
+        the reader's place; anchors keep the whole product on one page — which
+        is what "check everything before publishing" needs — while giving the
+        experienced user one jump. They also work with no JavaScript, cost
+        nothing in the bundle, and each is a real URL somebody can bookmark or
+        send to a colleague.
+
+        `Pubblicazione` and `Storico prezzi` are conditional panels, so their
+        links are conditional too: a link to an anchor that is not on the page
+        is a link that silently does nothing.
+      */}
+      <nav className="ac-sectionnav" aria-label="Sezioni del prodotto">
+        <a href="#sez-stato">Stato</a>
+        {canWrite && product.archived_at === null ? (
+          <a href="#sez-pubblicazione">Pubblicazione</a>
+        ) : null}
+        <a href="#sez-dettagli">Dettagli</a>
+        <a href="#sez-varianti">Varianti e prezzo</a>
+        <a href="#sez-foto">Foto</a>
+        <a href="#sez-compatibilita">Compatibilità</a>
+      </nav>
+
       {/* ── What is missing ───────────────────────────────────────────────── */}
-      <section className="panel stack">
-        <h2>Stato del prodotto</h2>
+      <section id="sez-stato" className="panel stack" aria-labelledby="h-stato">
+        <h2 id="h-stato">Stato del prodotto</h2>
         <ul className="ac-actions">
           <Check
             done={variants.some((v) => v.amount !== null)}
@@ -992,8 +1082,8 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
 
       {/* ── Publication ───────────────────────────────────────────────────── */}
       {canWrite && product.archived_at === null ? (
-        <section className="panel stack">
-          <h2>Pubblicazione</h2>
+        <section id="sez-pubblicazione" className="panel stack" aria-labelledby="h-pubblicazione">
+          <h2 id="h-pubblicazione">Pubblicazione</h2>
           <p className="small muted">
             {product.status === "active"
               ? "Il prodotto è visibile sul sito."
@@ -1013,10 +1103,19 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
       ) : null}
 
       {/* ── Details ───────────────────────────────────────────────────────── */}
-      <section className="panel stack">
-        <h2>Dettagli</h2>
+      <section id="sez-dettagli" className="panel stack" aria-labelledby="h-dettagli">
+        <h2 id="h-dettagli">Dettagli</h2>
         <Form method="post" className="stack">
           <input type="hidden" name="intent" value="save-details" />
+          {/*
+            The version this page was rendered from.
+
+            The action compares it against the row before writing, so a save
+            from a form that was open while somebody else saved is refused
+            rather than silently overwriting them. See the conflict guard in
+            the action.
+          */}
+          <input type="hidden" name="loadedUpdatedAt" value={String(product.updated_at)} />
 
           <div className="field">
             <label className="field__label" htmlFor="name">
@@ -1107,9 +1206,27 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
           </div>
 
           {canWrite ? (
-            <button type="submit" className="btn btn--primary">
-              Salva dettagli
-            </button>
+            <div className="cluster">
+              <button type="submit" className="btn btn--primary">
+                Salva dettagli
+              </button>
+              {/*
+                Set from the SERVER's response, never from the click. An
+                optimistic "saved" that appears before the write lands is the
+                most expensive lie an admin can tell: the merchant closes the
+                laptop.
+              */}
+              {actionData && "savedAt" in actionData && actionData.savedAt ? (
+                <span className="small muted" role="status">
+                  Salvato alle{" "}
+                  {new Intl.DateTimeFormat("it-IT", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    timeZone: "Europe/Rome",
+                  }).format(new Date(Number(actionData.savedAt)))}
+                </span>
+              ) : null}
+            </div>
           ) : (
             <p className="small muted">
               Serve il permesso <code>product.write</code> per modificare.
@@ -1119,8 +1236,8 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
       </section>
 
       {/* ── Variants, price and stock ─────────────────────────────────────── */}
-      <section className="panel stack">
-        <h2>Varianti</h2>
+      <section id="sez-varianti" className="panel stack" aria-labelledby="h-varianti">
+        <h2 id="h-varianti">Varianti</h2>
         <div className="ac-table-scroll">
           <table className="ac-table">
             <caption className="visually-hidden">Varianti del prodotto</caption>
@@ -1296,8 +1413,8 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
 
       {/* ── Price history ─────────────────────────────────────────────────── */}
       {priceHistory.length > 0 ? (
-        <section className="panel stack">
-          <h2>Storico prezzi</h2>
+        <section id="sez-prezzi" className="panel stack" aria-labelledby="h-prezzi">
+          <h2 id="h-prezzi">Storico prezzi</h2>
           <p className="small muted">
             Serve a dimostrare il prezzo più basso praticato negli ultimi 30 giorni. Senza questo
             storico uno sconto non può essere annunciato per legge (D.Lgs. 84/2022).
@@ -1321,8 +1438,8 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
       ) : null}
 
       {/* ── Images ────────────────────────────────────────────────────────── */}
-      <section className="panel stack">
-        <h2>Foto</h2>
+      <section id="sez-foto" className="panel stack" aria-labelledby="h-foto">
+        <h2 id="h-foto">Foto</h2>
         <p className="small muted">
           La prima foto è quella che compare negli elenchi. Le dimensioni vengono lette dal file:
           servono al sito per riservare lo spazio prima che l&apos;immagine arrivi, così la pagina
@@ -1441,8 +1558,8 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
       </section>
 
       {/* ── Compatibility ─────────────────────────────────────────────────── */}
-      <section className="panel stack">
-        <h2>Compatibilità</h2>
+      <section id="sez-compatibilita" className="panel stack" aria-labelledby="h-compatibilita">
+        <h2 id="h-compatibilita">Compatibilità</h2>
         <p className="small muted">
           Con quali telefoni funziona. Non viene mai dedotta dalla categoria o dal nome: se non è
           scritta qui, per il sito è <strong>sconosciuta</strong>, e il cliente lo legge.

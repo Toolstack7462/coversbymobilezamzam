@@ -51,24 +51,22 @@ export default defineConfig({
    * every time.
    */
   /*
-   * ONE worker.
+   * Two workers, not the six Playwright picks by default — see the note above
+   * this block for why six killed the shared `wrangler dev`.
    *
-   * It was two, chosen over Playwright's default six because six killed the
-   * shared `wrangler dev` partway through a run and Playwright cheerfully
-   * reported "50 passed" for a run in which thirty-seven tests never executed.
+   * It was briefly reduced to one, on the reasoning that the suite had outgrown
+   * two: a run showed sixty-eight failures that all passed in isolation, which
+   * is what a saturated server looks like. That reasoning was wrong. The real
+   * cause was ANOTHER RUN of the same suite executing on this machine at the
+   * same time, competing for CPU and for the port. With nothing else running,
+   * two workers finish 117 tests in three minutes with no failures; one worker
+   * takes five and a half and finds nothing extra.
    *
-   * The suite has since grown — a visual survey, an order fixture, workflow
-   * tests — and two workers now reproduce the same collapse: sixty-eight
-   * failures that every one of them passes in isolation. That is not a flaky
-   * suite, it is a saturated server, and the two look identical from the
-   * outside, which is exactly what makes it worth writing down.
-   *
-   * Everything behind this is ONE process and ONE SQLite file. A suite that
-   * takes twelve minutes and is believable beats one that takes four and is
-   * not. It is deliberately not part of `npm run verify`, so the cost is paid
-   * where it belongs.
+   * Recorded because the two look identical from the outside — "every test
+   * passes alone" is consistent with a saturated server AND with a busy
+   * machine, and the second is much easier to cause by accident.
    */
-  workers: 1,
+  workers: 2,
 
   // A test that only passes on the third attempt is a flaky test, and a flaky
   // test that is allowed to retry locally is a flaky test nobody ever fixes.
@@ -132,7 +130,21 @@ export default defineConfig({
       name: "mobile",
       use: { ...devices["Pixel 7"] },
       dependencies: ["setup"],
-      testIgnore: /admin-visual\.spec\.ts/,
+      /*
+       * The visual survey has its own project, and the no-JavaScript specs are
+       * not run twice.
+       *
+       * Those assert SERVER-RENDERED behaviour — that a page arrives with its
+       * content, that a link navigates, that a form is a GET. None of it
+       * changes with the viewport, so running them at both widths costs time
+       * and finds nothing.
+       *
+       * What DOES run at both widths is anything whose result can differ by
+       * one: the admin screens, the axe sweep, and the workflows — the product
+       * list becomes cards on a phone, and that is a different thing to
+       * operate.
+       */
+      testIgnore: [/admin-visual\.spec\.ts/, /no-javascript\.spec\.ts/],
     },
 
     /*

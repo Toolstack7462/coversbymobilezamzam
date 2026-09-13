@@ -61,7 +61,9 @@
     "hostinger:import": "node scripts/hostinger/import-mariadb.mjs",
     "hostinger:migrate": "node scripts/hostinger/migrate.mjs",
     "hostinger:reserved-words": "node scripts/hostinger/reserved-words.mjs",
-    "performance:baseline": "node scripts/hostinger/performance-baseline.mjs"
+    "performance:baseline": "node scripts/hostinger/performance-baseline.mjs",
+    "performance:smoke": "node scripts/hostinger/performance-smoke.mjs",
+    "verify:hostinger": "npm run verify && npm run test:db:mariadb"
   },
   "dependencies": {
     "@react-router/express": "8.3.1",

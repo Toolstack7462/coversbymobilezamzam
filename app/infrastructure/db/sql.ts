@@ -55,7 +55,18 @@ export interface SqlStatement {
   run(): Promise<SqlRunResult>;
 }
 
+export type SqlDialect = "sqlite" | "mariadb";
+
 export interface SqlDatabase {
+  /**
+   * Which engine is underneath.
+   *
+   * Read by the two statements that genuinely cannot be written once — see
+   * bootstrap-admin.ts. Everything else goes through the translator and never
+   * asks. A third reader of this field is a sign that something belongs in the
+   * translator instead.
+   */
+  readonly dialect: SqlDialect;
   prepare(sql: string): SqlStatement;
   /**
    * Runs every statement atomically, in order.

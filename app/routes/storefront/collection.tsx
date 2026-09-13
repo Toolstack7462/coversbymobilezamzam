@@ -6,6 +6,7 @@ import { parseLocalePath, translator, localePath, plural } from "~/lib/i18n";
 import { ProductCard, type ProductCardData } from "~/components/storefront/product-card";
 import { availabilityState } from "~/domain/inventory/availability";
 import { parseSearchQuery, emptySearchReason } from "~/domain/search/query";
+import { searchPredicate } from "~/infrastructure/search/predicate";
 
 const PER_PAGE = 24;
 
@@ -86,22 +87,30 @@ export async function loader({ context, request }: Route.LoaderArgs) {
    * and it could not rank, so the best match arrived in whatever order the
    * table happened to hold it.
    *
-   * `parsed.match` is built by the domain from the customer's words: quoted
-   * terms only, never their raw input, because FTS5's MATCH is a query language
-   * and a stray quotation mark in a search box would otherwise be a 500.
+   * The terms are built by the domain from the customer's words — never their
+   * raw input, because both engines' search syntaxes are query languages and a
+   * stray quotation mark in a search box would otherwise be a 500.
+   *
+   * `searchPredicate` chooses the fragment for whichever engine is underneath:
+   * FTS5's MATCH on SQLite, FULLTEXT plus an exact-token lookup on MariaDB. The
+   * second half is not redundancy — InnoDB will not index words shorter than
+   * three characters, and PD, Qi, S24 and 25W are things customers type.
    */
   const parsed = parseSearchQuery(q);
-  if (parsed.match !== null) {
-    binds.push(parsed.match);
-    where.push(`p.id IN (
-      SELECT m.product_id FROM product_search s
-        JOIN product_search_map m ON m.rowid = s.rowid
-       WHERE product_search MATCH ?${binds.length})`);
+  const search = searchPredicate(env.DB.dialect, parsed, binds.length);
+  if (search) {
+    binds.push(...search.binds);
+    where.push(search.sql);
   }
 
-  // With a search active, "relevance" means FTS5's own ranking rather than
-  // the merchant's featured order — the customer asked a question, and the
-  // answer to it outranks the shop's own preferences.
+  /*
+   * Note what "relevance" does NOT do: it does not rank by search score.
+   *
+   * The comment here used to claim it used FTS5's own ranking. It never did —
+   * the ordering below is the merchant's featured order in every case, search
+   * or no search. That is left exactly as it was, because changing result
+   * ordering is a storefront change and this is an infrastructure migration.
+   */
   const orderBy =
     sort === "price_asc"
       ? "price_amount ASC"

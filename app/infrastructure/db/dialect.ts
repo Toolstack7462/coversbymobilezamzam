@@ -412,9 +412,39 @@ function rewritePlaceholders(sql: string): { sql: string; parameterOrder: number
  * prepared on every request and translating it each time would be work done
  * hundreds of times per page for an identical answer.
  */
+/**
+ * A statement that declares which engine it was written for.
+ *
+ * A handful of statements cannot be written once — SQLite's conditional upsert
+ * and full-text search have no MariaDB equivalent, and MariaDB's FULLTEXT has
+ * no SQLite one. Those are written twice, chosen from `db.dialect`, and marked
+ * in the SQL itself so a reviewer reading the statement sees the choice.
+ */
+const DIALECT_MARKER = /\/\*\s*dialect:\s*(sqlite|mariadb)\s*\*\//i;
+
 export function translate(sql: string): TranslatedStatement {
-  for (const { pattern, reason } of FORBIDDEN) {
-    if (pattern.test(stripStrings(sql))) throw new UntranslatableSqlError(reason, sql);
+  const declared = DIALECT_MARKER.exec(sql)?.[1]?.toLowerCase();
+
+  /*
+   * A statement written FOR MariaDB reaching the MariaDB translator is already
+   * in the target dialect, so the forbidden-construct scan does not apply to
+   * it: `MATCH(...) AGAINST` is native MariaDB and only looks like FTS5.
+   *
+   * The placeholder rewrite still runs, because `?1` numbering is this
+   * codebase's convention rather than SQLite's.
+   */
+  if (declared === "sqlite") {
+    throw new UntranslatableSqlError(
+      "This statement is marked 'dialect: sqlite' and reached the MariaDB adapter. " +
+        "The call site chose the wrong branch — check its db.dialect test",
+      sql,
+    );
+  }
+
+  if (declared !== "mariadb") {
+    for (const { pattern, reason } of FORBIDDEN) {
+      if (pattern.test(stripStrings(sql))) throw new UntranslatableSqlError(reason, sql);
+    }
   }
 
   let working = sql;

@@ -17,8 +17,38 @@ import type { PaymentStatus } from "~/domain/payments/status";
 export interface ListView {
   slug: string;
   label: string;
-  /** A complete boolean SQL fragment. */
+  /**
+   * A complete boolean SQL fragment.
+   *
+   * May contain {@link NOW_MS}, which `viewClause` replaces with the request's
+   * timestamp. See that constant for why a view does not call a SQL clock.
+   */
   where: string;
+}
+
+/**
+ * The placeholder for "now", in epoch milliseconds.
+ *
+ * A view that needs the current time used to write `unixepoch() * 1000`, which
+ * is SQLite-only — MariaDB spells it `UNIX_TIMESTAMP() * 1000` and there is no
+ * portable form. Substituting the application's clock is not merely the
+ * portable choice, it is the CORRECT one: the reservation sweeper decides what
+ * has expired using `clock.now()`, and a screen that asked the database's
+ * clock instead would disagree with the sweeper whenever the two drift — which
+ * on shared hosting they do.
+ *
+ * Interpolating rather than binding is safe here and only here: the value is a
+ * server-generated integer that never touches a request, and `viewClause`
+ * rejects anything that is not one.
+ */
+export const NOW_MS = "{{NOW_MS}}";
+
+/** Resolves a view's fragment for a given moment. */
+export function viewClause(view: ListView, nowMs: number): string {
+  if (!Number.isSafeInteger(nowMs) || nowMs < 0) {
+    throw new Error(`viewClause needs a non-negative epoch-millisecond integer, got ${nowMs}`);
+  }
+  return view.where.split(NOW_MS).join(String(nowMs));
 }
 
 /**

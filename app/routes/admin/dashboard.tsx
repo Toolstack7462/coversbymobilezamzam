@@ -12,8 +12,9 @@ import {
 } from "~/domain/content/gates";
 import { buildActionCentre, isClear, type ActionItem } from "~/domain/content/action-centre";
 import { computeSetupSteps, summariseSetup } from "~/domain/content/setup-steps";
-import { ORDER_VIEWS, PAYMENT_VIEWS, ORDER_DELIVERY_FACET } from "~/lib/order-views";
+import { ORDER_VIEWS, PAYMENT_VIEWS, ORDER_DELIVERY_FACET, type ListView } from "~/lib/order-views";
 import { INVENTORY_VIEWS } from "~/lib/inventory-views";
+import { viewClause } from "~/lib/order-views";
 import { breadcrumbsFor } from "~/lib/admin-nav";
 import { PageHeader } from "~/components/admin/admin-shell";
 import { loadSetupSnapshot } from "./setup-centre";
@@ -32,15 +33,27 @@ import { loadSetupSnapshot } from "./setup-centre";
  * The metric and action-centre counts are built from the SAME clauses the
  * saved views use, so a badge can never disagree with the list it opens.
  */
-const clause = (views: readonly { slug: string; where: string }[], slug: string): string =>
-  views.find((v) => v.slug === slug)!.where;
+const clause = (views: readonly ListView[], slug: string, nowMs: number): string =>
+  viewClause(
+    views.find((v) => v.slug === slug)!,
+    nowMs,
+  );
 
-const TO_PREPARE = clause(ORDER_VIEWS, "da-preparare");
-const TO_CONTACT = clause(ORDER_VIEWS, "da-contattare");
-const TO_VERIFY = clause(PAYMENT_VIEWS, "da-verificare");
-const UNDER_VERIFICATION = clause(PAYMENT_VIEWS, "in-verifica");
-const LOW_STOCK = clause(INVENTORY_VIEWS, "scorte-basse");
-const OUT_OF_STOCK = clause(INVENTORY_VIEWS, "esauriti");
+/*
+ * Resolved per request rather than at module load.
+ *
+ * One of these views compares against "now", and a module-level constant would
+ * freeze that at the moment the isolate started — so a long-lived Node process
+ * would report expired reservations as of whenever it was last deployed.
+ */
+const badgeClauses = (nowMs: number) => ({
+  toPrepare: clause(ORDER_VIEWS, "da-preparare", nowMs),
+  toContact: clause(ORDER_VIEWS, "da-contattare", nowMs),
+  toVerify: clause(PAYMENT_VIEWS, "da-verificare", nowMs),
+  underVerification: clause(PAYMENT_VIEWS, "in-verifica", nowMs),
+  lowStock: clause(INVENTORY_VIEWS, "scorte-basse", nowMs),
+  outOfStock: clause(INVENTORY_VIEWS, "esauriti", nowMs),
+});
 
 export function meta() {
   return [{ title: "Panoramica" }, { name: "robots", content: "noindex, nofollow" }];
@@ -51,6 +64,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const actor = await requireStaff(request, env);
 
   const now = systemClock.now();
+  const { toPrepare, toContact, toVerify, underVerification, lowStock, outOfStock } =
+    badgeClauses(now);
   const dayAgo = now - 24 * 60 * 60 * 1000;
   const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
 
@@ -68,9 +83,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         (SELECT COALESCE(SUM(p.amount_received), 0) FROM order_payments p
           WHERE p.status = 'verified' AND p.verified_at > ?1) AS verified_today,
 
-        (SELECT COUNT(*) FROM order_payments op WHERE ${TO_VERIFY}) AS to_verify,
-        (SELECT COUNT(*) FROM order_payments op WHERE ${UNDER_VERIFICATION}) AS under_verification,
-        (SELECT COUNT(*) FROM orders o WHERE ${TO_CONTACT}) AS awaiting_contact,
+        (SELECT COUNT(*) FROM order_payments op WHERE ${toVerify}) AS to_verify,
+        (SELECT COUNT(*) FROM order_payments op WHERE ${underVerification}) AS under_verification,
+        (SELECT COUNT(*) FROM orders o WHERE ${toContact}) AS awaiting_contact,
 
         -- Built FROM the saved-view definitions rather than restated here. A
         -- badge reading 4 that opens a list of 7 is read as broken software,
@@ -78,12 +93,12 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         -- both from one source makes that drift impossible rather than merely
         -- unlikely.
         (SELECT COUNT(*) FROM orders o
-          WHERE ${TO_PREPARE} AND ${ORDER_DELIVERY_FACET["ritiro"]}) AS pickups_to_prepare,
+          WHERE ${toPrepare} AND ${ORDER_DELIVERY_FACET["ritiro"]}) AS pickups_to_prepare,
         (SELECT COUNT(*) FROM orders o
-          WHERE ${TO_PREPARE} AND ${ORDER_DELIVERY_FACET["spedizione"]}) AS orders_to_ship,
+          WHERE ${toPrepare} AND ${ORDER_DELIVERY_FACET["spedizione"]}) AS orders_to_ship,
 
-        (SELECT COUNT(*) FROM inventory_levels il WHERE ${LOW_STOCK}) AS low_stock,
-        (SELECT COUNT(*) FROM inventory_levels il WHERE ${OUT_OF_STOCK}) AS out_of_stock,
+        (SELECT COUNT(*) FROM inventory_levels il WHERE ${lowStock}) AS low_stock,
+        (SELECT COUNT(*) FROM inventory_levels il WHERE ${outOfStock}) AS out_of_stock,
         (SELECT COUNT(*) FROM stock_reservations
           WHERE status = 'active' AND expires_at < ?2) AS overdue_reservations`,
     )

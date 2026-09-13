@@ -16,6 +16,11 @@ const STEPS = [
   { name: "Typecheck", command: "npm", args: ["run", "typecheck"] },
   { name: "Locale parity", command: "npm", args: ["run", "locales:check"] },
   { name: "Migration check", command: "npm", args: ["run", "migrations:check"] },
+  // Every SQL statement in the application must be able to run on MariaDB, or
+  // be explicitly marked as written for one dialect. A change that quietly
+  // reintroduces FTS5 MATCH or a conditional upsert fails here rather than on
+  // the Hostinger deployment.
+  { name: "SQL portability", command: "npm", args: ["run", "hostinger:sql-audit"] },
   { name: "Unit tests", command: "npm", args: ["run", "test:unit"] },
   { name: "Integration tests", command: "npm", args: ["run", "test:integration"] },
   { name: "Build", command: "npm", args: ["run", "build"] },

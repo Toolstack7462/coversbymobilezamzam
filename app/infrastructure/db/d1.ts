@@ -60,6 +60,7 @@ function toMeta(meta: D1Meta): SqlMeta {
 }
 
 export class D1SqlDatabase implements SqlDatabase {
+  readonly dialect = "sqlite" as const;
   private readonly d1: D1Database;
 
   constructor(d1: D1Database) {

@@ -184,6 +184,7 @@ function decorate(error: unknown, sql: string): unknown {
 }
 
 export class MariaDbDatabase implements InteractiveSqlDatabase {
+  readonly dialect = "mariadb" as const;
   private readonly pool: Pool;
   private closed = false;
 

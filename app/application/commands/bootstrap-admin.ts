@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Clock, IdGenerator } from "~/application/ports";
 import type { AppEnv } from "~/runtime/context";
+import type { SqlDatabase } from "~/infrastructure/db/sql";
 
 /**
  * Initial administrator bootstrap.
@@ -178,16 +179,7 @@ export async function bootstrapAdmin(
    * live in-progress claim is younger than STALE_CLAIM_MS and will not match,
    * and a completed install will not match either.
    */
-  const claim = await env.DB.prepare(
-    `INSERT INTO installation_state (id, status, claimed_at, token_consumed_at)
-     VALUES ('singleton', 'in_progress', ?1, ?1)
-     ON CONFLICT(id) DO UPDATE
-       SET claimed_at = ?1, token_consumed_at = ?1
-     WHERE installation_state.status = 'in_progress'
-       AND installation_state.claimed_at < ?2`,
-  )
-    .bind(now, now - STALE_CLAIM_MS)
-    .run();
+  const claim = await claimInstallation(env.DB, now);
 
   if (claim.meta.changes === 0) {
     // Someone else holds a live claim, or installation already completed.
@@ -267,4 +259,66 @@ export async function bootstrapAdmin(
 
   await recordAttempt(deps, "completed", ipHash);
   return { ok: true, userId: account.userId, setCookie: account.setCookie };
+}
+
+/**
+ * The atomic installation claim, in each dialect.
+ *
+ * ── WHY THIS IS THE ONE STATEMENT THE TRANSLATOR REFUSES ────────────────────
+ *
+ * SQLite's upsert takes a WHERE on the conflict branch, so "reclaim only if the
+ * existing claim is stale" is one statement. MariaDB's ON DUPLICATE KEY UPDATE
+ * takes no WHERE at all. Silently dropping the condition would turn a
+ * CONDITIONAL claim into an unconditional one — a second installer could seize
+ * a live claim and create a second super admin on a shop that already has
+ * staff. So the translator throws rather than guessing, and this is the port.
+ *
+ * ── HOW THE MARIADB FORM PRESERVES THE SEMANTICS ────────────────────────────
+ *
+ * The condition moves from a WHERE into the assigned VALUE: each column is set
+ * to the new value when the claim is stale and to ITSELF when it is not. A row
+ * assigned its own value is not a changed row, so MariaDB reports zero affected
+ * rows — which is exactly what the caller reads as "someone else holds it".
+ *
+ * A bare column name inside ON DUPLICATE KEY UPDATE is the EXISTING row's
+ * value; VALUES(col) is the one that was going to be inserted. Both are needed
+ * here and mixing them up would invert the test.
+ *
+ * ── THE ONE BEHAVIOURAL DIFFERENCE, WHICH FAILS CLOSED ──────────────────────
+ *
+ * If a stale row's claimed_at happens to equal `now` to the millisecond, the
+ * assignment writes an identical value, MariaDB reports zero changed rows, and
+ * this reads as "lost the claim". The caller then refuses to install and says
+ * so. That is the safe direction: the failure is a retryable refusal, not two
+ * installers proceeding at once.
+ */
+async function claimInstallation(db: SqlDatabase, now: number) {
+  const staleBefore = now - STALE_CLAIM_MS;
+
+  if (db.dialect === "mariadb") {
+    return db
+      .prepare(
+        `/* dialect: mariadb */
+         INSERT INTO installation_state (id, status, claimed_at, token_consumed_at)
+         VALUES ('singleton', 'in_progress', ?1, ?1)
+         ON CONFLICT(id) DO UPDATE
+           SET claimed_at = IF(status = 'in_progress' AND claimed_at < ?2, VALUES(claimed_at), claimed_at),
+               token_consumed_at = IF(status = 'in_progress' AND claimed_at < ?2, VALUES(token_consumed_at), token_consumed_at)`,
+      )
+      .bind(now, staleBefore)
+      .run();
+  }
+
+  return db
+    .prepare(
+      `/* dialect: sqlite */
+       INSERT INTO installation_state (id, status, claimed_at, token_consumed_at)
+       VALUES ('singleton', 'in_progress', ?1, ?1)
+       ON CONFLICT(id) DO UPDATE
+         SET claimed_at = ?1, token_consumed_at = ?1
+       WHERE installation_state.status = 'in_progress'
+         AND installation_state.claimed_at < ?2`,
+    )
+    .bind(now, staleBefore)
+    .run();
 }

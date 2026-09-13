@@ -1,8 +1,18 @@
 import { env } from "cloudflare:test";
 import { describe, it, expect, beforeEach } from "vitest";
-import { ORDER_VIEWS, PAYMENT_VIEWS, ORDER_DELIVERY_FACET } from "~/lib/order-views";
+import { ORDER_VIEWS, PAYMENT_VIEWS, ORDER_DELIVERY_FACET, viewClause } from "~/lib/order-views";
 import { INVENTORY_VIEWS } from "~/lib/inventory-views";
 import { seed } from "../../tests/fixtures/seed";
+
+/*
+ * A fixed instant.
+ *
+ * A view may contain NOW_MS, which viewClause substitutes — that is how the
+ * expired-reservation view asks "expired by when?" without calling a SQL clock
+ * that SQLite and MariaDB spell differently. Pinning it keeps these counts
+ * reproducible.
+ */
+const NOW = 1_789_000_000_000;
 
 /**
  * The order, payment and inventory saved views, executed against a real D1.
@@ -31,7 +41,7 @@ describe("order views", () => {
   for (const view of ORDER_VIEWS) {
     it(`"${view.slug}" runs against the real schema`, async () => {
       const row = await env.DB.prepare(
-        `SELECT COUNT(*) AS n ${ORDER_FROM} WHERE ${view.where}`,
+        `SELECT COUNT(*) AS n ${ORDER_FROM} WHERE ${viewClause(view, NOW)}`,
       ).first<{ n: number }>();
       expect(Number.isInteger(row?.n)).toBe(true);
     });
@@ -78,7 +88,7 @@ describe("payment views", () => {
   for (const view of PAYMENT_VIEWS) {
     it(`"${view.slug}" runs against the real schema`, async () => {
       const row = await env.DB.prepare(
-        `SELECT COUNT(*) AS n ${PAYMENT_FROM} WHERE ${view.where}`,
+        `SELECT COUNT(*) AS n ${PAYMENT_FROM} WHERE ${viewClause(view, NOW)}`,
       ).first<{ n: number }>();
       expect(Number.isInteger(row?.n)).toBe(true);
     });
@@ -96,7 +106,7 @@ describe("payment views", () => {
                     AND d.transaction_reference IS NOT NULL
                     AND d.id <> op.id) AS duplicate_count
            ${PAYMENT_FROM}
-          WHERE ${view.where}
+          WHERE ${viewClause(view, NOW)}
           ORDER BY
             CASE op.status WHEN 'proof_received' THEN 0 WHEN 'under_verification' THEN 1 ELSE 2 END,
             o.reservation_expires_at ASC
@@ -132,7 +142,7 @@ describe("inventory views", () => {
   for (const view of INVENTORY_VIEWS) {
     it(`"${view.slug}" runs against the real schema`, async () => {
       const row = await env.DB.prepare(
-        `SELECT COUNT(*) AS n ${FROM} WHERE v.archived_at IS NULL AND ${view.where}`,
+        `SELECT COUNT(*) AS n ${FROM} WHERE v.archived_at IS NULL AND ${viewClause(view, NOW)}`,
       ).first<{ n: number }>();
       expect(Number.isInteger(row?.n)).toBe(true);
     });

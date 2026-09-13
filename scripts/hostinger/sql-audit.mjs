@@ -17,6 +17,18 @@
  * WHAT IT CANNOT SEE. A statement assembled from fragments across functions is
  * extracted as a fragment. Those are reported as `partial` and counted
  * separately rather than being claimed as verified — see the summary.
+ *
+ * DELIBERATELY DIALECT-SPECIFIC STATEMENTS. A handful of statements cannot be
+ * written once — SQLite's conditional upsert and FTS5's MATCH have no MariaDB
+ * equivalent at all. Those are written twice, chosen at runtime from
+ * `db.dialect`, and marked in the SQL with
+ *
+ *     a leading block comment reading `dialect: sqlite` or `dialect: mariadb`.
+ *
+ * The marker is required, not optional: it is the only way an untranslatable
+ * statement stops failing this audit, so "I ported this on purpose" has to be
+ * written down where a reviewer reads the SQL rather than inferred from a
+ * nearby if-statement.
  */
 
 import fs from "node:fs";
@@ -113,7 +125,10 @@ function walk(dir, out = []) {
 // ── Run ─────────────────────────────────────────────────────────────────────
 
 const SCAN_DIRS = ["app", "workers"];
-const results = { ok: [], partial: [], failed: [] };
+const results = { ok: [], partial: [], ported: [], failed: [] };
+
+/** A block comment reading `dialect: sqlite` — an explicit, reviewable opt-out. */
+const DIALECT_MARKER = /\/\*\s*dialect:\s*(sqlite|mariadb)\s*\*\//i;
 
 for (const dir of SCAN_DIRS) {
   for (const file of walk(path.join(root, dir))) {
@@ -133,6 +148,12 @@ for (const dir of SCAN_DIRS) {
        */
       const normalised = statement.replace(/__INTERPOLATED__/g, "interpolated_fragment");
       const isPartial = statement.includes("__INTERPOLATED__");
+
+      const marker = DIALECT_MARKER.exec(statement);
+      if (marker) {
+        results.ported.push({ file: relative, dialect: marker[1].toLowerCase(), statement });
+        continue;
+      }
 
       try {
         translate(normalised);
@@ -162,9 +183,17 @@ if (process.argv.includes("--json")) {
   console.log(JSON.stringify(results, null, 2));
 } else {
   console.log(`SQL portability audit — ${total} statements across ${SCAN_DIRS.join(", ")}\n`);
-  console.log(`  translated cleanly                     ${results.ok.length}`);
-  console.log(`  translated, with interpolated fragments ${results.partial.length}`);
-  console.log(`  UNTRANSLATABLE                          ${results.failed.length}`);
+  console.log(`  translated cleanly                      ${results.ok.length}`);
+  console.log(`  translated, with interpolated fragments  ${results.partial.length}`);
+  console.log(`  explicitly ported per dialect            ${results.ported.length}`);
+  console.log(`  UNTRANSLATABLE                           ${results.failed.length}`);
+
+  if (results.ported.length > 0) {
+    console.log("\nWritten twice on purpose, chosen from db.dialect:\n");
+    for (const item of results.ported) {
+      console.log(`  ${item.dialect.padEnd(8)} ${item.file}`);
+    }
+  }
 
   if (results.failed.length > 0) {
     console.log("\nStatements that cannot run on MariaDB:\n");

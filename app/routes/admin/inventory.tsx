@@ -6,6 +6,7 @@ import { systemClock, cryptoIds } from "~/infrastructure/primitives";
 import { availabilityState } from "~/domain/inventory/availability";
 import { parseTableParams, paginate, orderByClause, type TableSpec } from "~/lib/table-params";
 import { INVENTORY_VIEWS, INVENTORY_VIEW_SLUGS } from "~/lib/inventory-views";
+import { viewClause } from "~/lib/order-views";
 import { breadcrumbsFor } from "~/lib/admin-nav";
 import { PageHeader } from "~/components/admin/admin-shell";
 import { Link } from "react-router";
@@ -62,6 +63,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const state = parseTableParams(url.searchParams, SPEC);
   const view = INVENTORY_VIEWS.find((v) => v.slug === state.view) ?? INVENTORY_VIEWS[0]!;
+  // The application's clock, not the database's. See NOW_MS in order-views.
+  const now = systemClock.now();
 
   const from = `FROM inventory_levels il
        JOIN product_variants v ON v.id = il.variant_id
@@ -69,7 +72,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
        LEFT JOIN product_translations pt ON pt.product_id = p.id AND pt.locale = 'it'
        JOIN inventory_locations loc ON loc.id = il.location_id`;
 
-  const conditions = [`v.archived_at IS NULL`, view.where];
+  const conditions = [`v.archived_at IS NULL`, viewClause(view, now)];
   const binds: unknown[] = [];
 
   if (state.q) {
@@ -110,7 +113,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       }>(),
 
     env.DB.prepare(
-      `SELECT ${INVENTORY_VIEWS.map((v, i) => `SUM(CASE WHEN ${v.where} THEN 1 ELSE 0 END) AS v${i}`).join(", ")}
+      `SELECT ${INVENTORY_VIEWS.map((v, i) => `SUM(CASE WHEN ${viewClause(v, now)} THEN 1 ELSE 0 END) AS v${i}`).join(", ")}
          ${from} WHERE v.archived_at IS NULL`,
     ).first<Record<string, number>>(),
   ]);

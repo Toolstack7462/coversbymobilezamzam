@@ -1,4 +1,4 @@
-import type { ListView } from "~/lib/order-views";
+import { NOW_MS, type ListView } from "~/lib/order-views";
 
 /**
  * Saved views for the stock list.
@@ -35,7 +35,7 @@ export const INVENTORY_VIEWS: readonly ListView[] = [
                      WHERE sr.variant_id = il.variant_id
                        AND sr.location_id = il.location_id
                        AND sr.status = 'active'
-                       AND sr.expires_at < unixepoch() * 1000)`,
+                       AND sr.expires_at < ${NOW_MS})`,
   },
   {
     slug: "senza-soglia",

@@ -24,7 +24,7 @@
  * Whether the plan has headroom. That needs the hosting account.
  */
 
-import { monitorEventLoopDelay } from "node:perf_hooks";
+import { monitorEventLoopDelay, performance } from "node:perf_hooks";
 import { setTimeout as sleep } from "node:timers/promises";
 
 const args = process.argv.slice(2);

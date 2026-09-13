@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import type { Route } from "./+types/audit";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { requireStaff } from "~/infrastructure/auth/session.server";
 import { formatDateTime } from "~/lib/i18n";
 
@@ -16,7 +16,7 @@ export function meta() {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   await requireStaff(request, env, "audit.read");
 
   const url = new URL(request.url);

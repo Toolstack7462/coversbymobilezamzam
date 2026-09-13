@@ -1,6 +1,6 @@
 import { Form, Link, useLocation } from "react-router";
 import type { Route } from "./+types/security-2fa";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { createAuth } from "~/infrastructure/auth/auth.server";
 import {
   requireStaff,
@@ -26,7 +26,7 @@ export function meta() {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const actor = await requireStaff(request, env);
 
   const enrolled = await hasVerifiedTwoFactor(env, actor.userId);
@@ -48,7 +48,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const actor = await requireStaff(request, env);
   const form = await request.formData();
   const intent = String(form.get("intent") ?? "");

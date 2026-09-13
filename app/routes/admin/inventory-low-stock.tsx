@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import type { Route } from "./+types/inventory-low-stock";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { requireStaff } from "~/infrastructure/auth/session.server";
 import { breadcrumbsFor } from "~/lib/admin-nav";
 import { PageHeader } from "~/components/admin/admin-shell";
@@ -25,7 +25,7 @@ export function meta() {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   await requireStaff(request, env, "inventory.read");
 
   const { results } = await env.DB.prepare(

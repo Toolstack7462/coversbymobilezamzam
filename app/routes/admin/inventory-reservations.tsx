@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import type { Route } from "./+types/inventory-reservations";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { requireStaff } from "~/infrastructure/auth/session.server";
 import { systemClock } from "~/infrastructure/primitives";
 import { formatDateTime } from "~/lib/i18n";
@@ -36,7 +36,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   await requireStaff(request, env, "inventory.read");
 
   const now = systemClock.now();

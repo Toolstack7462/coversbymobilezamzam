@@ -1,7 +1,7 @@
 import { Form, redirect } from "react-router";
 import { renderSVG } from "uqr";
 import type { Route } from "./+types/security-2fa-setup";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { createAuth } from "~/infrastructure/auth/auth.server";
 import { requireStaff, hasVerifiedTwoFactor } from "~/infrastructure/auth/session.server";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
@@ -31,7 +31,7 @@ export function meta() {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const actor = await requireStaff(request, env);
 
   // Already enrolled: nothing to do here.
@@ -43,7 +43,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const actor = await requireStaff(request, env);
   const form = await request.formData();
   const step = String(form.get("step") ?? "");

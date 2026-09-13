@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { getAuthTables } from "better-auth/db";
 import { createAuth } from "~/infrastructure/auth/auth.server";
 import { seed } from "../../tests/fixtures/seed";
+import { testAppEnv, installTestAuthDatabase } from "../helpers/app-env";
 
 /**
  * The auth tables match what Better Auth expects.
@@ -38,7 +39,7 @@ import { seed } from "../../tests/fixtures/seed";
  * bindings in vitest.workers.config.ts rather than being written here, so no
  * quoted value sits next to the word SECRET in a source file.
  */
-const TEST_ENV = () => env as unknown as Env;
+const TEST_ENV = () => testAppEnv(env as unknown as Env);
 
 /** The columns SQLite actually has, per table. */
 async function columnsOf(table: string): Promise<Set<string>> {
@@ -49,6 +50,7 @@ async function columnsOf(table: string): Promise<Set<string>> {
 describe("every field Better Auth requires exists", () => {
   beforeEach(async () => {
     await seed(env.DB);
+    installTestAuthDatabase(env);
   });
 
   // Only the tables this project actually uses. Better Auth declares more for

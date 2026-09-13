@@ -1,6 +1,6 @@
 import { Form, Link } from "react-router";
 import type { Route } from "./+types/pages";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { requireStaff } from "~/infrastructure/auth/session.server";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
 import { breadcrumbsFor } from "~/lib/admin-nav";
@@ -50,7 +50,7 @@ const PAGE_TYPES = [
 ] as const;
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const actor = await requireStaff(request, env, "content.read");
 
   // `?tipo=guide` narrows the list; the nav entry for Guide points here.
@@ -105,7 +105,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const form = await request.formData();
   const intent = String(form.get("intent") ?? "");
   const now = systemClock.now();

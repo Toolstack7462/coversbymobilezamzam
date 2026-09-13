@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router";
 import type { Route } from "./+types/dashboard";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { requireStaff } from "~/infrastructure/auth/session.server";
 import { systemClock } from "~/infrastructure/primitives";
 import { money, format as formatMoney } from "~/domain/pricing/money";
@@ -47,7 +47,7 @@ export function meta() {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const actor = await requireStaff(request, env);
 
   const now = systemClock.now();

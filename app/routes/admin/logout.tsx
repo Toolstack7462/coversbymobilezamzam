@@ -1,6 +1,6 @@
 import { redirect } from "react-router";
 import type { Route } from "./+types/logout";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { createAuth } from "~/infrastructure/auth/auth.server";
 import { relayCookies } from "~/infrastructure/auth/cookies.server";
 
@@ -16,7 +16,7 @@ export function meta() {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const auth = createAuth(env);
 
   const response = await auth.api.signOut({ headers: request.headers, asResponse: true });

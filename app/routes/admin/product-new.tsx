@@ -1,6 +1,6 @@
 import { Form, Link, redirect } from "react-router";
 import type { Route } from "./+types/product-new";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { requireStaff } from "~/infrastructure/auth/session.server";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
 import { createProduct, CreateProductInput } from "~/application/commands/create-product";
@@ -38,7 +38,7 @@ export function meta() {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   await requireStaff(request, env, "product.write");
 
   const [brands, categories, location] = await Promise.all([
@@ -63,7 +63,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const actor = await requireStaff(request, env, "product.write");
   const form = await request.formData();
 
@@ -104,7 +104,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 
   const result = await createProduct(parsed.data, {
-    d1: env.DB,
+    db: env.DB,
     clock: systemClock,
     ids: cryptoIds,
     defaultLocationId: location.id,

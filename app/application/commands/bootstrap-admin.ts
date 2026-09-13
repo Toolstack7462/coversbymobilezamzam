@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { Clock, IdGenerator } from "~/application/ports";
+import type { AppEnv } from "~/runtime/context";
 
 /**
  * Initial administrator bootstrap.
@@ -43,7 +44,7 @@ export type BootstrapAdminResult =
   | { ok: false; reason: "account_creation_failed"; detail: string };
 
 export interface BootstrapAdminDeps {
-  env: Env;
+  env: AppEnv;
   clock: Clock;
   ids: IdGenerator;
   ipAddress: string | null;
@@ -110,7 +111,7 @@ async function recordAttempt(
 }
 
 /** Whether installation has already completed. Safe to call unauthenticated. */
-export async function isInstalled(env: Env): Promise<boolean> {
+export async function isInstalled(env: AppEnv): Promise<boolean> {
   const row = await env.DB.prepare(
     `SELECT status FROM installation_state WHERE id = 'singleton'`,
   ).first<{ status: string }>();

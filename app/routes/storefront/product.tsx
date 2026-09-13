@@ -1,7 +1,7 @@
 import { Link, Form, useLocation } from "react-router";
 import { data } from "react-router";
 import type { Route } from "./+types/product";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { parseLocalePath, translator, localePath } from "~/lib/i18n";
 import { money, format as formatMoney } from "~/domain/pricing/money";
 import { discountDisplay } from "~/domain/pricing/resolve";
@@ -51,7 +51,7 @@ export function meta({ loaderData }: Route.MetaArgs) {
 }
 
 export async function loader({ context, params }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
 
   const product = await env.DB.prepare(
     `SELECT p.id, p.slug, pt.name, pt.short_description, pt.full_description,

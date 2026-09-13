@@ -1,6 +1,6 @@
 import { Form, Link } from "react-router";
 import type { Route } from "./+types/compatibility";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { requireStaff } from "~/infrastructure/auth/session.server";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
 import { parseTableParams, paginate, orderByClause, type TableSpec } from "~/lib/table-params";
@@ -74,7 +74,7 @@ interface Row {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const actor = await requireStaff(request, env, "product.read");
 
   const url = new URL(request.url);
@@ -132,7 +132,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const actor = await requireStaff(request, env, "product.write");
   const form = await request.formData();
   const intent = String(form.get("intent") ?? "");

@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router";
 import type { Route } from "./+types/customers";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { requireStaff } from "~/infrastructure/auth/session.server";
 import { money, format as formatMoney } from "~/domain/pricing/money";
 import { formatDateTime } from "~/lib/i18n";
@@ -72,7 +72,7 @@ interface CustomerRow {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const actor = await requireStaff(request, env, "customer.read");
 
   const url = new URL(request.url);

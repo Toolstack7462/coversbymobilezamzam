@@ -4,6 +4,7 @@ import { slugify } from "~/domain/catalogue/slug";
 import { loadProductDetail } from "~/routes/admin/product-detail";
 import { cryptoIds } from "~/infrastructure/primitives";
 import { seed, IDS } from "../../tests/fixtures/seed";
+import { testAppEnv } from "../helpers/app-env";
 
 /**
  * Writes to the catalogue reference data, against the real schema.
@@ -176,7 +177,7 @@ describe("adding compatibility", () => {
     const id = cryptoIds.generate();
     await addCompatibility("adapter_required", IDS.deviceModelOther, id);
 
-    const data = await loadProductDetail(env, IDS.product);
+    const data = await loadProductDetail(testAppEnv(env), IDS.product);
     const row = data.compatibility.find((c) => c.id === id);
 
     expect(row).toBeDefined();

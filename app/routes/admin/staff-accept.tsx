@@ -1,6 +1,6 @@
 import { Form, redirect } from "react-router";
 import type { Route } from "./+types/staff-accept";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { createAuth } from "~/infrastructure/auth/auth.server";
 import { allSetCookies, cookieHeaderFrom } from "~/infrastructure/auth/cookies.server";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
@@ -23,7 +23,7 @@ export function meta() {
 }
 
 export async function loader({ params, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const now = systemClock.now();
 
   const invitation = await env.DB.prepare(
@@ -44,7 +44,7 @@ export async function loader({ params, context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, params, context }: Route.ActionArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const form = await request.formData();
 
   const password = String(form.get("password") ?? "");

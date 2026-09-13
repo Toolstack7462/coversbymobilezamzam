@@ -1,11 +1,12 @@
 import { Form, Link } from "react-router";
 import type { Route } from "./+types/legal-documents";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { requireStaff } from "~/infrastructure/auth/session.server";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
 import { formatDateTime } from "~/lib/i18n";
 import { breadcrumbsFor } from "~/lib/admin-nav";
 import { PageHeader } from "~/components/admin/admin-shell";
+import type { SqlStatement } from "~/infrastructure/db/sql";
 
 /**
  * Legal documents.
@@ -67,7 +68,7 @@ const REQUIRED_DOCUMENTS = [
 ] as const;
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const actor = await requireStaff(request, env, "content.read");
 
   const documents = await env.DB.prepare(
@@ -111,7 +112,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const form = await request.formData();
   const intent = String(form.get("intent") ?? "");
   const now = systemClock.now();
@@ -131,7 +132,7 @@ export async function action({ request, context }: Route.ActionArgs) {
       .bind(code)
       .first<{ id: string }>();
 
-    const statements: D1PreparedStatement[] = [];
+    const statements: SqlStatement[] = [];
     let documentId = document?.id ?? "";
 
     if (!document) {

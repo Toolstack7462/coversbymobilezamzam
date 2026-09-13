@@ -1,6 +1,6 @@
 import { Form, Link } from "react-router";
 import type { Route } from "./+types/staff";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { requireStaff, hasStepUp } from "~/infrastructure/auth/session.server";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
 import { formatDateTime } from "~/lib/i18n";
@@ -24,7 +24,7 @@ export function meta() {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const actor = await requireStaff(request, env, "staff.read");
   const now = systemClock.now();
 
@@ -103,7 +103,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const form = await request.formData();
   const intent = String(form.get("intent") ?? "");
   const now = systemClock.now();

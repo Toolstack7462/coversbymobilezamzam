@@ -1,6 +1,6 @@
 import { Form, redirect } from "react-router";
 import type { Route } from "./+types/login";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { createAuth } from "~/infrastructure/auth/auth.server";
 import { relayCookies, cookieHeaderFrom } from "~/infrastructure/auth/cookies.server";
 import { getSession, loadStaffActor } from "~/infrastructure/auth/session.server";
@@ -18,7 +18,7 @@ export function meta() {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const session = await getSession(request, env);
 
   // Already signed in AND actually staff: skip the form.
@@ -31,7 +31,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const form = await request.formData();
 
   const email = String(form.get("email") ?? "").trim();

@@ -1,6 +1,6 @@
 import { data } from "react-router";
 import type { Route } from "./+types/legal";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { parseLocalePath } from "~/lib/i18n";
 import { parsePageBody } from "~/domain/content/page-body";
 
@@ -40,7 +40,7 @@ export function meta({ loaderData }: Route.MetaArgs) {
 }
 
 export async function loader({ context, params, request }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const { locale } = parseLocalePath(new URL(request.url).pathname);
 
   const row = await env.DB.prepare(

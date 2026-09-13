@@ -1,6 +1,6 @@
 import { useLocation } from "react-router";
 import type { Route } from "./+types/store";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { parseLocalePath, translator } from "~/lib/i18n";
 import {
   canShowStoreSection,
@@ -32,7 +32,7 @@ export function meta() {
 }
 
 export async function loader({ context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const { results } = await env.DB.prepare(`SELECT key, value FROM store_settings`).all<{
     key: string;
     value: string;

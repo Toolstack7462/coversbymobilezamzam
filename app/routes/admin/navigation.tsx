@@ -1,10 +1,11 @@
 import { Form, Link } from "react-router";
 import type { Route } from "./+types/navigation";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { requireStaff } from "~/infrastructure/auth/session.server";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
 import { breadcrumbsFor } from "~/lib/admin-nav";
 import { PageHeader } from "~/components/admin/admin-shell";
+import type { SqlDatabase } from "~/infrastructure/db/sql";
 
 /**
  * Navigation.
@@ -51,7 +52,7 @@ const MENUS = [
  *  outside the pages and categories checked below, is refused. */
 const FIXED_ROUTES = ["/", "/shop", "/trova-dispositivo", "/negozio", "/carrello"] as const;
 
-async function resolvableTargets(db: D1Database) {
+async function resolvableTargets(db: SqlDatabase) {
   const pages = await db
     .prepare(`SELECT slug FROM pages WHERE status = 'published' AND archived_at IS NULL`)
     .all<{ slug: string }>();
@@ -67,7 +68,7 @@ async function resolvableTargets(db: D1Database) {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const actor = await requireStaff(request, env, "content.read");
 
   const items = await env.DB.prepare(
@@ -119,7 +120,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   await requireStaff(request, env, "content.write");
 
   const form = await request.formData();

@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { createOrder, CreateOrderInput } from "~/application/commands/create-order";
 import { fixedClock, cryptoIds } from "~/infrastructure/primitives";
 import { seed, orderInput, IDS } from "../fixtures/seed";
+import { testDb } from "../helpers/app-env";
 
 /**
  * Invariant 2: the server is the only authority.
@@ -14,7 +15,7 @@ import { seed, orderInput, IDS } from "../fixtures/seed";
  */
 
 const deps = {
-  d1: env.DB,
+  db: testDb(env),
   clock: fixedClock(1_756_000_100_000),
   ids: cryptoIds,
   vatBasisPoints: 2200,

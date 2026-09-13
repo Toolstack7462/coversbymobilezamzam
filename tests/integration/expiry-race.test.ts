@@ -4,6 +4,7 @@ import { createOrder, CreateOrderInput } from "~/application/commands/create-ord
 import { expireReservations } from "~/application/commands/expire-reservations";
 import { fixedClock, cryptoIds } from "~/infrastructure/primitives";
 import { seed, orderInput, IDS } from "../fixtures/seed";
+import { testDb } from "../helpers/app-env";
 
 /**
  * The race this system exists to survive: a customer pays at minute 119, staff
@@ -17,7 +18,7 @@ const T0 = 1_756_000_100_000;
 const MINUTE = 60 * 1000;
 
 const depsAt = (now: number) => ({
-  d1: env.DB,
+  db: testDb(env),
   clock: fixedClock(now),
   ids: cryptoIds,
   vatBasisPoints: 2200,

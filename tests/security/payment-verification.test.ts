@@ -5,6 +5,7 @@ import { verifyPayment, VerifyPaymentInput } from "~/application/commands/verify
 import { fixedClock, cryptoIds } from "~/infrastructure/primitives";
 import { seed, orderInput, IDS } from "../fixtures/seed";
 import { seedStaff, grantTestStepUp, paymentFor } from "../fixtures/staff";
+import { testDb, testAppEnv } from "../helpers/app-env";
 
 /**
  * Invariant 6 — the most important rule in this system.
@@ -17,7 +18,7 @@ import { seedStaff, grantTestStepUp, paymentFor } from "../fixtures/staff";
 const NOW = 1_756_000_100_000;
 
 const orderDeps = {
-  d1: env.DB,
+  db: testDb(env),
   clock: fixedClock(NOW),
   ids: cryptoIds,
   vatBasisPoints: 2200,
@@ -51,7 +52,7 @@ describe("only a human may verify a payment", () => {
         amountReceived: 3990,
         transactionReference: "TRN-1",
       }),
-      { env, clock: fixedClock(NOW), ids: cryptoIds, actor },
+      { env: testAppEnv(env), clock: fixedClock(NOW), ids: cryptoIds, actor },
     );
 
     expect(result.ok).toBe(false);
@@ -74,7 +75,7 @@ describe("only a human may verify a payment", () => {
         amountReceived: 3990,
         transactionReference: "TRN-2",
       }),
-      { env, clock: fixedClock(NOW), ids: cryptoIds, actor },
+      { env: testAppEnv(env), clock: fixedClock(NOW), ids: cryptoIds, actor },
     );
 
     expect(result).toMatchObject({ ok: false, reason: "step_up_required" });
@@ -95,7 +96,7 @@ describe("only a human may verify a payment", () => {
         amountReceived: 3990,
         transactionReference: "TRN-3",
       }),
-      { env, clock: fixedClock(NOW), ids: cryptoIds, actor },
+      { env: testAppEnv(env), clock: fixedClock(NOW), ids: cryptoIds, actor },
     );
 
     expect(result.ok).toBe(true);
@@ -113,7 +114,7 @@ describe("only a human may verify a payment", () => {
     const actor = await seedStaff(env.DB, { permissions: ["payment.read", "payment.verify"] });
     await grantTestStepUp(env.DB, actor.userId, "payment.verify", NOW);
 
-    const deps = { env, clock: fixedClock(NOW), ids: cryptoIds, actor };
+    const deps = { env: testAppEnv(env), clock: fixedClock(NOW), ids: cryptoIds, actor };
 
     const a = await verifyPayment(
       VerifyPaymentInput.parse({
@@ -187,7 +188,7 @@ describe("amounts and references", () => {
         amountReceived: 3000,
         transactionReference: "TRN-SHORT",
       }),
-      { env, clock: fixedClock(NOW), ids: cryptoIds, actor },
+      { env: testAppEnv(env), clock: fixedClock(NOW), ids: cryptoIds, actor },
     );
 
     expect(result).toMatchObject({ ok: false, reason: "amount_mismatch" });
@@ -206,7 +207,7 @@ describe("amounts and references", () => {
         amountReceived: 3000,
         transactionReference: "TRN-PARTIAL",
       }),
-      { env, clock: fixedClock(NOW), ids: cryptoIds, actor },
+      { env: testAppEnv(env), clock: fixedClock(NOW), ids: cryptoIds, actor },
     );
 
     expect(result.ok).toBe(true);
@@ -248,7 +249,7 @@ describe("amounts and references", () => {
         amountReceived: 3990,
         transactionReference: "SHARED-REF",
       }),
-      { env, clock: fixedClock(NOW), ids: cryptoIds, actor: actorA },
+      { env: testAppEnv(env), clock: fixedClock(NOW), ids: cryptoIds, actor: actorA },
     );
 
     const actorB = await seedStaff(env.DB, {
@@ -264,7 +265,7 @@ describe("amounts and references", () => {
         amountReceived: 3990,
         transactionReference: "SHARED-REF",
       }),
-      { env, clock: fixedClock(NOW), ids: cryptoIds, actor: actorB },
+      { env: testAppEnv(env), clock: fixedClock(NOW), ids: cryptoIds, actor: actorB },
     );
 
     expect(result.ok).toBe(true);
@@ -289,7 +290,7 @@ describe("verification is audited (invariant 8)", () => {
         amountReceived: 3990,
         transactionReference: "TRN-AUDIT",
       }),
-      { env, clock: fixedClock(NOW), ids: cryptoIds, actor },
+      { env: testAppEnv(env), clock: fixedClock(NOW), ids: cryptoIds, actor },
     );
 
     const audit = await env.DB.prepare(
@@ -336,7 +337,7 @@ describe("verification is audited (invariant 8)", () => {
         amountReceived: 3990,
         transactionReference: "TRN-STOCK",
       }),
-      { env, clock: fixedClock(NOW), ids: cryptoIds, actor },
+      { env: testAppEnv(env), clock: fixedClock(NOW), ids: cryptoIds, actor },
     );
 
     // Paying CONSUMES the hold: the unit leaves on_hand rather than returning

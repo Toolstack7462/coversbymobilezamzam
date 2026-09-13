@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { createOrder, CreateOrderInput } from "~/application/commands/create-order";
 import { fixedClock, cryptoIds } from "~/infrastructure/primitives";
 import { seed, orderInput, IDS } from "../../tests/fixtures/seed";
+import { testDb } from "../helpers/app-env";
 
 /**
  * Invariants 4 and 14, against a real D1 with the real migrations.
@@ -12,7 +13,7 @@ import { seed, orderInput, IDS } from "../../tests/fixtures/seed";
  */
 
 const deps = {
-  d1: env.DB,
+  db: testDb(env),
   clock: fixedClock(1_756_000_100_000),
   ids: cryptoIds,
   vatBasisPoints: 2200,

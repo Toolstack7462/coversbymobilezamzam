@@ -4,6 +4,7 @@ import { parseSearchQuery } from "~/domain/search/query";
 import { createProduct, CreateProductInput } from "~/application/commands/create-product";
 import { fixedClock, cryptoIds } from "~/infrastructure/primitives";
 import { seed, IDS } from "../../tests/fixtures/seed";
+import { testDb } from "../helpers/app-env";
 
 /**
  * Full-text search, against real SQLite.
@@ -21,7 +22,7 @@ import { seed, IDS } from "../../tests/fixtures/seed";
 
 const NOW = 1_756_000_900_000;
 const deps = {
-  d1: env.DB,
+  db: testDb(env),
   clock: fixedClock(NOW),
   ids: cryptoIds,
   defaultLocationId: IDS.location,

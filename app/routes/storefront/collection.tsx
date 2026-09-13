@@ -1,7 +1,7 @@
 import { Link, Form, useLocation, useRouteLoaderData } from "react-router";
 import type { Route } from "./+types/collection";
 import { categoryMembershipSql } from "~/domain/catalogue/category-membership";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { parseLocalePath, translator, localePath, plural } from "~/lib/i18n";
 import { ProductCard, type ProductCardData } from "~/components/storefront/product-card";
 import { availabilityState } from "~/domain/inventory/availability";
@@ -45,7 +45,7 @@ function availabilityFor(row: {
 }
 
 export async function loader({ context, request }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const url = new URL(request.url);
 
   const q = url.searchParams.get("q")?.trim() ?? "";

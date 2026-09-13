@@ -4,6 +4,7 @@ import { calculateTotals, type TotalsLine } from "~/domain/cart/totals";
 import { generateOrderNumber, generateTrackingToken } from "~/domain/orders/order-number";
 import { resolveCompatibility } from "~/domain/compatibility/resolve";
 import type { Clock, IdGenerator } from "~/application/ports";
+import type { SqlDatabase, SqlStatement } from "~/infrastructure/db/sql";
 
 /**
  * Order creation.
@@ -81,7 +82,7 @@ export type CreateOrderResult =
   | { ok: false; reason: "conflict" };
 
 export interface CreateOrderDeps {
-  d1: D1Database;
+  db: SqlDatabase;
   clock: Clock;
   ids: IdGenerator;
   vatBasisPoints: number;
@@ -109,13 +110,13 @@ export async function createOrder(
   input: CreateOrderInput,
   deps: CreateOrderDeps,
 ): Promise<CreateOrderResult> {
-  const { d1, clock, ids, vatBasisPoints, defaultLocationId } = deps;
+  const { db, clock, ids, vatBasisPoints, defaultLocationId } = deps;
   const now = clock.now();
 
   // ── 1. Idempotency replay ─────────────────────────────────────────────────
   // Customers double-click and networks retry. A replay returns the original
   // result rather than reserving the last unit twice.
-  const existing = await d1
+  const existing = await db
     .prepare(
       `SELECT result_payload, status FROM idempotency_keys
         WHERE key = ?1 AND scope = 'order_create' AND expires_at > ?2`,
@@ -145,7 +146,7 @@ export async function createOrder(
   // ── 2. Payment method must be configured AND active ───────────────────────
   // A method that is not fully configured is never advertised, and must not be
   // accepted even if its id was submitted directly.
-  const method = await d1
+  const method = await db
     .prepare(
       `SELECT id, reservation_minutes, eligible_for_shipping, eligible_for_pickup, active
          FROM payment_methods WHERE id = ?1 AND archived_at IS NULL`,
@@ -173,7 +174,7 @@ export async function createOrder(
   const variantIds = input.lines.map((l) => l.variantId);
   const placeholders = variantIds.map((_, i) => `?${i + 2}`).join(",");
 
-  const { results: rows } = await d1
+  const { results: rows } = await db
     .prepare(
       `SELECT v.id AS variant_id, v.product_id, v.sku, v.variant_label,
               pt.name AS product_name,
@@ -247,19 +248,19 @@ export async function createOrder(
   const reservationExpiresAt = now + method.reservation_minutes * 60 * 1000;
 
   const compatibilityByVariant = await resolveCompatibilityStates(
-    d1,
+    db,
     rows,
     input.deviceModelId ?? null,
   );
 
   // ── 7. ONE batch. All of it, or none of it. ───────────────────────────────
-  const statements: D1PreparedStatement[] = [];
+  const statements: SqlStatement[] = [];
 
   // Claiming the key is an INSERT against a UNIQUE index. Two concurrent
   // requests with the same key: one inserts, the other fails, and its whole
   // batch rolls back. The constraint IS the mechanism.
   statements.push(
-    d1
+    db
       .prepare(
         `INSERT INTO idempotency_keys (id, key, scope, owner_token, status, result_payload, expires_at, created_at)
          VALUES (?1, ?2, 'order_create', ?3, 'completed', ?4, ?5, ?6)`,
@@ -281,7 +282,7 @@ export async function createOrder(
   );
 
   statements.push(
-    d1
+    db
       .prepare(
         `INSERT INTO orders (
            id, order_number, tracking_token, status,
@@ -326,7 +327,7 @@ export async function createOrder(
     const row = byVariant.get(line.variantId)!;
     const lineTotal = totals.lineTotals[index]!;
     statements.push(
-      d1
+      db
         .prepare(
           `INSERT INTO order_items (
              id, order_id, product_id, variant_id, product_name, variant_label, sku,
@@ -356,7 +357,7 @@ export async function createOrder(
 
   if (input.address && input.deliveryMethod === "shipping") {
     statements.push(
-      d1
+      db
         .prepare(
           `INSERT INTO order_addresses (
              id, order_id, address_type, first_name, last_name, street, street_number,
@@ -382,7 +383,7 @@ export async function createOrder(
 
   for (const line of input.lines) {
     statements.push(
-      d1
+      db
         .prepare(
           `INSERT INTO stock_reservations (
              id, order_id, variant_id, location_id, quantity, status, expires_at, created_at, updated_at
@@ -418,7 +419,7 @@ export async function createOrder(
      * between the read and the write.
      */
     statements.push(
-      d1
+      db
         .prepare(
           `UPDATE inventory_levels
               SET reserved = reserved + ?1, updated_at = ?2
@@ -428,7 +429,7 @@ export async function createOrder(
     );
 
     statements.push(
-      d1
+      db
         .prepare(
           `INSERT INTO stock_movements (
              id, variant_id, location_id, movement_type, quantity_delta,
@@ -445,7 +446,7 @@ export async function createOrder(
   // Payment starts at 'awaiting_payment', not 'awaiting_customer_contact':
   // the instructions are on the confirmation page the customer is looking at.
   statements.push(
-    d1
+    db
       .prepare(
         `INSERT INTO order_payments (
            id, order_id, payment_method_id, status, amount_expected, currency, created_at, updated_at
@@ -463,7 +464,7 @@ export async function createOrder(
   );
 
   statements.push(
-    d1
+    db
       .prepare(
         `INSERT INTO order_status_history (id, order_id, from_status, to_status, actor, created_at)
          VALUES (?1,?2,NULL,'awaiting_customer_contact','customer',?3)`,
@@ -472,7 +473,7 @@ export async function createOrder(
   );
 
   statements.push(
-    d1
+    db
       .prepare(
         `INSERT INTO order_events (id, order_id, event_type, payload, customer_visible, created_at)
          VALUES (?1,?2,'order_placed',?3,1,?4)`,
@@ -481,7 +482,7 @@ export async function createOrder(
   );
 
   try {
-    await d1.batch(statements);
+    await db.batch(statements);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
 
@@ -513,7 +514,7 @@ export async function createOrder(
  * they were told.
  */
 async function resolveCompatibilityStates(
-  d1: D1Database,
+  db: SqlDatabase,
   rows: readonly VariantRow[],
   deviceModelId: string | null,
 ): Promise<Map<string, string>> {
@@ -523,7 +524,7 @@ async function resolveCompatibilityStates(
   const productIds = [...new Set(rows.map((r) => r.product_id))];
   const placeholders = productIds.map((_, i) => `?${i + 1}`).join(",");
 
-  const { results } = await d1
+  const { results } = await db
     .prepare(
       `SELECT product_id, variant_id, device_model_id, compatibility_level, verified
          FROM product_compatibility WHERE product_id IN (${placeholders})`,

@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import type { Route } from "./+types/inventory-movements";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { requireStaff } from "~/infrastructure/auth/session.server";
 import { formatDateTime } from "~/lib/i18n";
 import { breadcrumbsFor } from "~/lib/admin-nav";
@@ -44,7 +44,7 @@ const MOVEMENT_LABELS: Record<string, string> = {
 const PER_PAGE = 100;
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   await requireStaff(request, env, "inventory.read");
 
   const url = new URL(request.url);

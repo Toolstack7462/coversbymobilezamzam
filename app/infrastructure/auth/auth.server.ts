@@ -1,11 +1,10 @@
 import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { twoFactor } from "better-auth/plugins";
-import { createDb } from "~/infrastructure/db/client";
-import { user, session, account, verification, twoFactor as twoFactorTable } from "@db/schema";
+import { authDatabase } from "~/infrastructure/auth/database";
+import type { AppEnv } from "~/runtime/context";
 
 /**
- * Better Auth, over D1 through Drizzle.
+ * Better Auth, over whichever database the runtime configured.
  *
  * Better Auth owns `user`, `session`, `account`, `verification` and
  * `two_factor`. This project does not hand-roll session storage, credential
@@ -15,9 +14,7 @@ import { user, session, account, verification, twoFactor as twoFactorTable } fro
  * A fresh instance per request. Workers have no long-lived process to hold one,
  * and the bindings differ per request anyway.
  */
-export function createAuth(env: Env) {
-  const db = createDb(env.DB);
-
+export function createAuth(env: AppEnv) {
   /*
    * Refuse to build an auth system that does not know where it lives.
    *
@@ -42,19 +39,16 @@ export function createAuth(env: Env) {
   }
 
   return betterAuth({
-    database: drizzleAdapter(db, {
-      provider: "sqlite",
-      // Explicit rather than passing the whole schema: Better Auth should see
-      // only its own tables, so it can never touch orders or inventory.
-      schema: {
-        user,
-        session,
-        account,
-        verification,
-        // The plugin's model is `twoFactor`; the table is `two_factor`.
-        twoFactor: twoFactorTable,
-      },
-    }),
+    /*
+     * Supplied by the entry point, not built here.
+     *
+     * Drizzle's SQLite and MySQL dialects need different driver objects and
+     * different table definitions, and the adapter takes a query builder rather
+     * than SQL — so the `SqlDatabase` port cannot abstract it. Both entry
+     * points hand in an adapter scoped to Better Auth's own five tables, so it
+     * can never reach orders or inventory whichever database is underneath.
+     */
+    database: authDatabase(),
 
     secret: env.BETTER_AUTH_SECRET,
     baseURL: baseUrl,

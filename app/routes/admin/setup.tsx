@@ -1,6 +1,6 @@
 import { Form, redirect } from "react-router";
 import type { Route } from "./+types/setup";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { createAuth } from "~/infrastructure/auth/auth.server";
 import { allSetCookies, cookieHeaderFrom } from "~/infrastructure/auth/cookies.server";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
@@ -27,7 +27,7 @@ export function meta() {
 }
 
 export async function loader({ context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
 
   // Closed permanently once installation has completed.
   if (await isInstalled(env)) {
@@ -49,7 +49,7 @@ export async function loader({ context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
 
   if (await isInstalled(env)) {
     throw new Response("Not found", { status: 404 });

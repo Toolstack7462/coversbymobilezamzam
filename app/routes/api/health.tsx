@@ -1,5 +1,6 @@
 import type { Route } from "./+types/health";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
+import type { ObjectStore } from "~/infrastructure/storage/object-store";
 
 /**
  * `/api/health` — what is deployed, and does it work.
@@ -27,7 +28,7 @@ import { cloudflareContext } from "../../../workers/app";
  */
 
 export async function loader({ context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const startedAt = Date.now();
 
   // ── D1 ────────────────────────────────────────────────────────────────────
@@ -52,13 +53,13 @@ export async function loader({ context }: Route.LoaderArgs) {
     };
   }
 
-  // ── R2 ────────────────────────────────────────────────────────────────────
+  // ── Object storage ────────────────────────────────────────────────────────
   //
-  // `head` on a key that is not expected to exist. It proves the binding is
-  // wired and the bucket answers, and it reads no object and lists no keys —
+  // `head` on a key that is not expected to exist. It proves the store is
+  // wired and answers, and it reads no object and lists no keys —
   // listing a media bucket would hand out the whole catalogue's filenames, and
   // listing the proofs bucket would be considerably worse.
-  const probeBucket = async (bucket: R2Bucket): Promise<{ ok: boolean; ms: number }> => {
+  const probeBucket = async (bucket: ObjectStore): Promise<{ ok: boolean; ms: number }> => {
     const t0 = Date.now();
     try {
       await bucket.head("__health_probe__");

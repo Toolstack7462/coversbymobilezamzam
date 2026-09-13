@@ -1,6 +1,6 @@
 import { Form, redirect } from "react-router";
 import type { Route } from "./+types/security-2fa-verify";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext, type AppEnv } from "~/runtime/context";
 import { createAuth } from "~/infrastructure/auth/auth.server";
 import {
   relayCookies,
@@ -27,7 +27,7 @@ export function meta() {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
 
   // Already fully signed in: nothing to challenge.
   const session = await getSession(request, env);
@@ -70,7 +70,7 @@ const WRONG_CODE = "Codice non valido o scaduto.";
  * attempt, not the actor.
  */
 async function recordFailure(
-  env: Env,
+  env: AppEnv,
   now: number,
   mode: string,
   status: number,
@@ -97,7 +97,7 @@ async function recordFailure(
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const form = await request.formData();
   const auth = createAuth(env);
   const now = systemClock.now();

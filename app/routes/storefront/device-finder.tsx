@@ -1,6 +1,6 @@
 import { Link, Form, useLocation } from "react-router";
 import type { Route } from "./+types/device-finder";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { parseLocalePath, translator, localePath } from "~/lib/i18n";
 
 /**
@@ -25,7 +25,7 @@ export function meta() {
 }
 
 export async function loader({ context, request }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const url = new URL(request.url);
 
   const brand = url.searchParams.get("marca");

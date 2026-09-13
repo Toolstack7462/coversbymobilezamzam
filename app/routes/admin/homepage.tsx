@@ -1,6 +1,6 @@
 import { Form } from "react-router";
 import type { Route } from "./+types/homepage";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { requireStaff } from "~/infrastructure/auth/session.server";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
 import { breadcrumbsFor } from "~/lib/admin-nav";
@@ -86,7 +86,7 @@ const SECTION_TYPES = [
 ] as const;
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const actor = await requireStaff(request, env, "content.read");
 
   const sections = await env.DB.prepare(
@@ -125,7 +125,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   await requireStaff(request, env, "content.write");
 
   const form = await request.formData();

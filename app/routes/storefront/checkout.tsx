@@ -1,6 +1,6 @@
 import { Form, Link, useLocation, redirect } from "react-router";
 import type { Route } from "./+types/checkout";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { parseLocalePath, translator, localePath } from "~/lib/i18n";
 import { money, format as formatMoney } from "~/domain/pricing/money";
 import { calculateTotals } from "~/domain/cart/totals";
@@ -16,7 +16,7 @@ export function meta() {
 }
 
 export async function loader({ context, request }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
 
   const token = await readCartToken(request, env.BETTER_AUTH_SECRET);
   const cart = token
@@ -83,7 +83,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
 }
 
 export async function action({ context, request }: Route.ActionArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const form = await request.formData();
   const { locale } = parseLocalePath(new URL(request.url).pathname);
 
@@ -139,7 +139,7 @@ export async function action({ context, request }: Route.ActionArgs) {
   }
 
   const result = await createOrder(parsed.data, {
-    d1: env.DB,
+    db: env.DB,
     clock: systemClock,
     ids: cryptoIds,
     vatBasisPoints: VAT_BASIS_POINTS,

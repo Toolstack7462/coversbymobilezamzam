@@ -5,6 +5,8 @@ import { assertTransition as assertOrderTransition, isOrderStatus } from "~/doma
 import type { Clock, IdGenerator } from "~/application/ports";
 import type { StaffActor } from "~/infrastructure/auth/session.server";
 import { consumeStepUp } from "~/infrastructure/auth/session.server";
+import type { AppEnv } from "~/runtime/context";
+import type { SqlStatement } from "~/infrastructure/db/sql";
 
 /**
  * Payment verification — invariant 6.
@@ -60,7 +62,7 @@ export type VerifyPaymentResult =
   | { ok: false; reason: "amount_mismatch"; expected: Money; received: Money };
 
 export interface VerifyPaymentDeps {
-  env: Env;
+  env: AppEnv;
   clock: Clock;
   ids: IdGenerator;
   actor: StaffActor;
@@ -161,7 +163,7 @@ export async function verifyPayment(
         }
       })());
 
-  const statements: D1PreparedStatement[] = [
+  const statements: SqlStatement[] = [
     env.DB.prepare(
       `UPDATE order_payments
           SET status = ?1, amount_received = ?2, transaction_reference = ?3,

@@ -1,6 +1,6 @@
 import { Link, Form, useLocation, redirect, useRouteLoaderData } from "react-router";
 import type { Route } from "./+types/cart";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { parseLocalePath, translator, localePath } from "~/lib/i18n";
 import { money, format as formatMoney } from "~/domain/pricing/money";
 import { calculateTotals } from "~/domain/cart/totals";
@@ -23,7 +23,7 @@ export function meta() {
 }
 
 export async function loader({ context, request }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const token = await readCartToken(request, env.BETTER_AUTH_SECRET);
   if (!token) return { lines: [], totals: null };
 
@@ -57,7 +57,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
 }
 
 export async function action({ context, request }: Route.ActionArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const form = await request.formData();
   const intent = String(form.get("intent") ?? "");
   const now = systemClock.now();

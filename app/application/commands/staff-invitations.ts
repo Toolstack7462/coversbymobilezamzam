@@ -3,6 +3,8 @@ import type { Clock, IdGenerator } from "~/application/ports";
 import type { StaffActor } from "~/infrastructure/auth/session.server";
 import { canGrantRole } from "~/domain/users/staff-guards";
 import type { Permission } from "~/domain/users/permissions";
+import type { AppEnv } from "~/runtime/context";
+import type { SqlStatement } from "~/infrastructure/db/sql";
 
 /**
  * Staff invitations.
@@ -42,7 +44,7 @@ export type CreateInvitationResult =
   | { ok: false; reason: "unknown_role" };
 
 export interface InvitationDeps {
-  env: Env;
+  env: AppEnv;
   clock: Clock;
   ids: IdGenerator;
   actor: StaffActor;
@@ -164,7 +166,7 @@ export type AcceptInvitationResult =
   | { ok: false; reason: "account_creation_failed" };
 
 export interface AcceptDeps {
-  env: Env;
+  env: AppEnv;
   clock: Clock;
   ids: IdGenerator;
   createAccount: (input: {
@@ -235,7 +237,7 @@ export async function acceptInvitation(
 
   const roleIds = JSON.parse(invitation.role_ids) as string[];
 
-  const statements: D1PreparedStatement[] = [
+  const statements: SqlStatement[] = [
     env.DB.prepare(
       `INSERT INTO staff_profiles
          (id, user_id, display_name, status, active, created_at, updated_at)

@@ -1,6 +1,6 @@
 import { Form } from "react-router";
 import type { Route } from "./+types/security-sessions";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { requireStaff, getSession } from "~/infrastructure/auth/session.server";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
 import { formatDateTime } from "~/lib/i18n";
@@ -56,7 +56,7 @@ function describeAgent(agent: string | null): string {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const actor = await requireStaff(request, env);
   const current = await getSession(request, env);
 
@@ -89,7 +89,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const actor = await requireStaff(request, env);
   const current = await getSession(request, env);
   const form = await request.formData();

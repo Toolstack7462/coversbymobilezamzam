@@ -1,5 +1,5 @@
 import type { Route } from "./+types/auth";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { createAuth } from "~/infrastructure/auth/auth.server";
 
 /**
@@ -11,11 +11,11 @@ import { createAuth } from "~/infrastructure/auth/auth.server";
  * access.
  */
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   return createAuth(env).handler(request);
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   return createAuth(env).handler(request);
 }

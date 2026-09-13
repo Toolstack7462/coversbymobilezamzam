@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import type { Route } from "./+types/seo";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { requireStaff } from "~/infrastructure/auth/session.server";
 import { breadcrumbsFor } from "~/lib/admin-nav";
 import { PageHeader } from "~/components/admin/admin-shell";
@@ -38,7 +38,7 @@ const DESCRIPTION_MAX = 160;
 const DESCRIPTION_MIN = 50;
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   await requireStaff(request, env, "content.read");
 
   const pages = await env.DB.prepare(

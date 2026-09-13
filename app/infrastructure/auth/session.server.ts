@@ -2,6 +2,7 @@ import { redirect } from "react-router";
 import { createAuth } from "./auth.server";
 import type { Permission } from "~/domain/users/permissions";
 import { requiresStepUp } from "~/domain/users/permissions";
+import type { AppEnv } from "~/runtime/context";
 
 /**
  * Server-side authorisation.
@@ -27,7 +28,7 @@ export class Forbidden extends Error {
 }
 
 /** The current session, or null. Never throws. */
-export async function getSession(request: Request, env: Env) {
+export async function getSession(request: Request, env: AppEnv) {
   const auth = createAuth(env);
   return auth.api.getSession({ headers: request.headers });
 }
@@ -39,7 +40,7 @@ export async function getSession(request: Request, env: Env) {
  * role must take effect immediately, not whenever the session happens to
  * expire.
  */
-export async function loadStaffActor(env: Env, userId: string): Promise<StaffActor | null> {
+export async function loadStaffActor(env: AppEnv, userId: string): Promise<StaffActor | null> {
   const profile = await env.DB.prepare(
     `SELECT sp.display_name, u.email
        FROM staff_profiles sp
@@ -81,7 +82,7 @@ export async function loadStaffActor(env: Env, userId: string): Promise<StaffAct
  */
 export async function requireStaff(
   request: Request,
-  env: Env,
+  env: AppEnv,
   permission?: Permission,
 ): Promise<StaffActor> {
   const session = await getSession(request, env);
@@ -114,7 +115,7 @@ export async function requireStaff(
 const STEP_UP_WINDOW_MS = 10 * 60 * 1000;
 
 export async function hasStepUp(
-  env: Env,
+  env: AppEnv,
   userId: string,
   purpose: Permission,
   now: number,
@@ -130,7 +131,7 @@ export async function hasStepUp(
 }
 
 export async function grantStepUp(
-  env: Env,
+  env: AppEnv,
   userId: string,
   sessionId: string,
   purpose: Permission,
@@ -152,7 +153,7 @@ export async function grantStepUp(
  * spend the same one — the same pattern as the reservation sweeper.
  */
 export async function consumeStepUp(
-  env: Env,
+  env: AppEnv,
   userId: string,
   purpose: Permission,
   now: number,
@@ -176,7 +177,7 @@ export async function consumeStepUp(
  */
 export async function requireStepUp(
   request: Request,
-  env: Env,
+  env: AppEnv,
   permission: Permission,
   now: number,
 ): Promise<StaffActor> {
@@ -221,7 +222,7 @@ export function requiresTwoFactor(actor: StaffActor): boolean {
  * unverified secret is not a factor - nobody has proved they can generate a
  * code from it.
  */
-export async function hasVerifiedTwoFactor(env: Env, userId: string): Promise<boolean> {
+export async function hasVerifiedTwoFactor(env: AppEnv, userId: string): Promise<boolean> {
   const row = await env.DB.prepare(
     `SELECT verified FROM two_factor WHERE user_id = ?1 AND verified = 1 LIMIT 1`,
   )
@@ -266,7 +267,7 @@ export function isPreEnrolmentPath(pathname: string): boolean {
  */
 export async function requireEnrolledStaff(
   request: Request,
-  env: Env,
+  env: AppEnv,
   permission?: Permission,
 ): Promise<{ actor: StaffActor; mustEnrol: boolean }> {
   const actor = await requireStaff(request, env, permission);

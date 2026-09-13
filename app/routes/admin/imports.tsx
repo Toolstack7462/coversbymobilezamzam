@@ -1,6 +1,6 @@
 import { Form, useLocation } from "react-router";
 import type { Route } from "./+types/imports";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext, type AppEnv } from "~/runtime/context";
 import { requireStaff } from "~/infrastructure/auth/session.server";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
 import { money, format as formatMoney } from "~/domain/pricing/money";
@@ -13,6 +13,7 @@ import {
 import { createProduct, CreateProductInput } from "~/application/commands/create-product";
 import { breadcrumbsFor } from "~/lib/admin-nav";
 import { PageHeader } from "~/components/admin/admin-shell";
+import type { SqlStatement } from "~/infrastructure/db/sql";
 
 /**
  * Bulk import and export.
@@ -43,7 +44,7 @@ export function meta() {
 const EXPORT_COLUMNS = ["sku", "nome", "prezzo", "giacenza", "descrizione", "marchio"];
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const actor = await requireStaff(request, env, "product.read");
 
   const recent = await env.DB.prepare(
@@ -76,7 +77,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 /** Everything the planner needs about what already exists. */
-async function loadSnapshot(env: Env): Promise<CatalogueSnapshot> {
+async function loadSnapshot(env: AppEnv): Promise<CatalogueSnapshot> {
   const { results } = await env.DB.prepare(
     `SELECT v.sku,
             COALESCE(pt.name, '') AS name,
@@ -101,7 +102,7 @@ async function loadSnapshot(env: Env): Promise<CatalogueSnapshot> {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const form = await request.formData();
   const intent = String(form.get("intent") ?? "");
   const now = systemClock.now();
@@ -255,7 +256,7 @@ export async function action({ request, context }: Route.ActionArgs) {
             ...(row.values.description ? { shortDescription: row.values.description } : {}),
           }),
           {
-            d1: env.DB,
+            db: env.DB,
             clock: systemClock,
             ids: cryptoIds,
             defaultLocationId: location.id,
@@ -281,7 +282,7 @@ export async function action({ request, context }: Route.ActionArgs) {
         continue;
       }
 
-      const statements: D1PreparedStatement[] = [];
+      const statements: SqlStatement[] = [];
 
       if (row.values.priceMinor !== undefined) {
         const current = await env.DB.prepare(

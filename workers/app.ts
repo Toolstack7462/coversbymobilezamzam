@@ -1,6 +1,13 @@
-import { createContext, createRequestHandler, RouterContextProvider } from "react-router";
+import { createRequestHandler, RouterContextProvider } from "react-router";
 import { expireReservations } from "~/application/commands/expire-reservations";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
+import { appContext, type AppEnv } from "~/runtime/context";
+import { D1SqlDatabase } from "~/infrastructure/db/d1";
+import { R2ObjectStore } from "~/infrastructure/storage/r2";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { createD1Db } from "~/infrastructure/db/client";
+import { user, session, account, verification, twoFactor } from "@db/schema";
+import { setAuthDatabaseFactory } from "~/infrastructure/auth/database";
 import {
   CSP_DEVELOPMENT,
   CSP_PRODUCTION,
@@ -17,17 +24,72 @@ import {
  * `scheduled` runs the reservation sweeper.
  *
  * React Router v8 replaced the old `AppLoadContext` object with typed contexts:
- * a loader reads the bindings with `context.get(cloudflareContext)` rather than
+ * a loader reads what it needs with `context.get(appContext)` rather than
  * destructuring an untyped bag.
+ *
+ * That context is defined in app/runtime/context.ts, NOT here. It used to live
+ * in this file, which meant all sixty-six route modules imported the Worker
+ * entry point — and so could not be built for any other runtime.
  */
 
-export interface CloudflareContext {
-  env: Env;
-  ctx: ExecutionContext;
+/**
+ * Wraps the Cloudflare bindings in the runtime-neutral ports.
+ *
+ * The rest of the application sees a `SqlDatabase` and two `ObjectStore`s and
+ * cannot tell it is on Workers. That is what lets the Node server run the same
+ * routes, and what keeps "does this still work on Cloudflare?" a question the
+ * test suite answers rather than a claim.
+ *
+ * Built per request: the adapters wrap bindings that workerd hands in per
+ * request anyway, so there is nothing to cache, and a module-level instance
+ * would outlive the isolate's binding.
+ */
+function toAppEnv(env: Env): AppEnv {
+  /*
+   * `APP_BASE_URL` is OPTIONAL in the generated `Env` and required here.
+   *
+   * Wrangler makes a var optional across every environment if any one of them
+   * omits it, and `restore-test` does. The application cannot work without it:
+   * Better Auth signs cookies and validates request origins against this value,
+   * and an absent one does not degrade — it rejects every sign-in with an
+   * origin error that never reproduces locally. The wrangler.jsonc comment
+   * records the deploy where exactly that happened.
+   *
+   * So it is asserted here, once, at the boundary, rather than defaulted to
+   * something plausible.
+   */
+  if (!env.APP_BASE_URL) {
+    throw new Error(
+      "APP_BASE_URL is not set for this environment. Set it in wrangler.jsonc vars " +
+        "(or .dev.vars locally) — authentication cannot work without it.",
+    );
+  }
+
+  return {
+    ...env,
+    APP_BASE_URL: env.APP_BASE_URL,
+    DB: new D1SqlDatabase(env.DB),
+    MEDIA: new R2ObjectStore(env.MEDIA),
+    PRIVATE_FILES: new R2ObjectStore(env.PRIVATE_FILES),
+  };
 }
 
-/** Read in loaders and actions via `context.get(cloudflareContext)`. */
-export const cloudflareContext = createContext<CloudflareContext>();
+/**
+ * Better Auth's database, in the D1 dialect.
+ *
+ * Set per request because the binding is per request: workerd hands `env` to
+ * `fetch`, and a module-level adapter would close over the first request's
+ * binding and keep using it after the isolate was reused.
+ *
+ * The schema passed is EXPLICIT and covers Better Auth's own five tables only,
+ * so the auth layer cannot reach orders or inventory even by mistake.
+ */
+function d1AuthDatabase(env: Env) {
+  return drizzleAdapter(createD1Db(env.DB), {
+    provider: "sqlite",
+    schema: { user, session, account, verification, twoFactor },
+  });
+}
 
 const requestHandler = createRequestHandler(
   () => import("virtual:react-router/server-build"),
@@ -106,8 +168,14 @@ function applyResponseHeaders(response: Response, env: Env, request: Request): R
 
 export default {
   async fetch(request, env, ctx) {
+    setAuthDatabaseFactory(() => d1AuthDatabase(env));
+
     const context = new RouterContextProvider();
-    context.set(cloudflareContext, { env, ctx });
+    context.set(appContext, {
+      env: toAppEnv(env),
+      waitUntil: (promise) => ctx.waitUntil(promise),
+      platform: "cloudflare",
+    });
 
     const response = await requestHandler(request, context);
     return applyResponseHeaders(response, env, request);
@@ -124,7 +192,7 @@ export default {
    */
   async scheduled(_event, env, _ctx) {
     await expireReservations({
-      d1: env.DB,
+      db: new D1SqlDatabase(env.DB),
       clock: systemClock,
       ids: cryptoIds,
     });

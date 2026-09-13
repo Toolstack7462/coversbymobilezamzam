@@ -1,6 +1,6 @@
 import { Form, Link, useLocation } from "react-router";
 import type { Route } from "./+types/order-detail";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext, type AppEnv } from "~/runtime/context";
 import { requireStaff } from "~/infrastructure/auth/session.server";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
 import { money, format as formatMoney } from "~/domain/pricing/money";
@@ -58,7 +58,7 @@ export function meta({ loaderData }: Route.MetaArgs) {
  * exactly the statements the route runs, against the real schema — no copy in
  * the test that could drift back into agreement with a bug.
  */
-export async function loadOrderDetail(env: Env, orderId: string) {
+export async function loadOrderDetail(env: AppEnv, orderId: string) {
   const order = await env.DB.prepare(
     `SELECT o.*, pm.name_it AS payment_method_name,
             op.status AS payment_status, op.amount_expected, op.amount_received,
@@ -128,7 +128,7 @@ export async function loadOrderDetail(env: Env, orderId: string) {
 }
 
 export async function loader({ request, params, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const actor = await requireStaff(request, env, "order.read");
 
   const { order, items, history, address, settings } = await loadOrderDetail(env, params.orderId);
@@ -175,7 +175,7 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, params, context }: Route.ActionArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const form = await request.formData();
   const intent = String(form.get("intent") ?? "");
   const now = systemClock.now();

@@ -6,6 +6,7 @@ import { createProduct, CreateProductInput } from "~/application/commands/create
 import { createOrder, CreateOrderInput } from "~/application/commands/create-order";
 import { fixedClock, cryptoIds } from "~/infrastructure/primitives";
 import { seed, orderInput, IDS } from "../../tests/fixtures/seed";
+import { testDb, testAppEnv } from "../helpers/app-env";
 
 /**
  * The detail screens' queries, run against the real schema.
@@ -24,7 +25,7 @@ import { seed, orderInput, IDS } from "../../tests/fixtures/seed";
  */
 
 const NOW = 1_756_000_600_000;
-const deps = { d1: env.DB, clock: fixedClock(NOW), ids: cryptoIds };
+const deps = { db: testDb(env), clock: fixedClock(NOW), ids: cryptoIds };
 
 describe("the product screen's queries", () => {
   beforeEach(async () => {
@@ -39,7 +40,7 @@ describe("the product screen's queries", () => {
     expect(created.ok).toBe(true);
     if (!created.ok) return;
 
-    const data = await loadProductDetail(env, created.productId);
+    const data = await loadProductDetail(testAppEnv(env), created.productId);
 
     expect(data.product.slug).toBe("cover-di-prova");
     expect(data.variants).toHaveLength(1);
@@ -55,7 +56,7 @@ describe("the product screen's queries", () => {
     // The seeded product exercises the compatibility join and its three levels
     // of LEFT JOIN through device_models to device_brands — the part most
     // likely to break on a schema change.
-    const data = await loadProductDetail(env, IDS.product);
+    const data = await loadProductDetail(testAppEnv(env), IDS.product);
     expect(data.product.id).toBe(IDS.product);
     expect(data.compatibility.length).toBeGreaterThan(0);
     for (const row of data.compatibility) {
@@ -65,7 +66,7 @@ describe("the product screen's queries", () => {
 
   it("throws a 404 rather than returning an empty page", async () => {
     // A stale link or a typo. Saying so is more use than a blank editor.
-    await expect(loadProductDetail(env, "prod_does_not_exist")).rejects.toMatchObject({
+    await expect(loadProductDetail(testAppEnv(env), "prod_does_not_exist")).rejects.toMatchObject({
       status: 404,
     });
   });
@@ -90,7 +91,7 @@ describe("the order screen's queries", () => {
 
   it("runs every one of them for a real order", async () => {
     const orderId = await anOrder();
-    const data = await loadOrderDetail(env, orderId);
+    const data = await loadOrderDetail(testAppEnv(env), orderId);
 
     expect(data.order.id).toBe(orderId);
     expect(data.items.length).toBeGreaterThan(0);
@@ -113,7 +114,7 @@ describe("the order screen's queries", () => {
       .bind(cryptoIds.generate(), orderId, NOW)
       .run();
 
-    const data = await loadOrderDetail(env, orderId);
+    const data = await loadOrderDetail(testAppEnv(env), orderId);
     const entry = data.history.find((h) => h.to_status === "awaiting_payment");
     expect(entry).toBeDefined();
     expect(entry!.actor).toBe("user_test");
@@ -142,6 +143,8 @@ describe("the order screen's queries", () => {
   });
 
   it("throws a 404 for an order that does not exist", async () => {
-    await expect(loadOrderDetail(env, "ord_does_not_exist")).rejects.toMatchObject({ status: 404 });
+    await expect(loadOrderDetail(testAppEnv(env), "ord_does_not_exist")).rejects.toMatchObject({
+      status: 404,
+    });
   });
 });

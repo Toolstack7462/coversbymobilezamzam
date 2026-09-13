@@ -2,6 +2,7 @@ import { z } from "zod";
 import { parseAmountToMinorUnits } from "~/domain/pricing/money";
 import { uniqueSlug } from "~/domain/catalogue/slug";
 import type { Clock, IdGenerator } from "~/application/ports";
+import type { SqlDatabase, SqlStatement } from "~/infrastructure/db/sql";
 
 /**
  * Product creation.
@@ -67,7 +68,7 @@ export const CreateProductInput = z.object({
 export type CreateProductInput = z.infer<typeof CreateProductInput>;
 
 export interface CreateProductDeps {
-  d1: D1Database;
+  db: SqlDatabase;
   clock: Clock;
   ids: IdGenerator;
   defaultLocationId: string;
@@ -82,7 +83,7 @@ export async function createProduct(
   input: CreateProductInput,
   deps: CreateProductDeps,
 ): Promise<CreateProductResult> {
-  const { d1, clock, ids, defaultLocationId, actorId, actorLabel } = deps;
+  const { db, clock, ids, defaultLocationId, actorId, actorLabel } = deps;
   const now = clock.now();
 
   let amount: number | null = null;
@@ -98,7 +99,7 @@ export async function createProduct(
   // A duplicate SKU is a stocktake error waiting to happen: two physical piles
   // that the system believes are one. Checked before writing so the merchant
   // gets a sentence rather than a constraint violation.
-  const existingSku = await d1
+  const existingSku = await db
     .prepare(`SELECT id FROM product_variants WHERE sku = ?1 LIMIT 1`)
     .bind(input.sku)
     .first<{ id: string }>();
@@ -106,14 +107,14 @@ export async function createProduct(
     return { ok: false, error: `Il codice SKU "${input.sku}" è già usato da un altro prodotto.` };
   }
 
-  const priceList = await d1
+  const priceList = await db
     .prepare(`SELECT id FROM price_lists WHERE is_default = 1 LIMIT 1`)
     .first<{ id: string }>();
   if (!priceList) {
     return { ok: false, error: "Nessun listino prezzi predefinito configurato." };
   }
 
-  const takenSlugs = await d1.prepare(`SELECT slug FROM products`).all<{ slug: string }>();
+  const takenSlugs = await db.prepare(`SELECT slug FROM products`).all<{ slug: string }>();
   const slug = uniqueSlug(
     input.name,
     takenSlugs.results.map((r) => r.slug),
@@ -122,8 +123,8 @@ export async function createProduct(
   const productId = ids.generate();
   const variantId = ids.generate();
 
-  const statements: D1PreparedStatement[] = [
-    d1
+  const statements: SqlStatement[] = [
+    db
       .prepare(
         `INSERT INTO products
            (id, slug, status, brand_id, primary_category_id, accessory_type,
@@ -141,14 +142,14 @@ export async function createProduct(
         now,
       ),
 
-    d1
+    db
       .prepare(
         `INSERT INTO product_translations (id, product_id, locale, name, short_description)
          VALUES (?1, ?2, 'it', ?3, ?4)`,
       )
       .bind(ids.generate(), productId, input.name, input.shortDescription ?? null),
 
-    d1
+    db
       .prepare(
         `INSERT INTO product_variants
            (id, product_id, sku, is_default, active, sort_order, created_at, updated_at)
@@ -156,7 +157,7 @@ export async function createProduct(
       )
       .bind(variantId, productId, input.sku, now),
 
-    d1
+    db
       .prepare(
         `INSERT INTO inventory_levels
            (id, variant_id, location_id, on_hand, reserved, created_at, updated_at)
@@ -167,7 +168,7 @@ export async function createProduct(
 
   if (amount !== null) {
     statements.push(
-      d1
+      db
         .prepare(
           `INSERT INTO variant_prices
              (id, variant_id, price_list_id, amount, currency, created_at, updated_at)
@@ -178,7 +179,7 @@ export async function createProduct(
       // The first price is history too. Without an opening row the 30-day prior
       // price has no baseline, and the first discount could not be evidenced
       // (D.Lgs. 84/2022).
-      d1
+      db
         .prepare(
           `INSERT INTO price_history
              (id, variant_id, price_list_id, old_amount, new_amount, currency, channel,
@@ -190,7 +191,7 @@ export async function createProduct(
   }
 
   statements.push(
-    d1
+    db
       .prepare(
         `INSERT INTO audit_logs
            (id, actor_id, actor_label, action, entity_type, entity_id, after_value, created_at)
@@ -207,7 +208,7 @@ export async function createProduct(
   );
 
   try {
-    await d1.batch(statements);
+    await db.batch(statements);
   } catch (error) {
     // The slug and SKU checks above race: another save can take either between
     // the read and the write. The unique indexes are the real guarantee, and

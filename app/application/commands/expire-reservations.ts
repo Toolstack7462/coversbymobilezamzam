@@ -1,4 +1,5 @@
 import type { Clock, IdGenerator } from "~/application/ports";
+import type { SqlDatabase } from "~/infrastructure/db/sql";
 
 /**
  * The reservation sweeper. Runs on cron, every five minutes, in UTC.
@@ -16,7 +17,7 @@ import type { Clock, IdGenerator } from "~/application/ports";
  */
 
 export interface ExpireReservationsDeps {
-  d1: D1Database;
+  db: SqlDatabase;
   clock: Clock;
   ids: IdGenerator;
   /** Safety valve so one run cannot exceed the Worker CPU budget. */
@@ -44,7 +45,7 @@ interface ExpiredRow {
 export async function expireReservations(
   deps: ExpireReservationsDeps,
 ): Promise<ExpireReservationsResult> {
-  const { d1, clock, ids, batchSize = 100 } = deps;
+  const { db, clock, ids, batchSize = 100 } = deps;
   const now = clock.now();
 
   const result: ExpireReservationsResult = {
@@ -56,7 +57,7 @@ export async function expireReservations(
   };
 
   const runId = ids.generate();
-  await d1
+  await db
     .prepare(
       `INSERT INTO scheduled_job_runs (id, job_name, status, started_at, items_processed)
        VALUES (?1,'expire_reservations','running',?2,0)`,
@@ -66,7 +67,7 @@ export async function expireReservations(
 
   try {
     // ── 1. Find candidates ────────────────────────────────────────────────
-    const { results: candidates } = await d1
+    const { results: candidates } = await db
       .prepare(
         `SELECT r.id, r.order_id, r.variant_id, r.location_id, r.quantity,
                 p.status AS payment_status, o.status AS order_status
@@ -85,7 +86,7 @@ export async function expireReservations(
     for (const row of candidates) {
       try {
         // ── 2. CLAIM it. Conditional, so a concurrent run loses. ──────────
-        const claim = await d1
+        const claim = await db
           .prepare(
             `UPDATE stock_reservations
                 SET status = 'expired', released_at = ?1, released_reason = 'reservation_window_elapsed', updated_at = ?1
@@ -103,7 +104,7 @@ export async function expireReservations(
         // ── 3. Re-check payment, AFTER claiming ──────────────────────────
         // This is the race-closing step. Between the query in step 1 and the
         // claim in step 2, staff may have verified the payment.
-        const current = await d1
+        const current = await db
           .prepare(
             `SELECT p.status AS payment_status, o.status AS order_status
                FROM orders o LEFT JOIN order_payments p ON p.order_id = o.id
@@ -119,7 +120,7 @@ export async function expireReservations(
 
         if (settled) {
           // Give the claim back. The order is paid; its stock stays held.
-          await d1
+          await db
             .prepare(
               `UPDATE stock_reservations
                   SET status = 'active', released_at = NULL, released_reason = NULL, updated_at = ?1
@@ -132,8 +133,8 @@ export async function expireReservations(
         }
 
         // ── 4-7. Release, record, and update statuses, atomically ────────
-        await d1.batch([
-          d1
+        await db.batch([
+          db
             .prepare(
               `UPDATE inventory_levels
                   SET reserved = MAX(0, reserved - ?1), updated_at = ?2
@@ -141,7 +142,7 @@ export async function expireReservations(
             )
             .bind(row.quantity, now, row.variant_id, row.location_id),
 
-          d1
+          db
             .prepare(
               `INSERT INTO stock_movements (
                  id, variant_id, location_id, movement_type, quantity_delta,
@@ -153,35 +154,35 @@ export async function expireReservations(
             )
             .bind(ids.generate(), row.variant_id, row.location_id, row.order_id, now),
 
-          d1
+          db
             .prepare(
               `UPDATE orders SET status = 'expired', updated_at = ?1
                 WHERE id = ?2 AND status IN ('awaiting_customer_contact','awaiting_payment','payment_under_review')`,
             )
             .bind(now, row.order_id),
 
-          d1
+          db
             .prepare(
               `UPDATE order_payments SET status = 'expired', updated_at = ?1
                 WHERE order_id = ?2 AND status IN ('awaiting_customer_contact','awaiting_payment','proof_received')`,
             )
             .bind(now, row.order_id),
 
-          d1
+          db
             .prepare(
               `INSERT INTO order_status_history (id, order_id, from_status, to_status, reason, actor, created_at)
                VALUES (?1,?2,?3,'expired','reservation window elapsed','system',?4)`,
             )
             .bind(ids.generate(), row.order_id, row.order_status, now),
 
-          d1
+          db
             .prepare(
               `INSERT INTO order_events (id, order_id, event_type, payload, customer_visible, created_at)
                VALUES (?1,?2,'reservation_expired','{}',1,?3)`,
             )
             .bind(ids.generate(), row.order_id, now),
 
-          d1
+          db
             .prepare(
               `INSERT INTO audit_logs (id, actor_id, actor_label, action, entity_type, entity_id, after_value, created_at)
                VALUES (?1,'system','Scheduled job','reservation.expire','order',?2,?3,?4)`,
@@ -203,7 +204,7 @@ export async function expireReservations(
       }
     }
 
-    await d1
+    await db
       .prepare(
         `UPDATE scheduled_job_runs
             SET status = ?1, finished_at = ?2, items_processed = ?3, summary = ?4
@@ -220,7 +221,7 @@ export async function expireReservations(
 
     return result;
   } catch (error) {
-    await d1
+    await db
       .prepare(
         `UPDATE scheduled_job_runs SET status = 'failed', finished_at = ?1, error = ?2 WHERE id = ?3`,
       )

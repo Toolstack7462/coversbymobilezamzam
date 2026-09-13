@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 import { Link, useLocation } from "react-router";
 import type { Route } from "./+types/home";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { parseLocalePath, translator, localePath } from "~/lib/i18n";
 import {
   canShowStoreAddress,
@@ -74,7 +74,7 @@ function availabilityFor(row: {
 }
 
 export async function loader({ context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
 
   const [settingsResult, newArrivals, featuredRows, guideRows, sectionRows, categories, devices] =
     await Promise.all([

@@ -1,8 +1,8 @@
 import type { Route } from "./+types/media";
-import { cloudflareContext } from "../../workers/app";
+import { appContext } from "~/runtime/context";
 
 /**
- * Serves product images from R2.
+ * Serves product images from the public object store.
  *
  * Only used when `PUBLIC_MEDIA_BASE_URL` is unset. With a CDN or a public
  * bucket domain configured, the storefront links straight there and this route
@@ -19,14 +19,14 @@ import { cloudflareContext } from "../../workers/app";
  *     a build step, not in a request path with a CPU budget.
  *   - **No listing.** A key is required. An enumerable media bucket is an
  *     invitation to scrape the whole catalogue.
- *   - **No access to PRIVATE_FILES.** Payment proofs live in that bucket and
+ *   - **No access to PRIVATE_FILES.** Payment proofs live in that store and
  *     must never be reachable by URL. This route is bound to MEDIA alone, so
  *     the separation is structural rather than a check that could be edited
  *     away.
  */
 
 export async function loader({ params, request, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
 
   const key = params["*"];
   if (!key || key.includes("..")) {
@@ -40,8 +40,17 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
   if (object === null) return new Response("Not found", { status: 404 });
 
   const headers = new Headers();
-  object.writeHttpMetadata(headers);
-  headers.set("etag", object.httpEtag);
+  /*
+   * Set explicitly rather than through R2's `writeHttpMetadata`.
+   *
+   * That helper belongs to the R2 object and copies whatever metadata the
+   * bucket happens to hold, which is convenient on Cloudflare and unavailable
+   * on a filesystem. Naming the two headers this route actually needs is also
+   * the safer version: it cannot copy across a `content-disposition` or a
+   * `content-encoding` that somebody set on an object years ago.
+   */
+  if (object.contentType) headers.set("content-type", object.contentType);
+  headers.set("etag", object.etag);
 
   // Keys contain a content hash, so an object at a given key never changes.
   // That makes an immutable year-long cache correct rather than optimistic: a
@@ -56,7 +65,7 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
 
   // A conditional request from a browser that already holds the object.
   const ifNoneMatch = request.headers.get("if-none-match");
-  if (ifNoneMatch === object.httpEtag) {
+  if (ifNoneMatch === object.etag) {
     return new Response(null, { status: 304, headers });
   }
 

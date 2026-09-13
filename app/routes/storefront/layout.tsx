@@ -1,6 +1,6 @@
 import { Outlet, useLocation } from "react-router";
 import type { Route } from "./+types/layout";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { systemClock } from "~/infrastructure/primitives";
 import { parseLocalePath, translator } from "~/lib/i18n";
 import {
@@ -26,7 +26,7 @@ import { MobileNav } from "~/components/storefront/mobile-nav";
  * independently.
  */
 export async function loader({ context, request }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
 
   const { results } = await env.DB.prepare(`SELECT key, value FROM store_settings`).all<{
     key: string;

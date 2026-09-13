@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router";
 import type { Route } from "./+types/setup-centre";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext, type AppEnv } from "~/runtime/context";
 import { requireStaff } from "~/infrastructure/auth/session.server";
 import { systemClock } from "~/infrastructure/primitives";
 import { breadcrumbsFor } from "~/lib/admin-nav";
@@ -21,7 +21,7 @@ export function meta() {
 }
 
 /** One query pass, so the domain function stays pure and the SQL stays here. */
-export async function loadSetupSnapshot(env: Env, now: number) {
+export async function loadSetupSnapshot(env: AppEnv, now: number) {
   const [settingsResult, counts] = await Promise.all([
     env.DB.prepare(`SELECT key, value FROM store_settings`).all<{
       key: string;
@@ -111,7 +111,7 @@ export async function loadSetupSnapshot(env: Env, now: number) {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   await requireStaff(request, env);
 
   const snapshot = await loadSetupSnapshot(env, systemClock.now());

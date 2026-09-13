@@ -1,6 +1,6 @@
 import { Form, Link } from "react-router";
 import type { Route } from "./+types/orders";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { requireStaff } from "~/infrastructure/auth/session.server";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
 import { money, format as formatMoney } from "~/domain/pricing/money";
@@ -25,6 +25,7 @@ import {
 import { breadcrumbsFor } from "~/lib/admin-nav";
 import { PageHeader } from "~/components/admin/admin-shell";
 import { DataTable, type Column } from "~/components/admin/data-table";
+import type { SqlStatement } from "~/infrastructure/db/sql";
 
 /**
  * Orders.
@@ -72,7 +73,7 @@ interface OrderRow {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const actor = await requireStaff(request, env, "order.read");
 
   const url = new URL(request.url);
@@ -144,7 +145,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const actor = await requireStaff(request, env, "order.write");
   const form = await request.formData();
   const now = systemClock.now();
@@ -182,7 +183,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     };
   }
 
-  const statements: D1PreparedStatement[] = [
+  const statements: SqlStatement[] = [
     env.DB.prepare(
       `UPDATE orders SET status = ?1, updated_at = ?2 WHERE id = ?3 AND status = ?4`,
     ).bind(to, now, orderId, from),

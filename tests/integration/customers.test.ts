@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { createOrder, CreateOrderInput } from "~/application/commands/create-order";
 import { fixedClock, cryptoIds } from "~/infrastructure/primitives";
 import { seed, orderInput, IDS } from "../../tests/fixtures/seed";
+import { testDb } from "../helpers/app-env";
 
 /**
  * The customers view, against real SQLite.
@@ -47,7 +48,7 @@ async function placeOrder(email: string, quantity = 1): Promise<string> {
       orderInput({ customerEmail: email, lines: [{ variantId: IDS.variant, quantity }] }),
     ),
     {
-      d1: env.DB,
+      db: testDb(env),
       clock: fixedClock(NOW),
       ids: cryptoIds,
       vatBasisPoints: 2200,

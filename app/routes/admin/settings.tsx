@@ -1,6 +1,6 @@
 import { Form } from "react-router";
 import type { Route } from "./+types/settings";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import {
   requireStaff,
   getSession,
@@ -19,6 +19,7 @@ import { gateStatuses, type SettingsMap } from "~/domain/content/gates";
 import { SETTING_GROUPS, uncoveredKeys, type SettingField } from "~/lib/setting-fields";
 import { breadcrumbsFor } from "~/lib/admin-nav";
 import { PageHeader } from "~/components/admin/admin-shell";
+import type { SqlStatement } from "~/infrastructure/db/sql";
 
 /**
  * Merchant settings, and payment-method configuration.
@@ -44,7 +45,7 @@ export function meta() {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const actor = await requireStaff(request, env, "settings.read");
   const now = systemClock.now();
 
@@ -90,7 +91,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const form = await request.formData();
   const intent = String(form.get("intent") ?? "");
   const now = systemClock.now();
@@ -125,7 +126,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   // ── Ordinary settings ────────────────────────────────────────────────────
   if (intent === "save-settings") {
     const actor = await requireStaff(request, env, "settings.write");
-    const statements: D1PreparedStatement[] = [];
+    const statements: SqlStatement[] = [];
 
     /*
      * Collect the submitted values FIRST, last-wins.
@@ -227,7 +228,7 @@ export async function action({ request, context }: Route.ActionArgs) {
       return { error: "Non puoi attivare un metodo senza un identificativo di pagamento." };
     }
 
-    const statements: D1PreparedStatement[] = [];
+    const statements: SqlStatement[] = [];
 
     if (identifier) {
       const encryptor = aesGcmEncryptor(env.SETTINGS_ENCRYPTION_KEY);

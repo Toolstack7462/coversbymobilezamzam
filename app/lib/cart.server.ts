@@ -1,4 +1,5 @@
 import { createCookie } from "react-router";
+import type { SqlDatabase } from "~/infrastructure/db/sql";
 
 /**
  * Cart identity.
@@ -50,7 +51,7 @@ export async function serialiseCartToken(token: string, secret: string): Promise
 
 /** Creates the cart row if this token has none yet. */
 export async function ensureCart(
-  db: D1Database,
+  db: SqlDatabase,
   token: string,
   now: number,
   newId: string,
@@ -79,7 +80,7 @@ export async function ensureCart(
  * Every render re-reads, so a price or stock change is visible to the customer
  * before checkout rather than being sprung on them at the end.
  */
-export async function readCartLines(db: D1Database, cartId: string): Promise<CartLine[]> {
+export async function readCartLines(db: SqlDatabase, cartId: string): Promise<CartLine[]> {
   const { results } = await db
     .prepare(
       `SELECT ci.variant_id, ci.quantity, v.sku, v.variant_label, p.slug,
@@ -129,7 +130,7 @@ export async function readCartLines(db: D1Database, cartId: string): Promise<Car
 }
 
 export async function addToCart(
-  db: D1Database,
+  db: SqlDatabase,
   cartId: string,
   variantId: string,
   quantity: number,
@@ -148,7 +149,7 @@ export async function addToCart(
 }
 
 export async function setQuantity(
-  db: D1Database,
+  db: SqlDatabase,
   cartId: string,
   variantId: string,
   quantity: number,

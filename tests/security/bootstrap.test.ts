@@ -7,6 +7,8 @@ import {
 } from "~/application/commands/bootstrap-admin";
 import { fixedClock, cryptoIds } from "~/infrastructure/primitives";
 import { reset } from "../fixtures/seed";
+import { testAppEnv } from "../helpers/app-env";
+import type { AppEnv } from "~/runtime/context";
 
 /**
  * Initial-admin bootstrap.
@@ -61,10 +63,10 @@ function deps(over: Partial<Parameters<typeof bootstrapAdmin>[1]> = {}) {
  * With exactOptionalPropertyTypes those are different things, and "absent" is
  * what an unconfigured deploy actually looks like.
  */
-function envWithoutToken(): Env {
-  const base: Record<string, unknown> = { ...env };
+function envWithoutToken(): AppEnv {
+  const base: Record<string, unknown> = { ...testAppEnv(env) };
   delete base.INITIAL_ADMIN_SETUP_TOKEN;
-  return base as unknown as Env;
+  return base as unknown as AppEnv;
 }
 
 const input = (over: Record<string, unknown> = {}) =>
@@ -138,7 +140,7 @@ describe("the setup token", () => {
 
     expect(result).toMatchObject({ ok: false, reason: "invalid_token" });
     expect(await adminCount()).toBe(0);
-    expect(await isInstalled(env)).toBe(false);
+    expect(await isInstalled(testAppEnv(env))).toBe(false);
 
     // No claim was taken, so a correct attempt still works.
     const installation = await env.DB.prepare(
@@ -158,7 +160,7 @@ describe("the setup token", () => {
   it("refuses a token that is too short to be high-entropy", async () => {
     const result = await bootstrapAdmin(
       input({ setupToken: "short" }),
-      deps({ env: { ...env, INITIAL_ADMIN_SETUP_TOKEN: "short" } as Env }),
+      deps({ env: { ...testAppEnv(env), INITIAL_ADMIN_SETUP_TOKEN: "short" } }),
     );
     expect(result).toMatchObject({ ok: false, reason: "not_configured" });
   });
@@ -197,9 +199,9 @@ describe("replay and closure", () => {
   });
 
   it("reports installed, so the route can 404", async () => {
-    expect(await isInstalled(env)).toBe(false);
+    expect(await isInstalled(testAppEnv(env))).toBe(false);
     await bootstrapAdmin(input(), deps());
-    expect(await isInstalled(env)).toBe(true);
+    expect(await isInstalled(testAppEnv(env))).toBe(true);
   });
 
   it("records completion with the user who did it", async () => {
@@ -259,7 +261,7 @@ describe("failure and recovery", () => {
     expect(result).toMatchObject({ ok: false, reason: "roles_missing" });
 
     expect(await adminCount()).toBe(0);
-    expect(await isInstalled(env)).toBe(false);
+    expect(await isInstalled(testAppEnv(env))).toBe(false);
   });
 
   it("reclaims a STALE in-progress claim, but not a live one", async () => {

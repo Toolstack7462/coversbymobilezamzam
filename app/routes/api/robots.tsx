@@ -1,5 +1,5 @@
 import type { Route } from "./+types/robots";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 
 /**
  * `/robots.txt`, written from the environment rather than shipped as a file.
@@ -17,7 +17,7 @@ import { cloudflareContext } from "../../../workers/app";
  */
 
 export async function loader({ context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const isPublic = (env.APP_ENV ?? "development") === "production";
 
   const body = isPublic

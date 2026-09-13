@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import type { Route } from "./+types/security";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import {
   requireStaff,
   requiresTwoFactor,
@@ -15,7 +15,7 @@ export function meta() {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const actor = await requireStaff(request, env);
 
   const sessions = await env.DB.prepare(

@@ -1,6 +1,6 @@
 import { Form, Link, useLocation, useSearchParams } from "react-router";
 import type { Route } from "./+types/product-detail";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext, type AppEnv } from "~/runtime/context";
 import { requireStaff } from "~/infrastructure/auth/session.server";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
 import { money, format as formatMoney, parseAmountToMinorUnits } from "~/domain/pricing/money";
@@ -20,6 +20,7 @@ import {
 import { formatDateTime } from "~/lib/i18n";
 import { breadcrumbsFor } from "~/lib/admin-nav";
 import { PageHeader } from "~/components/admin/admin-shell";
+import type { SqlStatement } from "~/infrastructure/db/sql";
 
 /**
  * One product.
@@ -52,7 +53,7 @@ export function meta({ loaderData }: Route.MetaArgs) {
  * column renamed by a migration typechecks, builds, and throws a 500 the first
  * time a merchant opens the page.
  */
-export async function loadProductDetail(env: Env, productId: string) {
+export async function loadProductDetail(env: AppEnv, productId: string) {
   const product = await env.DB.prepare(
     `SELECT p.id, p.slug, p.status, p.archived_at, p.brand_id, p.primary_category_id,
             p.accessory_type, p.published_at, p.created_at, p.updated_at,
@@ -212,7 +213,7 @@ export async function loadProductDetail(env: Env, productId: string) {
 }
 
 export async function loader({ request, params, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const actor = await requireStaff(request, env, "product.read");
 
   const data = await loadProductDetail(env, params.productId);
@@ -230,7 +231,7 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, params, context }: Route.ActionArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const form = await request.formData();
   const intent = String(form.get("intent") ?? "");
   const now = systemClock.now();
@@ -324,7 +325,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
 
     if (current && current.amount === amount) return { success: "Nessuna modifica." };
 
-    const statements: D1PreparedStatement[] = [];
+    const statements: SqlStatement[] = [];
 
     if (current) {
       statements.push(
@@ -438,7 +439,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
       .first<{ n: number }>();
 
     const variantId = cryptoIds.generate();
-    const statements: D1PreparedStatement[] = [
+    const statements: SqlStatement[] = [
       env.DB.prepare(
         // Never is_default: the product already has one, and two defaults would
         // make the storefront's initial selection arbitrary.
@@ -604,10 +605,9 @@ export async function action({ request, params, context }: Route.ActionArgs) {
     // and is invisible. The other order would leave a row pointing at nothing,
     // which renders a broken image on the shop.
     await env.MEDIA.put(key, buffer, {
-      httpMetadata: {
-        contentType: check.facts.type,
-        cacheControl: "public, max-age=31536000, immutable",
-      },
+      contentType: check.facts.type,
+      // The key carries a content hash, so an object at a key never changes.
+      cacheControl: "public, max-age=31536000, immutable",
     });
 
     const id = cryptoIds.generate();

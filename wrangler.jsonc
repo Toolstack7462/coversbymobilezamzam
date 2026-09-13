@@ -197,6 +197,9 @@
        */
       "vars": {
         "APP_ENV": "development",
+        // Never served, and still present: an absent var here makes the
+        // generated `Env` optional for every environment that does set it.
+        "APP_BASE_URL": "http://localhost:5173",
         "DEFAULT_LOCALE": "it",
         "SUPPORTED_LOCALES": "it,en",
         "DEFAULT_CURRENCY": "EUR",
@@ -219,7 +222,24 @@
     "staging": {
       "name": "ita-commerce-staging",
       "workers_dev": false,
-      "vars": { "APP_ENV": "staging" },
+      /*
+       * Every var is repeated here, not inherited.
+       *
+       * Wrangler does not merge a top-level `vars` block into a named
+       * environment — and worse, a var that is missing from ANY environment
+       * becomes optional in the single `Env` type it generates for all of
+       * them. Both consequences are silent: this environment would deploy with
+       * no default locale and no currency, and the type system would stop
+       * being able to tell anyone.
+       */
+      "vars": {
+        "APP_ENV": "staging",
+        "APP_BASE_URL": "https://REPLACE_WITH_STAGING_ORIGIN",
+        "DEFAULT_LOCALE": "it",
+        "SUPPORTED_LOCALES": "it,en",
+        "DEFAULT_CURRENCY": "EUR",
+        "STORE_TIMEZONE": "Europe/Rome",
+      },
       "d1_databases": [
         {
           "binding": "DB",
@@ -237,7 +257,24 @@
     "production": {
       "name": "ita-commerce-production",
       "workers_dev": false,
-      "vars": { "APP_ENV": "production" },
+      /*
+       * Every var is repeated here, not inherited.
+       *
+       * Wrangler does not merge a top-level `vars` block into a named
+       * environment — and worse, a var that is missing from ANY environment
+       * becomes optional in the single `Env` type it generates for all of
+       * them. Both consequences are silent: this environment would deploy with
+       * no default locale and no currency, and the type system would stop
+       * being able to tell anyone.
+       */
+      "vars": {
+        "APP_ENV": "production",
+        "APP_BASE_URL": "https://REPLACE_WITH_PRODUCTION_ORIGIN",
+        "DEFAULT_LOCALE": "it",
+        "SUPPORTED_LOCALES": "it,en",
+        "DEFAULT_CURRENCY": "EUR",
+        "STORE_TIMEZONE": "Europe/Rome",
+      },
       "d1_databases": [
         {
           "binding": "DB",

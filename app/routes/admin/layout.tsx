@@ -1,7 +1,7 @@
 import { Outlet, isRouteErrorResponse, useRouteError, Link } from "react-router";
 import type { LinksFunction } from "react-router";
 import type { Route } from "./+types/layout";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { requireEnrolledStaff } from "~/infrastructure/auth/session.server";
 import { visibleNav } from "~/lib/admin-nav";
 import { AdminShell } from "~/components/admin/admin-shell";
@@ -26,7 +26,7 @@ export function meta() {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
 
   /**
    * Checked on EVERY request, not once after login. A one-time redirect is

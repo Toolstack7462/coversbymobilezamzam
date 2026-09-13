@@ -1,7 +1,7 @@
 import { Form, Link } from "react-router";
 import { data } from "react-router";
 import type { Route } from "./+types/staff-detail";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext, type AppEnv } from "~/runtime/context";
 import { requireStaff, hasStepUp, consumeStepUp } from "~/infrastructure/auth/session.server";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
 import { formatDateTime } from "~/lib/i18n";
@@ -15,6 +15,7 @@ import {
   type StaffSummary,
 } from "~/domain/users/staff-guards";
 import type { Permission } from "~/domain/users/permissions";
+import type { SqlStatement } from "~/infrastructure/db/sql";
 
 /**
  * One staff member: status, roles, sessions, history.
@@ -29,7 +30,7 @@ export function meta() {
 }
 
 /** Everyone's status and roles — the input the last-super-admin guard needs. */
-async function loadSummaries(env: Env): Promise<StaffSummary[]> {
+async function loadSummaries(env: AppEnv): Promise<StaffSummary[]> {
   const { results } = await env.DB.prepare(
     `SELECT sp.user_id, sp.status,
             (SELECT GROUP_CONCAT(r.code) FROM user_roles ur
@@ -45,7 +46,7 @@ async function loadSummaries(env: Env): Promise<StaffSummary[]> {
 }
 
 export async function loader({ request, params, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const actor = await requireStaff(request, env, "staff.read");
   const now = systemClock.now();
 
@@ -121,7 +122,7 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, params, context }: Route.ActionArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
   const form = await request.formData();
   const intent = String(form.get("intent") ?? "");
   const now = systemClock.now();
@@ -160,7 +161,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
 
     const usable = to === "active";
 
-    const statements: D1PreparedStatement[] = [
+    const statements: SqlStatement[] = [
       env.DB.prepare(
         `UPDATE staff_profiles
             SET status = ?1, active = ?2, suspended_at = ?3, suspended_by = ?4,
@@ -255,7 +256,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
     });
     if (!guard.allowed) return { error: guard.reason };
 
-    const statements: D1PreparedStatement[] = [
+    const statements: SqlStatement[] = [
       env.DB.prepare(`DELETE FROM user_roles WHERE user_id = ?1`).bind(member.user_id),
     ];
     for (const id of requestedIds) {

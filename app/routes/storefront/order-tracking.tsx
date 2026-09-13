@@ -1,7 +1,7 @@
 import { useLocation } from "react-router";
 import { data } from "react-router";
 import type { Route } from "./+types/order-tracking";
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import { parseLocalePath, translator, formatDateTime } from "~/lib/i18n";
 import { money, format as formatMoney } from "~/domain/pricing/money";
 
@@ -18,7 +18,7 @@ export function meta() {
 }
 
 export async function loader({ context, params }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
 
   // A short token is not worth a database round trip, and rejecting early
   // keeps the endpoint cheap to defend.

@@ -1,4 +1,4 @@
-import { cloudflareContext } from "../../../workers/app";
+import { appContext } from "~/runtime/context";
 import type { Route } from "./+types/sitemap";
 import { SUPPORTED_LOCALES, DEFAULT_LOCALE, localePath } from "~/lib/i18n";
 
@@ -44,7 +44,7 @@ const escapeXml = (value: string) =>
   );
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { env } = context.get(cloudflareContext);
+  const { env } = context.get(appContext);
 
   const headers = {
     "content-type": "application/xml; charset=utf-8",

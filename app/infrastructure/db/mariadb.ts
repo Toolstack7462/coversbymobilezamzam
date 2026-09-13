@@ -17,6 +17,7 @@ import mysql from "mysql2/promise";
 import type { Pool, PoolConnection, PoolOptions } from "mysql2/promise";
 import { translate, orderParameters, type TranslatedStatement } from "./dialect";
 import { classifySqlError } from "./sql";
+import { record as recordQuery } from "./query-metrics";
 import type {
   InteractiveSqlDatabase,
   SqlDatabase,
@@ -76,12 +77,30 @@ type BindValues = Parameters<PoolConnection["execute"]>[1];
 class MariaDbStatement implements SqlStatement {
   private values: readonly unknown[] = [];
 
+  /*
+   * Plain fields rather than TypeScript parameter properties.
+   *
+   * Node's type stripping is syntax-only and rejects parameter properties, and
+   * this module is loaded DIRECTLY as TypeScript by server/index.ts and by the
+   * migration scripts. Compiling it instead would mean a second artifact whose
+   * provenance has to be checked at every deploy; this is the cheaper contract.
+   */
+  private readonly executor: () => Promise<Executor> | Executor;
+  private readonly release: ((executor: Executor) => void) | null;
+  private readonly translated: TranslatedStatement;
+  private readonly originalSql: string;
+
   constructor(
-    private readonly executor: () => Promise<Executor> | Executor,
-    private readonly release: ((executor: Executor) => void) | null,
-    private readonly translated: TranslatedStatement,
-    private readonly originalSql: string,
-  ) {}
+    executor: () => Promise<Executor> | Executor,
+    release: ((executor: Executor) => void) | null,
+    translated: TranslatedStatement,
+    originalSql: string,
+  ) {
+    this.executor = executor;
+    this.release = release;
+    this.translated = translated;
+    this.originalSql = originalSql;
+  }
 
   bind(...values: unknown[]): SqlStatement {
     const next = new MariaDbStatement(
@@ -109,7 +128,11 @@ class MariaDbStatement implements SqlStatement {
     try {
       const [rows] = await executor.execute(sql, params as BindValues);
       const info = isResultSetHeader(rows) ? rows : null;
-      return { rows, info, ms: Date.now() - started };
+      const ms = Date.now() - started;
+      // A no-op unless the request opted into instrumentation. See
+      // query-metrics.ts for why it is not always on.
+      recordQuery(sql, ms, Array.isArray(rows) ? rows.length : (info?.affectedRows ?? 0));
+      return { rows, info, ms };
     } catch (error) {
       throw decorate(error, this.originalSql);
     } finally {
@@ -279,11 +302,9 @@ export class MariaDbDatabase implements InteractiveSqlDatabase {
         }
         const info = isResultSetHeader(rows) ? rows : null;
         const results = Array.isArray(rows) ? (rows as T[]) : [];
-        out.push({
-          results,
-          success: true,
-          meta: metaFrom(info, Date.now() - started, results.length),
-        });
+        const ms = Date.now() - started;
+        recordQuery(sql, ms, results.length || (info?.affectedRows ?? 0));
+        out.push({ results, success: true, meta: metaFrom(info, ms, results.length) });
       }
 
       await connection.commit();

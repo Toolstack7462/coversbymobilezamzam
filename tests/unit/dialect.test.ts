@@ -216,3 +216,55 @@ describe("constructs that must fail loudly", () => {
     expect(parameterOrder).toEqual([0]);
   });
 });
+
+describe("reserved identifiers", () => {
+  /*
+   * The one that took the whole shop down.
+   *
+   * SQLite reserves almost nothing, so `SELECT key, value FROM store_settings`
+   * is ordinary SQL there and a syntax error in MariaDB. That statement is on
+   * the storefront layout's critical path — every page load reads the
+   * merchant's settings — so every route returned 500 until the rule existed.
+   */
+  it("backticks `key` used as a column", () => {
+    const { sql } = translate("SELECT key, value FROM store_settings WHERE key = ?1");
+    expect(sql).toBe("SELECT `key`, value FROM store_settings WHERE `key` = ?");
+  });
+
+  it("backticks a qualified reserved column", () => {
+    const { sql } = translate("SELECT s.key FROM store_settings s");
+    expect(sql).toBe("SELECT s.`key` FROM store_settings s");
+  });
+
+  it("leaves an already-backticked identifier alone", () => {
+    const { sql } = translate("SELECT `key` FROM store_settings");
+    expect(sql).toBe("SELECT `key` FROM store_settings");
+  });
+
+  /*
+   * Three places `KEY` is syntax rather than a column. Backticking any of them
+   * produces a statement MariaDB cannot parse.
+   */
+  it("does not touch ON DUPLICATE KEY UPDATE", () => {
+    const { sql } = translate(
+      "INSERT INTO carts (id, token) VALUES (?1, ?2) ON CONFLICT(token) DO UPDATE SET expires_at = ?3",
+    );
+    expect(sql).toContain("ON DUPLICATE KEY UPDATE");
+    expect(sql).not.toContain("`KEY`");
+  });
+
+  it("does not touch a word that merely contains a reserved one", () => {
+    const { sql } = translate("SELECT monkey, keyboard FROM t");
+    expect(sql).toBe("SELECT monkey, keyboard FROM t");
+  });
+
+  it("does not touch ROW_NUMBER() the window function", () => {
+    const { sql } = translate("SELECT ROW_NUMBER() OVER (ORDER BY id) AS n FROM orders");
+    expect(sql).toBe("SELECT ROW_NUMBER() OVER (ORDER BY id) AS n FROM orders");
+  });
+
+  it("does not touch the word inside a string literal", () => {
+    const { sql } = translate("SELECT * FROM store_settings WHERE value = 'the key is here'");
+    expect(sql).toBe("SELECT * FROM store_settings WHERE value = 'the key is here'");
+  });
+});

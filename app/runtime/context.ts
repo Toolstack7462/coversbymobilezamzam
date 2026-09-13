@@ -91,4 +91,31 @@ export interface AppRuntime {
   platform: "cloudflare" | "node";
 }
 
-export const appContext = createContext<AppRuntime>();
+/**
+ * ONE context object, however many times this module is loaded.
+ *
+ * `createContext()` mints a fresh key each time it runs, and on the Node
+ * deployment this module is loaded TWICE: once inside the React Router server
+ * build (which the routes import from) and once inside the compiled Express
+ * entry (which sets the value). Two module instances meant two keys, so the
+ * server set one and every loader read the other — "No value found for
+ * context", on every route, with a correct-looking 500.
+ *
+ * Cloudflare never hit this: one bundle, one instance. It only appears once
+ * there are two entry points, which is exactly what this migration adds.
+ *
+ * A `Symbol.for` key is the fix rather than a build-config change, because the
+ * two bundles are produced by different tools for different runtimes and any
+ * arrangement that keeps them sharing a module is one refactor from breaking
+ * again — silently, and in the same way.
+ */
+const CONTEXT_KEY = Symbol.for("covers-by-mobile.app-context");
+
+type ContextHolder = typeof globalThis & {
+  [CONTEXT_KEY]?: ReturnType<typeof createContext<AppRuntime>>;
+};
+
+const holder = globalThis as ContextHolder;
+
+export const appContext: ReturnType<typeof createContext<AppRuntime>> =
+  holder[CONTEXT_KEY] ?? (holder[CONTEXT_KEY] = createContext<AppRuntime>());

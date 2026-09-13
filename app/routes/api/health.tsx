@@ -31,16 +31,30 @@ export async function loader({ context }: Route.LoaderArgs) {
   const { env } = context.get(appContext);
   const startedAt = Date.now();
 
-  // ── D1 ────────────────────────────────────────────────────────────────────
+  // ── Database ──────────────────────────────────────────────────────────────
   let database: { ok: boolean; ms: number; migration: string | null; error?: string };
   try {
     const t0 = Date.now();
-    // The furthest-applied migration. `d1_migrations` is Wrangler's own table;
-    // reading its last name is how the deployment says which schema it expects,
-    // without exposing anything about the data in it.
-    const row = await env.DB.prepare(
-      `SELECT name FROM d1_migrations ORDER BY id DESC LIMIT 1`,
-    ).first<{ name: string }>();
+    /*
+     * The furthest-applied migration: how the deployment says which schema it
+     * expects, without exposing anything about the data in it.
+     *
+     * The LEDGER differs by engine, and this is not cosmetic. `d1_migrations`
+     * is Wrangler's table and does not exist on MariaDB — reading it there made
+     * the first real MariaDB deployment report itself `degraded` on a database
+     * that was completely healthy, which is exactly the kind of false alarm
+     * that teaches people to ignore a health check.
+     */
+    const row =
+      env.DB.dialect === "mariadb"
+        ? await env.DB.prepare(
+            `/* dialect: mariadb */
+             SELECT name FROM schema_migrations ORDER BY name DESC LIMIT 1`,
+          ).first<{ name: string }>()
+        : await env.DB.prepare(
+            `/* dialect: sqlite */
+             SELECT name FROM d1_migrations ORDER BY id DESC LIMIT 1`,
+          ).first<{ name: string }>();
     database = { ok: true, ms: Date.now() - t0, migration: row?.name ?? null };
   } catch (error) {
     // The message, not the stack. "no such table" is useful; a stack trace is a

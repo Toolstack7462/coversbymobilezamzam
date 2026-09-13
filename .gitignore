@@ -58,3 +58,10 @@ Thumbs.db
 *.log
 npm-debug.log*
 logs/
+
+# Hostinger migration working directory, when it is placed inside the repo.
+# The default is ~/hostinger-migration-work, OUTSIDE the repository, because it
+# holds database exports and a copy of the media library — every customer
+# record the shop has. Neither belongs in Git.
+/hostinger-migration-work/
+/build/server-node/

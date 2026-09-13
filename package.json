@@ -51,7 +51,17 @@
     "mariadb:version": "node scripts/hostinger/local-db.mjs version",
     "hostinger:schema": "node scripts/hostinger/generate-schema.mjs",
     "test:db:mariadb": "vitest run --config vitest.mariadb.config.ts",
-    "hostinger:sql-audit": "node scripts/hostinger/sql-audit.mjs"
+    "hostinger:sql-audit": "node scripts/hostinger/sql-audit.mjs",
+    "build:node": "react-router build --config vite.node.config.ts",
+    "build:server": "vite build --config vite.server.config.ts",
+    "build:hostinger": "npm run build:node && npm run build:server",
+    "start:hostinger": "node build/server-node/index.js",
+    "hostinger:search-rebuild": "node scripts/hostinger/search-rebuild.mjs",
+    "hostinger:export": "node scripts/hostinger/export-d1.mjs",
+    "hostinger:import": "node scripts/hostinger/import-mariadb.mjs",
+    "hostinger:migrate": "node scripts/hostinger/migrate.mjs",
+    "hostinger:reserved-words": "node scripts/hostinger/reserved-words.mjs",
+    "performance:baseline": "node scripts/hostinger/performance-baseline.mjs"
   },
   "dependencies": {
     "@react-router/express": "8.3.1",

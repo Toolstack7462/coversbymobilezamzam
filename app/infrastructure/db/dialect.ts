@@ -334,6 +334,71 @@ function stringLiteralRanges(sql: string): [number, number][] {
   return ranges;
 }
 
+/**
+ * Identifiers this schema uses that MariaDB reserves.
+ *
+ * SQLite reserves almost nothing, so `SELECT key, value FROM store_settings` is
+ * ordinary SQL there and a SYNTAX ERROR in MariaDB. That statement is on the
+ * storefront layout's critical path: every page load reads the merchant's
+ * settings, so the whole shop returned 500 until this rule existed.
+ *
+ * The list is not from documentation. `npm run hostinger:reserved-words` asks
+ * the actual server, by attempting `SELECT <identifier> FROM DUAL` and
+ * distinguishing a parse error (reserved) from an unknown-column error (not).
+ * Which words are reserved differs between MariaDB versions, so the list is
+ * re-derived against the merchant's server once capability check C-2 says
+ * which version that is.
+ *
+ * Two of 524 identifiers on MariaDB 10.11.19: `key` and `row_number`.
+ */
+const RESERVED_IDENTIFIERS = new Set(["key", "row_number"]);
+
+/**
+ * Backticks a reserved word used as a column name.
+ *
+ * Three things must NOT be touched, and each would break something different:
+ *
+ *   PRIMARY KEY / FOREIGN KEY / UNIQUE KEY — DDL syntax. Backticking `KEY`
+ *     there produces a statement MariaDB cannot parse at all.
+ *   ON DUPLICATE KEY UPDATE — DML, and the upsert this codebase relies on.
+ *   ROW_NUMBER() — a window function, recognised by the parenthesis.
+ *
+ * An already-backticked identifier is left alone, so the rule is idempotent
+ * and a hand-quoted statement is not double-quoted.
+ */
+function quoteReservedIdentifiers(sql: string): string {
+  const mask = maskStrings(sql);
+  const pattern = /\b([A-Za-z_][A-Za-z0-9_]*)\b/g;
+
+  let result = "";
+  let cursor = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(mask)) !== null) {
+    const word = match[1];
+    if (word === undefined || !RESERVED_IDENTIFIERS.has(word.toLowerCase())) continue;
+
+    const start = match.index;
+    const end = start + word.length;
+
+    // Already quoted.
+    if (sql[start - 1] === "`" || sql[end] === "`") continue;
+
+    // A window function, not a column.
+    if (/^\s*\(/.test(mask.slice(end))) continue;
+
+    // DDL and upsert syntax: PRIMARY KEY, FOREIGN KEY, UNIQUE KEY,
+    // ON DUPLICATE KEY UPDATE.
+    const before = mask.slice(Math.max(0, start - 24), start);
+    if (/\b(PRIMARY|FOREIGN|UNIQUE|DUPLICATE)\s+$/i.test(before)) continue;
+
+    result += sql.slice(cursor, start) + "`" + sql.slice(start, end) + "`";
+    cursor = end;
+  }
+
+  return result + sql.slice(cursor);
+}
+
 /** Constructs that must never be silently translated. */
 const FORBIDDEN: { pattern: RegExp; reason: string }[] = [
   {
@@ -466,6 +531,7 @@ export function translate(sql: string): TranslatedStatement {
   // wrong.
   working = rewriteScalarMinMax(working);
   working = rewriteGroupConcat(working);
+  working = quoteReservedIdentifiers(working);
 
   working = rewriteUpsert(working);
 

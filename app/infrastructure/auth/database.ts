@@ -31,20 +31,36 @@ import type { BetterAuthOptions } from "better-auth";
 export type AuthDatabase = BetterAuthOptions["database"];
 
 /**
- * A holder, set once per runtime.
+ * A holder, set once per runtime, and shared across module instances.
  *
- * A module-level value rather than another field threaded through `AppEnv`,
- * because it is a property of the PROCESS, not of a request: on Node one pool
- * serves every request, and on Workers the adapter is rebuilt per request
- * anyway because the binding is.
+ * A property of the PROCESS rather than of a request: on Node one pool serves
+ * every request, and on Workers the adapter is rebuilt per request anyway
+ * because the binding is.
+ *
+ * ── WHY IT HANGS OFF globalThis ─────────────────────────────────────────────
+ *
+ * On the Node deployment this module is loaded TWICE — once inside the React
+ * Router server build, which `createAuth` is bundled into, and once inside the
+ * compiled Express entry, which sets the factory. A plain module-level `let`
+ * meant the entry set one copy and `createAuth` read the other, so every admin
+ * route failed with "No auth database has been configured" while the server
+ * had, in fact, configured one.
+ *
+ * Same shape and same reason as `appContext` in app/runtime/context.ts. Both
+ * are symptoms of having two entry points, which is what this migration adds,
+ * and both are invisible on Cloudflare where there is only one bundle.
  */
-let configured: (() => AuthDatabase) | null = null;
+const HOLDER_KEY = Symbol.for("covers-by-mobile.auth-database");
+
+type Holder = typeof globalThis & { [HOLDER_KEY]?: () => AuthDatabase };
+const holder = globalThis as Holder;
 
 export function setAuthDatabaseFactory(factory: () => AuthDatabase): void {
-  configured = factory;
+  holder[HOLDER_KEY] = factory;
 }
 
 export function authDatabase(): AuthDatabase {
+  const configured = holder[HOLDER_KEY];
   if (!configured) {
     throw new Error(
       "No auth database has been configured. The entry point must call " +

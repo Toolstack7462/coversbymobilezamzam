@@ -242,3 +242,84 @@ test is reported as a failing test.
 - **Never deploy to production automatically.** It requires separate explicit
   authorisation, every time.
 - Never create production Cloudflare resources automatically.
+
+## 13. The merchant admin
+
+Rules that exist because each was broken once. Every one names the defect.
+
+### Scoped styling
+
+- Admin CSS lives in `app/styles/admin.css` and **every selector is prefixed
+  `.ac`**. A bare `.card`, `.button` or `.sidebar` in that file restyles the
+  public storefront, which loads the same tokens.
+- Colours, radii and spacing come from `tokens.css`. Never invent a token name:
+  `--radius-sm` and `--color-text-muted` do not exist, and a `var()` that does
+  not resolve fails silently as "no style at all".
+- **Never use `opacity` to mean "unavailable".** It fades ink and border
+  together and keeps no contrast floor — `.is-inert` composited to ~1.9:1 and
+  axe flagged it as a serious failure. Use an explicit audited colour.
+- Text on a sunken surface uses `--color-text-secondary-on-sunken`, not
+  `--color-text-secondary`. The difference is 4.42:1 versus 6.69:1 and the tab
+  count chip was the one place that got it wrong.
+
+### Shared components
+
+- `app/components/admin/` is the home of every repeated pattern. Extend what is
+  there; do not write a second local copy. `StatusBadge` existed three times
+  before it existed once.
+- **Never render a raw enum.** `{row.status}` shows an Italian shopkeeper
+  `out_of_stock`. Always `<StatusBadge kind="…" value={…} />`, or
+  `statusLabel()` inside a sentence. A state with no Italian label belongs in
+  `status-badge.tsx`.
+- `DataTable` owns list layout: views, search, sorting, pagination, bulk
+  actions, the mobile card collapse. A hand-rolled `<table>` in a route will
+  not collapse on a phone.
+- Column width is negotiated, not declared. A `<colgroup>` width is a
+  _suggestion_ under auto table layout; `min-inline-size` on the cell is the
+  constraint that binds.
+
+### Data boundaries
+
+- A list column is a **correlated subquery inside the existing statement**,
+  never a second query per row. Image, SKU and stock were added to the product
+  list this way; one query per card would be an N+1 on the busiest screen.
+- Money stays integer minor units to the last moment. Format for display only.
+- `NULL` and `0` are different facts and must look different. A product with no
+  inventory rows is _not tracked_; one with rows summing to zero is _out of
+  stock_. Showing the first as `0` is a claim the data does not support.
+- A sum hides shape. A product total of 3 can mean "3 of one variant, 0 of the
+  other" — say so rather than implying availability.
+
+### Localisation
+
+- The admin is Italian. An English word reaching the UI is a defect, not a
+  placeholder.
+- Label maps are exhaustive by type (`Record<OrderStatus, string>`) so a new
+  enum member is a compile error rather than a surprise on a screen.
+
+### Verification
+
+- **`npm run verify` does not serve a page.** It type-checks and builds. A
+  renderer that throws on every request passes it — that is exactly what
+  happened when installing `@react-router/express` switched the Cloudflare SSR
+  entry and every page became a 500. Run the browser suite before believing a
+  runtime change.
+- Both SSR entries are explicit (`app/entry.server.tsx`,
+  `app/entry.server.node.tsx`). Never delete them to "let the framework decide":
+  the framework decides from the dependency list.
+- The browser suite seeds a `[DEMO]` catalogue. **A test asserting against an
+  empty list proves nothing** — a Playwright locator that matches nothing
+  reports "not visible", which is how the mobile card test passed for months
+  without a table on the page.
+- The visual survey is its own Playwright project. Do not add heavy specs to
+  `desktop`/`mobile`: one shared `wrangler dev` and one SQLite file stop
+  answering, and the run reports "passed" for tests that never executed.
+
+### Performance budgets
+
+- Admin assets never reach the customer bundle. `admin.css` is loaded by the
+  admin layout route alone.
+- Current: CSS 12.6 KB of a 45 KB budget; average admin chunk 1.6 KB of 3 KB
+  across 51 screens. `npm run budgets` enforces both.
+- No charting library, no dashboard framework, no polling loop that runs in a
+  hidden tab.

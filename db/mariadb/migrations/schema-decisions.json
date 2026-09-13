@@ -1,0 +1,8509 @@
+{
+  "generatedFrom": [
+    "0000_init.sql",
+    "0001_installation_singleton.sql",
+    "0002_two_factor_verification.sql",
+    "0003_staff_invitations.sql",
+    "0004_account_issuer.sql",
+    "0005_product_search.sql",
+    "0006_product_reviews.sql"
+  ],
+  "decisions": [
+    {
+      "table": "account",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "account",
+      "column": "user_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "account",
+      "column": "account_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "account",
+      "column": "provider_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "account",
+      "column": "access_token",
+      "from": "text",
+      "to": "TEXT",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "account",
+      "column": "refresh_token",
+      "from": "text",
+      "to": "TEXT",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "account",
+      "column": "access_token_expires_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "account",
+      "column": "refresh_token_expires_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "account",
+      "column": "scope",
+      "from": "text",
+      "to": "VARCHAR(500)",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "account",
+      "column": "id_token",
+      "from": "text",
+      "to": "TEXT",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "account",
+      "column": "password",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "account",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "account",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "account",
+      "column": "issuer",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "indexed-label",
+      "notNull": true,
+      "default": "''"
+    },
+    {
+      "table": "permissions",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "permissions",
+      "column": "code",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "permissions",
+      "column": "description",
+      "from": "text",
+      "to": "TEXT",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "permissions",
+      "column": "category",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "role_permissions",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "role_permissions",
+      "column": "role_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "role_permissions",
+      "column": "permission_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "roles",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "roles",
+      "column": "code",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "roles",
+      "column": "name_it",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "roles",
+      "column": "name_en",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "roles",
+      "column": "description",
+      "from": "text",
+      "to": "TEXT",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "roles",
+      "column": "is_system",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "false"
+    },
+    {
+      "table": "roles",
+      "column": "sort_order",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "roles",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "roles",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "session",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "session",
+      "column": "user_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "session",
+      "column": "token",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "session",
+      "column": "expires_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "session",
+      "column": "ip_address",
+      "from": "text",
+      "to": "VARCHAR(45)",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "session",
+      "column": "user_agent",
+      "from": "text",
+      "to": "VARCHAR(500)",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "session",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "session",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "staff_profiles",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "staff_profiles",
+      "column": "user_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "staff_profiles",
+      "column": "display_name",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "staff_profiles",
+      "column": "job_title",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "staff_profiles",
+      "column": "active",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "true"
+    },
+    {
+      "table": "staff_profiles",
+      "column": "last_login_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "staff_profiles",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "staff_profiles",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "staff_profiles",
+      "column": "archived_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "staff_profiles",
+      "column": "status",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": "'active'"
+    },
+    {
+      "table": "staff_profiles",
+      "column": "suspended_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "staff_profiles",
+      "column": "suspended_by",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "staff_profiles",
+      "column": "suspended_reason",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "step_up_sessions",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "step_up_sessions",
+      "column": "user_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "step_up_sessions",
+      "column": "session_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "step_up_sessions",
+      "column": "purpose",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "indexed-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "step_up_sessions",
+      "column": "expires_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "step_up_sessions",
+      "column": "consumed_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "step_up_sessions",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "two_factor",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "two_factor",
+      "column": "user_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "two_factor",
+      "column": "secret",
+      "from": "text",
+      "to": "VARCHAR(500)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "two_factor",
+      "column": "backup_codes",
+      "from": "text",
+      "to": "TEXT",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "two_factor",
+      "column": "verified",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "false"
+    },
+    {
+      "table": "two_factor",
+      "column": "failed_verification_count",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "two_factor",
+      "column": "locked_until",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "user",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "user",
+      "column": "name",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "user",
+      "column": "email",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "user",
+      "column": "email_verified",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "false"
+    },
+    {
+      "table": "user",
+      "column": "image",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "user",
+      "column": "two_factor_enabled",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "false"
+    },
+    {
+      "table": "user",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "user",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "user_roles",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "user_roles",
+      "column": "user_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "user_roles",
+      "column": "role_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "user_roles",
+      "column": "granted_by",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "indexed-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "user_roles",
+      "column": "granted_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "verification",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "verification",
+      "column": "identifier",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "verification",
+      "column": "value",
+      "from": "text",
+      "to": "VARCHAR(500)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "verification",
+      "column": "expires_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "verification",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "verification",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "brand_translations",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "brand_translations",
+      "column": "brand_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "brand_translations",
+      "column": "locale",
+      "from": "text",
+      "to": "VARCHAR(10)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "brand_translations",
+      "column": "description",
+      "from": "text",
+      "to": "TEXT",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "brands",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "brands",
+      "column": "slug",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "brands",
+      "column": "name",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "brands",
+      "column": "logo_key",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "brands",
+      "column": "website_url",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "brands",
+      "column": "sort_order",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "brands",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "brands",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "brands",
+      "column": "archived_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "categories",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "categories",
+      "column": "slug",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "categories",
+      "column": "parent_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "categories",
+      "column": "path",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "indexed-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "categories",
+      "column": "depth",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "categories",
+      "column": "accessory_type",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "categories",
+      "column": "image_key",
+      "from": "text",
+      "to": "VARCHAR(512)",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "categories",
+      "column": "sort_order",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "categories",
+      "column": "visible",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "true"
+    },
+    {
+      "table": "categories",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "categories",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "categories",
+      "column": "archived_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "category_translations",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "category_translations",
+      "column": "category_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "category_translations",
+      "column": "locale",
+      "from": "text",
+      "to": "VARCHAR(10)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "category_translations",
+      "column": "name",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "category_translations",
+      "column": "description",
+      "from": "text",
+      "to": "TEXT",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "category_translations",
+      "column": "seo_title",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "category_translations",
+      "column": "seo_description",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_category_assignments",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_category_assignments",
+      "column": "product_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_category_assignments",
+      "column": "category_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_images",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_images",
+      "column": "product_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_images",
+      "column": "variant_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_images",
+      "column": "object_key",
+      "from": "text",
+      "to": "VARCHAR(512)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_images",
+      "column": "alt_it",
+      "from": "text",
+      "to": "VARCHAR(500)",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_images",
+      "column": "alt_en",
+      "from": "text",
+      "to": "VARCHAR(500)",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_images",
+      "column": "width",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_images",
+      "column": "height",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_images",
+      "column": "mime_type",
+      "from": "text",
+      "to": "VARCHAR(120)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_images",
+      "column": "file_size",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_images",
+      "column": "file_hash",
+      "from": "text",
+      "to": "VARCHAR(128)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_images",
+      "column": "is_primary",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "false"
+    },
+    {
+      "table": "product_images",
+      "column": "sort_order",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "product_images",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_relationships",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_relationships",
+      "column": "product_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_relationships",
+      "column": "related_product_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_relationships",
+      "column": "relationship_type",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_relationships",
+      "column": "sort_order",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "product_safety_information",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_safety_information",
+      "column": "product_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_safety_information",
+      "column": "manufacturer_name",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_safety_information",
+      "column": "manufacturer_address",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_safety_information",
+      "column": "manufacturer_contact",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_safety_information",
+      "column": "product_identifier",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_safety_information",
+      "column": "responsible_person_name",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_safety_information",
+      "column": "responsible_person_address",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_safety_information",
+      "column": "responsible_person_contact",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_safety_information",
+      "column": "warnings_it",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_safety_information",
+      "column": "warnings_en",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_safety_information",
+      "column": "manual_url",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_safety_information",
+      "column": "recall_notice",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_safety_information",
+      "column": "disposal_info_it",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_safety_information",
+      "column": "disposal_info_en",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_safety_information",
+      "column": "certification",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_safety_information",
+      "column": "battery_notes",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_safety_information",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_safety_information",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_specifications",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_specifications",
+      "column": "product_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_specifications",
+      "column": "variant_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_specifications",
+      "column": "spec_key",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_specifications",
+      "column": "value_text",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_specifications",
+      "column": "value_number",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_specifications",
+      "column": "value_bool",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_specifications",
+      "column": "unit",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_specifications",
+      "column": "sort_order",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "product_translations",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_translations",
+      "column": "product_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_translations",
+      "column": "locale",
+      "from": "text",
+      "to": "VARCHAR(10)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_translations",
+      "column": "name",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_translations",
+      "column": "short_description",
+      "from": "text",
+      "to": "TEXT",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_translations",
+      "column": "full_description",
+      "from": "text",
+      "to": "TEXT",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_translations",
+      "column": "seo_title",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_translations",
+      "column": "seo_description",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_variants",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_variants",
+      "column": "product_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_variants",
+      "column": "sku",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_variants",
+      "column": "barcode",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_variants",
+      "column": "variant_label",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_variants",
+      "column": "colour",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_variants",
+      "column": "length_mm",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_variants",
+      "column": "capacity_mah",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_variants",
+      "column": "connector",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_variants",
+      "column": "pack_size",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "1"
+    },
+    {
+      "table": "product_variants",
+      "column": "weight_grams",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_variants",
+      "column": "dimensions_mm",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_variants",
+      "column": "active",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "true"
+    },
+    {
+      "table": "product_variants",
+      "column": "is_default",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "false"
+    },
+    {
+      "table": "product_variants",
+      "column": "available_online",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "true"
+    },
+    {
+      "table": "product_variants",
+      "column": "available_for_pickup",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "true"
+    },
+    {
+      "table": "product_variants",
+      "column": "allow_backorder",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "false"
+    },
+    {
+      "table": "product_variants",
+      "column": "sort_order",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "product_variants",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_variants",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_variants",
+      "column": "archived_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "products",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "products",
+      "column": "slug",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "products",
+      "column": "status",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": "'draft'"
+    },
+    {
+      "table": "products",
+      "column": "brand_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "products",
+      "column": "primary_category_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "products",
+      "column": "accessory_type",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "products",
+      "column": "product_family_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "products",
+      "column": "is_featured",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "false"
+    },
+    {
+      "table": "products",
+      "column": "is_new",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "false"
+    },
+    {
+      "table": "products",
+      "column": "is_bestseller",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "false"
+    },
+    {
+      "table": "products",
+      "column": "published_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "products",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "products",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "products",
+      "column": "archived_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "variant_option_assignments",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "variant_option_assignments",
+      "column": "variant_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "variant_option_assignments",
+      "column": "option_value_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "variant_option_groups",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "variant_option_groups",
+      "column": "product_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "variant_option_groups",
+      "column": "code",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "variant_option_groups",
+      "column": "name_it",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "variant_option_groups",
+      "column": "name_en",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "variant_option_groups",
+      "column": "sort_order",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "variant_option_values",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "variant_option_values",
+      "column": "group_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "variant_option_values",
+      "column": "value",
+      "from": "text",
+      "to": "TEXT",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "variant_option_values",
+      "column": "label_it",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "variant_option_values",
+      "column": "label_en",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "variant_option_values",
+      "column": "swatch_hex",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "variant_option_values",
+      "column": "sort_order",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "compatibility_verification_logs",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "compatibility_verification_logs",
+      "column": "compatibility_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "compatibility_verification_logs",
+      "column": "previous_level",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "compatibility_verification_logs",
+      "column": "new_level",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "compatibility_verification_logs",
+      "column": "previous_verified",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "compatibility_verification_logs",
+      "column": "new_verified",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "compatibility_verification_logs",
+      "column": "source",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "compatibility_verification_logs",
+      "column": "note",
+      "from": "text",
+      "to": "TEXT",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "compatibility_verification_logs",
+      "column": "changed_by",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "compatibility_verification_logs",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_aliases",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_aliases",
+      "column": "device_model_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_aliases",
+      "column": "alias",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_aliases",
+      "column": "alias_normalised",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "indexed-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_brand_translations",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_brand_translations",
+      "column": "device_brand_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_brand_translations",
+      "column": "locale",
+      "from": "text",
+      "to": "VARCHAR(10)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_brand_translations",
+      "column": "description",
+      "from": "text",
+      "to": "TEXT",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "device_brands",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_brands",
+      "column": "handle",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_brands",
+      "column": "name",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_brands",
+      "column": "logo_key",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "device_brands",
+      "column": "sort_order",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "device_brands",
+      "column": "active",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "true"
+    },
+    {
+      "table": "device_brands",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_brands",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_brands",
+      "column": "archived_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "device_families",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_families",
+      "column": "device_brand_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_families",
+      "column": "handle",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_families",
+      "column": "name",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_families",
+      "column": "release_year",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "device_families",
+      "column": "sort_order",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "device_families",
+      "column": "active",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "true"
+    },
+    {
+      "table": "device_families",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_families",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_families",
+      "column": "archived_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "device_family_translations",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_family_translations",
+      "column": "device_family_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_family_translations",
+      "column": "locale",
+      "from": "text",
+      "to": "VARCHAR(10)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_family_translations",
+      "column": "description",
+      "from": "text",
+      "to": "TEXT",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "device_model_translations",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_model_translations",
+      "column": "device_model_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_model_translations",
+      "column": "locale",
+      "from": "text",
+      "to": "VARCHAR(10)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_model_translations",
+      "column": "display_name",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "device_model_translations",
+      "column": "notes",
+      "from": "text",
+      "to": "TEXT",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "device_models",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_models",
+      "column": "device_brand_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_models",
+      "column": "device_family_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_models",
+      "column": "handle",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_models",
+      "column": "name",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_models",
+      "column": "release_year",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "device_models",
+      "column": "image_key",
+      "from": "text",
+      "to": "VARCHAR(512)",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "device_models",
+      "column": "connector",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "device_models",
+      "column": "is_popular",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "false"
+    },
+    {
+      "table": "device_models",
+      "column": "sort_order",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "device_models",
+      "column": "active",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "true"
+    },
+    {
+      "table": "device_models",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_models",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "device_models",
+      "column": "archived_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_compatibility",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_compatibility",
+      "column": "product_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_compatibility",
+      "column": "variant_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_compatibility",
+      "column": "device_model_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_compatibility",
+      "column": "compatibility_level",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_compatibility",
+      "column": "note",
+      "from": "text",
+      "to": "TEXT",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_compatibility",
+      "column": "verified",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "false"
+    },
+    {
+      "table": "product_compatibility",
+      "column": "verification_source",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_compatibility",
+      "column": "verified_by",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_compatibility",
+      "column": "verified_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_compatibility",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_compatibility",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_families",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_families",
+      "column": "handle",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_families",
+      "column": "name_it",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_families",
+      "column": "name_en",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_families",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_families",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_families",
+      "column": "archived_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_family_members",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_family_members",
+      "column": "product_family_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_family_members",
+      "column": "product_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_family_members",
+      "column": "sort_order",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "coupon_redemptions",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "coupon_redemptions",
+      "column": "coupon_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "coupon_redemptions",
+      "column": "order_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "coupon_redemptions",
+      "column": "customer_email",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "coupon_redemptions",
+      "column": "amount_discounted",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "coupon_redemptions",
+      "column": "currency",
+      "from": "text",
+      "to": "VARCHAR(3)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": "'EUR'"
+    },
+    {
+      "table": "coupon_redemptions",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "coupons",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "coupons",
+      "column": "code",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "coupons",
+      "column": "discount_type",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "coupons",
+      "column": "discount_value",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "coupons",
+      "column": "usage_limit",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "coupons",
+      "column": "usage_count",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "coupons",
+      "column": "per_customer_limit",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "coupons",
+      "column": "starts_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "coupons",
+      "column": "ends_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "coupons",
+      "column": "min_order_amount",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "money-minor-units",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "coupons",
+      "column": "active",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "true"
+    },
+    {
+      "table": "coupons",
+      "column": "sort_order",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "coupons",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "coupons",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "coupons",
+      "column": "archived_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "price_history",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "price_history",
+      "column": "variant_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "price_history",
+      "column": "price_list_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "price_history",
+      "column": "old_amount",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "money-minor-units",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "price_history",
+      "column": "new_amount",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "money-minor-units",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "price_history",
+      "column": "currency",
+      "from": "text",
+      "to": "VARCHAR(3)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": "'EUR'"
+    },
+    {
+      "table": "price_history",
+      "column": "channel",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "price_history",
+      "column": "effective_from",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "price_history",
+      "column": "effective_to",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "price_history",
+      "column": "reason",
+      "from": "text",
+      "to": "VARCHAR(500)",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "price_history",
+      "column": "changed_by",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "price_history",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "price_lists",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "price_lists",
+      "column": "code",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "price_lists",
+      "column": "name",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "price_lists",
+      "column": "channel",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "price_lists",
+      "column": "is_default",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "false"
+    },
+    {
+      "table": "price_lists",
+      "column": "active",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "true"
+    },
+    {
+      "table": "price_lists",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "price_lists",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "promotion_products",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "promotion_products",
+      "column": "promotion_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "promotion_products",
+      "column": "product_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "promotion_products",
+      "column": "variant_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "promotions",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "promotions",
+      "column": "code",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "promotions",
+      "column": "name",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "promotions",
+      "column": "discount_type",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "promotions",
+      "column": "discount_value",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "promotions",
+      "column": "channel",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": "'online'"
+    },
+    {
+      "table": "promotions",
+      "column": "starts_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "promotions",
+      "column": "ends_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "promotions",
+      "column": "priority",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "promotions",
+      "column": "stackable",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "false"
+    },
+    {
+      "table": "promotions",
+      "column": "min_quantity",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "promotions",
+      "column": "min_order_amount",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "money-minor-units",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "promotions",
+      "column": "active",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "true"
+    },
+    {
+      "table": "promotions",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "promotions",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "promotions",
+      "column": "archived_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "variant_prices",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "variant_prices",
+      "column": "variant_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "variant_prices",
+      "column": "price_list_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "variant_prices",
+      "column": "amount",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "money-minor-units",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "variant_prices",
+      "column": "currency",
+      "from": "text",
+      "to": "VARCHAR(3)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": "'EUR'"
+    },
+    {
+      "table": "variant_prices",
+      "column": "prior_price_30d",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "variant_prices",
+      "column": "prior_price_reference_date",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "variant_prices",
+      "column": "cost_price",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "money-minor-units",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "variant_prices",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "variant_prices",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "inventory_levels",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "inventory_levels",
+      "column": "variant_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "inventory_levels",
+      "column": "location_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "inventory_levels",
+      "column": "on_hand",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "inventory_levels",
+      "column": "reserved",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "inventory_levels",
+      "column": "incoming",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "inventory_levels",
+      "column": "reorder_threshold",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "inventory_levels",
+      "column": "allow_backorder",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "false"
+    },
+    {
+      "table": "inventory_levels",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "inventory_levels",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "inventory_locations",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "inventory_locations",
+      "column": "code",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "inventory_locations",
+      "column": "name",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "inventory_locations",
+      "column": "location_type",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "inventory_locations",
+      "column": "sellable_online",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "false"
+    },
+    {
+      "table": "inventory_locations",
+      "column": "sellable_in_store",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "false"
+    },
+    {
+      "table": "inventory_locations",
+      "column": "active",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "true"
+    },
+    {
+      "table": "inventory_locations",
+      "column": "sort_order",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "inventory_locations",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "inventory_locations",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "inventory_locations",
+      "column": "archived_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "stock_adjustments",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_adjustments",
+      "column": "variant_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_adjustments",
+      "column": "location_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_adjustments",
+      "column": "quantity_before",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_adjustments",
+      "column": "quantity_after",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_adjustments",
+      "column": "reason_code",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_adjustments",
+      "column": "reason_note",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_adjustments",
+      "column": "performed_by",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_adjustments",
+      "column": "movement_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "stock_adjustments",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_movements",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_movements",
+      "column": "variant_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_movements",
+      "column": "location_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_movements",
+      "column": "movement_type",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_movements",
+      "column": "quantity_delta",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_movements",
+      "column": "quantity_before",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_movements",
+      "column": "quantity_after",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_movements",
+      "column": "reference_type",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "stock_movements",
+      "column": "reference_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "stock_movements",
+      "column": "reason",
+      "from": "text",
+      "to": "VARCHAR(500)",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "stock_movements",
+      "column": "performed_by",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "stock_movements",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_reservations",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_reservations",
+      "column": "order_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_reservations",
+      "column": "variant_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_reservations",
+      "column": "location_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_reservations",
+      "column": "quantity",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_reservations",
+      "column": "status",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": "'active'"
+    },
+    {
+      "table": "stock_reservations",
+      "column": "expires_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_reservations",
+      "column": "released_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "stock_reservations",
+      "column": "released_reason",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "stock_reservations",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_reservations",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_transfer_items",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_transfer_items",
+      "column": "transfer_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_transfer_items",
+      "column": "variant_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_transfer_items",
+      "column": "quantity_sent",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_transfer_items",
+      "column": "quantity_received",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "stock_transfers",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_transfers",
+      "column": "reference",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "indexed-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_transfers",
+      "column": "from_location_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_transfers",
+      "column": "to_location_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_transfers",
+      "column": "status",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": "'draft'"
+    },
+    {
+      "table": "stock_transfers",
+      "column": "note",
+      "from": "text",
+      "to": "TEXT",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "stock_transfers",
+      "column": "created_by",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_transfers",
+      "column": "received_by",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "stock_transfers",
+      "column": "received_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "stock_transfers",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "stock_transfers",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "cart_items",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "cart_items",
+      "column": "cart_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "cart_items",
+      "column": "variant_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "cart_items",
+      "column": "quantity",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "cart_items",
+      "column": "compatibility_at_add",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "cart_items",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "cart_items",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "carts",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "carts",
+      "column": "token",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "carts",
+      "column": "user_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "carts",
+      "column": "device_model_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "carts",
+      "column": "currency",
+      "from": "text",
+      "to": "VARCHAR(3)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": "'EUR'"
+    },
+    {
+      "table": "carts",
+      "column": "expires_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "carts",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "carts",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_addresses",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_addresses",
+      "column": "order_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_addresses",
+      "column": "address_type",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_addresses",
+      "column": "first_name",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_addresses",
+      "column": "last_name",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_addresses",
+      "column": "street",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_addresses",
+      "column": "street_number",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "order_addresses",
+      "column": "postcode",
+      "from": "text",
+      "to": "VARCHAR(20)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_addresses",
+      "column": "city",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_addresses",
+      "column": "province",
+      "from": "text",
+      "to": "VARCHAR(2)",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "order_addresses",
+      "column": "country",
+      "from": "text",
+      "to": "VARCHAR(2)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": "'IT'"
+    },
+    {
+      "table": "order_addresses",
+      "column": "phone",
+      "from": "text",
+      "to": "VARCHAR(40)",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "order_addresses",
+      "column": "note",
+      "from": "text",
+      "to": "TEXT",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "order_addresses",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_events",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_events",
+      "column": "order_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_events",
+      "column": "event_type",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_events",
+      "column": "payload",
+      "from": "text",
+      "to": "MEDIUMTEXT",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "order_events",
+      "column": "customer_visible",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "true"
+    },
+    {
+      "table": "order_events",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_items",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_items",
+      "column": "order_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_items",
+      "column": "product_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "order_items",
+      "column": "variant_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "order_items",
+      "column": "product_name",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_items",
+      "column": "variant_label",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "order_items",
+      "column": "sku",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_items",
+      "column": "image_key",
+      "from": "text",
+      "to": "VARCHAR(512)",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "order_items",
+      "column": "compatibility_state",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "order_items",
+      "column": "device_model_name",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "order_items",
+      "column": "quantity",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_items",
+      "column": "unit_price",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "money-minor-units",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_items",
+      "column": "discount_amount",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "money-minor-units",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "order_items",
+      "column": "tax_amount",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "money-minor-units",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "order_items",
+      "column": "line_total",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "money-minor-units",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_items",
+      "column": "currency",
+      "from": "text",
+      "to": "VARCHAR(3)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": "'EUR'"
+    },
+    {
+      "table": "order_items",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_notes",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_notes",
+      "column": "order_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_notes",
+      "column": "body",
+      "from": "text",
+      "to": "MEDIUMTEXT",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_notes",
+      "column": "customer_visible",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "false"
+    },
+    {
+      "table": "order_notes",
+      "column": "author_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "order_notes",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_status_history",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_status_history",
+      "column": "order_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_status_history",
+      "column": "from_status",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "order_status_history",
+      "column": "to_status",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_status_history",
+      "column": "reason",
+      "from": "text",
+      "to": "VARCHAR(500)",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "order_status_history",
+      "column": "actor",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_status_history",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "orders",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "orders",
+      "column": "order_number",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "indexed-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "orders",
+      "column": "tracking_token",
+      "from": "text",
+      "to": "VARCHAR(128)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "orders",
+      "column": "user_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "orders",
+      "column": "status",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": "'draft'"
+    },
+    {
+      "table": "orders",
+      "column": "customer_first_name",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "orders",
+      "column": "customer_last_name",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "orders",
+      "column": "customer_email",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "orders",
+      "column": "customer_phone",
+      "from": "text",
+      "to": "VARCHAR(40)",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "orders",
+      "column": "customer_whatsapp",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "orders",
+      "column": "delivery_method",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "orders",
+      "column": "shipping_method_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "orders",
+      "column": "pickup_location_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "orders",
+      "column": "payment_method_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "orders",
+      "column": "device_model_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "orders",
+      "column": "item_subtotal",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "money-minor-units",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "orders",
+      "column": "discount_total",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "money-minor-units",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "orders",
+      "column": "shipping_total",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "money-minor-units",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "orders",
+      "column": "tax_total",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "money-minor-units",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "orders",
+      "column": "grand_total",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "money-minor-units",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "orders",
+      "column": "currency",
+      "from": "text",
+      "to": "VARCHAR(3)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": "'EUR'"
+    },
+    {
+      "table": "orders",
+      "column": "customer_note",
+      "from": "text",
+      "to": "TEXT",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "orders",
+      "column": "terms_version_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "orders",
+      "column": "reservation_expires_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "orders",
+      "column": "placed_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "orders",
+      "column": "cancelled_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "orders",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "orders",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_payments",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_payments",
+      "column": "order_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_payments",
+      "column": "payment_method_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_payments",
+      "column": "status",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": "'awaiting_customer_contact'"
+    },
+    {
+      "table": "order_payments",
+      "column": "amount_expected",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_payments",
+      "column": "amount_claimed",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "order_payments",
+      "column": "amount_received",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "order_payments",
+      "column": "currency",
+      "from": "text",
+      "to": "VARCHAR(3)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": "'EUR'"
+    },
+    {
+      "table": "order_payments",
+      "column": "transaction_reference",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "indexed-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "order_payments",
+      "column": "verified_by",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "order_payments",
+      "column": "verified_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "order_payments",
+      "column": "verification_note",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "order_payments",
+      "column": "rejected_reason",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "order_payments",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "order_payments",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "payment_methods",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "payment_methods",
+      "column": "code",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "payment_methods",
+      "column": "method_type",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "payment_methods",
+      "column": "name_it",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "payment_methods",
+      "column": "name_en",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "payment_methods",
+      "column": "description_it",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "payment_methods",
+      "column": "description_en",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "payment_methods",
+      "column": "active",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "false"
+    },
+    {
+      "table": "payment_methods",
+      "column": "sort_order",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "payment_methods",
+      "column": "beneficiary_name",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "payment_methods",
+      "column": "account_identifier_encrypted",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "payment_methods",
+      "column": "account_identifier_masked",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "payment_methods",
+      "column": "merchant_qr_key",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "payment_methods",
+      "column": "instructions_it",
+      "from": "text",
+      "to": "TEXT",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "payment_methods",
+      "column": "instructions_en",
+      "from": "text",
+      "to": "TEXT",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "payment_methods",
+      "column": "staff_instructions",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "payment_methods",
+      "column": "reservation_minutes",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "1440"
+    },
+    {
+      "table": "payment_methods",
+      "column": "eligible_for_shipping",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "true"
+    },
+    {
+      "table": "payment_methods",
+      "column": "eligible_for_pickup",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "true"
+    },
+    {
+      "table": "payment_methods",
+      "column": "min_amount",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "money-minor-units",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "payment_methods",
+      "column": "max_amount",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "money-minor-units",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "payment_methods",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "payment_methods",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "payment_methods",
+      "column": "archived_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "payment_proof_access_logs",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "payment_proof_access_logs",
+      "column": "proof_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "payment_proof_access_logs",
+      "column": "accessed_by",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "payment_proof_access_logs",
+      "column": "accessed_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "payment_proof_access_logs",
+      "column": "ip_address",
+      "from": "text",
+      "to": "VARCHAR(45)",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "payment_proofs",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "payment_proofs",
+      "column": "order_payment_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "payment_proofs",
+      "column": "object_key",
+      "from": "text",
+      "to": "VARCHAR(512)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "payment_proofs",
+      "column": "mime_type",
+      "from": "text",
+      "to": "VARCHAR(120)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "payment_proofs",
+      "column": "file_size",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "payment_proofs",
+      "column": "original_filename_display",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "payment_proofs",
+      "column": "uploaded_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "payment_proofs",
+      "column": "uploaded_by_ip",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "payment_proofs",
+      "column": "deleted_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "payment_status_history",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "payment_status_history",
+      "column": "order_payment_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "payment_status_history",
+      "column": "from_status",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "payment_status_history",
+      "column": "to_status",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "payment_status_history",
+      "column": "amount_at_transition",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "payment_status_history",
+      "column": "reason",
+      "from": "text",
+      "to": "VARCHAR(500)",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "payment_status_history",
+      "column": "actor",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "payment_status_history",
+      "column": "is_correction",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "false"
+    },
+    {
+      "table": "payment_status_history",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "fulfilment_items",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "fulfilment_items",
+      "column": "fulfilment_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "fulfilment_items",
+      "column": "order_item_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "fulfilment_items",
+      "column": "quantity",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "fulfilment_status_history",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "fulfilment_status_history",
+      "column": "fulfilment_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "fulfilment_status_history",
+      "column": "from_status",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "fulfilment_status_history",
+      "column": "to_status",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "fulfilment_status_history",
+      "column": "reason",
+      "from": "text",
+      "to": "VARCHAR(500)",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "fulfilment_status_history",
+      "column": "actor",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "fulfilment_status_history",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "fulfilments",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "fulfilments",
+      "column": "order_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "fulfilments",
+      "column": "status",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": "'pending'"
+    },
+    {
+      "table": "fulfilments",
+      "column": "fulfilment_type",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "fulfilments",
+      "column": "location_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "fulfilments",
+      "column": "prepared_by",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "fulfilments",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "fulfilments",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "pickup_orders",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "pickup_orders",
+      "column": "order_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "pickup_orders",
+      "column": "location_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "pickup_orders",
+      "column": "ready_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "pickup_orders",
+      "column": "ready_by",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "pickup_orders",
+      "column": "collected_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "pickup_orders",
+      "column": "collected_by",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "pickup_orders",
+      "column": "collected_by_name",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "pickup_orders",
+      "column": "pickup_deadline",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "pickup_orders",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "pickup_orders",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "refund_items",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "refund_items",
+      "column": "refund_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "refund_items",
+      "column": "order_item_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "refund_items",
+      "column": "quantity",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "refund_items",
+      "column": "amount",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "money-minor-units",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "refunds",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "refunds",
+      "column": "order_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "refunds",
+      "column": "return_request_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "refunds",
+      "column": "amount",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "money-minor-units",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "refunds",
+      "column": "currency",
+      "from": "text",
+      "to": "VARCHAR(3)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": "'EUR'"
+    },
+    {
+      "table": "refunds",
+      "column": "refund_method",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "refunds",
+      "column": "reference",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "refunds",
+      "column": "status",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": "'pending'"
+    },
+    {
+      "table": "refunds",
+      "column": "processed_by",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "refunds",
+      "column": "processed_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "refunds",
+      "column": "note",
+      "from": "text",
+      "to": "TEXT",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "refunds",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "refunds",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "return_items",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "return_items",
+      "column": "return_request_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "return_items",
+      "column": "order_item_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "return_items",
+      "column": "quantity",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "return_items",
+      "column": "condition_code",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "return_items",
+      "column": "inspection_note",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "return_requests",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "return_requests",
+      "column": "order_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "return_requests",
+      "column": "reference",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "indexed-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "return_requests",
+      "column": "status",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": "'requested'"
+    },
+    {
+      "table": "return_requests",
+      "column": "reason_code",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "return_requests",
+      "column": "reason_note",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "return_requests",
+      "column": "is_withdrawal",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "false"
+    },
+    {
+      "table": "return_requests",
+      "column": "requested_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "return_requests",
+      "column": "approved_by",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "return_requests",
+      "column": "approved_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "return_requests",
+      "column": "received_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "return_requests",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "return_requests",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "shipments",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "shipments",
+      "column": "fulfilment_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "shipments",
+      "column": "carrier_name",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "shipments",
+      "column": "tracking_number",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "shipments",
+      "column": "tracking_url",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "shipments",
+      "column": "shipped_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "shipments",
+      "column": "delivered_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "shipments",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "shipments",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "shipping_methods",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "shipping_methods",
+      "column": "code",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "shipping_methods",
+      "column": "name_it",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "shipping_methods",
+      "column": "name_en",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "shipping_methods",
+      "column": "description_it",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "shipping_methods",
+      "column": "description_en",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "shipping_methods",
+      "column": "rate_type",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "shipping_methods",
+      "column": "active",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "false"
+    },
+    {
+      "table": "shipping_methods",
+      "column": "sort_order",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "shipping_methods",
+      "column": "dispatch_note_it",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "shipping_methods",
+      "column": "dispatch_note_en",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "shipping_methods",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "shipping_methods",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "shipping_methods",
+      "column": "archived_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "shipping_rates",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "shipping_rates",
+      "column": "shipping_method_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "shipping_rates",
+      "column": "shipping_zone_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "shipping_rates",
+      "column": "amount",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "money-minor-units",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "shipping_rates",
+      "column": "currency",
+      "from": "text",
+      "to": "VARCHAR(3)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": "'EUR'"
+    },
+    {
+      "table": "shipping_rates",
+      "column": "free_over_amount",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "money-minor-units",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "shipping_rates",
+      "column": "min_weight_grams",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "shipping_rates",
+      "column": "max_weight_grams",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "shipping_rates",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "shipping_rates",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "shipping_zones",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "shipping_zones",
+      "column": "code",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "shipping_zones",
+      "column": "name",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "shipping_zones",
+      "column": "countries",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "shipping_zones",
+      "column": "postcode_prefixes",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "shipping_zones",
+      "column": "sort_order",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "shipping_zones",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "shipping_zones",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "banners",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "banners",
+      "column": "placement",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "indexed-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "banners",
+      "column": "message_it",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "banners",
+      "column": "message_en",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "banners",
+      "column": "link_url",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "banners",
+      "column": "image_key",
+      "from": "text",
+      "to": "VARCHAR(512)",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "banners",
+      "column": "starts_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "banners",
+      "column": "ends_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "banners",
+      "column": "active",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "false"
+    },
+    {
+      "table": "banners",
+      "column": "sort_order",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "banners",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "banners",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "homepage_section_translations",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "homepage_section_translations",
+      "column": "section_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "homepage_section_translations",
+      "column": "locale",
+      "from": "text",
+      "to": "VARCHAR(10)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "homepage_section_translations",
+      "column": "heading",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "homepage_section_translations",
+      "column": "subheading",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "homepage_section_translations",
+      "column": "body_text",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "homepage_section_translations",
+      "column": "cta_label",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "homepage_section_translations",
+      "column": "cta_url",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "homepage_sections",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "homepage_sections",
+      "column": "section_type",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "homepage_sections",
+      "column": "sort_order",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "homepage_sections",
+      "column": "visible",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "true"
+    },
+    {
+      "table": "homepage_sections",
+      "column": "config",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "homepage_sections",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "homepage_sections",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "legal_document_versions",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "legal_document_versions",
+      "column": "document_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "legal_document_versions",
+      "column": "version",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "indexed-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "legal_document_versions",
+      "column": "body_it",
+      "from": "text",
+      "to": "MEDIUMTEXT",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "legal_document_versions",
+      "column": "body_en",
+      "from": "text",
+      "to": "MEDIUMTEXT",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "legal_document_versions",
+      "column": "effective_from",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "legal_document_versions",
+      "column": "published_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "legal_document_versions",
+      "column": "published_by",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "legal_document_versions",
+      "column": "reviewed_by_lawyer",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "false"
+    },
+    {
+      "table": "legal_document_versions",
+      "column": "review_note",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "legal_document_versions",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "legal_documents",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "legal_documents",
+      "column": "code",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "legal_documents",
+      "column": "name_it",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "legal_documents",
+      "column": "name_en",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "legal_documents",
+      "column": "current_version_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "legal_documents",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "legal_documents",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "navigation_items",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "navigation_items",
+      "column": "menu_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "navigation_items",
+      "column": "parent_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "navigation_items",
+      "column": "label_it",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "navigation_items",
+      "column": "label_en",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "navigation_items",
+      "column": "url",
+      "from": "text",
+      "to": "VARCHAR(1000)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "navigation_items",
+      "column": "icon_name",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "navigation_items",
+      "column": "depth",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "navigation_items",
+      "column": "sort_order",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "navigation_items",
+      "column": "visible",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "true"
+    },
+    {
+      "table": "navigation_items",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "navigation_items",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "navigation_menus",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "navigation_menus",
+      "column": "code",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "navigation_menus",
+      "column": "name",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "navigation_menus",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "navigation_menus",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "page_translations",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "page_translations",
+      "column": "page_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "page_translations",
+      "column": "locale",
+      "from": "text",
+      "to": "VARCHAR(10)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "page_translations",
+      "column": "title",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "page_translations",
+      "column": "excerpt",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "page_translations",
+      "column": "body",
+      "from": "text",
+      "to": "MEDIUMTEXT",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "page_translations",
+      "column": "seo_title",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "page_translations",
+      "column": "seo_description",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "pages",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "pages",
+      "column": "slug",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "pages",
+      "column": "status",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": "'draft'"
+    },
+    {
+      "table": "pages",
+      "column": "publish_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "pages",
+      "column": "page_type",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": "'page'"
+    },
+    {
+      "table": "pages",
+      "column": "sort_order",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "pages",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "pages",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "pages",
+      "column": "archived_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "store_settings",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "store_settings",
+      "column": "key",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "store_settings",
+      "column": "value",
+      "from": "text",
+      "to": "TEXT",
+      "rule": "explicit",
+      "notNull": true,
+      "default": "''"
+    },
+    {
+      "table": "store_settings",
+      "column": "value_type",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": "'string'"
+    },
+    {
+      "table": "store_settings",
+      "column": "category",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "indexed-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "store_settings",
+      "column": "description_it",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "store_settings",
+      "column": "gates_feature",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "false"
+    },
+    {
+      "table": "store_settings",
+      "column": "is_sensitive",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "false"
+    },
+    {
+      "table": "store_settings",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "store_settings",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "audit_logs",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "audit_logs",
+      "column": "actor_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "audit_logs",
+      "column": "actor_label",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "audit_logs",
+      "column": "action",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "indexed-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "audit_logs",
+      "column": "entity_type",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "audit_logs",
+      "column": "entity_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "audit_logs",
+      "column": "before_value",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "audit_logs",
+      "column": "after_value",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "audit_logs",
+      "column": "request_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "audit_logs",
+      "column": "ip_address",
+      "from": "text",
+      "to": "VARCHAR(45)",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "audit_logs",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "email_logs",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "email_logs",
+      "column": "outbox_event_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "email_logs",
+      "column": "recipient",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "indexed-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "email_logs",
+      "column": "template",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "email_logs",
+      "column": "subject",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "email_logs",
+      "column": "status",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "email_logs",
+      "column": "provider_message_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "email_logs",
+      "column": "error",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "email_logs",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "export_jobs",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "export_jobs",
+      "column": "export_type",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "export_jobs",
+      "column": "status",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": "'pending'"
+    },
+    {
+      "table": "export_jobs",
+      "column": "result_object_key",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "export_jobs",
+      "column": "row_count",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "export_jobs",
+      "column": "filters",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "export_jobs",
+      "column": "created_by",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "export_jobs",
+      "column": "completed_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "export_jobs",
+      "column": "expires_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "export_jobs",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "feature_flags",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "feature_flags",
+      "column": "key",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "feature_flags",
+      "column": "description",
+      "from": "text",
+      "to": "TEXT",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "feature_flags",
+      "column": "enabled",
+      "from": "integer",
+      "to": "TINYINT(1)",
+      "rule": "boolean",
+      "notNull": true,
+      "default": "false"
+    },
+    {
+      "table": "feature_flags",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "feature_flags",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "idempotency_keys",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "idempotency_keys",
+      "column": "key",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "idempotency_keys",
+      "column": "scope",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "indexed-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "idempotency_keys",
+      "column": "owner_token",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "idempotency_keys",
+      "column": "result_payload",
+      "from": "text",
+      "to": "MEDIUMTEXT",
+      "rule": "explicit",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "idempotency_keys",
+      "column": "status",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": "'pending'"
+    },
+    {
+      "table": "idempotency_keys",
+      "column": "expires_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "idempotency_keys",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "import_job_rows",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "import_job_rows",
+      "column": "import_job_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "import_job_rows",
+      "column": "row_number",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "import_job_rows",
+      "column": "outcome",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "import_job_rows",
+      "column": "entity_type",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "import_job_rows",
+      "column": "entity_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "import_job_rows",
+      "column": "message",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "import_job_rows",
+      "column": "raw_data",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "import_jobs",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "import_jobs",
+      "column": "import_type",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "import_jobs",
+      "column": "filename",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "import_jobs",
+      "column": "source_object_key",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "import_jobs",
+      "column": "status",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": "'uploaded'"
+    },
+    {
+      "table": "import_jobs",
+      "column": "rows_total",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "money-minor-units",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "import_jobs",
+      "column": "rows_to_create",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "import_jobs",
+      "column": "rows_to_update",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "import_jobs",
+      "column": "rows_unchanged",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "import_jobs",
+      "column": "rows_with_warnings",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "import_jobs",
+      "column": "rows_with_errors",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "import_jobs",
+      "column": "created_by",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "import_jobs",
+      "column": "confirmed_by",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "import_jobs",
+      "column": "confirmed_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "import_jobs",
+      "column": "completed_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "import_jobs",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "import_jobs",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "outbox_events",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "outbox_events",
+      "column": "event_type",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "outbox_events",
+      "column": "aggregate_type",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "outbox_events",
+      "column": "aggregate_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "outbox_events",
+      "column": "payload",
+      "from": "text",
+      "to": "MEDIUMTEXT",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "outbox_events",
+      "column": "status",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": "'pending'"
+    },
+    {
+      "table": "outbox_events",
+      "column": "attempts",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "outbox_events",
+      "column": "last_error",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "outbox_events",
+      "column": "next_attempt_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "outbox_events",
+      "column": "delivered_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "outbox_events",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "scheduled_job_runs",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "scheduled_job_runs",
+      "column": "job_name",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "indexed-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "scheduled_job_runs",
+      "column": "status",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "scheduled_job_runs",
+      "column": "started_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "scheduled_job_runs",
+      "column": "finished_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "scheduled_job_runs",
+      "column": "items_processed",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": "0"
+    },
+    {
+      "table": "scheduled_job_runs",
+      "column": "error",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "scheduled_job_runs",
+      "column": "summary",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "system_settings",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "system_settings",
+      "column": "key",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "system_settings",
+      "column": "value",
+      "from": "text",
+      "to": "TEXT",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "system_settings",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "system_settings",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "bootstrap_attempts",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "bootstrap_attempts",
+      "column": "ip_hash",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "bootstrap_attempts",
+      "column": "outcome",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "bootstrap_attempts",
+      "column": "attempted_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "installation_state",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "installation_state",
+      "column": "status",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "installation_state",
+      "column": "claimed_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "installation_state",
+      "column": "completed_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "installation_state",
+      "column": "completed_by_user_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "installation_state",
+      "column": "token_consumed_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "staff_invitations",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "staff_invitations",
+      "column": "email",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "staff_invitations",
+      "column": "role_ids",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "staff_invitations",
+      "column": "invited_by",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "indexed-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "staff_invitations",
+      "column": "token_hash",
+      "from": "text",
+      "to": "VARCHAR(128)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "staff_invitations",
+      "column": "status",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": "'pending'"
+    },
+    {
+      "table": "staff_invitations",
+      "column": "expires_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "staff_invitations",
+      "column": "accepted_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "staff_invitations",
+      "column": "accepted_by_user_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "staff_invitations",
+      "column": "revoked_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "staff_invitations",
+      "column": "revoked_by",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "staff_invitations",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "staff_invitations",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_search_map",
+      "column": "rowid",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_search_map",
+      "column": "product_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_reviews",
+      "column": "id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_reviews",
+      "column": "product_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_reviews",
+      "column": "order_item_id",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "identifier",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_reviews",
+      "column": "provenance",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_reviews",
+      "column": "status",
+      "from": "text",
+      "to": "VARCHAR(64)",
+      "rule": "indexed-code",
+      "notNull": true,
+      "default": "'pending'"
+    },
+    {
+      "table": "product_reviews",
+      "column": "author_name",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_reviews",
+      "column": "rating",
+      "from": "integer",
+      "to": "INT",
+      "rule": "integer",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_reviews",
+      "column": "title",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "name",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_reviews",
+      "column": "body",
+      "from": "text",
+      "to": "MEDIUMTEXT",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_reviews",
+      "column": "locale",
+      "from": "text",
+      "to": "VARCHAR(10)",
+      "rule": "explicit",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_reviews",
+      "column": "moderated_by",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_reviews",
+      "column": "moderated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_reviews",
+      "column": "moderation_note",
+      "from": "text",
+      "to": "VARCHAR(255)",
+      "rule": "default-label",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_reviews",
+      "column": "published_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": false,
+      "default": null
+    },
+    {
+      "table": "product_reviews",
+      "column": "created_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    },
+    {
+      "table": "product_reviews",
+      "column": "updated_at",
+      "from": "integer",
+      "to": "BIGINT",
+      "rule": "epoch-millis",
+      "notNull": true,
+      "default": null
+    }
+  ],
+  "skippedIndexes": [
+    {
+      "unique": true,
+      "name": "product_specifications_variant_unique",
+      "table": "product_specifications",
+      "columns": ["product_id", "variant_id", "spec_key"],
+      "where": "variant_id IS NOT NULL"
+    },
+    {
+      "unique": true,
+      "name": "product_specifications_product_unique",
+      "table": "product_specifications",
+      "columns": ["product_id", "spec_key"],
+      "where": "variant_id IS NULL"
+    },
+    {
+      "unique": true,
+      "name": "product_compatibility_variant_unique",
+      "table": "product_compatibility",
+      "columns": ["product_id", "variant_id", "device_model_id"],
+      "where": "variant_id IS NOT NULL"
+    },
+    {
+      "unique": true,
+      "name": "product_compatibility_product_unique",
+      "table": "product_compatibility",
+      "columns": ["product_id", "device_model_id"],
+      "where": "variant_id IS NULL"
+    }
+  ],
+  "ignored": [
+    {
+      "file": "0004_account_issuer.sql",
+      "kind": "update",
+      "head": "UPDATE `account` SET `issuer` = `provider_id` WHERE `issuer` = '';"
+    },
+    {
+      "file": "0005_product_search.sql",
+      "kind": "create_virtual_table",
+      "head": "CREATE VIRTUAL TABLE `product_search` USING fts5( name, short_desc"
+    },
+    {
+      "file": "0005_product_search.sql",
+      "kind": "create_trigger",
+      "head": "CREATE TRIGGER `product_search_ai` AFTER INSERT ON `product_translatio"
+    },
+    {
+      "file": "0005_product_search.sql",
+      "kind": "create_trigger",
+      "head": "CREATE TRIGGER `product_search_au` AFTER UPDATE ON `product_translatio"
+    },
+    {
+      "file": "0005_product_search.sql",
+      "kind": "create_trigger",
+      "head": "CREATE TRIGGER `product_search_ad` AFTER DELETE ON `product_translatio"
+    },
+    {
+      "file": "0005_product_search.sql",
+      "kind": "create_trigger",
+      "head": "CREATE TRIGGER `product_search_variant_ai` AFTER INSERT ON `product_va"
+    },
+    {
+      "file": "0005_product_search.sql",
+      "kind": "insert",
+      "head": "INSERT INTO product_search_map (product_id) SELECT p.id FROM products "
+    },
+    {
+      "file": "0005_product_search.sql",
+      "kind": "insert",
+      "head": "INSERT INTO product_search (rowid, name, short_description, sku, brand"
+    }
+  ]
+}

@@ -7,6 +7,7 @@ import { formatDateTime } from "~/lib/i18n";
 import { settingValue, SETTING_KEYS, canOfferPickup } from "~/domain/content/gates";
 import { breadcrumbsFor } from "~/lib/admin-nav";
 import { PageHeader } from "~/components/admin/admin-shell";
+import { StatusBadge } from "~/components/admin/status-badge";
 
 /**
  * Collection from the shop.
@@ -235,7 +236,7 @@ export default function AdminPickups({ loaderData, actionData }: Route.Component
                 <span>
                   {o.customer_first_name} {o.customer_last_name}
                 </span>
-                <span className="badge">{o.status}</span>
+                <StatusBadge kind="order" value={o.status} />
                 {canWrite && locations.length > 0 ? (
                   <Form method="post" className="cluster">
                     <input type="hidden" name="intent" value="start" />

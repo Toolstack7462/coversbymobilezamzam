@@ -248,10 +248,42 @@ test.describe("tables on a phone", () => {
 
     await page.goto("/admin/prodotti");
 
-    // The same markup becomes cards through CSS alone. If the header row is
-    // still laid out as a table, the breakpoint did not apply.
-    const headerVisible = await page.locator(".ac-table thead").isVisible();
-    expect(headerVisible).toBe(false);
+    /*
+     * There must BE a table to test.
+     *
+     * This assertion is the point of the rewrite. The original checked
+     * `.ac-table thead` was not visible — and a locator that matches nothing
+     * reports "not visible", so on an empty catalogue the test passed without
+     * a table ever existing. It had been passing vacuously; seeding the demo
+     * catalogue is what revealed that, and what then revealed the two real
+     * problems below.
+     */
+    await expect(page.locator(".ac-table tbody tr").first()).toBeVisible();
+
+    /*
+     * The header must take no LAYOUT space — not be removed.
+     *
+     * The card layout deliberately keeps `thead` in the accessibility tree,
+     * visually hidden with the 1px + clip-path pattern, because the headers are
+     * what make the cells mean anything to a screen reader. `isVisible()` does
+     * not understand clip-path and reports that 1px box as visible, so the old
+     * assertion contradicted the CSS's own stated intent.
+     *
+     * What actually matters is that it occupies no room, which is measurable.
+     */
+    const headerHeight = await page.evaluate(() => {
+      const head = document.querySelector(".ac-table thead");
+      return head ? head.getBoundingClientRect().height : -1;
+    });
+    expect(headerHeight).toBeGreaterThanOrEqual(0);
+    expect(headerHeight).toBeLessThanOrEqual(2);
+
+    // And the rows must genuinely be cards, not table rows.
+    const rowDisplay = await page.evaluate(() => {
+      const row = document.querySelector(".ac-table tbody tr");
+      return row ? getComputedStyle(row).display : null;
+    });
+    expect(rowDisplay).toBe("block");
 
     const overflows = await page.evaluate(
       () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,

@@ -34,6 +34,31 @@ export interface Column<Row> {
   numeric?: boolean;
   /** Hidden below the card breakpoint, where space is scarce. */
   secondary?: boolean;
+  /**
+   * A width hint, applied through `<colgroup>`.
+   *
+   * Semantic rather than a pixel value, because a data table's columns have to
+   * negotiate with their content and a hardcoded width loses that argument the
+   * first time a product is called something long:
+   *
+   *   `shrink`  take only what the content needs — thumbnails, badges, actions
+   *   `wide`    take the remaining space — the column carrying the name
+   *
+   * Added when the product list gained image, SKU and stock columns and every
+   * name started wrapping onto three lines. Without a hint the browser shares
+   * width equally, which gives a 40px thumbnail the same room as a product
+   * title.
+   */
+  width?: "shrink" | "wide";
+  /**
+   * Forbids wrapping inside the cell.
+   *
+   * For identifiers — a SKU, an order number — where a line break in the
+   * middle of the token makes it unreadable and, worse, unsearchable by eye.
+   * The cell truncates with an ellipsis instead, and keeps its full value as a
+   * title so nothing is lost.
+   */
+  nowrap?: boolean;
 }
 
 export interface SavedView {
@@ -126,6 +151,19 @@ export function DataTable<Row>({
             aria-label="Tabella scorrevole"
           >
             <table className="ac-table">
+              {/*
+                Column widths belong in `<colgroup>`, not on each cell: it is
+                the mechanism the table layout algorithm actually reads, and
+                setting a width on every `<td>` means the decision is repeated
+                once per row and can disagree with itself.
+              */}
+              <colgroup>
+                {bulkActions ? <col className="ac-col--shrink" /> : null}
+                {columns.map((col) => (
+                  <col key={col.key} className={col.width ? `ac-col--${col.width}` : undefined} />
+                ))}
+                <col className="ac-col--shrink" />
+              </colgroup>
               <thead>
                 <tr>
                   {bulkActions ? (
@@ -197,6 +235,8 @@ export function DataTable<Row>({
                           className={[
                             col.numeric ? "ac-table__numeric numeric" : "",
                             col.secondary ? "ac-table__secondary" : "",
+                            col.nowrap ? "ac-table__nowrap" : "",
+                            col.width ? `ac-table__${col.width}` : "",
                           ]
                             .filter(Boolean)
                             .join(" ")}

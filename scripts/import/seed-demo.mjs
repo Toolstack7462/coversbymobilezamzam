@@ -36,6 +36,28 @@ const envIndex = args.indexOf("--env");
 const ENVIRONMENT = envIndex >= 0 ? args[envIndex + 1] : null;
 const REMOTE = args.includes("--remote");
 
+/**
+ * An alternate local D1 directory.
+ *
+ * Added so the BROWSER SUITE can seed its throwaway database. Without it the
+ * admin tests ran against an empty catalogue: every list showed its empty
+ * state, so nothing about tables, filters, pagination, product rows, stock
+ * columns or compatibility badges was ever actually exercised — and a visual
+ * survey of empty screens proves nothing about the screens a merchant uses.
+ *
+ * Mirrors the same option in seed.mjs, including its refusal to combine with
+ * --remote: pointing a persistence directory at a remote database is a request
+ * that cannot be honoured, and silently ignoring one of the two flags is how a
+ * demo catalogue ends up in production.
+ */
+const persistIndex = args.indexOf("--persist-to");
+const PERSIST_TO = persistIndex >= 0 ? args[persistIndex + 1] : null;
+
+if (REMOTE && PERSIST_TO) {
+  console.error("--persist-to is a local-only option; it cannot be combined with --remote.");
+  process.exit(1);
+}
+
 // A fixed instant, so re-running produces identical rows rather than a new
 // timestamp that makes every record look freshly edited.
 const NOW = 1_756_000_000_000;
@@ -354,6 +376,7 @@ try {
       DB,
       REMOTE ? "--remote" : "--local",
       ...(ENVIRONMENT ? ["--env", ENVIRONMENT] : []),
+      ...(PERSIST_TO ? ["--persist-to", PERSIST_TO] : []),
       "--command",
       statements.join(";\n"),
     ],

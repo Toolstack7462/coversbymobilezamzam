@@ -788,6 +788,14 @@
   font-variant-numeric: tabular-nums;
   background: var(--color-surface-sunken);
   border-radius: var(--radius-chip);
+  /* The badge inherited `--color-text-secondary` from the tab, which is 4.97:1
+     on the page but only 4.28:1 on this sunken chip — below AA for text this
+     small. The project already has the token for exactly this situation and
+     this was the one place not using it: 6.69:1.
+
+     Not found by review. axe found it, and only once the catalogue had enough
+     rows for a count to render at all. */
+  color: var(--color-text-secondary-on-sunken);
 }
 
 /* ── Search, bulk actions, pagination ──────────────────────────────────── */
@@ -831,8 +839,25 @@
 
 /* Not a disabled link: a disabled anchor still takes focus and announces as a
    link that does nothing. This is inert text wearing the button's shape. */
+/* An unavailable control — the "Precedente" button on page one.
+
+   NOT `opacity`. At 0.45 the label composited to roughly 1.9:1 against the
+   surface, which axe flagged as a serious contrast failure the moment the
+   product list had enough rows to render pagination at all. Opacity is the
+   convenient way to say "unavailable" and the one that makes text unreadable,
+   because it fades the ink and the border together and keeps no floor.
+
+   An explicit colour instead: `--color-text-secondary` is #667085, which is
+   4.97:1 on the surface and passes AA for body text. The control still reads
+   as unavailable — a lighter border, no hover, no pointer — and a merchant can
+   still see that the button exists and what it would do.
+
+   It stays `aria-hidden` and out of the tab order at the call site: this is
+   the visual half of the answer, not the whole of it. */
 .is-inert {
-  opacity: 0.45;
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+  background: var(--color-surface);
   pointer-events: none;
 }
 
@@ -1382,4 +1407,121 @@ a.ac-pick:hover {
    they are separate questions rather than one long list. */
 .ac__main > .stack + .stack {
   margin-block-start: var(--space-7);
+}
+
+/* ── Row thumbnail ──────────────────────────────────────────────────────────
+   A 40px square in the first column of the product list.
+
+   Added because the catalogue could not be SCANNED: every row was words, so
+   finding "the blue one" meant opening rows until you found it. A picture in
+   a list is not decoration, it is the index.
+
+   `object-fit: cover` with a fixed square rather than the image's own ratio:
+   a column whose row height depends on the photo makes the table jump as it
+   loads, and a merchant scanning down a list is reading the left edge. */
+.ac .ac-row-thumb {
+  display: block;
+  inline-size: 40px;
+  block-size: 40px;
+  border-radius: var(--radius-chip);
+  object-fit: cover;
+  background: var(--color-surface-sunken);
+  /* The border keeps a white-background product photo from bleeding into the
+     table. Most accessory photography is cut out on white. */
+  border: var(--border-width) solid var(--color-border);
+}
+
+.ac .ac-row-thumb--empty {
+  display: grid;
+  place-items: center;
+  color: var(--color-text-secondary);
+  /* Dashed, so "no photo yet" reads as an empty slot rather than as a picture
+     that failed to load. The two need different responses from the merchant. */
+  border-style: dashed;
+}
+
+/* A cluster whose items belong to one another — a number and its badge — as
+   opposed to the default cluster, which separates peers. */
+.ac .cluster--tight {
+  gap: var(--space-2);
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+/* ── Column widths ──────────────────────────────────────────────────────────
+   Applied through <colgroup>, which is the mechanism the table layout
+   algorithm reads. Without a hint the browser shares width equally, so a 40px
+   thumbnail is given the same room as a product title and every name wraps
+   onto three lines — which is what happened the moment the product list gained
+   image, SKU and stock columns. */
+.ac .ac-col--shrink {
+  /* 0 with `auto` layout means "as narrow as the content allows". */
+  width: 0;
+}
+
+.ac .ac-col--wide {
+  width: 40%;
+}
+
+/* The constraint that actually binds.
+
+   A <colgroup> width is only a SUGGESTION under auto table layout: the browser
+   will happily wrap a cell whose content CAN wrap in order to satisfy a
+   neighbour that cannot. So the first attempt at this made things worse — the
+   product name wrapped onto four lines while the SKU column, which had been
+   told not to wrap, took the space.
+
+   A min-width on the cell is not negotiable, so the name column keeps a
+   readable measure and the pressure falls on the columns that can absorb it. */
+.ac .ac-table__wide {
+  min-inline-size: 20ch;
+}
+
+.ac .ac-table__shrink {
+  white-space: nowrap;
+}
+
+/* Identifiers must not break mid-token: a SKU split across two lines is
+   unreadable and, worse, cannot be matched by eye against a label on a shelf.
+   Truncation with the full value in `title` loses nothing. */
+.ac .ac-table__nowrap {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-inline-size: 16ch;
+}
+
+/* A stacked cell: the figure on one line, its qualifier beneath. Used where a
+   number and a badge would otherwise collide in a narrow column. */
+.ac .ac-cell-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+}
+
+/* The product cell: picture and name, together.
+
+   The thumbnail had a column of its own at first. That cost width on a table
+   that was already cramped, and in the stacked mobile layout it produced an
+   unlabelled circle floating at the top of every card. Beside the name it needs
+   no header, no width and no label — it is obviously the picture of the thing
+   next to it. */
+.ac .ac-product-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.ac .ac-product-cell .ac-row-thumb {
+  flex: 0 0 auto;
+}
+
+/* In the stacked card layout the row has room, so an identifier should be
+   shown in full rather than truncated to fit a column that is no longer there. */
+@media (max-width: 48rem) {
+  .ac .ac-table__nowrap {
+    max-inline-size: none;
+    white-space: normal;
+  }
 }

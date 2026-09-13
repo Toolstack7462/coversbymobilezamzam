@@ -42,10 +42,26 @@ export default defineConfig({
   plugins: [reactRouter()],
 
   resolve: {
-    alias: {
-      "~": new URL("./app", import.meta.url).pathname,
-      "@db": new URL("./db", import.meta.url).pathname,
-    },
+    alias: [
+      /*
+       * The Node SSR entry, in place of the Web Streams one.
+       *
+       * React Router finds the application's entry by FILENAME, so there can
+       * only be one `app/entry.server.tsx`. That one renders with
+       * `renderToReadableStream` for workerd. Node needs
+       * `renderToPipeableStream`, so this build swaps the module underneath
+       * the name.
+       *
+       * An exact match, not a prefix: a loose pattern would also catch
+       * `entry.server.node.tsx` and alias the file to itself.
+       */
+      {
+        find: /^.*[\\/]app[\\/]entry\.server\.tsx$/,
+        replacement: new URL("./app/entry.server.node.tsx", import.meta.url).pathname,
+      },
+      { find: "~", replacement: new URL("./app", import.meta.url).pathname },
+      { find: "@db", replacement: new URL("./db", import.meta.url).pathname },
+    ],
   },
 
   define: {

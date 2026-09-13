@@ -17,6 +17,7 @@ import { PAYMENT_VIEWS, PAYMENT_VIEW_SLUGS } from "~/lib/order-views";
 import { breadcrumbsFor } from "~/lib/admin-nav";
 import { PageHeader } from "~/components/admin/admin-shell";
 import { Link } from "react-router";
+import { StatusBadge } from "~/components/admin/status-badge";
 
 /**
  * The verification queue.
@@ -348,7 +349,9 @@ export default function AdminPayments({ loaderData, actionData }: Route.Componen
                         <span className="badge"> {row.proof_count} ricevuta</span>
                       ) : null}
                     </td>
-                    <td className="small">{row.status}</td>
+                    <td>
+                      <StatusBadge kind="payment" value={row.status} />
+                    </td>
                     <td className="small">
                       {row.reservation_expires_at ? (
                         <span className={expiring ? "stock--low_stock" : undefined}>

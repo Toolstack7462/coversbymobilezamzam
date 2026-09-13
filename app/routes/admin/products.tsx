@@ -9,6 +9,7 @@ import { breadcrumbsFor } from "~/lib/admin-nav";
 import { PageHeader } from "~/components/admin/admin-shell";
 import { DataTable, type Column } from "~/components/admin/data-table";
 import { PRODUCT_VIEWS, PRODUCT_VIEW_SLUGS } from "~/lib/product-views";
+import { StatusBadge } from "~/components/admin/status-badge";
 
 /**
  * Products.
@@ -52,6 +53,11 @@ interface ProductRow {
   updated_at: number;
   name: string | null;
   brand_name: string | null;
+  image_key: string | null;
+  first_sku: string | null;
+  /** on_hand - reserved, summed. NULL when nothing is tracked. */
+  available: number | null;
+  depleted_variants: number;
   variant_count: number;
   compat_count: number;
   verified_count: number;
@@ -97,6 +103,35 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     env.DB.prepare(
       `SELECT p.id, p.slug, p.status, p.archived_at, p.updated_at,
               pt.name, b.name AS brand_name,
+              /*
+               * Thumbnail, first SKU and stock, added so the catalogue can be
+               * SCANNED rather than opened row by row. A merchant looking for
+               * "the blue one" needs the picture, and a merchant asked whether
+               * something is in stock should not have to click into it.
+               *
+               * All correlated subqueries inside this one statement, matching
+               * what min_price already does. One query per row for any of these
+               * would be an N+1 on the busiest screen in the admin.
+               */
+              (SELECT pi.object_key FROM product_images pi
+                WHERE pi.product_id = p.id
+                ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS image_key,
+              (SELECT v.sku FROM product_variants v
+                WHERE v.product_id = p.id AND v.archived_at IS NULL
+                ORDER BY v.is_default DESC, v.sort_order ASC, v.sku ASC LIMIT 1) AS first_sku,
+              /*
+               * available = on_hand - reserved, summed across the product's
+               * variants and locations. NULL when the product has no inventory
+               * rows at all, which is "not_tracked" — different from zero, and
+               * shown differently.
+               */
+              (SELECT SUM(il.on_hand - il.reserved) FROM inventory_levels il
+                 JOIN product_variants v ON v.id = il.variant_id
+                WHERE v.product_id = p.id AND v.archived_at IS NULL) AS available,
+              (SELECT COUNT(*) FROM inventory_levels il
+                 JOIN product_variants v ON v.id = il.variant_id
+                WHERE v.product_id = p.id AND v.archived_at IS NULL
+                  AND (il.on_hand - il.reserved) <= 0) AS depleted_variants,
               (SELECT COUNT(*) FROM product_variants v WHERE v.product_id = p.id) AS variant_count,
               (SELECT COUNT(*) FROM product_compatibility pc WHERE pc.product_id = p.id) AS compat_count,
               (SELECT COUNT(*) FROM product_compatibility pc
@@ -125,6 +160,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return {
     rows: page.results,
     state,
+    // The same resolution every other screen uses: a configured CDN base, or
+    // the application's own /media route when there is none.
+    mediaBaseUrl: env.PUBLIC_MEDIA_BASE_URL?.replace(/\/$/, "") ?? "/media",
     pagination: paginate(state, total),
     views: PRODUCT_VIEWS.map((v, i) => ({
       slug: v.slug,
@@ -266,28 +304,90 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function AdminProducts({ loaderData, actionData }: Route.ComponentProps) {
-  const { rows, state, pagination, views, canWrite } = loaderData;
+  const { rows, state, pagination, views, canWrite, mediaBaseUrl } = loaderData;
 
   const columns: Column<ProductRow>[] = [
     {
       key: "name",
       header: "Prodotto",
+      width: "wide",
       render: (row) => (
-        <>
-          <Link to={`/admin/prodotti/${row.id}`}>{row.name ?? row.slug}</Link>
-          {/* A product with no Italian name is not a blank row; it is a row
+        <div className="ac-product-cell">
+          {row.image_key ? (
+            <img
+              className="ac-row-thumb"
+              src={`${mediaBaseUrl}/${row.image_key}`}
+              /*
+               * Empty alt, on purpose. The product name is right beside it and
+               * is the link; repeating it here makes a screen reader announce
+               * every row twice. The picture accompanies the name, it does not
+               * replace it.
+               */
+              alt=""
+              width={40}
+              height={40}
+              loading="lazy"
+              decoding="async"
+            />
+          ) : (
+            /*
+             * Not a grey placeholder. A missing photo is a job to do — there is
+             * a "Senza immagine" view for exactly this — so the cell says so
+             * rather than pretending to be a picture that failed to load.
+             */
+            <span className="ac-row-thumb ac-row-thumb--empty" title="Nessuna immagine">
+              <span className="visually-hidden">Nessuna immagine</span>
+              <span aria-hidden="true">—</span>
+            </span>
+          )}
+          <span>
+            <Link to={`/admin/prodotti/${row.id}`}>{row.name ?? row.slug}</Link>
+            {/* A product with no Italian name is not a blank row; it is a row
               whose translation is missing, and saying so is more useful. */}
-          {row.name === null ? (
-            <span className="badge badge--warning"> traduzione mancante</span>
-          ) : null}
-        </>
+            {row.name === null ? (
+              <span className="badge badge--warning"> traduzione mancante</span>
+            ) : null}
+          </span>
+        </div>
       ),
     },
-    { key: "brand", header: "Marchio", render: (row) => row.brand_name ?? "—", secondary: true },
+    {
+      key: "sku",
+      header: "SKU",
+      secondary: true,
+      nowrap: true,
+      width: "shrink",
+      render: (row) =>
+        row.first_sku === null ? (
+          <span className="muted">—</span>
+        ) : (
+          <span className="numeric" title={row.first_sku}>
+            {row.first_sku}
+            {/*
+              A product with several variants has several SKUs, and printing one
+              of them as if it were THE SKU is a small lie that costs somebody a
+              wrong order. The suffix says there are more without pretending to
+              list them.
+            */}
+            {row.variant_count > 1 ? (
+              <span className="muted"> +{row.variant_count - 1}</span>
+            ) : null}
+          </span>
+        ),
+    },
+    {
+      key: "brand",
+      header: "Marchio",
+      render: (row) => row.brand_name ?? "—",
+      secondary: true,
+    },
     {
       key: "status",
       header: "Stato",
-      render: (row) => <StatusBadge status={row.archived_at ? "archived" : row.status} />,
+      width: "shrink",
+      render: (row) => (
+        <StatusBadge kind="product" value={row.archived_at ? "archived" : row.status} />
+      ),
     },
     {
       key: "price",
@@ -302,8 +402,45 @@ export default function AdminProducts({ loaderData, actionData }: Route.Componen
         ),
     },
     {
+      key: "stock",
+      header: "Scorte",
+      numeric: true,
+      width: "shrink",
+      render: (row) => {
+        /*
+         * NULL means the product has no inventory rows at all — the shop does
+         * not count it. That is not the same fact as counting it and having
+         * none, so it is never shown as zero.
+         */
+        if (row.available === null) {
+          return <StatusBadge kind="availability" value="not_tracked" />;
+        }
+
+        const available = Number(row.available);
+        return (
+          <span className="ac-cell-stack">
+            <strong className="numeric">{available}</strong>
+            {available <= 0 ? (
+              <StatusBadge kind="availability" value="out_of_stock" describedAs="Scorte" />
+            ) : row.depleted_variants > 0 ? (
+              /*
+               * A sum hides the shape: three of one colour and none of another
+               * still totals three. Saying how many variants are gone is the
+               * difference between "in stock" and "in stock, but not the one
+               * the customer asked for".
+               */
+              <span className="badge badge--warning">
+                {row.depleted_variants} esaurit{row.depleted_variants === 1 ? "a" : "e"}
+              </span>
+            ) : null}
+          </span>
+        );
+      },
+    },
+    {
       key: "variants",
       header: "Varianti",
+      width: "shrink",
       numeric: true,
       secondary: true,
       render: (row) => row.variant_count,
@@ -365,21 +502,4 @@ export default function AdminProducts({ loaderData, actionData }: Route.Componen
       />
     </>
   );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const label =
-    status === "active"
-      ? "Pubblicato"
-      : status === "draft"
-        ? "Bozza"
-        : status === "archived"
-          ? "Archiviato"
-          : status;
-
-  // The word carries the meaning; the colour only reinforces it.
-  const tone =
-    status === "active" ? "badge--success" : status === "archived" ? "badge--muted" : "badge--info";
-
-  return <span className={`badge ${tone}`}>{label}</span>;
 }

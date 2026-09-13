@@ -105,6 +105,8 @@ export default defineConfig({
       name: "desktop",
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
       dependencies: ["setup"],
+      // The visual survey has its own project and sets its own viewports.
+      testIgnore: /admin-visual\.spec\.ts/,
     },
     {
       // The real target device for this shop's customers, and the viewport
@@ -112,6 +114,31 @@ export default defineConfig({
       name: "mobile",
       use: { ...devices["Pixel 7"] },
       dependencies: ["setup"],
+      testIgnore: /admin-visual\.spec\.ts/,
+    },
+
+    /*
+     * The visual survey, on its own.
+     *
+     * It sets its own viewports — 390, 768 and 1440, the widths the design work
+     * is argued at — so running it under `desktop` AND `mobile` produced 104
+     * navigations where 52 do the job, each with a full-page screenshot. That
+     * doubling is what tipped the run over: the shared `wrangler dev` and its
+     * single SQLite file stopped answering partway through and Playwright
+     * reported a run in which most of the functional suite never executed.
+     *
+     * The config already warns about exactly this failure mode two screens up.
+     * Adding a heavy survey to the default projects walked straight into it.
+     *
+     * One worker, because it is the heaviest thing here and it is the one whose
+     * results are read by a person rather than by CI.
+     */
+    {
+      name: "visual",
+      testMatch: /admin-visual\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"] },
+      dependencies: ["setup"],
+      workers: 1,
     },
   ],
 
@@ -143,6 +170,20 @@ export default defineConfig({
       "npm run build",
       `npx wrangler d1 migrations apply ${DB} --local --persist-to ${PERSIST_TO}`,
       `node scripts/import/seed.mjs --persist-to ${PERSIST_TO}`,
+      /*
+       * A synthetic catalogue, so the admin tests exercise real screens.
+       *
+       * Without this every list rendered its empty state: tables, filters,
+       * pagination, product rows, stock columns and compatibility badges were
+       * never actually reached, and a suite that only ever sees "Nessun
+       * prodotto" proves nothing about the screens a merchant uses all day.
+       *
+       * Every product name begins with [DEMO], which is not decoration — it is
+       * how anyone looking at a screenshot can tell this from a real catalogue.
+       * It creates no reviews, no business identity and no payment data, so the
+       * storefront keeps correctly hiding what depends on those.
+       */
+      `node scripts/import/seed-demo.mjs --db ${DB} --persist-to ${PERSIST_TO}`,
       /*
        * Secrets are passed inline rather than through a .dev.vars file: there is
        * nothing to create before running the suite, nothing lands in git, and

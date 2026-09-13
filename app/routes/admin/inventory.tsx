@@ -10,6 +10,7 @@ import { viewClause } from "~/lib/order-views";
 import { breadcrumbsFor } from "~/lib/admin-nav";
 import { PageHeader } from "~/components/admin/admin-shell";
 import { Link } from "react-router";
+import { StatusBadge } from "~/components/admin/status-badge";
 
 /**
  * Inventory.
@@ -323,7 +324,9 @@ export default function AdminInventory({ loaderData, actionData }: Route.Compone
                   <td className="numeric">
                     <strong>{level.available}</strong>
                   </td>
-                  <td className={`small stock--${level.state}`}>{level.state}</td>
+                  <td>
+                    <StatusBadge kind="availability" value={level.state} />
+                  </td>
                   <td>
                     {canAdjust ? (
                       <details>

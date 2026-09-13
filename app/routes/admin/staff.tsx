@@ -10,6 +10,7 @@ import {
   revokeInvitation,
 } from "~/application/commands/staff-invitations";
 import { activeSuperAdmins, type StaffSummary } from "~/domain/users/staff-guards";
+import { StatusBadge } from "~/components/admin/status-badge";
 
 /**
  * Staff list and invitations.
@@ -273,7 +274,9 @@ export default function AdminStaff({ loaderData, actionData }: Route.ComponentPr
                 <td>{s.display_name}</td>
                 <td className="small">{s.email}</td>
                 <td className="small">{s.roleCodes.join(", ") || "—"}</td>
-                <td className="small">{s.status}</td>
+                <td>
+                  <StatusBadge kind="staff" value={s.status} />
+                </td>
                 <td className="small">
                   {s.totpEnrolled ? (
                     <span className="stock--in_stock">attiva</span>

@@ -16,6 +16,7 @@ import {
 } from "~/domain/users/staff-guards";
 import type { Permission } from "~/domain/users/permissions";
 import type { SqlStatement } from "~/infrastructure/db/sql";
+import { statusLabel } from "~/components/admin/status-badge";
 
 /**
  * One staff member: status, roles, sessions, history.
@@ -341,7 +342,8 @@ export default function StaffDetail({ loaderData, actionData }: Route.ComponentP
       </p>
       <h1>{member.display_name}</h1>
       <p className="small muted">
-        {member.email} · {member.status} · {member.active_sessions} sessioni attive
+        {member.email} · {statusLabel("staff", member.status)} · {member.active_sessions} sessioni
+        attive
       </p>
 
       {actionData && "error" in actionData && actionData.error ? (

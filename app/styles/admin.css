@@ -818,6 +818,16 @@
 .ac-search input[type="search"] {
   flex: 1 1 16rem;
   min-height: var(--target-min);
+  min-width: 0;
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-width) solid var(--color-border-strong);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+
+.ac-search input[type="search"]::placeholder {
+  color: var(--color-text-secondary-on-sunken);
 }
 
 .ac-bulk {

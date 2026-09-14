@@ -16,6 +16,30 @@ updates:
         patterns: ["vitest", "@vitest/*", "@playwright/*", "@axe-core/*"]
       linting:
         patterns: ["eslint", "@eslint/*", "typescript-eslint", "prettier"]
+    ignore:
+      # vitest is held at 4.x by a peer dependency, not by preference.
+      #
+      # @cloudflare/vitest-pool-workers declares peer vitest@^4.1.0, and 0.22.0
+      # is the LATEST release of it — none accepts vitest 5. So a vitest 5 bump
+      # does not fail a test, it fails `npm ci` outright:
+      #
+      #   npm error Could not resolve dependency:
+      #   npm error peer vitest@"^4.1.0" from @cloudflare/vitest-pool-workers@0.22.0
+      #
+      # Nothing runs after that. Every later step then reports failure having
+      # never executed, which reads like a broken test suite and is not one.
+      #
+      # vitest is grouped with @playwright/test above, so this also dragged a
+      # perfectly good Playwright bump down with it, and the same unmergeable
+      # PR reopened every week.
+      #
+      # Lift this the moment the pool ships a release whose peer range includes
+      # vitest 5:
+      #   npm view @cloudflare/vitest-pool-workers peerDependencies.vitest
+      #
+      # Only the MAJOR is ignored — 4.x patches and minors still arrive.
+      - dependency-name: vitest
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:

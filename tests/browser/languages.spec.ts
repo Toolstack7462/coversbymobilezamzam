@@ -105,7 +105,7 @@ test.describe("authenticated English interface", () => {
       ["/admin/inventario/rettifiche", /Adjustments/i],
       ["/admin/inventario/trasferimenti", /Transfers/],
       ["/admin/inventario/scorte-basse", /Low stock/],
-      ["/admin/inventario/prenotazioni", /Reservations/],
+      ["/admin/inventario/prenotazioni", /Stock reservations/],
       ["/admin/sconti", /Discount/],
       ["/admin/promozioni", /Promotions/],
       ["/admin/recensioni", /Reviews/],

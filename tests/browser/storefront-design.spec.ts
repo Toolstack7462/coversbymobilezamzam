@@ -36,18 +36,16 @@ for (const viewport of widths) {
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
       );
       if (overflow > 1) {
-        const offenders = await page
-          .locator("body *")
-          .evaluateAll((nodes) =>
-            nodes
-              .filter((node) => node.getBoundingClientRect().right > innerWidth + 1)
-              .map((node) => ({
-                tag: node.tagName,
-                className: node.className,
-                width: node.getBoundingClientRect().width,
-                right: node.getBoundingClientRect().right,
-              })),
-          );
+        const offenders = await page.locator("body *").evaluateAll((nodes) =>
+          nodes
+            .filter((node) => node.getBoundingClientRect().right > innerWidth + 1)
+            .map((node) => ({
+              tag: node.tagName,
+              className: node.className,
+              width: node.getBoundingClientRect().width,
+              right: node.getBoundingClientRect().right,
+            })),
+        );
         console.log("OVERFLOW", route, viewport.width, JSON.stringify(offenders));
       }
       await page.screenshot({

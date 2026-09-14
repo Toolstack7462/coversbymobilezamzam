@@ -7,6 +7,7 @@ import { requireEnrolledStaff } from "~/infrastructure/auth/session.server";
 import { visibleNav } from "~/lib/admin-nav";
 import { AdminShell } from "~/components/admin/admin-shell";
 import adminStyles from "~/styles/admin.css?url";
+import adminFormStyles from "~/styles/admin-forms.css?url";
 import { SETTING_KEYS, type SettingsMap } from "~/domain/content/gates";
 
 /**
@@ -21,7 +22,10 @@ import { SETTING_KEYS, type SettingsMap } from "~/domain/content/gates";
  * separate chunk that never reaches a customer browsing the shop.
  */
 
-export const links: LinksFunction = () => [{ rel: "stylesheet", href: adminStyles }];
+export const links: LinksFunction = () => [
+  { rel: "stylesheet", href: adminFormStyles },
+  { rel: "stylesheet", href: adminStyles },
+];
 
 export function meta() {
   return [{ name: "robots", content: "noindex, nofollow" }];

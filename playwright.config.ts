@@ -197,17 +197,29 @@ export default defineConfig({
      *
      * Firefox ran the admin spec cleanly before this was narrowed, and that is
      * recorded in docs/admin-visual-qa.md rather than left as folklore.
+     *
+     * ── AND THE PASSWORD SPEC ───────────────────────────────────────────────
+     *
+     * Added because its signed-out half needs no session either: it exercises
+     * the login form, which is public by definition. That half is also where an
+     * engine difference is most likely to bite — switching an input between
+     * `password` and `text` sends the caret to the end in WebKit and drops the
+     * selection in Chromium — so a reveal control verified in one engine is a
+     * reveal control verified nowhere.
+     *
+     * Its signed-in half skips itself on WebKit, for the cookie reason above,
+     * and says so in the skip message rather than quietly reporting a pass.
      */
     {
       name: "firefox",
-      testMatch: /accessibility\.spec\.ts/,
+      testMatch: [/accessibility\.spec\.ts/, /admin-password\.spec\.ts/],
       use: { ...devices["Desktop Firefox"] },
       dependencies: ["setup"],
       workers: 1,
     },
     {
       name: "webkit",
-      testMatch: /accessibility\.spec\.ts/,
+      testMatch: [/accessibility\.spec\.ts/, /admin-password\.spec\.ts/],
       use: { ...devices["Desktop Safari"] },
       dependencies: ["setup"],
       workers: 1,

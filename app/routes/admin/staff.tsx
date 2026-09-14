@@ -1,5 +1,6 @@
 import { Form, Link } from "react-router";
 import type { Route } from "./+types/staff";
+import { PasswordField } from "~/components/admin/password-field";
 import { appContext } from "~/runtime/context";
 import { requireStaff, hasStepUp } from "~/infrastructure/auth/session.server";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
@@ -303,19 +304,13 @@ export default function AdminStaff({ loaderData, actionData }: Route.ComponentPr
           {!hasStepUp ? (
             <Form method="post" className="cluster">
               <input type="hidden" name="intent" value="step-up" />
-              <div className="field">
-                <label className="field__label" htmlFor="stepup">
-                  Conferma la password per gestire il personale
-                </label>
-                <input
-                  id="stepup"
-                  name="password"
-                  type="password"
-                  className="input"
-                  required
-                  autoComplete="current-password"
-                />
-              </div>
+              <PasswordField
+                id="stepup"
+                name="password"
+                label="Conferma la password per gestire il personale"
+                autoComplete="current-password"
+                required
+              />
               <button type="submit" className="btn btn--primary">
                 Conferma
               </button>

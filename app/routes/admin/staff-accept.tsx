@@ -1,5 +1,9 @@
 import { Form, redirect } from "react-router";
+import type { LinksFunction } from "react-router";
 import type { Route } from "./+types/staff-accept";
+import { PasswordField } from "~/components/admin/password-field";
+import { MIN_PASSWORD_LENGTH, PASSWORD_REQUIREMENTS } from "~/domain/users/password-policy";
+import adminFormStyles from "~/styles/admin-forms.css?url";
 import { appContext } from "~/runtime/context";
 import { createAuth } from "~/infrastructure/auth/auth.server";
 import { allSetCookies, cookieHeaderFrom } from "~/infrastructure/auth/cookies.server";
@@ -103,6 +107,14 @@ export async function action({ request, params, context }: Route.ActionArgs) {
   );
 }
 
+/**
+ * The form control styles.
+ *
+ * Registered outside routes/admin/layout.tsx — an invited colleague has no
+ * staff session yet — so admin.css never loads here.
+ */
+export const links: LinksFunction = () => [{ rel: "stylesheet", href: adminFormStyles }];
+
 export default function AcceptInvite({ loaderData, actionData }: Route.ComponentProps) {
   if (!loaderData.valid) {
     return (
@@ -141,36 +153,24 @@ export default function AcceptInvite({ loaderData, actionData }: Route.Component
             <input id="name" name="name" className="input" required autoComplete="name" />
           </div>
 
-          <div className="field">
-            <label className="field__label" htmlFor="password">
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              className="input"
-              required
-              minLength={12}
-              autoComplete="new-password"
-            />
-            <span className="field__hint">Almeno 12 caratteri.</span>
-          </div>
+          <PasswordField
+            id="password"
+            name="password"
+            label="Password"
+            autoComplete="new-password"
+            required
+            minLength={MIN_PASSWORD_LENGTH}
+            requirements={PASSWORD_REQUIREMENTS}
+          />
 
-          <div className="field">
-            <label className="field__label" htmlFor="confirm">
-              Ripeti la password
-            </label>
-            <input
-              id="confirm"
-              name="confirm"
-              type="password"
-              className="input"
-              required
-              minLength={12}
-              autoComplete="new-password"
-            />
-          </div>
+          <PasswordField
+            id="confirm"
+            name="confirm"
+            label="Ripeti la password"
+            autoComplete="new-password"
+            required
+            minLength={MIN_PASSWORD_LENGTH}
+          />
 
           <button type="submit" className="btn btn--primary">
             Crea account

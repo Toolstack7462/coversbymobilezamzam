@@ -1,5 +1,6 @@
 import { Form } from "react-router";
 import type { Route } from "./+types/payments";
+import { PasswordField } from "~/components/admin/password-field";
 import { appContext } from "~/runtime/context";
 import {
   requireStaff,
@@ -274,19 +275,13 @@ export default function AdminPayments({ loaderData, actionData }: Route.Componen
           </p>
           <Form method="post" className="cluster">
             <input type="hidden" name="intent" value="step-up" />
-            <div className="field">
-              <label className="field__label" htmlFor="stepup-password">
-                Password
-              </label>
-              <input
-                id="stepup-password"
-                name="password"
-                type="password"
-                className="input"
-                required
-                autoComplete="current-password"
-              />
-            </div>
+            <PasswordField
+              id="stepup-password"
+              name="password"
+              label="Password"
+              autoComplete="current-password"
+              required
+            />
             <button type="submit" className="btn btn--primary">
               Conferma
             </button>

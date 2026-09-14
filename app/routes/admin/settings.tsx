@@ -1,5 +1,6 @@
 import { Form } from "react-router";
 import type { Route } from "./+types/settings";
+import { PasswordField } from "~/components/admin/password-field";
 import { appContext } from "~/runtime/context";
 import {
   requireStaff,
@@ -398,19 +399,13 @@ export default function AdminSettings({ loaderData, actionData }: Route.Componen
         ) : !paymentStepUp ? (
           <Form method="post" className="panel cluster">
             <input type="hidden" name="intent" value="payment-step-up" />
-            <div className="field">
-              <label className="field__label" htmlFor="pay-stepup">
-                Conferma la password per modificare i dati di pagamento
-              </label>
-              <input
-                id="pay-stepup"
-                name="password"
-                type="password"
-                className="input"
-                required
-                autoComplete="current-password"
-              />
-            </div>
+            <PasswordField
+              id="pay-stepup"
+              name="password"
+              label="Conferma la password per modificare i dati di pagamento"
+              autoComplete="current-password"
+              required
+            />
             <button type="submit" className="btn btn--primary">
               Conferma
             </button>

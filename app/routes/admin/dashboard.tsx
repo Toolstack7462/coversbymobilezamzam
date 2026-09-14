@@ -283,7 +283,7 @@ export default function AdminDashboard({ loaderData }: Route.ComponentProps) {
             <Metric
               variant="headline"
               label={t("Valore degli ordini")}
-              value={formatMoney(money(metrics.valueToday))}
+              value={formatMoney(money(metrics.valueToday), t.intl)}
               note="Ordini creati, non incassati"
             />
           </div>
@@ -292,7 +292,7 @@ export default function AdminDashboard({ loaderData }: Route.ComponentProps) {
               <>
                 <Metric
                   label={t("Pagamenti verificati")}
-                  value={formatMoney(money(metrics.verifiedToday))}
+                  value={formatMoney(money(metrics.verifiedToday), t.intl)}
                   note="Confermati da una persona"
                 />
                 <Metric

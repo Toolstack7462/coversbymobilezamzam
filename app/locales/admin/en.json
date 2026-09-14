@@ -1611,5 +1611,12 @@
   "{{v0}}: massimo {{v1}} caratteri.": "{{v0}}: maximum {{v1}} characters.",
   "Il codice SKU \"{{v0}}\" è già usato da un altro prodotto.": "SKU “{{v0}}” is already used by another product.",
   "Nessun listino prezzi predefinito configurato.": "No default price list configured.",
-  "Un altro prodotto con lo stesso codice o indirizzo è stato creato nel frattempo. Riprova.": "Another product with this code or address was just created. Try again."
+  "Un altro prodotto con lo stesso codice o indirizzo è stato creato nel frattempo. Riprova.": "Another product with this code or address was just created. Try again.",
+  "Ordini creati, non incassati": "Orders placed, not payments received",
+  "Confermati da una persona": "Confirmed by a staff member",
+  "Nessun prodotto, ordine, cliente o dispositivo corrisponde. Controlla il testo, oppure cerca dentro la sezione giusta dove i filtri sono più precisi.": "No products, orders, customers or devices match. Check your search, or use the filters in the relevant section.",
+  "Senza prezzo il prodotto non è acquistabile e non può essere pubblicato.": "Without a price, this product cannot be purchased or published.",
+  "Sul sito comparirebbe un riquadro vuoto al posto dell'immagine.": "The website would display an empty frame instead of a product photo.",
+  "I clienti non possono filtrare questo prodotto per il proprio telefono.": "Customers cannot filter this product for their phone.",
+  "Una variante senza riga di giacenza non risulta disponibile.": "A variant without a stock record is not available."
 }

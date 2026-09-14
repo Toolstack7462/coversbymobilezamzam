@@ -1918,10 +1918,10 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
             <tbody>
               {variants.map((variant) => (
                 <tr key={variant.id}>
-                  <td data-label="SKU" className="numeric">
+                  <td data-label={t("SKU")} className="numeric">
                     {variant.sku}
                   </td>
-                  <td data-label="Variante">
+                  <td data-label={t("Variante")}>
                     {variant.variant_label ?? variant.colour ?? t("Unica")}
                     {variant.is_default === 1 ? (
                       <span className="badge badge--muted"> {t(" predefinita")}</span>
@@ -1949,14 +1949,14 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
                       </span>
                     ) : null}
                   </td>
-                  <td data-label="Disponibile" className="ac-table__numeric numeric">
+                  <td data-label={t("Disponibile")} className="ac-table__numeric numeric">
                     {variant.on_hand === null ? (
                       <span className="badge badge--warning">{t("non registrata")}</span>
                     ) : (
                       Math.max(0, variant.on_hand - (variant.reserved ?? 0))
                     )}
                   </td>
-                  <td data-label="Prezzo">
+                  <td data-label={t("Prezzo")}>
                     {canPrice ? (
                       <Form method="post" className="cluster">
                         <input type="hidden" name="intent" value="set-price" />

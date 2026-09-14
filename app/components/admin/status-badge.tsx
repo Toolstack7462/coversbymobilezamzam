@@ -187,7 +187,7 @@ export function StatusBadge({
   const { label, tone } = resolve(kind, value);
   return (
     <span className={`badge ${tone}`}>
-      {describedAs ? <span className="visually-hidden">{describedAs}: </span> : null}
+      {describedAs ? <span className="visually-hidden">{t(describedAs)}: </span> : null}
       {t(label)}
     </span>
   );

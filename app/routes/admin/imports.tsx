@@ -570,13 +570,13 @@ export default function Imports({ loaderData, actionData }: Route.ComponentProps
                     .slice(0, 50)
                     .map((row) => (
                       <tr key={row.rowNumber}>
-                        <td data-label="Riga" className="numeric">
+                        <td data-label={t("Riga")} className="numeric">
                           {row.rowNumber}
                         </td>
-                        <td data-label="SKU" className="numeric">
+                        <td data-label={t("SKU")} className="numeric">
                           {row.sku || "—"}
                         </td>
-                        <td data-label="Cosa succede">
+                        <td data-label={t("Cosa succede")}>
                           {row.outcome === "error" ? (
                             <span className="badge badge--sale">{t("saltata")}</span>
                           ) : (

@@ -500,7 +500,7 @@ export default function OrderDetail({ loaderData, actionData }: Route.ComponentP
                 <tbody>
                   {items.map((item, i) => (
                     <tr key={i}>
-                      <td data-label="Articolo">
+                      <td data-label={t("Articolo")}>
                         {/* The snapshot name is what is shown. The link to the live
                           product is an extra, and it is absent when the product
                           has since been archived. */}
@@ -523,16 +523,16 @@ export default function OrderDetail({ loaderData, actionData }: Route.ComponentP
                           </>
                         ) : null}
                       </td>
-                      <td data-label="SKU" className="numeric">
+                      <td data-label={t("SKU")} className="numeric">
                         {item.sku}
                       </td>
-                      <td data-label="Qtà" className="ac-table__numeric numeric">
+                      <td data-label={t("Qt\u00e0")} className="ac-table__numeric numeric">
                         {item.quantity}
                       </td>
-                      <td data-label="Prezzo" className="ac-table__numeric numeric">
+                      <td data-label={t("Prezzo")} className="ac-table__numeric numeric">
                         {formatMoney(money(item.unit_price), t.intl)}
                       </td>
-                      <td data-label="Totale" className="ac-table__numeric numeric">
+                      <td data-label={t("Totale")} className="ac-table__numeric numeric">
                         {formatMoney(money(item.line_total), t.intl)}
                       </td>
                     </tr>

@@ -278,10 +278,10 @@ export default function Discounts({ loaderData, actionData }: Route.ComponentPro
 
                   return (
                     <tr key={coupon.id}>
-                      <td data-label="Codice" className="numeric">
+                      <td data-label={t("Codice")} className="numeric">
                         {coupon.code}
                       </td>
-                      <td data-label="Sconto">
+                      <td data-label={t("Sconto")}>
                         {coupon.discount_type === "percentage"
                           ? `${coupon.discount_value}%`
                           : formatMoney(money(coupon.discount_value), t.intl)}
@@ -295,16 +295,16 @@ export default function Discounts({ loaderData, actionData }: Route.ComponentPro
                           </>
                         ) : null}
                       </td>
-                      <td data-label="Usato" className="ac-table__numeric numeric">
+                      <td data-label={t("Usato")} className="ac-table__numeric numeric">
                         {coupon.usage_count}
                         {coupon.usage_limit !== null ? ` / ${coupon.usage_limit}` : ""}
                       </td>
-                      <td data-label="Validità" className="small">
+                      <td data-label={t("Validit\u00e0")} className="small">
                         {coupon.ends_at === null
                           ? t("senza scadenza")
                           : t("fino al {{v0}}", { v0: formatDateTime(coupon.ends_at, t.locale) })}
                       </td>
-                      <td data-label="Stato">
+                      <td data-label={t("Stato")}>
                         {coupon.active === 0 ? (
                           <span className="badge badge--muted">{t("disattivato")}</span>
                         ) : expired ? (
@@ -316,7 +316,7 @@ export default function Discounts({ loaderData, actionData }: Route.ComponentPro
                         )}
                       </td>
                       {canWrite ? (
-                        <td data-label="Azione">
+                        <td data-label={t("Azione")}>
                           <Form method="post">
                             <input type="hidden" name="intent" value="toggle" />
                             <input type="hidden" name="id" value={coupon.id} />

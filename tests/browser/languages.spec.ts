@@ -129,6 +129,10 @@ test.describe("authenticated English interface", () => {
       await expect(page.getByRole("heading", { level: 1 }), route).toHaveText(heading);
       await expect(page.locator("html"), route).toHaveAttribute("lang", "en");
       await expect(page.locator("head title"), route).toHaveCount(1);
+      if (route === "/admin/ordini/ord_demo_review") {
+        await expect(page.locator('[data-label="Articolo"]')).toHaveCount(0);
+        await expect(page.locator('[data-label="Item"]').first()).toBeVisible();
+      }
     }
   });
 
@@ -137,6 +141,15 @@ test.describe("authenticated English interface", () => {
   }, testInfo) => {
     await page.goto("/admin");
     await switchAdmin(page, "English");
+    await expect(page.locator(".ac-headline .ac-metric__note")).toHaveText(
+      "Orders placed, not payments received",
+    );
+    await expect(page.locator(".ac-metrics .ac-metric__note")).toHaveText(
+      "Confirmed by a staff member",
+    );
+    await expect(page.locator(".ac-headline .ac-metric__value").nth(1)).toHaveText(
+      /^€[\d,]+\.\d{2}$/,
+    );
     for (const width of [390, 768, 1366, 1440]) {
       await page.setViewportSize({ width, height: width === 1366 ? 768 : 900 });
       const summary = page.locator(".ac__language > summary");

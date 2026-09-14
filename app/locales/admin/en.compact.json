@@ -1611,5 +1611,12 @@
   "dl24k6": "{{v0}}: maximum {{v1}} characters.",
   "1iwxtph": "SKU “{{v0}}” is already used by another product.",
   "os1xex": "No default price list configured.",
-  "1f2rrz2": "Another product with this code or address was just created. Try again."
+  "1f2rrz2": "Another product with this code or address was just created. Try again.",
+  "167rwnu": "Orders placed, not payments received",
+  "1hyucaq": "Confirmed by a staff member",
+  "1poca7o": "No products, orders, customers or devices match. Check your search, or use the filters in the relevant section.",
+  "sqnu51": "Without a price, this product cannot be purchased or published.",
+  "1ax7ewl": "The website would display an empty frame instead of a product photo.",
+  "1906gpk": "Customers cannot filter this product for their phone.",
+  "1jp5r5z": "A variant without a stock record is not available."
 }

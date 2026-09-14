@@ -361,7 +361,6 @@
 }
 .showcase__controls button {
   min-width: 0;
-  flex-basis: 0;
   min-height: 48px;
   display: flex;
   align-items: center;

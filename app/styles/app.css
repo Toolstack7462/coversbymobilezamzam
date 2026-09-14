@@ -42,20 +42,40 @@ html {
 /*
  * One structural gradient on the page itself: ivory at the top, settling to the
  * page colour by the first fold. It gives the document a light source rather
- * than a flat fill, and it is fixed so it does not travel with the scroll and
- * band across a long page.
+ * than a flat fill.
  *
- * `background-attachment: fixed` is skipped on touch, where it forces a repaint
- * on every scroll frame for an effect nobody sees on a 6-inch screen.
+ * ── THE COLOUR IS A LONGHAND, AND THAT IS THE WHOLE POINT ───────────────────
+ *
+ * This rule used to end with `background: var(--color-background)`, six lines
+ * below the gradient. The shorthand resets EVERY background longhand, so it
+ * silently deleted the `background-image` and `background-repeat` above it, and
+ * the page rendered the flat fill the comment says it is trying to avoid.
+ *
+ * Both declarations were individually correct, which is why it survived review:
+ * nothing warns, and the only symptom is an effect that is quietly absent. The
+ * tempting fix is a more specific rule or `!important` somewhere else, which
+ * leaves the reset in place and makes the next one harder to find.
+ *
+ * So the colour is set with `background-color`, and it is set FIRST: the colour
+ * is the base the gradient sits on, and it is also the fallback for anything
+ * that cannot paint the gradient. `tests/unit/css-shorthand-resets.test.ts`
+ * fails if a shorthand is ever put back below a longhand, here or anywhere else
+ * in these stylesheets.
+ *
+ * NOTE: the previous comment claimed the gradient was `fixed` and skipped on
+ * touch. No `background-attachment` rule has ever existed in these stylesheets,
+ * so that described behaviour the browser never had. The claim is removed
+ * rather than implemented — how this looks now belongs with the storefront
+ * theme, not with a bug fix.
  */
 body {
+  background-color: var(--color-background);
   background-image: linear-gradient(180deg, #fdfcf7 0%, var(--color-background) 46vh);
   background-repeat: no-repeat;
   font-family: var(--font-body);
   font-size: var(--text-body);
   line-height: var(--text-body-lh);
   color: var(--color-ink);
-  background: var(--color-background);
   -webkit-font-smoothing: antialiased;
   min-height: 100dvh;
 }

@@ -3,6 +3,11 @@ import AxeBuilder from "@axe-core/playwright";
 
 // The existing CI browser job runs the real built application and an isolated
 // [DEMO] catalogue. These are lab screenshots, never evidence of merchant stock.
+test.use({
+  viewport: { width: 1366, height: 768 },
+  video: { mode: "on", size: { width: 1366, height: 768 } },
+});
+
 const widths = [
   { width: 390, height: 844 },
   { width: 768, height: 1024 },
@@ -41,11 +46,6 @@ for (const viewport of widths) {
 }
 
 test.describe("hero interaction evidence", () => {
-  test.use({
-    viewport: { width: 1366, height: 768 },
-    video: { mode: "on", size: { width: 1366, height: 768 } },
-  });
-
   test("modes work by keyboard and retain readable content", async ({ page }) => {
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));

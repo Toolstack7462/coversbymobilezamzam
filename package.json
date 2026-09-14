@@ -6,7 +6,7 @@
   "description": "Self-owned ecommerce platform for an Italian mobile-accessories retailer. React Router v8 on Cloudflare Workers, D1 and R2.",
   "license": "UNLICENSED",
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.22.0"
   },
   "scripts": {
     "dev": "react-router dev",

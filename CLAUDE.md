@@ -322,6 +322,22 @@ Rules that exist because each was broken once. Every one names the defect.
 - The visual survey is its own Playwright project. Do not add heavy specs to
   `desktop`/`mobile`: one shared `wrangler dev` and one SQLite file stop
   answering, and the run reports "passed" for tests that never executed.
+- **A browser-suite TOTAL can hide a run that stopped early.** Three runs in
+  one session reported "passed" at 29, 43 and 216 against the same suite, with
+  nothing failing — most tests simply never executed. Wipe the throwaway
+  database first (`rm -rf .wrangler/e2e`) and read the PER-PROJECT counts, not
+  the total.
+- **Never put a shorthand below one of its own longhands.** `background:` after
+  `background-image:` in the same rule silently deletes the image; the file
+  looks correct and the only symptom is a missing effect. Set the part you mean
+  (`background-color`). `tests/unit/css-shorthand-resets.test.ts` enforces this
+  across every stylesheet, with longhands listed explicitly — `flex` resets
+  grow/shrink/basis and NOT `flex-direction`, and a guard that cries wolf gets
+  deleted.
+- **A comment describing behaviour the code does not have is a defect.** The
+  `body` gradient comment described `background-attachment: fixed` skipped on
+  touch; no such rule ever existed. Fix the code or fix the comment — never
+  leave a reader trusting the prose.
 - **A skipped test reads as a verified one.** Guard on a precondition only where
   it is genuinely optional; otherwise ASSERT it. A signed-in spec missing its
   file-level `test.use({ storageState })` redirects to the login page, the

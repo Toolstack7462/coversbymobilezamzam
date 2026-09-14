@@ -15,6 +15,65 @@ const widths = [
   { width: 1440, height: 900 },
 ];
 
+// Same browser, production build, fixture and measurement window before/after.
+// These are repeatable lab samples, not field Core Web Vitals or a budget waiver.
+test("representative storefront browser measurements", async ({ page }) => {
+  await page.addInitScript(() => {
+    const metrics = { lcp: 0, cls: 0, longTasks: 0 };
+    Object.assign(window, { storefrontMetrics: metrics });
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) metrics.lcp = entry.startTime;
+    }).observe({ type: "largest-contentful-paint", buffered: true });
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        const shift = entry as PerformanceEntry & { value: number; hadRecentInput: boolean };
+        if (!shift.hadRecentInput) metrics.cls += shift.value;
+      }
+    }).observe({ type: "layout-shift", buffered: true });
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) metrics.longTasks += entry.duration;
+    }).observe({ type: "longtask", buffered: true });
+  });
+  for (const [width, route] of [
+    [1366, "/"],
+    [390, "/"],
+    [1366, "/shop"],
+    [1366, "/prodotti/demo-cover-trasparente-iphone-16-pro"],
+  ] as const) {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 768 });
+    for (let sample = 1; sample <= 3; sample += 1) {
+      await page.goto(route);
+      await page.evaluate(() => document.fonts.ready);
+      // Fixed 1.8s window includes entrance, hydration and settled first view.
+      await page.waitForTimeout(1800);
+      const metrics = await page.evaluate(() => {
+        const custom = (
+          window as Window & {
+            storefrontMetrics?: { lcp: number; cls: number; longTasks: number };
+          }
+        ).storefrontMetrics;
+        const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming;
+        const resources = performance.getEntriesByType("resource") as PerformanceResourceTiming[];
+        const bytes = (pattern: RegExp) =>
+          resources
+            .filter((entry) => pattern.test(entry.name))
+            .reduce((sum, entry) => sum + entry.encodedBodySize, 0);
+        return {
+          ...custom,
+          fcp: performance.getEntriesByName("first-contentful-paint")[0]?.startTime,
+          ttfb: nav.responseStart - nav.requestStart,
+          jsBytes: bytes(/\.js(?:\?|$)/),
+          cssBytes: bytes(/\.css(?:\?|$)/),
+          imageBytes: bytes(/\.(?:png|jpe?g|webp|avif|svg)(?:\?|$)/),
+          loadedImages: document.querySelectorAll("img").length,
+          pendingImages: [...document.images].filter((img) => !img.complete).length,
+        };
+      });
+      console.log("STOREFRONT_LAB " + JSON.stringify({ width, route, sample, ...metrics }));
+    }
+  }
+});
+
 for (const viewport of widths) {
   test(`storefront fits ${viewport.width}px`, async ({ page }, testInfo) => {
     await page.setViewportSize(viewport);

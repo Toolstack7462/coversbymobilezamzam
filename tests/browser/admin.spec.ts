@@ -296,7 +296,13 @@ test.describe("organized merchant workspace without JavaScript", () => {
   test.use({ javaScriptEnabled: false });
   test("opens a menu group and reaches the photo repair queue", async ({ page }, testInfo) => {
     await page.goto("/admin");
-    if (testInfo.project.name === "mobile") await page.locator(".ac__drawer-toggle").click();
+    if (testInfo.project.name === "mobile") {
+      // No document overflow is not enough: inherited ordering once squeezed
+      // whole task descriptions into the narrow count column.
+      const taskText = await page.locator(".ac-action__body").first().boundingBox();
+      expect(taskText!.width, "task descriptions have readable line lengths").toBeGreaterThan(180);
+      await page.locator(".ac__drawer-toggle").click();
+    }
     const nav = page.locator(
       testInfo.project.name === "mobile" ? ".ac__drawer" : ".ac__nav-desktop",
     );

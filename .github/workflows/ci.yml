@@ -100,7 +100,11 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: playwright-report-${{ matrix.project }}
-          path: playwright-report/
+          path: |
+            playwright-report/
+            test-results/**/test-failed-*.png
+            test-results/**/error-context.md
+            test-results/**/trace.zip
           retention-days: 7
 
   admin_visual:

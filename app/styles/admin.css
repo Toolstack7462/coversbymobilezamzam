@@ -47,7 +47,7 @@
   color: var(--ac-chrome-ink);
 }
 
-/* The focus ring is drawn against the page; on near-black the default vanishes. */
+/* Keep keyboard focus consistent across the merchant chrome. */
 .ac__topbar :focus-visible,
 .ac__sidebar :focus-visible {
   outline-color: var(--color-focus);
@@ -1777,8 +1777,7 @@ a.ac-pick:hover {
   border-radius: var(--radius-control);
 }
 
-/* The placeholder has to survive on dark chrome. The secondary on-deep token
-   is the one already audited against this surface for the sidebar labels. */
+/* The quieter search text still needs contrast against the input surface. */
 .ac .ac__search input::placeholder {
   color: var(--ac-chrome-ink-muted);
 }
@@ -1964,6 +1963,9 @@ a.ac-pick:hover {
 .ac .ac-dashboard__photos {
   background: var(--color-primary-surface);
 }
+.ac .ac-dashboard__photos .muted {
+  color: var(--color-text-secondary-on-sunken);
+}
 .ac .ac-dashboard__eyebrow {
   margin-top: 0;
   font-size: 0.6875rem;
@@ -1983,6 +1985,11 @@ a.ac-pick:hover {
 }
 .ac .ac-dashboard__priorities {
   min-width: 0;
+}
+.ac .ac-dashboard .ac-actions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 .ac .ac-dashboard .ac-action {
   padding: var(--space-3);
@@ -2110,8 +2117,14 @@ a.ac-pick:hover {
     grid-template-columns: 36px minmax(0, 1fr);
     align-items: start;
   }
+  .ac .ac-dashboard .ac-action__body {
+    order: 0;
+    grid-column: 2;
+    grid-row: 1;
+  }
   .ac .ac-dashboard .ac-action .btn {
     grid-column: 2;
+    grid-row: 2;
     justify-self: start;
   }
 }

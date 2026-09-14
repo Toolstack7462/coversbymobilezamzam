@@ -89,7 +89,7 @@ jobs:
         run: npm run db:migrate:local && npm run db:seed
 
       - name: Playwright
-        run: npm run test:e2e
+        run: npx playwright test --project=desktop --project=mobile --project=visual
 
       - name: Upload report
         if: failure()
@@ -99,6 +99,21 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
+  storefront:
+    name: Storefront visual review
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: verify
+    # A separate runner/database keeps the catalogue stable for review screenshots.
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test --project=storefront
       - name: Upload storefront review evidence
         if: always()
         uses: actions/upload-artifact@v5
@@ -106,5 +121,6 @@ jobs:
           name: storefront-design-evidence
           path: |
             test-results/**/storefront-*.png
+            test-results/**/test-failed-*.png
             test-results/**/video.webm
           retention-days: 14

@@ -392,6 +392,54 @@ describe("driver value semantics", () => {
    * adapter is what makes SUM a number, and this pins it: the option is one
    * line away from being removed as "a default nobody needs".
    */
+  /*
+   * ── THE APPLICATION BRINGS ITS OWN sql_mode ─────────────────────────────
+   *
+   * The merchant's MariaDB runs with `NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION`
+   * and NO `STRICT_TRANS_TABLES`. Every test in this file was written against a
+   * server that had it, so every one of them would have kept passing locally
+   * while the deployed shop quietly accepted data it should have refused: an
+   * over-long product name truncated to fit, a non-numeric price stored as 0.
+   *
+   * The adapter therefore sets the mode itself, per connection, and this is
+   * what stops that being deleted as "a default nobody needs". It asserts the
+   * SESSION mode rather than the server's, because the server's is not ours.
+   */
+  it("sets a strict sql_mode on its own connections, whatever the server's default", async () => {
+    const row = await db.prepare("SELECT @@session.sql_mode AS mode").first<{ mode: string }>();
+
+    expect(row?.mode).toContain("STRICT_TRANS_TABLES");
+    expect(row?.mode).toContain("ERROR_FOR_DIVISION_BY_ZERO");
+  });
+
+  it("refuses an over-long value rather than truncating it", async () => {
+    /*
+     * The consequence of the mode above, stated as behaviour.
+     *
+     * Without strict mode this INSERT succeeds and the stored value is
+     * silently shortened — which for a SKU means two products can end up
+     * sharing one, and the unique index that was supposed to prevent exactly
+     * that never sees a conflict.
+     */
+    const now = Date.now();
+    const tooLong = "X".repeat(200);
+
+    await expect(
+      db
+        .prepare(
+          `INSERT INTO product_variants (id, product_id, sku, active, is_default, sort_order, created_at, updated_at)
+           VALUES ('v-toolong', 'p1', ?1, 1, 0, 99, ?2, ?2)`,
+        )
+        .bind(tooLong, now)
+        .run(),
+    ).rejects.toThrow();
+
+    const row = await db
+      .prepare("SELECT COUNT(*) AS n FROM product_variants WHERE id = 'v-toolong'")
+      .first<{ n: number }>();
+    expect(row?.n).toBe(0);
+  });
+
   it("returns SUM over integer money as a number, not a string", async () => {
     const now = Date.now();
 

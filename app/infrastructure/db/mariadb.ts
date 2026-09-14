@@ -228,6 +228,36 @@ export class MariaDbDatabase implements InteractiveSqlDatabase {
       enableKeepAlive: true,
       keepAliveInitialDelay: 10_000,
 
+      /*
+       * Drop an idle connection before the SERVER does.
+       *
+       * Hostinger's MariaDB is configured with `wait_timeout = 20` — twenty
+       * seconds. A pooled connection left idle longer than that is closed by
+       * the server, and the pool does not find out until it hands the dead
+       * connection to a request, which fails as ECONNRESET or
+       * PROTOCOL_CONNECTION_LOST.
+       *
+       * On a busy server this never shows up. On a shop that is quiet for half
+       * a minute — which is most of a shop's life — it is the FIRST visitor
+       * after the quiet period who gets the error, every time.
+       *
+       * TCP keep-alive above does not help: `wait_timeout` measures idleness of
+       * the MySQL protocol, not of the socket. So the pool has to be the one
+       * that closes first, with enough margin for a connection checked out at
+       * the moment the timer expires.
+       */
+      idleTimeout: 10_000,
+
+      /*
+       * How many idle connections are kept.
+       *
+       * Two, not eight. The per-user connection cap on shared hosting is the
+       * binding constraint (see the file header), and eight idle connections
+       * held against a shop with no visitors is eight connections another
+       * process on the same account cannot have.
+       */
+      maxIdle: 2,
+
       // Epoch milliseconds are stored in BIGINT. mysql2 returns BIGINT as a
       // JS number unless asked otherwise, and every value in this schema is
       // far inside Number.MAX_SAFE_INTEGER (an epoch-millisecond timestamp is
@@ -285,6 +315,74 @@ export class MariaDbDatabase implements InteractiveSqlDatabase {
      * see docs/hostinger/environment-reference.md.
      */
     this.pool = mysql.createPool(config.ssl ? { ...options, ssl: config.ssl } : options);
+
+    /*
+     * ── THE APPLICATION BRINGS ITS OWN sql_mode ─────────────────────────────
+     *
+     * Hostinger's MariaDB runs with:
+     *
+     *     NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION
+     *
+     * There is no STRICT_TRANS_TABLES in it. Everything in this migration was
+     * built and tested against a server that HAD it, and the difference is not
+     * cosmetic — without strict mode MariaDB does not refuse bad data, it
+     * quietly changes it:
+     *
+     *   - a string longer than its column is TRUNCATED and the row is saved,
+     *     so a 300-character product name becomes 255 characters and nobody is
+     *     told;
+     *   - a value that is not a number becomes 0, which for money is a price
+     *     of nothing;
+     *   - a missing value for a NOT NULL column without a default becomes ''
+     *     or 0 rather than an error.
+     *
+     * The project has a test named "strict-mode truncation" precisely because
+     * this class of silent corruption is the one a shop cannot recover from:
+     * there is no error to find in a log, only wrong data discovered later.
+     *
+     * So the mode is set per connection rather than inherited. It makes the
+     * developer's MariaDB and the merchant's behave identically, and it means a
+     * hosting provider changing a default cannot change what this application
+     * considers a valid write.
+     *
+     * ERROR_FOR_DIVISION_BY_ZERO is included for the same reason: 1/0 is NULL
+     * without it, and a NULL that should have been an error propagates.
+     */
+    this.pool.on("connection", (connection) => {
+      /*
+       * Queued synchronously, so it is the first command on this connection.
+       *
+       * mysql2 runs commands per connection in FIFO order and this handler runs
+       * before the connection is handed to whoever asked for it, so no query
+       * can reach the server ahead of it.
+       */
+      /*
+       * The CALLBACK form, and the cast is the reason this comment exists.
+       *
+       * `mysql2/promise`'s pool emits the CORE connection from this event, not
+       * the promise wrapper — the typings say otherwise. Calling the promise
+       * API on it does not reject, it returns an object whose `.catch()` mysql2
+       * refuses to honour, and the command never completes: the pool then waits
+       * forever for a connection that is stuck mid-handshake. That is a hang
+       * with no error, which is how it was found — a test run that never
+       * finished rather than one that failed.
+       */
+      const core = connection as unknown as {
+        query: (sql: string, callback: (error: unknown) => void) => void;
+      };
+
+      core.query(
+        "SET SESSION sql_mode = 'STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'",
+        (error: unknown) => {
+          if (error) {
+            // Loud, not swallowed. A connection running in the wrong mode is a
+            // connection that accepts data this application considers invalid,
+            // and that must not be a surprise discovered in the data months later.
+            console.error("[mariadb] could not set sql_mode on a new connection:", error);
+          }
+        },
+      );
+    });
   }
 
   prepare(sql: string): SqlStatement {

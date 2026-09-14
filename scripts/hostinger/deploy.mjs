@@ -87,7 +87,19 @@ const PAYLOAD = [
   "package.json",
   "package-lock.json",
   "db/mariadb/migrations",
-  "scripts/hostinger/run-job.mjs",
+  /*
+   * The maintenance scripts travel with the release.
+   *
+   * `migrate.mjs` and `import-mariadb.mjs` need a database connection, and on
+   * shared hosting the database listens on localhost only — so they cannot be
+   * run from a developer machine at all. They have to run on the server, which
+   * means they have to be there, and they have to be the versions that match
+   * this build rather than whatever a previous deploy left behind.
+   *
+   * They need nothing but `mysql2`, which `npm ci` installs as a production
+   * dependency.
+   */
+  "scripts/hostinger",
 ];
 
 function say(step, detail = "") {

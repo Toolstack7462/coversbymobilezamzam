@@ -57,6 +57,7 @@ const USER = process.env.HOSTINGER_SSH_USER ?? "";
 const HOME = `/home/${USER}`;
 const APP_ROOT = `${HOME}/domains/${DOMAIN}/current`;
 const DOCROOT = `${HOME}/domains/${DOMAIN}/public_html`;
+const SECRETS_FILE = flag("secrets-file", `${HOME}/zamzam-private/secrets.env`);
 
 /**
  * Every variable the application needs, and whether it may be absent.
@@ -65,14 +66,26 @@ const DOCROOT = `${HOME}/domains/${DOMAIN}/public_html`;
  * means no transactional email, not email that silently fails — which is why
  * the server accepts their absence and this script does not invent them.
  */
-const REQUIRED = [
-  "APP_BASE_URL",
-  "DB_HOST",
-  "DB_NAME",
-  "DB_USER",
-  "DB_PASSWORD",
+const REQUIRED = ["APP_BASE_URL", "DB_HOST", "DB_NAME", "DB_USER", "DB_PASSWORD"];
+
+/**
+ * Secrets that are NOT passed in, and never travel.
+ *
+ * They are generated on the server, live in a 0600 file outside the web root,
+ * and are merged into `.htaccess` by a command that runs there. They do not
+ * appear in this process, in a shell history, in a terminal scrollback, or in
+ * the argument list of any local command.
+ *
+ * That matters most for the two that cannot be regenerated without cost:
+ * rotating BETTER_AUTH_SECRET invalidates every session AND makes existing
+ * TOTP enrolments unreadable, and rotating SETTINGS_ENCRYPTION_KEY makes the
+ * merchant's saved payment identifiers undecryptable.
+ */
+const SERVER_SIDE_SECRETS = [
   "BETTER_AUTH_SECRET",
   "SETTINGS_ENCRYPTION_KEY",
+  "JOB_AUTH_SECRET",
+  "INITIAL_ADMIN_SETUP_TOKEN",
 ];
 
 const OPTIONAL = [
@@ -85,8 +98,6 @@ const OPTIONAL = [
   "PRIVATE_MEDIA_ROOT",
   "PUBLIC_MEDIA_BASE_URL",
   "TRUSTED_HOSTS",
-  "INITIAL_ADMIN_SETUP_TOKEN",
-  "JOB_AUTH_SECRET",
   "TOTP_ISSUER",
   "TURNSTILE_SITE_KEY",
   "TURNSTILE_SECRET_KEY",
@@ -208,14 +219,48 @@ await withSsh(async (ssh) => {
   // be undoable without reconstructing it from memory at the wrong hour.
   await ssh.run(`[ -f ${DOCROOT}/.htaccess ] && cp ${DOCROOT}/.htaccess ${DOCROOT}/.htaccess.bak`);
 
-  await ssh.write(htaccess, `${DOCROOT}/.htaccess`);
+  const missingSecrets = await ssh.run(
+    SERVER_SIDE_SECRETS.map((name) => `grep -q '^${name}=' ${SECRETS_FILE} || echo ${name}`).join(
+      "; ",
+    ),
+  );
+  const absent = missingSecrets.out.trim().split("\n").filter(Boolean);
+  if (absent.length > 0) {
+    throw new Error(
+      `${SECRETS_FILE} is missing: ${absent.join(", ")}\n\n` +
+        `Generate them on the server. They are deliberately not created from here:\n` +
+        `a secret that was ever on a developer machine is a secret that was in a\n` +
+        `shell history.`,
+    );
+  }
+
+  /*
+   * The partial goes up; the secrets are appended where they already live.
+   *
+   * `printf '%s\\n'` rather than `echo`, because a generated secret can contain
+   * a backslash and `echo` would interpret it. The values are read and written
+   * by the shell on the server and never cross the connection.
+   */
+  await ssh.write(htaccess, `${DOCROOT}/.htaccess.partial`);
+  await mustRun(
+    ssh,
+    `cd ${DOCROOT} && cp .htaccess.partial .htaccess.new && ` +
+      `while IFS='=' read -r name value; do ` +
+      `case "$name" in ''|'#'*) continue;; esac; ` +
+      `printf 'SetEnv %s "%s"\\n' "$name" "$value" >> .htaccess.new; ` +
+      `done < ${SECRETS_FILE} && ` +
+      `mv -f .htaccess.new .htaccess && rm -f .htaccess.partial`,
+    "merging server-side secrets",
+  );
   await mustRun(ssh, `chmod 644 ${DOCROOT}/.htaccess`, "chmod");
 
   const count = htaccess.split("\n").filter((l) => l.startsWith("SetEnv ")).length;
   console.log(`  wrote ${DOCROOT}/.htaccess`);
   console.log(`  app root       ${APP_ROOT}`);
   console.log(`  node           ${NODE_BIN}`);
-  console.log(`  variables set  ${count}`);
+  console.log(
+    `  variables set  ${count} here + ${SERVER_SIDE_SECRETS.length} from ${SECRETS_FILE}`,
+  );
 
   await ssh.run(`mkdir -p ${APP_ROOT}/tmp && touch ${APP_ROOT}/tmp/restart.txt`);
   console.log(`  restarted`);

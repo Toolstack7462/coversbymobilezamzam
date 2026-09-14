@@ -10,7 +10,12 @@ import {
 } from "~/infrastructure/auth/session.server";
 import { createAuth } from "~/infrastructure/auth/auth.server";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
-import { money, format as formatMoney } from "~/domain/pricing/money";
+import {
+  money,
+  format as formatMoney,
+  formatPlain,
+  parseAmountToMinorUnits,
+} from "~/domain/pricing/money";
 import { formatDateTime } from "~/lib/i18n";
 import { verifyPayment, VerifyPaymentInput } from "~/application/commands/verify-payment";
 import { parseTableParams, type TableSpec } from "~/lib/table-params";
@@ -166,10 +171,36 @@ export async function action({ request, context }: Route.ActionArgs) {
   if (intent === "verify") {
     const rawAmount = String(form.get("amountReceived") ?? "").trim();
 
+    /*
+     * The amount is typed in EUROS and read with the same parser as every
+     * other price in the admin.
+     *
+     * It used to be `Number(rawAmount)` against a field labelled
+     * "(centesimi)". The prefill made the common path safe, but the moment the
+     * figure had to be CHANGED - which is exactly the partial-payment case -
+     * somebody who received ten euros typed "10" and recorded ten cents. And
+     * "34,90", the way the amount is written everywhere else on the screen,
+     * became NaN and came back as the generic "Dati non validi."
+     *
+     * Refused with a sentence rather than coerced: a misread amount here is a
+     * payment record that disagrees with the bank.
+     */
+    let amountReceived: number | undefined;
+    if (rawAmount !== "") {
+      try {
+        amountReceived = parseAmountToMinorUnits(rawAmount);
+      } catch {
+        return {
+          error: `Importo non leggibile: "${rawAmount}". Usa la forma 34,90.`,
+        };
+      }
+      if (amountReceived < 0) return { error: "L’importo ricevuto non può essere negativo." };
+    }
+
     const parsed = VerifyPaymentInput.safeParse({
       orderPaymentId: String(form.get("orderPaymentId") ?? ""),
       outcome: String(form.get("outcome") ?? ""),
-      amountReceived: rawAmount === "" ? undefined : Number(rawAmount),
+      amountReceived,
       transactionReference: String(form.get("transactionReference") ?? "").trim() || undefined,
       note: String(form.get("note") ?? "").trim() || undefined,
     });
@@ -383,16 +414,24 @@ export default function AdminPayments({ loaderData, actionData }: Route.Componen
 
                             <div className="field">
                               <label className="field__label" htmlFor={`amount-${row.id}`}>
-                                Importo ricevuto (centesimi)
+                                Importo ricevuto
                               </label>
+                              {/*
+                                type="text", not type="number".
+
+                                A number input will not accept "34,90" in every
+                                browser - the comma is simply refused in some -
+                                and it is the only way an Italian merchant
+                                writes an amount. inputMode="decimal" still
+                                brings up the numeric keypad on a phone.
+                              */}
                               <input
                                 id={`amount-${row.id}`}
                                 name="amountReceived"
-                                type="number"
-                                inputMode="numeric"
-                                min={0}
+                                type="text"
+                                inputMode="decimal"
                                 className="input numeric"
-                                defaultValue={row.amount_expected}
+                                defaultValue={formatPlain(money(row.amount_expected))}
                               />
                               <span className="field__hint">
                                 {formatMoney(money(row.amount_expected))} attesi

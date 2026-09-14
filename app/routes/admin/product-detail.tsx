@@ -554,9 +554,22 @@ export async function action({ request, params, context }: Route.ActionArgs) {
     const label = String(form.get("variantLabel") ?? "").trim() || null;
     const colour = String(form.get("colour") ?? "").trim() || null;
     const rawPrice = String(form.get("price") ?? "").trim();
-    const onHand = Math.max(0, Math.trunc(Number(form.get("onHand")) || 0));
+    /*
+     * Read strictly, like every other quantity in the admin.
+     *
+     * It was `Math.max(0, Math.trunc(Number(...) || 0))`, which turns anything
+     * unreadable into zero WITHOUT saying so: "12 pezzi", "1,5", a pasted
+     * "12 " with a non-breaking space - each one created a variant silently
+     * holding no stock. The adjustment screens next door already refuse a
+     * quantity they cannot read; this one guessed.
+     */
+    const rawOnHand = String(form.get("onHand") ?? "").trim();
+    const onHand = rawOnHand === "" ? 0 : Number(rawOnHand);
 
     if (sku === "") return { error: "Il codice SKU è obbligatorio." };
+    if (!Number.isInteger(onHand) || onHand < 0) {
+      return { error: "La giacenza iniziale deve essere un numero intero non negativo." };
+    }
     if (label === null && colour === null) {
       // Two variants that differ in nothing a customer can see are two rows the
       // shop cannot tell apart at the counter.

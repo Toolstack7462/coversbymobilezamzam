@@ -5,6 +5,51 @@ Notable changes. Newest first.
 Versions are not published to a registry, so entries are grouped by milestone
 rather than semver tag.
 
+## 2026-09-14 — storefront premium refinement (deployed)
+
+Released `a0f5ae2` to https://coversbymobile.com as
+`releases/2026-09-14T17-35-00Z`. Rollback checkpoint:
+`pre-release/storefront-premium-2026-09-14` (`0e98a14`).
+
+### Added
+
+- Storefront premium refinement: brand logo, favicon and apple-touch-icon,
+  reworked homepage and footer, cart and product presentation, an 881-line
+  scoped storefront stylesheet, and a `service` page type in the admin that the
+  new homepage section reads.
+- Product-image quarantine by object key, so suppressed stock photography
+  leaves a labelled, translated empty frame rather than an invented photo — and
+  a merchant upload takes effect immediately.
+- A `storefront` Playwright project: 5 routes at 390 / 768 / 1366 / 1440 px
+  with horizontal-overflow assertions and captured screenshots.
+- `tests/unit/server-config.test.ts` — one case per required environment
+  variable, missing and blank.
+
+### Fixed
+
+- **A missing database variable was reported after the check, not before.**
+  `server/config.ts` read the four `DB_*` values inside the returned object
+  literal, which is evaluated after `if (problems.length > 0) throw`. A
+  deployment missing `DB_HOST` started normally carrying empty credentials and
+  failed on the first query with a MySQL access-denied error for an empty user —
+  which reads like a wrong password on the database server, and sends you to
+  hPanel to check a credential that was never the problem. It now fails at
+  startup, naming the variable.
+- **The deploy guard refused the deployment system's own files.** Its
+  allow-list omitted `.htaccess.bak` and `tmp/`, both created by
+  `hostinger:configure` and Passenger, so every deploy after the first refused
+  to run. This blocked the first attempt at this release.
+
+### Known issues
+
+- Storefront route metadata is Italian on the English pages: `/en` serves
+  `lang="en"` and English content, but the `<title>` reads
+  `… | Accessori smartphone`. Systemic across storefront `meta()` functions.
+- Storefront JavaScript is at 135.0 KB of a 136.0 KB budget — 99%.
+- No email provider configured, so there is still no password reset.
+- Hostinger Git auto-deployment remains connected and fails harmlessly on every
+  push; it cannot serve an SSR application.
+
 ## Unreleased
 
 ### Added

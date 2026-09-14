@@ -1,14 +1,133 @@
 # Hostinger capability audit
 
-**Status: BLOCKED on access.** No Hostinger hPanel, SSH or API credential for this
-project is configured on the machine this migration is being built on, and none
-was supplied. Nothing below claims to have been observed on the merchant's
-actual plan. The documented facts come from Hostinger's own support pages and
-are cited; the unverified ones are listed as checks for the merchant to run,
-with the exact command or screen for each.
+**Status: PARTLY RESOLVED.** SSH access was supplied on 2026-09-14. **C-1
+(server-side Node.js) and C-3 (persistent storage) are proven on the real
+plan** — see §0, which is the only part of this document written from
+observation of the merchant's own server.
 
-This document is the gate. The migration does not deploy to Hostinger until
-§3 is filled in with real values.
+Everything below §0 was written while access was absent. It is kept rather than
+rewritten: the checks it specifies are still the checks, and the reasoning about
+what may not be assumed is what kept the work safe while it waited. Where §0
+contradicts it, §0 is right.
+
+Still blocked: **C-2** (a database has to be created in hPanel), **C-4** (cron
+is an hPanel screen), **C-6** (email) and **C-8** (backups).
+
+---
+
+## 0. RESOLVED, 2026-09-14 — SSH access granted, C-1 and C-3 proven on the real plan
+
+The merchant supplied SSH credentials. Everything in §1 below about absent
+access is now out of date and is kept only because the reasoning it records —
+in particular the refusal to guess that the host in `known_hosts` was the
+target — is what made it safe to wait.
+
+**It was not the target.** The account is `u995575981` on
+`fr-int-web1347.main-hosting.eu` (147.93.92.161, SSH port 65002), and it holds
+exactly one domain: **coversbymobile.com**. The existing unrelated website is on
+a different account entirely, so the "do not touch the other site" constraint is
+now structural rather than a matter of care.
+
+### The answer to the question §1 asks
+
+> is the application to be deployed into the _same_ Hostinger account as the
+> existing website, or a separate one?
+
+**A separate one.** `ls ~/domains` returns `coversbymobile.com` and nothing
+else. The home directory was provisioned the same morning.
+
+---
+
+## 0.1 C-1 — Server-side Node.js on the actual plan: **PROVEN**
+
+Not inferred from a plan name. A Node application was wired to the live domain,
+served a request, and was then removed.
+
+|                           |                                                                                                                                       |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Node runtimes present     | `/opt/alt/alt-nodejs{18,20,22,24}` → **v18.20.8, v20.19.4, v22.18.0, v24.6.0**                                                        |
+| Chosen for the deployment | **v20.19.4** (npm 10.8.2). The build targets node20 and `engines` asks for ≥20.                                                       |
+| Web server                | **LiteSpeed**, with `/usr/local/lsws/fcgi-bin/lsnode.js` — its Node application launcher                                              |
+| Wiring mechanism          | **`.htaccess` with Passenger directives** (`PassengerAppRoot`, `PassengerNodejs`, `PassengerAppType node`, `PassengerStartupFile`)    |
+| Proof                     | `https://coversbymobile.com/` returned `{"ok":true,"marker":"capability-check-C1","node":"v20.19.4","pid":2089948}`                   |
+| Process model             | **One persistent process.** 15 consecutive requests were served by the same pid; `ps` showed a single `lsnode:` process at 47 MB RSS. |
+| Restart                   | `touch <appRoot>/tmp/restart.txt`, the Passenger convention. Observed working.                                                        |
+| Configuration             | **`.htaccess` `SetEnv` reaches the process.** A probe variable and `NODE_ENV=production` both arrived in `process.env`.               |
+| Outbound network          | Yes — `fetch` to the npm registry returned 200.                                                                                       |
+| Cores visible             | 64 (shared host; the real limit is CloudLinux's per-account CPU allowance, not this number)                                           |
+
+### What "one persistent process" settles
+
+Three things this project spent effort on:
+
+- The **response cache** is worth what it was measured to be worth. It lives in
+  the heap of a process that survives between requests.
+- The **connection pool** is stable, so `DB_CONNECTION_LIMIT=8` means eight
+  connections rather than eight per request.
+- The **cross-worker cache version file** is, for now, insurance rather than
+  necessity. One process means one cache. It stays, because the number of
+  workers is Hostinger's decision and not ours, and the file costs nothing.
+
+### The memory ceiling: **at least 1.25 GB**
+
+The one number [load-test-results.md](load-test-results.md) said "should worry
+somebody". A probe allocated 50 MB at a time and was **not** stopped at 1,250 MB
+RSS.
+
+Measured demand under sustained load is **341–372 MB**. There is room, and the
+question is closed.
+
+### What the merchant's git deployment was doing, and why it produced nothing
+
+`hbuilds/logs/…/deploy.log` shows Hostinger's Git deployment ran `npm run build`
+on **the `main` branch** at 08:10 and finished with:
+
+```
+ERROR: No output directory found after build
+```
+
+It is a **static-site** deployment: it builds, then looks for a directory of
+files to publish. `npm run build` is the Cloudflare build, which produces a
+Worker bundle and a `build/client` — nothing that flow recognises. That is why
+the domain still serves Hostinger's parked `default.php`.
+
+An SSR application is not deployed that way. It is deployed by putting the built
+application in the app root and pointing `.htaccess` at it, which is what C-1
+proved works.
+
+---
+
+## 0.2 C-3 — Persistent storage outside the build directory: **PROVEN**
+
+`~/zamzam-storage/public` and `~/zamzam-private` were created, written to, and
+survived an application restart. Both are outside every deployment path, so a
+redeployment cannot reach them.
+
+The second half of C-3 — surviving a **full redeployment** — is now a property
+of a deployment method we control rather than a question about Hostinger, since
+the Git flow above does not apply. It is proven for real when the first real
+redeploy happens.
+
+---
+
+## 0.3 Still open after SSH
+
+| Check                                        | State                                                                                                                                                                                                                                                                                                                                                     | What it needs                    |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| **C-2** database engine and version          | **Blocked.** A MariaDB server answers on localhost — `mysql` returns `ERROR 1045 Access denied`, which is an authentication refusal and therefore proof the server is there — but no database or user exists on this account yet. The **client** is 11.8.9-MariaDB, which suggests an 11.x server and **not** the 10.11.19 everything was tested against. | hPanel → Databases. Credentials. |
+| **C-4** cron running Node                    | **Partly.** There is no `crontab` binary inside the CageFS jail, so cron is configured in hPanel only. `/opt/alt/alt-nodejs20/root/usr/bin/node` is an absolute path that works from a non-login shell, so the node launcher is viable; the `curl` launcher remains the fallback.                                                                         | hPanel → Advanced → Cron Jobs.   |
+| **C-6** mailbox and SMTP                     | **Untouched.**                                                                                                                                                                                                                                                                                                                                            | hPanel → Emails.                 |
+| **C-7** resource usage beside the other site | **Not applicable.** The other site is on a different account.                                                                                                                                                                                                                                                                                             |
+| **C-8** backup coverage                      | **Untouched.**                                                                                                                                                                                                                                                                                                                                            | hPanel → Backups.                |
+
+### The one finding that needs acting on
+
+**The server is probably MariaDB 11.x, not 10.11.19.** Every schema test, the
+reserved-word list and the dialect translator were built against 10.11.19.
+Reserved words differ between major versions — `lines` was already found the
+hard way on 10.11 — so `npm run hostinger:reserved-words` must be re-run
+against the real server before cutover, and the MariaDB integration suite
+pointed at it. That is a one-command check, and it is on the critical path.
 
 ---
 

@@ -144,8 +144,23 @@ async function waitForHealth(timeoutMs = 30_000) {
  * only the failed expectation.
  */
 export async function startLocalServer({ env = {}, quiet = true } = {}) {
+  /*
+   * Build it if it is not there, rather than telling somebody to.
+   *
+   * `npm run verify` runs the CLOUDFLARE build, and both builds write to
+   * `build/` — so running verify deletes `build/server-node` and every script
+   * that needs the Node server fails immediately afterwards. That is a real
+   * trap: the suites pass individually, and the second one run in a session
+   * fails with what looks like a missing build step.
+   */
   if (!fs.existsSync(ENTRY)) {
-    throw new Error(`No server build at ${ENTRY}. Run \`npm run build:hostinger\` first.`);
+    console.log("[local-server] no Node build present — running build:hostinger");
+    const { execFileSync } = await import("node:child_process");
+    execFileSync("npm", ["run", "build:hostinger"], { stdio: "pipe", shell: true });
+  }
+
+  if (!fs.existsSync(ENTRY)) {
+    throw new Error(`Still no server build at ${ENTRY} after building.`);
   }
 
   await refuseIfOccupied();

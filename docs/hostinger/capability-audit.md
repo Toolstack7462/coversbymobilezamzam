@@ -22,8 +22,8 @@ access is now out of date and is kept only because the reasoning it records —
 in particular the refusal to guess that the host in `known_hosts` was the
 target — is what made it safe to wait.
 
-**It was not the target.** The account is `u995575981` on
-`fr-int-web1347.main-hosting.eu` (147.93.92.161, SSH port 65002), and it holds
+**It was not the target.** The account is `<account>` on
+`<assigned shared host>` (<host IP>, SSH port 65002), and it holds
 exactly one domain: **coversbymobile.com**. The existing unrelated website is on
 a different account entirely, so the "do not touch the other site" constraint is
 now structural rather than a matter of care.
@@ -133,12 +133,12 @@ pointed at it. That is a one-command check, and it is on the critical path.
 
 ## 1. What access exists, and what does not
 
-| Access             | State         | Evidence                                                                                                                                                                               |
-| ------------------ | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Cloudflare account | **Available** | `wrangler whoami` — OAuth token, `genzdigitaltools7462@gmail.com`, account `1f6bb660…f864d1`, d1/workers/pages write                                                                   |
-| GitHub remote      | **Available** | `github.com/Toolstack7462/coversbymobilezamzam.git`, pushes succeed                                                                                                                    |
-| Hostinger hPanel   | **Absent**    | No Hostinger MCP connector is configured (`claude mcp` lists only an unrelated server); no API token in the environment                                                                |
-| Hostinger SSH      | **Absent**    | `~/.ssh/known_hosts` holds one host on Hostinger's SSH port (`147.79.103.253:65002`), but no username is known and key-only auth is refused (`Permission denied (publickey,password)`) |
+| Access             | State         | Evidence                                                                                                                                                                        |
+| ------------------ | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cloudflare account | **Available** | `wrangler whoami` — OAuth token, `genzdigitaltools7462@gmail.com`, account `1f6bb660…f864d1`, d1/workers/pages write                                                            |
+| GitHub remote      | **Available** | `github.com/Toolstack7462/coversbymobilezamzam.git`, pushes succeed                                                                                                             |
+| Hostinger hPanel   | **Absent**    | No Hostinger MCP connector is configured (`claude mcp` lists only an unrelated server); no API token in the environment                                                         |
+| Hostinger SSH      | **Absent**    | `~/.ssh/known_hosts` holds one host on Hostinger's SSH port (`<an IP>:65002`), but no username is known and key-only auth is refused (`Permission denied (publickey,password)`) |
 
 ### The host in known_hosts is not assumed to be the target
 

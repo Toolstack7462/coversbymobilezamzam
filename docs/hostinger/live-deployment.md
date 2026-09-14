@@ -9,14 +9,14 @@ in it was observed.
 
 ## 1. What is live
 
-|            |                                                                                                                            |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------- |
-| URL        | **https://coversbymobile.com**                                                                                             |
-| Account    | `u995575981` on `fr-int-web1347.main-hosting.eu` — **only this site**, the merchant's other website is a different account |
-| Runtime    | Node **v20.19.4** (`/opt/alt/alt-nodejs20`), one persistent process under LiteSpeed                                        |
-| Database   | **MariaDB 11.8.9**, `u995575981_Coversbymobile`, 103 InnoDB tables                                                         |
-| Storage    | `~/zamzam-storage/public` (media), `~/zamzam-private` (proofs, secrets) — both outside every deployment path               |
-| Cloudflare | **Untouched and still serving.** Nothing has been deleted, no DNS moved.                                                   |
+|            |                                                                                                                   |
+| ---------- | ----------------------------------------------------------------------------------------------------------------- |
+| URL        | **https://coversbymobile.com**                                                                                    |
+| Account    | `<account>` on `<assigned shared host>` — **only this site**, the merchant's other website is a different account |
+| Runtime    | Node **v20.19.4** (`/opt/alt/alt-nodejs20`), one persistent process under LiteSpeed                               |
+| Database   | **MariaDB 11.8.9**, `<database>`, 103 InnoDB tables                                                               |
+| Storage    | `~/zamzam-storage/public` (media), `~/zamzam-private` (proofs, secrets) — both outside every deployment path      |
+| Cloudflare | **Untouched and still serving.** Nothing has been deleted, no DNS moved.                                          |
 
 Migrated: **1,864 rows across 100 tables**, reconciled against the export
 manifest with zero rejections and zero differences, and **36 media objects**,
@@ -67,6 +67,14 @@ explanation anywhere.
 ---
 
 ## 3. Credentials
+
+> **This repository is public.** Account identifiers in this document are
+> written as `<account>`, `<database>` and `<assigned shared host>` on purpose.
+> Earlier revisions of this file and of
+> [capability-audit.md](capability-audit.md) contained the real values, and git
+> history is permanent — no password was ever published, but the SSH username,
+> host and port were, and password authentication is enabled on that port.
+> **Rotating the SSH password is worth doing.** The real values are in hPanel.
 
 **Nothing is in the repository.** The four application secrets were generated
 **on the server**, live in `~/zamzam-private/secrets.env` at mode `0600`, and
@@ -153,7 +161,7 @@ hPanel action a person takes. The dump itself is proven complete and loadable.
 Needed once, because the old secret cannot be decrypted. It weakens nothing —
 the existing factor is already unusable.
 
-In hPanel → Databases → phpMyAdmin, on `u995575981_Coversbymobile`:
+In hPanel → Databases → phpMyAdmin, on `<database>`:
 
 ```sql
 DELETE FROM two_factor;

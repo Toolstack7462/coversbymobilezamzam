@@ -99,6 +99,14 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
+      - name: Upload admin visual evidence
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: admin-visual-evidence
+          path: test-results/admin-visual/*.png
+          retention-days: 14
+
   storefront:
     name: Storefront visual review
     runs-on: ubuntu-latest

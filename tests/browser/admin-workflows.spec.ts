@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { STORAGE_STATE } from "./helpers/admin-session";
+import { pngFixture } from "./helpers/image-fixture";
 
 /**
  * The tasks a merchant actually performs, end to end, through the real UI.
@@ -629,5 +630,221 @@ test.describe("duplicating a product", () => {
     await page.goto(original, { waitUntil: "networkidle" });
     await expect(page.locator("h1")).not.toContainText(/\(copia\)/i);
     await expect(page.locator("#sez-varianti")).toContainText("DEMO-CHG-25W-WHT");
+  });
+});
+
+test.describe("the media manager", () => {
+  /**
+   * Photographs are ~94% of the weight of a product page and the single thing
+   * a customer looks at first, and until now not one line of the gallery had a
+   * browser test. It was listed as "no browser proof" in three documents.
+   *
+   * The fixture is a real PNG built byte by byte — a genuine IHDR, a real
+   * deflate-compressed IDAT and real CRCs — because the upload path does not
+   * trust the browser's MIME type and reads the format from the file's own
+   * magic bytes. A one-pixel image would be correctly rejected: the minimum is
+   * 200 per side, on the reasoning that anything smaller is a thumbnail
+   * somebody saved by mistake.
+   *
+   * Desktop only. It writes shared rows, and the two projects share one server
+   * and one database.
+   */
+  test("uploads a photo, describes it, reorders it and deletes it", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === "mobile", "writes shared rows");
+
+    await page.goto("/admin/prodotti/prod_demo_incomplete");
+    await page.locator("#sez-foto").scrollIntoViewIfNeeded();
+
+    const before = await page.locator("#sez-foto li.ac-thumb").count();
+
+    // ── Upload ──────────────────────────────────────────────────────────────
+    await page.setInputFiles("#image", {
+      name: "prova-uno.png",
+      mimeType: "image/png",
+      buffer: pngFixture(400, 400, [12, 34, 56]),
+    });
+    await page.fill("#alt", "Supporto magnetico visto di fronte");
+    await Promise.all([
+      page.waitForResponse((r) => r.request().method() === "POST" && r.status() < 400),
+      page.getByRole("button", { name: /carica foto/i }).click(),
+    ]);
+    await page.waitForLoadState("networkidle");
+
+    await expect(page.locator("#sez-foto li.ac-thumb")).toHaveCount(before + 1);
+
+    /*
+     * The dimensions come from the FILE, not from the form.
+     *
+     * `product_images.width` and `height` are not null so the storefront can
+     * reserve the space a photo will occupy before it loads. A merchant cannot
+     * be asked for pixel dimensions, so they are parsed out of the header —
+     * and 400×400 on the screen is the proof that parsing happened.
+     */
+    await expect(page.locator("#sez-foto")).toContainText("400×400");
+
+    // ── Alt text, after the fact ────────────────────────────────────────────
+    //
+    // The whole point of the change: the "senza descrizione" badge used to be
+    // unactionable, so a photo uploaded without a description could only be
+    // fixed by deleting it and starting again.
+    await page.setInputFiles("#image", {
+      name: "prova-due.png",
+      mimeType: "image/png",
+      buffer: pngFixture(400, 400, [200, 30, 30]),
+    });
+    /*
+     * Cleared explicitly.
+     *
+     * The upload form re-renders on the client after a submit rather than
+     * reloading, so an uncontrolled text input keeps whatever was typed into
+     * it. Without this the second photo silently inherits the first one's
+     * description, and the "no description" case this test exists for never
+     * happens.
+     */
+    await page.fill("#alt", "");
+    await Promise.all([
+      page.waitForResponse((r) => r.request().method() === "POST" && r.status() < 400),
+      page.getByRole("button", { name: /carica foto/i }).click(),
+    ]);
+    await page.waitForLoadState("networkidle");
+
+    const undescribed = page.locator("#sez-foto li.ac-thumb").filter({
+      hasText: /senza descrizione/,
+    });
+    await expect(undescribed).toHaveCount(1);
+
+    await undescribed.locator("input[name='alt']").fill("Supporto magnetico visto di lato");
+    await Promise.all([
+      page.waitForResponse((r) => r.request().method() === "POST" && r.status() < 400),
+      undescribed.getByRole("button", { name: /salva descrizione/i }).click(),
+    ]);
+    await page.waitForLoadState("networkidle");
+
+    // The badge is gone because the description is there — read back from the
+    // server, not from the banner.
+    await expect(
+      page.locator("#sez-foto li.ac-thumb").filter({ hasText: /senza descrizione/ }),
+    ).toHaveCount(0);
+    await expect(page.locator("#sez-foto li.ac-thumb input[name='alt']").last()).toHaveValue(
+      "Supporto magnetico visto di lato",
+    );
+
+    // ── Order ───────────────────────────────────────────────────────────────
+    //
+    // Three photos are needed to reorder anything, because the primary is
+    // pinned at the top and the arrows order the rest. With two, the only
+    // movable photo is both first and last.
+    await page.setInputFiles("#image", {
+      name: "prova-tre.png",
+      mimeType: "image/png",
+      buffer: pngFixture(400, 400, [30, 180, 90]),
+    });
+    await page.fill("#alt", "Supporto magnetico visto da dietro");
+    await Promise.all([
+      page.waitForResponse((r) => r.request().method() === "POST" && r.status() < 400),
+      page.getByRole("button", { name: /carica foto/i }).click(),
+    ]);
+    await page.waitForLoadState("networkidle");
+
+    const thumbs = page.locator("#sez-foto li.ac-thumb");
+
+    /*
+     * Wait for the third thumbnail before reading anything.
+     *
+     * Every assertion below auto-waits, but `evaluateAll` does not: reading the
+     * descriptions a tick early returns two of three, and the failure then
+     * looks like a reorder that lost a photo rather than a read that was early.
+     */
+    await expect(thumbs).toHaveCount(3);
+
+    /*
+     * The primary photo has NO arrows.
+     *
+     * Every consumer sorts `is_primary DESC, sort_order`, so it leads whatever
+     * its sort_order says. Giving it arrows produced a control that swapped two
+     * numbers and changed no order at all — which looks exactly like a control
+     * that worked, and is the reason this assertion exists.
+     */
+    await expect(thumbs.first()).toContainText("Sempre per prima");
+    await expect(thumbs.first().getByRole("button", { name: /più in alto/ })).toHaveCount(0);
+
+    // The ends are disabled rather than hidden, so the control does not move
+    // under the pointer as photos are reordered.
+    await expect(thumbs.nth(1).getByRole("button", { name: /più in alto/ })).toBeDisabled();
+    await expect(thumbs.last().getByRole("button", { name: /più in basso/ })).toBeDisabled();
+
+    const readAlts = () =>
+      page
+        .locator("#sez-foto li.ac-thumb input[name='alt']")
+        .evaluateAll((nodes) => nodes.map((n) => (n as HTMLInputElement).value));
+
+    const altsBefore = await readAlts();
+
+    await Promise.all([
+      page.waitForResponse((r) => r.request().method() === "POST" && r.status() < 400),
+      thumbs
+        .last()
+        .getByRole("button", { name: /più in alto/ })
+        .click(),
+    ]);
+    await page.waitForLoadState("networkidle");
+
+    /*
+     * Read the order back after a RELOAD, not after the client re-render.
+     *
+     * The success banner appears as soon as the action returns; the list is
+     * repainted a tick later, so reading it immediately compares against the
+     * order that was there before. And a reload is the only evidence the new
+     * order was written rather than drawn.
+     */
+    const altsAfter = await reloadAnd(page, readAlts);
+
+    expect(altsAfter).not.toEqual(altsBefore);
+    // The same photos, in a different order — nothing gained or lost.
+    expect([...altsAfter].sort()).toEqual([...altsBefore].sort());
+
+    // The primary is still first: the arrows order the rest, they do not
+    // promote anything past it.
+    expect(altsAfter[0]).toBe(altsBefore[0]);
+
+    // ── Delete asks first ───────────────────────────────────────────────────
+    //
+    // And asks in the MARKUP. `confirm()` would fail open: with no script the
+    // click deletes the photo and nothing is asked at all.
+    const doomed = page.locator("#sez-foto li.ac-thumb").last();
+    const confirm = doomed.locator("details.ac-confirm");
+    await expect(confirm.getByRole("button", { name: /sì, elimina/i })).toBeHidden();
+
+    await confirm.locator("summary").click();
+    await expect(confirm.getByRole("button", { name: /sì, elimina/i })).toBeVisible();
+
+    const count = await page.locator("#sez-foto li.ac-thumb").count();
+    await Promise.all([
+      page.waitForResponse((r) => r.request().method() === "POST" && r.status() < 400),
+      confirm.getByRole("button", { name: /sì, elimina/i }).click(),
+    ]);
+    await page.waitForLoadState("networkidle");
+
+    await expect(page.locator("#sez-foto li.ac-thumb")).toHaveCount(count - 1);
+  });
+
+  test("refuses an image that is too small to be a product photo", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === "mobile", "writes shared rows");
+
+    // 100×100 is a favicon somebody saved by mistake, not a photograph of a
+    // phone case. The refusal has to be a sentence, not a silent no-op.
+    await page.goto("/admin/prodotti/prod_demo_incomplete");
+    await page.setInputFiles("#image", {
+      name: "troppo-piccola.png",
+      mimeType: "image/png",
+      buffer: pngFixture(100, 100),
+    });
+    await Promise.all([
+      page.waitForResponse((r) => r.request().method() === "POST"),
+      page.getByRole("button", { name: /carica foto/i }).click(),
+    ]);
+    await page.waitForLoadState("networkidle");
+
+    await expect(page.getByRole("alert")).toContainText(/200/);
   });
 });

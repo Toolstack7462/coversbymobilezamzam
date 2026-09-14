@@ -115,6 +115,23 @@ dice. Non è un errore: è che nessuno sa ancora che cosa chiedervi.
 I numeri si scrivono come vengono: **10.000** e **10000** vanno bene entrambi.
 Una lunghezza in millimetri: un cavo da un metro è **1000**.
 
+### Le foto
+
+Nella sezione **Foto** di ogni prodotto:
+
+- **Aggiungete** una foto scattata col telefono. JPG, PNG o WebP, almeno 200
+  pixel per lato. I file SVG non sono accettati.
+- **Descrivetela.** La descrizione si può scrivere anche dopo: se una foto ha
+  l'etichetta _senza descrizione_, c'è una casella sotto per aggiungerla.
+  Serve a chi non vede la foto — chi usa un lettore di schermo, e chiunque
+  quando l'immagine non carica.
+- **Ordinatele** con le frecce ↑ ↓.
+- **Eliminatene** una: il pannello chiede conferma prima.
+
+> **La foto principale sta sempre per prima** e non ha le frecce. Per cambiarla,
+> premete **Rendi principale** su un'altra foto. Le frecce ordinano tutte le
+> altre.
+
 ### Duplicare un prodotto
 
 Lo stesso articolo in un altro colore non si riscrive da capo. In fondo alla

@@ -824,6 +824,144 @@ export async function action({ request, params, context }: Route.ActionArgs) {
     return { success: "Immagine principale aggiornata." };
   }
 
+  /*
+   * ── ALT TEXT, AFTER THE FACT ────────────────────────────────────────────
+   *
+   * The gallery has always shown a "senza descrizione" warning on a photo with
+   * no alt text, and there was no way to act on it: alt could only be set
+   * during upload, so the only route to fixing one was to delete the photo and
+   * upload it again.
+   *
+   * A warning a merchant cannot act on is worse than no warning. It teaches
+   * them that the badges on this screen are decoration.
+   */
+  if (intent === "save-image-alt") {
+    const actor = await requireStaff(request, env, "product.write");
+    const id = String(form.get("imageId") ?? "");
+    const alt = String(form.get("alt") ?? "").trim();
+
+    const image = await env.DB.prepare(
+      `SELECT id FROM product_images WHERE id = ?1 AND product_id = ?2`,
+    )
+      .bind(id, productId)
+      .first<{ id: string }>();
+    // Scoped to THIS product, so an id belonging to another product's photo is
+    // not editable by anybody who can guess one.
+    if (!image) return { error: "Immagine non trovata." };
+
+    if (alt.length > 200)
+      return { error: "La descrizione è troppo lunga (massimo 200 caratteri)." };
+
+    await env.DB.batch([
+      // An empty box CLEARS it rather than storing "". A photo with no
+      // description and a photo described as nothing are the same thing, and
+      // the warning badge keys on NULL.
+      env.DB.prepare(`UPDATE product_images SET alt_it = ?1 WHERE id = ?2`).bind(
+        alt === "" ? null : alt,
+        id,
+      ),
+      audit(actor.userId, actor.displayName, "product.image.alt", "product_image", id, null, {
+        alt: alt === "" ? null : alt,
+      }),
+    ]);
+
+    return { success: alt === "" ? "Descrizione rimossa." : "Descrizione salvata.", savedAt: now };
+  }
+
+  /*
+   * ── ORDER ───────────────────────────────────────────────────────────────
+   *
+   * `sort_order` decides the order of the gallery on the product page and has
+   * never been editable. "Rendi principale" moves ONE photo to the front; it
+   * says nothing about the other four, and a merchant photographing a case
+   * from the front, the back and the side has an opinion about which comes
+   * second.
+   *
+   * A swap with the neighbour rather than a drag-and-drop list: a swap works
+   * with no JavaScript, works with a keyboard, works on a phone, and is two
+   * buttons instead of a component.
+   */
+  if (intent === "move-image") {
+    const actor = await requireStaff(request, env, "product.write");
+    const id = String(form.get("imageId") ?? "");
+    const direction = String(form.get("direction") ?? "");
+    if (direction !== "up" && direction !== "down") {
+      return { error: "Direzione non valida." };
+    }
+
+    /*
+     * Read the whole gallery and swap in memory.
+     *
+     * `sort_order` is not guaranteed to be contiguous — a delete leaves a gap,
+     * and every row imported at once starts at zero — so "find the row with
+     * sort_order - 1" finds nothing. Position in the ORDERED list is the only
+     * reliable notion of "the one above".
+     */
+    /*
+     * The PRIMARY photo is pinned and is not part of the ordering.
+     *
+     * Every consumer of this gallery sorts `is_primary DESC, sort_order`, so a
+     * primary photo is first whatever its sort_order says. Including it here
+     * produced a button that did nothing: pressing ↑ on the second photo swapped
+     * two numbers and changed no order at all, which is the worst kind of
+     * control — it looks like it worked.
+     *
+     * So "principale" answers which photo leads, and the arrows answer the
+     * order of the rest. Two controls, two questions, neither pretending to
+     * override the other.
+     */
+    const { results: gallery } = await env.DB.prepare(
+      `SELECT id, sort_order FROM product_images
+        WHERE product_id = ?1 AND is_primary = 0 ORDER BY sort_order, id`,
+    )
+      .bind(productId)
+      .all<{ id: string; sort_order: number }>();
+
+    const index = gallery.findIndex((row) => row.id === id);
+    if (index === -1) {
+      return {
+        error:
+          "La foto principale è sempre la prima. Per cambiarla, rendete principale un'altra foto.",
+      };
+    }
+
+    const target = direction === "up" ? index - 1 : index + 1;
+    if (target < 0 || target >= gallery.length) {
+      return { error: "La foto è già in fondo o in cima." };
+    }
+
+    /*
+     * Renumber the WHOLE gallery from the swapped order.
+     *
+     * Swapping just the two `sort_order` values fails whenever they are equal
+     * — which they are for everything the importer created — and the symptom
+     * is a button that does nothing. Rewriting all of them costs one statement
+     * per photo on a list capped at twenty, and it leaves the column
+     * contiguous, which is the state everything else assumes.
+     */
+    const reordered = [...gallery];
+    const moved = reordered[index];
+    const other = reordered[target];
+    if (moved === undefined || other === undefined) return { error: "Immagine non trovata." };
+    reordered[index] = other;
+    reordered[target] = moved;
+
+    await env.DB.batch([
+      ...reordered.map((row, position) =>
+        env.DB.prepare(`UPDATE product_images SET sort_order = ?1 WHERE id = ?2`).bind(
+          position,
+          row.id,
+        ),
+      ),
+      audit(actor.userId, actor.displayName, "product.image.reorder", "product_image", id, null, {
+        direction,
+        order: reordered.map((row) => row.id),
+      }),
+    ]);
+
+    return { success: "Ordine delle foto aggiornato." };
+  }
+
   if (intent === "delete-image") {
     const actor = await requireStaff(request, env, "product.write");
     const id = String(form.get("imageId") ?? "");
@@ -1973,7 +2111,13 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
           </div>
         ) : (
           <ul className="ac-thumbs">
-            {images.map((image) => (
+            {/*
+              The first photo the arrows can move.
+
+              The primary is pinned at the top, so "already at the top" means
+              "first among the ones that can move", not index zero.
+            */}
+            {images.map((image, index, all) => (
               <li key={image.id} className="ac-thumb">
                 <img
                   src={`${mediaBaseUrl}/${image.object_key}`}
@@ -2001,23 +2145,119 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
                 </div>
 
                 {canWrite ? (
-                  <div className="cluster">
-                    {image.is_primary === 0 ? (
-                      <Form method="post">
-                        <input type="hidden" name="intent" value="set-primary-image" />
-                        <input type="hidden" name="imageId" value={image.id} />
-                        <button type="submit" className="btn btn--ghost btn--small">
-                          Rendi principale
-                        </button>
-                      </Form>
-                    ) : null}
-                    <Form method="post">
-                      <input type="hidden" name="intent" value="delete-image" />
+                  <div className="stack">
+                    {/*
+                      Alt text, editable HERE.
+
+                      The "senza descrizione" badge above has always been
+                      right and, until now, unactionable: alt could only be set
+                      while uploading, so fixing one meant deleting the photo
+                      and uploading it again. A warning a merchant cannot act
+                      on teaches them the badges are decoration.
+                    */}
+                    <Form method="post" className="cluster">
+                      <input type="hidden" name="intent" value="save-image-alt" />
                       <input type="hidden" name="imageId" value={image.id} />
+                      <label className="visually-hidden" htmlFor={`alt-${image.id}`}>
+                        Descrizione della foto {index + 1}
+                      </label>
+                      <input
+                        id={`alt-${image.id}`}
+                        name="alt"
+                        className="input"
+                        maxLength={200}
+                        defaultValue={image.alt_it ?? ""}
+                        placeholder="Cosa si vede nella foto"
+                      />
                       <button type="submit" className="btn btn--ghost btn--small">
-                        Elimina
+                        Salva descrizione
                       </button>
                     </Form>
+
+                    <div className="cluster">
+                      {/*
+                        Order, as two buttons rather than a drag-and-drop list.
+
+                        A swap with the neighbour works with no JavaScript,
+                        works with a keyboard, works on a phone, and is two
+                        buttons instead of a component. The ends are disabled
+                        rather than hidden, so the control does not move under
+                        the pointer as photos are reordered.
+
+                        The PRIMARY photo has no arrows. Every consumer sorts
+                        `is_primary DESC, sort_order`, so it leads whatever its
+                        sort_order says — giving it arrows produced a button
+                        that swapped two numbers and changed nothing, which
+                        looks exactly like a button that worked.
+                      */}
+                      {image.is_primary === 1 ? (
+                        <span className="small muted">Sempre per prima</span>
+                      ) : (
+                        <>
+                          <Form method="post">
+                            <input type="hidden" name="intent" value="move-image" />
+                            <input type="hidden" name="imageId" value={image.id} />
+                            <input type="hidden" name="direction" value="up" />
+                            <button
+                              type="submit"
+                              className="btn btn--ghost btn--small"
+                              disabled={index === all.findIndex((row) => row.is_primary === 0)}
+                              aria-label={`Sposta la foto ${index + 1} più in alto`}
+                            >
+                              ↑
+                            </button>
+                          </Form>
+                          <Form method="post">
+                            <input type="hidden" name="intent" value="move-image" />
+                            <input type="hidden" name="imageId" value={image.id} />
+                            <input type="hidden" name="direction" value="down" />
+                            <button
+                              type="submit"
+                              className="btn btn--ghost btn--small"
+                              disabled={index === images.length - 1}
+                              aria-label={`Sposta la foto ${index + 1} più in basso`}
+                            >
+                              ↓
+                            </button>
+                          </Form>
+                        </>
+                      )}
+
+                      {image.is_primary === 0 ? (
+                        <Form method="post">
+                          <input type="hidden" name="intent" value="set-primary-image" />
+                          <input type="hidden" name="imageId" value={image.id} />
+                          <button type="submit" className="btn btn--ghost btn--small">
+                            Rendi principale
+                          </button>
+                        </Form>
+                      ) : null}
+
+                      {/*
+                        Deleting asks first — and asks WITHOUT JavaScript.
+
+                        `confirm()` would be one line and would fail open: with
+                        no script the click deletes the photo and nothing is
+                        asked at all. A `<details>` asks in the markup, so the
+                        question survives a stockroom on one bar of signal.
+                      */}
+                      <Form method="post">
+                        <input type="hidden" name="intent" value="delete-image" />
+                        <input type="hidden" name="imageId" value={image.id} />
+                        <details className="ac-confirm ac-confirm--danger">
+                          <summary className="btn btn--ghost btn--small">Elimina</summary>
+                          <div className="ac-confirm__panel">
+                            <p className="small">
+                              La foto sparisce dal sito. Se è l&apos;unica, il prodotto resta senza
+                              immagine.
+                            </p>
+                            <button type="submit" className="btn btn--danger btn--small">
+                              Sì, elimina la foto
+                            </button>
+                          </div>
+                        </details>
+                      </Form>
+                    </div>
                   </div>
                 ) : null}
               </li>

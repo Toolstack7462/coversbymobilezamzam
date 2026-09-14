@@ -32,8 +32,11 @@ approximate.
 | Change a product's name or description        | Prodotti → row → Dettagli → Salva   | 4        | `admin-workflows` — a saved detail survives a reload **(measured)**          |
 | Jump to one section of a long product         | Product → section nav               | **3**    | `admin-workflows` — jumps straight to a section **(measured)**               |
 | Change a price                                | Product → Varianti → Salva prezzo   | 4        | `admin.spec`                                                                 |
-| Add a photo                                   | Product → Foto → upload             | 4        | not yet                                                                      |
-| Choose the primary photo                      | Product → Foto → "Rendi principale" | 4        | not yet                                                                      |
+| Add a photo                                   | Product → Foto → upload             | **4**    | `admin-workflows` — a real PNG, uploaded and read back **(measured)**        |
+| Choose the primary photo                      | Product → Foto → "Rendi principale" | 4        | `admin-workflows` — the pinned photo has no arrows **(measured)**            |
+| Describe a photo after uploading it           | Product → Foto → Salva descrizione  | **4**    | `admin-workflows` — the warning badge clears **(measured)**                  |
+| Reorder the photos                            | Product → Foto → ↑ ↓                | **3**    | `admin-workflows` — survives a reload **(measured)**                         |
+| Delete a photo                                | Product → Foto → Elimina → conferma | **4**    | `admin-workflows` — asks first, in the markup **(measured)**                 |
 | Record device compatibility                   | Product → Compatibilità → add       | 5        | `admin.spec`                                                                 |
 | Record a technical specification              | Product → Varianti → variant → save | **5**    | `admin-workflows` — a cable's length survives a reload **(measured)**        |
 | Duplicate a product in another colour         | Product → Duplica prodotto          | **2**    | `admin-workflows` — a draft copy with no stock **(measured)**                |
@@ -157,12 +160,12 @@ that handles one row where the merchant is thinking in batches.
 
 ## 8. What has no browser proof yet
 
-|                                                    |                                                                                                                                                                                 |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Photo upload, reorder, primary selection, alt text | The media manager is unchanged by this work.                                                                                                                                    |
-| The two write-heavy workflow tests on a phone      | They run on desktop only. Both Playwright projects share one server and one database, so running a writing test twice concurrently tests the scheduler rather than the feature. |
-| WhatsApp message composition                       | Opens an external URL; asserting the URL is possible, opening it is not.                                                                                                        |
-| Internal notes                                     |                                                                                                                                                                                 |
-| Payment verification through the UI                | Covered server-side in `tests/security/payment-verification`, which exercises the rules including step-up. The screen itself is not walked.                                     |
-| Anything on the MariaDB runtime                    | The browser suite runs against `wrangler dev` and D1.                                                                                                                           |
-| Firefox, WebKit                                    | Chromium only.                                                                                                                                                                  |
+|                                               |                                                                                                                                                                                 |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Image derivatives                             | One 900×900 file serves every size. Measured and costed in [hostinger/media-optimisation.md](hostinger/media-optimisation.md); blocked on a dependency decision.                |
+| The two write-heavy workflow tests on a phone | They run on desktop only. Both Playwright projects share one server and one database, so running a writing test twice concurrently tests the scheduler rather than the feature. |
+| WhatsApp message composition                  | Opens an external URL; asserting the URL is possible, opening it is not.                                                                                                        |
+| Internal notes                                |                                                                                                                                                                                 |
+| Payment verification through the UI           | Covered server-side in `tests/security/payment-verification`, which exercises the rules including step-up. The screen itself is not walked.                                     |
+| Anything on the MariaDB runtime               | The browser suite runs against `wrangler dev` and D1.                                                                                                                           |
+| Firefox, WebKit                               | Chromium only.                                                                                                                                                                  |

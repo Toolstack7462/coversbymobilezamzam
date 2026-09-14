@@ -22,7 +22,7 @@ jobs:
     timeout-minutes: 25
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v5
         with:
@@ -76,7 +76,7 @@ jobs:
     needs: verify
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v5
         with:
@@ -118,7 +118,7 @@ jobs:
         revision: [baseline, updated]
     # Separate fixtures avoid shared Wrangler crashes and changing catalogue data.
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: ${{ matrix.revision == 'baseline' && github.event.pull_request.base.sha || github.sha }}
       - uses: actions/setup-node@v5
@@ -143,7 +143,7 @@ jobs:
     needs: verify
     # A separate runner/database keeps the catalogue stable for review screenshots.
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v5
         with:
           node-version: 24

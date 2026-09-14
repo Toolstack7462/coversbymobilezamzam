@@ -246,14 +246,12 @@ evidence of anything. Each row now carries what happened to it.
 
 ### What is still open, stated plainly
 
-Two things, in the order a merchant would notice them:
+One thing:
 
-1. **The media manager.** Upload, reorder, primary selection and alt text are
-   unrefined and have no browser proof. It is the last unimproved screen.
-2. **A guided path for a NEW product.** The section nav makes a long editor
-   navigable; it does not turn the first ten minutes with an empty product into
-   a sequence. The readiness panel names what is missing, which is most of the
-   value, but the form is still one form.
+**A guided path for a NEW product.** The section nav makes a long editor
+navigable; it does not turn the first ten minutes with an empty product into a
+sequence. The readiness panel names what is missing, which is most of the value,
+but the form is still one form.
 
 And two limits on the verification rather than on the admin: the MariaDB run
 covers `admin.spec.ts` at one desktop viewport, and WebKit cannot hold an admin

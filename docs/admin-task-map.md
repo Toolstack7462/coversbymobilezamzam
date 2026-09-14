@@ -103,7 +103,7 @@ later.
 | ---------------------------------- | --------------------------------- | ----------- | ------------------------------------------------------------ |
 | See who is waiting to be contacted | Ordini → Da contattare            | 2           | `admin-visual`                                               |
 | Open an order                      | Ordini → row                      | 2           | `admin-workflows` **(measured)**                             |
-| Message a customer on WhatsApp     | Order → Apri WhatsApp             | 3           | not yet                                                      |
+| Message a customer on WhatsApp     | Order → Apri WhatsApp             | 3           | not yet — opens an external URL                              |
 | See the customer's phone number    | Order — side column, no scrolling | **2**       | `admin-workflows` — customer beside the order **(measured)** |
 | Move an order to its next state    | Ordini → row select → Applica     | 3           | `admin-workflows` — survives a reload **(measured)**         |
 | Verify a payment                   | Pagamenti → row → verify          | 3 + step-up | `tests/security/payment-verification`                        |
@@ -160,12 +160,12 @@ that handles one row where the merchant is thinking in batches.
 
 ## 8. What has no browser proof yet
 
-|                                               |                                                                                                                                                                                 |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Image derivatives                             | One 900×900 file serves every size. Measured and costed in [hostinger/media-optimisation.md](hostinger/media-optimisation.md); blocked on a dependency decision.                |
-| The two write-heavy workflow tests on a phone | They run on desktop only. Both Playwright projects share one server and one database, so running a writing test twice concurrently tests the scheduler rather than the feature. |
-| WhatsApp message composition                  | Opens an external URL; asserting the URL is possible, opening it is not.                                                                                                        |
-| Internal notes                                |                                                                                                                                                                                 |
-| Payment verification through the UI           | Covered server-side in `tests/security/payment-verification`, which exercises the rules including step-up. The screen itself is not walked.                                     |
-| Anything on the MariaDB runtime               | The browser suite runs against `wrangler dev` and D1.                                                                                                                           |
-| Firefox, WebKit                               | Chromium only.                                                                                                                                                                  |
+|                                                |                                                                                                                                                                                                                          |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Image derivatives                              | One 900×900 file serves every size. Measured and costed in [hostinger/media-optimisation.md](hostinger/media-optimisation.md); blocked on a dependency decision.                                                         |
+| The five write-heavy workflow tests on a phone | They run on desktop only. Both Playwright projects share one server and one database, so running a writing test twice concurrently tests the scheduler rather than the feature.                                          |
+| WhatsApp message composition                   | Opens an external URL; asserting the URL is possible, opening it is not.                                                                                                                                                 |
+| Internal notes                                 | Not walked.                                                                                                                                                                                                              |
+| Payment verification through the UI            | Covered server-side in `tests/security/payment-verification`, which exercises the rules including step-up. The screen itself is not walked.                                                                              |
+| The WORKFLOW tests on the MariaDB runtime      | `npm run test:e2e:mariadb` runs `admin.spec.ts` — every screen, the navigation, the axe sweep and the create-a-product flow — against Node and MariaDB. The workflow spec still runs against `wrangler dev` and D1 only. |
+| Firefox, WebKit on the ADMIN                   | Firefox passes `admin.spec.ts`. WebKit cannot hold the admin session over plain HTTP — the cookie is `__Host-` with `Secure` — so both engines run the public-page accessibility spec instead.                           |

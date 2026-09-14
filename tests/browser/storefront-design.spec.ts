@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { STORAGE_STATE } from "./helpers/admin-session";
 import { pngFixture } from "./helpers/image-fixture";
+import { execFileSync } from "node:child_process";
 
 // The existing CI browser job runs the real built application and an isolated
 // [DEMO] catalogue. These are lab screenshots, never evidence of merchant stock.
@@ -92,7 +93,17 @@ for (const viewport of widths) {
       await expect(page.locator("h1")).toHaveCount(1);
       await expect(page).toHaveTitle(/Covers by Mobile Zam Zam/);
       await expect(page.locator("head title")).toHaveCount(1);
+      await expect(page.locator('link[rel="icon"][type="image/svg+xml"]')).toHaveAttribute(
+        "href",
+        "/favicon.svg",
+      );
       await expect(page.locator("a a, a button, button a, button button")).toHaveCount(0);
+      if (name === "shop" && viewport.width >= 1366) {
+        expect((await page.locator(".product-card").first().boundingBox())!.y).toBeLessThan(520);
+      }
+      if (name === "home") {
+        await expect(page.locator(".site-footer__inner > *")).toHaveCount(4);
+      }
       await page.evaluate(() => document.fonts.ready);
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -232,6 +243,8 @@ test("the selected variant survives adding, updating and removing a cart line", 
   await page.goBack();
   await expect(page.locator('.variant-picker a[aria-current="true"]')).toHaveText("Trasparente");
   await page.getByRole("link", { name: "Nero opaco", exact: true }).click();
+  await expect(page).toHaveURL(/variante=var_demo_cover16pro_black/);
+  await expect(page.locator('.variant-picker a[aria-current="true"]')).toHaveText("Nero opaco");
   await page.reload();
   await expect(page.locator('.variant-picker a[aria-current="true"]')).toHaveText("Nero opaco");
   const variant = await page.locator('#acquista input[name="variantId"]').inputValue();
@@ -318,6 +331,29 @@ test("hero entrance, intermediate states and pointer depth stay usable", async (
   expect(
     await stage.evaluate((node) => (node as HTMLElement).style.getPropertyValue("--scene-x")),
   ).toBe("");
+  const rendering = await page.evaluate(async () => {
+    const gaps: number[] = [];
+    const start = performance.now();
+    let previous = start;
+    await new Promise<void>((resolve) => {
+      function frame(now: number) {
+        gaps.push(now - previous);
+        previous = now;
+        if (now - start < 1500) requestAnimationFrame(frame);
+        else resolve();
+      }
+      document.querySelector<HTMLButtonElement>(".showcase__controls button:nth-child(2)")?.click();
+      requestAnimationFrame(frame);
+    });
+    gaps.sort((a, b) => a - b);
+    return {
+      frames: gaps.length,
+      medianFrameGap: gaps[Math.floor(gaps.length / 2)],
+      p95FrameGap: gaps[Math.floor(gaps.length * 0.95)],
+      over32ms: gaps.filter((gap) => gap > 32).length,
+    };
+  });
+  console.log("STOREFRONT_RENDER " + JSON.stringify(rendering));
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.mouse.move(bounds!.x + bounds!.width * 0.8, bounds!.y + bounds!.height * 0.35);
   expect(
@@ -392,11 +428,17 @@ test("merchant media persists into the real gallery and native thumbnail navigat
       .locator("#sez-foto li.ac-thumb input[name='alt']")
       .first()
       .fill("[TEST] updated merchant description");
-    await editor
-      .locator("#sez-foto li.ac-thumb")
-      .first()
-      .getByRole("button", { name: /salva descrizione/i })
-      .click();
+    await Promise.all([
+      editor.waitForResponse(
+        (response) => response.request().method() === "POST" && response.status() < 400,
+      ),
+      editor
+        .locator("#sez-foto li.ac-thumb")
+        .first()
+        .getByRole("button", { name: /salva descrizione/i })
+        .click(),
+    ]);
+    await editor.waitForLoadState("networkidle");
     await editor.reload();
     await expect(editor.locator("#sez-foto li.ac-thumb input[name='alt']").first()).toHaveValue(
       "[TEST] updated merchant description",
@@ -408,5 +450,82 @@ test("merchant media persists into the real gallery and native thumbnail navigat
     );
   } finally {
     await staff.close();
+  }
+});
+
+test("configured pickup checkout reaches confirmation and token-protected tracking", async ({
+  page,
+}, testInfo) => {
+  // Only the existing throwaway Playwright database. No remote DB or live payment.
+  const fixture = (sql: string) =>
+    execFileSync(
+      process.execPath,
+      [
+        "node_modules/wrangler/bin/wrangler.js",
+        "d1",
+        "execute",
+        "ita-commerce",
+        "--local",
+        "--persist-to",
+        ".wrangler/e2e",
+        "--command",
+        sql,
+      ],
+      { timeout: 30000, stdio: "pipe" },
+    );
+  fixture(
+    "UPDATE store_settings SET value='true' WHERE key='pickup.enabled'; UPDATE store_settings SET value='[TEST] preparation' WHERE key='pickup.preparation_time'; UPDATE payment_methods SET active=1 WHERE id='pm_pay_at_pickup';",
+  );
+  try {
+    await page.goto("/prodotti/demo-cover-trasparente-iphone-16-pro");
+    await page.locator('#acquista button[type="submit"]').click();
+    await page.locator('a[href="/cassa"]').click();
+    for (const viewport of widths) {
+      await page.setViewportSize(viewport);
+      await expect(page.locator("#firstName")).toBeVisible();
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth - innerWidth),
+      ).toBeLessThanOrEqual(1);
+      await page.screenshot({
+        path: testInfo.outputPath(`storefront-checkout-${viewport.width}.png`),
+        fullPage: true,
+        animations: "disabled",
+      });
+    }
+    await page.locator("#firstName").fill("Demo");
+    await page.locator("#lastName").fill("Checkout");
+    await page.locator("#email").fill("checkout@example.invalid");
+    await page.locator('input[name="deliveryMethod"][value="pickup"]').check();
+    await page.locator('input[name="paymentMethodId"][value="pm_pay_at_pickup"]').check();
+    await page.locator('.checkout button[type="submit"]').click();
+    await expect(page).toHaveURL(/\/ordine\/.+\?t=/);
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
+      "content",
+      "noindex, nofollow",
+    );
+    for (const viewport of widths) {
+      await page.setViewportSize(viewport);
+      await page.screenshot({
+        path: testInfo.outputPath(`storefront-confirmation-${viewport.width}.png`),
+        fullPage: true,
+        animations: "disabled",
+      });
+    }
+    const tracking = page.locator('a[href*="/traccia/"]');
+    await tracking.click();
+    await expect(page).toHaveURL(/\/traccia\/[a-zA-Z0-9_-]{32}$/);
+    await expect(page.locator("h1")).toHaveCount(1);
+    for (const viewport of widths) {
+      await page.setViewportSize(viewport);
+      await page.screenshot({
+        path: testInfo.outputPath(`storefront-tracking-${viewport.width}.png`),
+        fullPage: true,
+        animations: "disabled",
+      });
+    }
+  } finally {
+    fixture(
+      "UPDATE store_settings SET value='false' WHERE key='pickup.enabled'; UPDATE store_settings SET value='' WHERE key='pickup.preparation_time'; UPDATE payment_methods SET active=0 WHERE id='pm_pay_at_pickup';",
+    );
   }
 });

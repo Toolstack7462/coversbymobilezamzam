@@ -63,6 +63,7 @@ export function SiteFooter({
   const whatsapp = settingValue(settings, SETTING_KEYS.whatsappNumber);
   const directions = settingValue(settings, SETTING_KEYS.storeDirectionsUrl);
   const tagline = settingValue(settings, SETTING_KEYS.tagline);
+  const hasAddress = Boolean(street && postcode && city);
 
   return (
     <footer className="site-footer">
@@ -92,11 +93,11 @@ export function SiteFooter({
             ))}
           </ul>
         </nav>
-        {gates.store || pages.length > 0 || legal.length > 0 ? (
+        {gates.store || hasAddress || pages.length > 0 || legal.length > 0 ? (
           <nav className="site-footer__column" aria-label={t("footer.information")}>
             <h2 className="site-footer__heading">{t("footer.information")}</h2>
             <ul>
-              {gates.store ? (
+              {gates.store || hasAddress ? (
                 <li>
                   <Link to={path("/negozio")}>{t("home.visit_store")}</Link>
                 </li>

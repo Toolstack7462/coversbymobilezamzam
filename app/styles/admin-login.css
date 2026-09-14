@@ -79,6 +79,7 @@
   width: 90px;
   height: 90px;
   border-radius: 20px;
+  filter: brightness(0) invert(1);
 }
 .admin-login .admin-auth__panel {
   width: 100%;

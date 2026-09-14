@@ -72,7 +72,7 @@ export default function StorePage({ loaderData }: Route.ComponentProps) {
   const d = loaderData;
 
   return (
-    <div className="page section stack">
+    <div className="page section stack store-page">
       <h1>{d.name ?? t("store.title")}</h1>
 
       {d.street && d.postcode && d.city ? (

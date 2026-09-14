@@ -380,7 +380,7 @@ export default function Collection({ loaderData }: Route.ComponentProps) {
             aria-hidden="true"
             width={1200}
             height={600}
-            fetchPriority="high"
+            loading="lazy"
           />
         ) : null}
 

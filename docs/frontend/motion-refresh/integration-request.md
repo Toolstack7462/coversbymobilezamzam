@@ -11,7 +11,7 @@ No dependency, migration, payment/inventory service, server, shared root/base st
 
 ## Small loader addition for the PDP presentation repair
 
-`app/routes/storefront/product.tsx` retains all original queries and response fields, adding `compatibility`, the result of the existing domain `resolveCompatibility` for a null selected device. The old component performed exactly that calculation on every render. The existing `compatibilityRecords` contract is retained. Resolution now runs once server-side and does not ship the unused personalised resolver with the customer bundle.
+`app/routes/storefront/product.tsx` retains all original queries and response fields, adding the selected variant’s `stock` display state and `compatibility`, the result of the existing domain `resolveCompatibility` for a null selected device. The old component performed exactly that calculation on every render. The existing `compatibilityRecords` contract is retained. Resolution and the stock display calculation now run once server-side using the original domain functions, instead of shipping those calculations with the customer bundle. The `variante` query selects the same existing variant in the loader and component. All original queries and fields remain intact.
 
 The new `?variante=<existing variant ID>` parameter is presentation state. Unknown IDs fall back to the existing default variant; links preserve all other query parameters. Price, stock, SKU, buy bar, and the existing `/carrello` POST use the same selected variant. Server cart validation remains authoritative. This is backward-compatible with URLs without the parameter and works without JavaScript.
 

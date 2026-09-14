@@ -36,6 +36,12 @@
 .storefront main > .section:last-child {
   margin-bottom: 0;
 }
+.storefront main > .page.section + .page.section {
+  padding-top: 0;
+}
+.storefront main > :is(.collection-page, .product-page, .finder-page, .store-page, .checkout) {
+  padding-block: 1.5rem 3rem;
+}
 .storefront .section__head {
   align-items: center;
   gap: 1rem;
@@ -580,6 +586,7 @@
 .storefront .finder-page {
   max-width: var(--page-width);
   padding-block: 2rem 3rem;
+  gap: 0;
 }
 .storefront .finder-page__head {
   max-width: 42rem;
@@ -823,9 +830,10 @@
 /* A small collection header puts the actual catalogue within the first view. */
 .storefront .collection-page {
   padding-block: 1.5rem 3rem;
+  gap: 1rem;
 }
 .storefront .collection-page > * + * {
-  margin-top: 1rem;
+  margin-top: 0;
 }
 .storefront .collection-head {
   max-inline-size: none;
@@ -1026,6 +1034,12 @@
   padding: 1.5rem;
   border-radius: 0.9rem;
 }
+.storefront .checkout {
+  max-inline-size: 48rem;
+}
+.storefront .store-page {
+  max-inline-size: 60rem;
+}
 .storefront .checkout legend {
   padding-inline: 0.5rem;
   font-weight: 700;
@@ -1045,7 +1059,7 @@
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
   gap: 2rem;
   align-items: start;
-  padding-block: 2.5rem 1.75rem;
+  padding-block: 2rem 1.5rem;
 }
 .storefront .site-footer__heading {
   font-size: 0.75rem;

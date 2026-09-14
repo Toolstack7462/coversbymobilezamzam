@@ -289,8 +289,24 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
     note: r.note,
   }));
 
+  const selectedVariantId = new URL(request.url).searchParams.get("variante");
+  const variant =
+    variants.results.find((item) => item.id === selectedVariantId) ?? variants.results[0];
+  const stock = variant
+    ? availabilityState({
+        variantId: variant.id,
+        locationId: "",
+        onHand: variant.on_hand ?? 0,
+        reserved: variant.reserved ?? 0,
+        incoming: 0,
+        reorderThreshold: variant.reorder_threshold,
+        allowBackorder: variant.allow_backorder === 1,
+      })
+    : "not_tracked";
+
   return {
     product,
+    stock,
     images: images.results.filter((image) => saleableImageKey(image.object_key)),
     mediaBaseUrl: env.PUBLIC_MEDIA_BASE_URL?.replace(/\/$/, "") ?? "/media",
     variants: variants.results,
@@ -349,17 +365,7 @@ export default function ProductPage({ loaderData }: Route.ComponentProps) {
   const adding = navigation.state !== "idle" && navigation.formData?.get("intent") === "add";
   const intl = locale === "it" ? "it-IT" : "en-GB";
 
-  const stock = variant
-    ? availabilityState({
-        variantId: variant.id,
-        locationId: "",
-        onHand: variant.on_hand ?? 0,
-        reserved: variant.reserved ?? 0,
-        incoming: 0,
-        reorderThreshold: variant.reorder_threshold,
-        allowBackorder: variant.allow_backorder === 1,
-      })
-    : "not_tracked";
+  const stock = loaderData.stock;
 
   const discount = variant
     ? discountDisplay({

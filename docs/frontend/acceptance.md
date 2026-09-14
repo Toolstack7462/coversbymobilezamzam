@@ -5,13 +5,33 @@
 This section supersedes the earlier branch/publication status below. Current base is `c6db3cd`; the original storefront has been incorporated into main. The media/footer/admin work is on `feat/media-footer-admin-polish`, draft [PR #13](https://github.com/Toolstack7462/coversbymobilezamzam/pull/13). No merge, production deployment or production media mutation was performed in this pass.
 
 - Local `npm run verify`: all 11 gates pass; 577 unit and 213 integration tests. Hostinger production build also passes.
-- Worker build gzip totals: storefront JS 135.0 → 135.4 KB; admin JS 84.5 → 85.2 KB; all-route CSS 16.9 → 17.8 KB. Existing budgets pass without increases; these are aggregate build measurements, not page transfer size or field Core Web Vitals.
-- First implementation CI run 34878765150: verification, storefront (9 tests), baseline admin visual and updated admin visual jobs pass. Desktop/mobile functional runs each expose one contrast failure on the photo-task panel; its text token is corrected. Manual screenshot review also caught task descriptions flowing into the narrow count column on mobile, despite no document overflow. The mobile grid now explicitly places the body and link; a readable-width regression check is added. Final browser results are pending. Baseline run 34876707550 had an unrelated shared Wrangler process termination after 12 tests; that failed run is not treated as passing.
+- Worker build gzip totals: storefront JS 135.0 → 135.4 KB; admin JS 84.5 → 85.2 KB; all-route CSS 16.9 → 17.9 KB. Existing budgets pass without increases; these are aggregate build measurements, not page transfer size or field Core Web Vitals.
+- First implementation CI run 34878765150: verification, storefront (9 tests), baseline admin visual and updated admin visual jobs pass. Desktop/mobile functional runs each expose one contrast failure on the photo-task panel; its text token is corrected. Manual screenshot review also caught task descriptions flowing into the narrow count column on mobile, despite no document overflow. The mobile grid now explicitly places the body and link; a readable-width regression check is added. Final application revision `73453081960afa149cefa28be56f3dadf8a753de` passes every job in [run 34879826419](https://github.com/Toolstack7462/coversbymobilezamzam/actions/runs/34879826419). Baseline run 34876707550 had an unrelated shared Wrangler process termination after 12 tests; that failed run is not treated as passing.
 - Source changes: storefront/admin styles, footer, neutral photo placeholder, product image-selection queries, missing-photo view/setup count, dashboard, shared admin shell and product editor photo guidance. Existing authentication, payments, inventory mutations and Hostinger architecture are retained.
 - Still required: real merchant/supplier photographs for the 26 known unsuitable assignments, merchant verification of seeded specifications/stock, and a verified shop photo. No new photography was fabricated.
 - Hosting: current release documents were inspected, but hPanel settings and an isolated hosted preview are not independently available in this session. Browser evidence is built from isolated fixtures, not production customer data.
 
 **Status: feature-branch review, not approved for production.** No production merge, deployment or database/media write was performed. The GitHub pull request records publication and remote CI status.
+
+## Final follow-up browser evidence
+
+| Job / scope                     | Final result                                                                                                                  |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Verify                          | All CI gates pass: 577 unit, 213 integration and 36 security tests; unchanged budgets                                         |
+| Desktop Chromium                | 70 passed, 2 intentional viewport skips                                                                                       |
+| Mobile Chromium                 | 59 passed, 7 intentional workflow/viewport skips                                                                              |
+| Admin visual survey             | 58 passed (setup plus 19 screens × 390/768/1440px); baseline also passes separately                                           |
+| Storefront visual / interaction | 9 passed; 20 screenshots covering home, shop, device finder, PDP and cart at 390/768/1366/1440px                              |
+| Photo persistence               | Existing browser upload, alt-text editing, reorder and deletion workflow passes against isolated fixture storage              |
+| Navigation / accessibility      | Existing admin/public axe sweeps, no-JS menu and photo repair path, desktop sidebar collapse and mobile task-width check pass |
+
+No retries or failures are reported in the final run. Job totals include separate fixture-setup tests; they must not be summed as unique tests. Intentional skips are explicitly reported, not hidden.
+
+Six unretouched before/after PNGs are retained in [the review folder](evidence/media-footer-admin/README.md). Final dashboard images at 390/1440px, product-list images at 390/768/1440px and storefront images at 390/1366px were manually inspected across the review and correction passes. The mobile task-column failure found in the first screenshots is resolved in the final captures. No further browser test expansion is needed for this UI pass.
+
+Full run artifacts (expire 28 September 2026): [storefront screenshots and recordings](https://github.com/Toolstack7462/coversbymobilezamzam/actions/runs/34879826419/artifacts/10363190437), [updated admin screenshots](https://github.com/Toolstack7462/coversbymobilezamzam/actions/runs/34879826419/artifacts/10363120468), [admin baseline](https://github.com/Toolstack7462/coversbymobilezamzam/actions/runs/34879826419/artifacts/10361444916). The existing hero animation is retained, with new interaction recordings in the storefront artifact. No hosted preview was deployed; production/merchant-media acceptance remains outstanding.
+
+Final Hostinger build also passes. Aggregate gzip impact relative to this pass's baseline is +0.4 KB storefront JS, +0.7 KB admin JS and +1.0 KB all-route CSS. No new image download or animation dependency is introduced by the source changes. Screenshots are review assets, not storefront assets. Browser frame times, server CPU and field Core Web Vitals were not measured in this pass.
 
 ## Changes
 

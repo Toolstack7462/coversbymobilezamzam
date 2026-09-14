@@ -10,7 +10,7 @@ The admin's long dark sidebar, repeated warnings and low-positioned metrics made
 
 A blocked primary product image could mask a usable secondary merchant photo. Database selection now applies the same known-defect predicate as presentation. Missing-photo counts, the saved product view and setup centre now agree. No genuine product photography was supplied or uploaded to production.
 
-Baseline local verification passed all 11 gates (577 unit, 210 integration). Baseline CI run 34876707550 passed verification and the four-width storefront survey, but its shared browser server exited after 12 tests; the remaining connection failures are not accepted UI results. Browser projects and admin visual baselines now run on isolated CI jobs. Browser evidence for the implementation is recorded in acceptance.md when available.
+Baseline local verification passed all 11 gates (577 unit, 210 integration). Baseline CI run 34876707550 passed verification and the four-width storefront survey, but its shared browser server exited after 12 tests; the remaining connection failures are not accepted UI results. Browser projects and admin visual baselines now run on isolated CI jobs. Final application 7345308 passes all jobs in run 34879826419. Screenshot inspection found and corrected a mobile task-column ordering error; axe found and corrected photo-panel contrast. The final before/after evidence and precise test scope are recorded in acceptance.md.
 
 ## Source and release
 

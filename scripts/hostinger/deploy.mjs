@@ -188,12 +188,28 @@ async function main() {
 
   await withSsh(async (ssh) => {
     // ── 2. Refuse to trample somebody else's site ──────────────────────────
+    //
+    // The guard exists to catch ANOTHER WEBSITE in this docroot. It must not
+    // trip over the deployment system's own footprint, which is what it did:
+    //
+    //   .htaccess.bak   written by `hostinger:configure`, which keeps the
+    //                   previous configuration so a bad change is undoable
+    //   tmp/            holds Passenger's `restart.txt` trigger
+    //
+    // Both appear the first time the site is configured and restarted, so
+    // every deploy AFTER the first one failed with "contains files this deploy
+    // did not put there" — naming two files this deployment system had put
+    // there itself. The release then could not proceed at all.
+    //
+    // Listed by exact name rather than by pattern: a real second website is
+    // still refused, which is the entire point.
+    const OURS = ["default.php", ".htaccess", ".htaccess.bak", ".well-known", "tmp"];
     const { out: docrootListing } = await ssh.run(`ls -A ${DOCROOT} 2>/dev/null`);
     const unexpected = docrootListing
       .trim()
       .split("\n")
       .filter(Boolean)
-      .filter((name) => !["default.php", ".htaccess", ".well-known"].includes(name));
+      .filter((name) => !OURS.includes(name));
 
     if (unexpected.length > 0) {
       throw new Error(

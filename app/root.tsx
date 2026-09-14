@@ -15,6 +15,9 @@ import { parseLocalePath, translator, direction, DEFAULT_LOCALE } from "~/lib/i1
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
+  { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+  { rel: "icon", href: "/favicon.ico", sizes: "32x32" },
+  { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
 
   /*
    * The two faces that render above the fold, preloaded.

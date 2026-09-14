@@ -1,3 +1,6 @@
+import { DeviceDiscovery } from "~/components/storefront/device-discovery";
+import { HeroShowcase } from "~/components/storefront/hero-showcase";
+import { saleableImageKey, editorialHeroKey, storePhotoKey } from "~/domain/media/storefront-image";
 import { Fragment } from "react";
 import { Link, useLocation } from "react-router";
 import type { Route } from "./+types/home";
@@ -13,64 +16,11 @@ import {
   type SettingsMap,
 } from "~/domain/content/gates";
 import { ProductCard, type ProductCardData } from "~/components/storefront/product-card";
-import { availabilityState } from "~/domain/inventory/availability";
 
 export function meta({ matches }: Route.MetaArgs) {
-  /*
-   * The brand comes from the layout's loader, not a second constant.
-   *
-   * `matches` is the only way a child route can read an ancestor's data from
-   * `meta`, and it is worth the awkwardness: the alternative is the shop's name
-   * written out again here, which is how the tab title and the wordmark end up
-   * disagreeing after somebody renames the shop in one of them.
-   */
   const shell = matches.find((m) => m?.id?.startsWith("routes/storefront/layout"));
   const brand = (shell?.loaderData as { brand?: { full: string } } | undefined)?.brand;
-
-  // Deliberately generic until the merchant supplies a brand name. A title
-  // naming a shop that has not been named is an invention.
-  //
-  // The description says what the shop does and where it does it, and nothing
-  // it cannot back up — no superlatives, no counts, no delivery promise. It is
-  // the only text a search result shows beneath the title, and the homepage was
-  // shipping without one, so search engines were composing that line from
-  // whatever they scraped.
-  return [
-    // "Page — Brand", the convention every browser tab and search result
-    // expects. Without a brand configured it stays the page name alone rather
-    // than trailing an empty dash.
-    { title: brand ? `Accessori per smartphone — ${brand.full}` : "Accessori per smartphone" },
-    {
-      name: "description",
-      content:
-        "Cover, pellicole, caricatori, cavi e power bank scelti per il tuo modello. " +
-        "Ordina online o ritira in negozio.",
-    },
-  ];
-}
-
-/**
- * Availability for a card, from the row the grid query returns.
- *
- * `on_hand === null` means the product has no inventory record at all, which is
- * `not_tracked` — different from zero, and the card says nothing rather than
- * claiming it is out of stock.
- */
-function availabilityFor(row: {
-  on_hand: number | null;
-  reserved: number | null;
-  reorder_threshold: number | null;
-}) {
-  if (row.on_hand === null) return null;
-  return availabilityState({
-    variantId: "",
-    locationId: "",
-    onHand: row.on_hand,
-    reserved: row.reserved ?? 0,
-    incoming: 0,
-    reorderThreshold: row.reorder_threshold,
-    allowBackorder: false,
-  });
+  return [{ title: `${brand?.full ?? "Covers by Mobile Zam Zam"} | Accessori smartphone` }];
 }
 
 export async function loader({ context }: Route.LoaderArgs) {
@@ -89,21 +39,7 @@ export async function loader({ context }: Route.LoaderArgs) {
                 WHERE v.product_id = p.id ORDER BY vp.amount ASC LIMIT 1) AS price_amount,
               (SELECT object_key FROM product_images pi
                 WHERE pi.product_id = p.id
-                ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS image_key,
-              /*
-               * The cheapest variant's stock, matched to the variant whose
-               * price is shown. Availability and price must describe the same
-               * thing or the card contradicts itself.
-               */
-              (SELECT il.on_hand FROM inventory_levels il
-                 JOIN product_variants v ON v.id = il.variant_id
-                WHERE v.product_id = p.id ORDER BY il.on_hand DESC LIMIT 1) AS on_hand,
-              (SELECT il.reserved FROM inventory_levels il
-                 JOIN product_variants v ON v.id = il.variant_id
-                WHERE v.product_id = p.id ORDER BY il.on_hand DESC LIMIT 1) AS reserved,
-              (SELECT il.reorder_threshold FROM inventory_levels il
-                 JOIN product_variants v ON v.id = il.variant_id
-                WHERE v.product_id = p.id ORDER BY il.on_hand DESC LIMIT 1) AS reorder_threshold
+                ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS image_key
          FROM products p
          LEFT JOIN product_translations pt ON pt.product_id = p.id AND pt.locale = 'it'
         WHERE p.status = 'active' AND p.archived_at IS NULL
@@ -115,9 +51,6 @@ export async function loader({ context }: Route.LoaderArgs) {
         name: string | null;
         price_amount: number | null;
         image_key: string | null;
-        on_hand: number | null;
-        reserved: number | null;
-        reorder_threshold: number | null;
       }>(),
 
       /*
@@ -167,18 +100,18 @@ export async function loader({ context }: Route.LoaderArgs) {
        * renders no guides section, rather than a heading over three empty cards.
        */
       env.DB.prepare(
-        `SELECT p.slug, COALESCE(t.title, p.slug) AS title, t.excerpt
+        `SELECT p.slug, p.page_type, COALESCE(t.title, p.slug) AS title, t.excerpt
          FROM pages p
          LEFT JOIN page_translations t ON t.page_id = p.id AND t.locale = 'it'
-        WHERE p.page_type = 'guide'
+        WHERE p.page_type IN ('guide', 'service')
           AND p.status = 'published'
           AND p.archived_at IS NULL
           AND (p.publish_at IS NULL OR p.publish_at <= ?1)
         ORDER BY p.sort_order
-        LIMIT 3`,
+        LIMIT 12`,
       )
         .bind(Date.now())
-        .all<{ slug: string; title: string; excerpt: string | null }>(),
+        .all<{ slug: string; page_type: string; title: string; excerpt: string | null }>(),
       env.DB.prepare(
         `SELECT s.section_type, t.heading, t.subheading
          FROM homepage_sections s
@@ -216,7 +149,7 @@ export async function loader({ context }: Route.LoaderArgs) {
         GROUP BY dm.id
        HAVING product_count > 0
         ORDER BY product_count DESC, dm.name ASC
-        LIMIT 8`,
+        LIMIT 6`,
       ).all<{
         handle: string;
         name: string;
@@ -234,19 +167,29 @@ export async function loader({ context }: Route.LoaderArgs) {
     // otherwise the app's own /media route.
     mediaBaseUrl: env.PUBLIC_MEDIA_BASE_URL?.replace(/\/$/, "") ?? "/media",
     products: newArrivals.results
-      .filter((p) => p.price_amount !== null)
+      .filter(
+        (p) =>
+          p.price_amount !== null &&
+          !featuredRows.results
+            .filter((r) => r.price_amount !== null && saleableImageKey(r.image_key))
+            .slice(0, 1)
+            .some((r) => r.slug === p.slug),
+      )
       .map<ProductCardData>((p) => ({
         slug: p.slug,
         name: p.name ?? p.slug,
         priceAmount: p.price_amount!,
-        imageKey: p.image_key,
-        availability: availabilityFor(p),
+        imageKey: saleableImageKey(p.image_key),
+        availability: null,
       })),
     categories: categories.results.filter((c) => c.name),
     devices: devices.results,
     // The merchant's chosen composition. Empty means "use the designed order".
-    featured: featuredRows.results.filter((r) => r.price_amount !== null),
-    guides: guideRows.results,
+    featured: featuredRows.results
+      .filter((r) => r.price_amount !== null && saleableImageKey(r.image_key))
+      .slice(0, 1),
+    guides: guideRows.results.filter((row) => row.page_type === "guide").slice(0, 3),
+    services: guideRows.results.filter((row) => row.page_type === "service").slice(0, 3),
     sections: sectionRows.results.map((row) => ({
       type: row.section_type,
       heading: row.heading,
@@ -265,8 +208,8 @@ export async function loader({ context }: Route.LoaderArgs) {
     storeCity: settingValue(settings, SETTING_KEYS.storeCity),
     // Media slots. Empty until the merchant fills them in; the sections
     // below render their typographic form when they are.
-    heroImage: settingValue(settings, SETTING_KEYS.heroImage),
-    storeImage: settingValue(settings, SETTING_KEYS.storeImage),
+    heroImage: editorialHeroKey(settingValue(settings, SETTING_KEYS.heroImage)),
+    storeImage: storePhotoKey(settingValue(settings, SETTING_KEYS.storeImage)),
     // Each trust claim is gated on the fact that makes it true. A promise of
     // in-store collection from a shop that has not configured collection is
     // the kind of copy that ends up in a complaint.
@@ -322,76 +265,19 @@ export default function Home({ loaderData }: Route.ComponentProps) {
    * Ordering decides where a section goes, never whether it has anything to
    * say.
    */
+  const sectionCopy = (type: string) =>
+    loaderData.sections.find((section) => section.type === type);
+  const sectionHeading = (type: string, fallback: string) => sectionCopy(type)?.heading || fallback;
   const SECTIONS: Record<string, () => React.ReactNode> = {
     hero: () => (
-      <>
-        {/*
-          A statement, not a category label.
-
-          Three verbs, because those are the three things every accessory in this
-          shop does. It fits in one screen on a phone without pushing the products
-          out of reach, which a full-viewport hero would.
-        */}
-        <section className={`hero${loaderData.heroImage ? " hero--with-media" : ""}`}>
-          <div className="page hero__inner">
-            <h1 className="hero__statement">
-              <span>{t("home.hero_statement_1")}</span>
-              <span>{t("home.hero_statement_2")}</span>
-              <span>{t("home.hero_statement_3")}</span>
-            </h1>
-            <p className="hero__lead">{t("home.hero_lead")}</p>
-            <div className="cluster">
-              <Link className="btn btn--primary btn--lg" to={path("/trova-dispositivo")}>
-                {t("home.find_device")}
-              </Link>
-              <Link className="btn btn--secondary btn--lg" to={path("/shop")}>
-                {t("home.shop_now")}
-              </Link>
-            </div>
-          </div>
-
-          {/*
-            The hero image, when one exists.
-
-            `aria-hidden` and an empty alt: it is atmosphere, and the promise is
-            already in the heading beside it. Describing it again would make a
-            screen reader read the decoration twice.
-
-            Eager and high priority — on this page it IS the LCP element, and
-            lazy-loading the largest thing above the fold is the classic way to
-            lose the metric.
-          */}
-          {loaderData.heroImage ? (
-            <div className="hero__media" aria-hidden="true">
-              {/*
-                Preloaded, because this image IS the LCP element on desktop.
-
-                Without it the browser cannot know the URL until it has parsed the
-                HTML and reached this tag — measured at 440ms, against ~50ms for a
-                preload in the head. `fetchPriority` alone does not fix that: it
-                reorders the queue once the request is known, it does not make the
-                request happen sooner.
-
-                React 19 hoists this into <head> from here, so the URL stays with
-                the element it belongs to rather than being duplicated in a route
-                module that would have to be kept in step with it.
-              */}
-              <link
-                rel="preload"
-                as="image"
-                href={`${loaderData.mediaBaseUrl}/${loaderData.heroImage}`}
-                fetchPriority="high"
-              />
-              <img
-                src={`${loaderData.mediaBaseUrl}/${loaderData.heroImage}`}
-                alt=""
-                fetchPriority="high"
-                decoding="async"
-              />
-            </div>
-          ) : null}
-        </section>
-      </>
+      <HeroShowcase
+        heading={sectionCopy("hero")?.heading ?? null}
+        lead={sectionCopy("hero")?.subheading ?? null}
+        imageKey={loaderData.heroImage}
+        mediaBaseUrl={loaderData.mediaBaseUrl}
+        locale={locale}
+        t={t}
+      />
     ),
     trust: () => (
       <>
@@ -429,28 +315,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             {/* Shortcuts, ordered by how many products actually fit. Rendered only
                 when the catalogue can answer for them. */}
             {loaderData.devices.length > 0 ? (
-              <ul className="finder-callout__devices">
-                {loaderData.devices.map((device) => (
-                  <li key={device.handle}>
-                    <Link className="device-chip" to={path(`/shop?dispositivo=${device.handle}`)}>
-                      <span className="device-chip__brand">{device.brand_name}</span>
-                      <span className="device-chip__model">{device.name}</span>
-                      <span className="device-chip__count">
-                        {/*
-                          "1 accessori" was wrong, and so was "1 accessories".
-                          The count and the noun were concatenated with no
-                          regard for number — invisible until a device had
-                          exactly one, which Moto G54 does.
-                        */}
-                        {device.product_count}{" "}
-                        {device.product_count === 1
-                          ? t("home.shop_by_device_count_one")
-                          : t("home.shop_by_device_count")}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+              <DeviceDiscovery devices={loaderData.devices} locale={locale} t={t} />
             ) : null}
           </div>
         </section>
@@ -462,7 +327,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         {loaderData.categories.length > 0 ? (
           <section className="page section">
             <div className="section__head">
-              <h2>{t("home.popular_categories")}</h2>
+              <h2>{sectionHeading("categories", t("home.popular_categories"))}</h2>
               <Link className="section__more" to={path("/shop")}>
                 {t("home.browse_all")}
               </Link>
@@ -497,7 +362,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         {loaderData.products.length > 0 ? (
           <section className="page section">
             <div className="section__head">
-              <h2>{t("home.new_arrivals")}</h2>
+              <h2>{sectionHeading("featured_products", t("home.new_arrivals"))}</h2>
               <Link className="section__more" to={path("/shop")}>
                 {t("home.browse_all")}
               </Link>
@@ -547,7 +412,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           */
           <section className="section section--deep">
             <div className="page section__head">
-              <h2>{t("home.featured_title")}</h2>
+              <h2>{sectionHeading("featured_collection", t("home.featured_title"))}</h2>
               <Link className="section__more" to={path("/shop")}>
                 {t("home.browse_all")}
               </Link>
@@ -591,44 +456,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
      * marketplace cannot copy. Gated on the store being configured for the same
      * reason the footer is: a shop with no address has no counter to promise.
      */
-    services: () => (
-      <>
-        {loaderData.showStore ? (
-          /* A tint, not a colour: enough to separate the counter services from
-             the guides below them without becoming a second dark band. */
-          <section className="section section--tint">
-            <div className="page section__head">
-              <h2>{t("home.services_title")}</h2>
-            </div>
-            <ul className="page service-grid">
-              {[
-                ["repairs", t("home.service_repairs"), t("home.service_repairs_body")],
-                ["fitting", t("home.service_fitting"), t("home.service_fitting_body")],
-                ["advice", t("home.service_advice"), t("home.service_advice_body")],
-              ].map(([key, title, body]) => (
-                <li className="service" key={key}>
-                  <h3 className="service__title">{title}</h3>
-                  <p className="service__body">{body}</p>
-                </li>
-              ))}
-            </ul>
-
-            {/*
-              One call to action for the three of them, and it goes to the store
-              page — which exists. Three buttons would imply three destinations,
-              and there is no repairs page to send anybody to. A link per service
-              would be three links to nowhere dressed as choice.
-            */}
-            <p className="page service-cta">
-              <Link className="btn btn--secondary" to={path("/negozio")}>
-                {t("store.title")}
-              </Link>
-            </p>
-          </section>
-        ) : null}
-      </>
-    ),
-
     /*
      * Buying guides.
      *
@@ -637,15 +464,32 @@ export default function Home({ loaderData }: Route.ComponentProps) {
      * is the question this shop answers better than a marketplace, and
      * answering it in public is how that becomes visible.
      */
+    services: () =>
+      loaderData.services.length > 0 ? (
+        <section className="section section--tint">
+          <div className="page">
+            <div className="section__head">
+              <h2>{sectionHeading("services", t("home.services_title"))}</h2>
+            </div>
+            <ul className="service-grid">
+              {loaderData.services.map((service) => (
+                <li className="service" key={service.slug}>
+                  <h3>
+                    <Link to={path(`/pagine/${service.slug}`)}>{service.title}</Link>
+                  </h3>
+                  {service.excerpt ? <p>{service.excerpt}</p> : null}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      ) : null,
     guides: () => (
       <>
         {loaderData.guides.length > 0 ? (
           <section className="page section">
             <div className="section__head">
-              <h2>{t("home.guides_title")}</h2>
-              <Link className="section__more" to={path("/pagine/compatibilita")}>
-                {t("home.guides_more")}
-              </Link>
+              <h2>{sectionHeading("guides", t("home.guides_title"))}</h2>
             </div>
             <ul className="guide-grid">
               {loaderData.guides.map((guide) => (

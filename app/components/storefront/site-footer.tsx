@@ -65,41 +65,12 @@ export function SiteFooter({
 
   return (
     <footer className="site-footer">
-      {/*
-        Who this is, first — on its own tier.
-
-        A footer that opens with a link list assumes the reader already knows
-        whose shop they are on. This used to be the first cell of the link grid,
-        which stretched it to the height of the tallest column and left a void
-        under the name the size of a paragraph. It is a band now: the name gets
-        its own line, the columns start clean beneath it, and nothing is
-        stretched to fill space it does not want.
-
-        Rendered only when the merchant has supplied a name — never a
-        placeholder, and never this project's own.
-      */}
-      <div className="page site-footer__masthead">
-        <BrandLockup brand={brand} locale={locale} variant="footer" />
-        {tagline ? <p className="site-footer__tagline">{tagline}</p> : null}
-      </div>
-
       <div className="page site-footer__inner">
-        {/*
-          The full category list, from the SAME source as the header rail.
-          Two hand-maintained copies of a taxonomy drift, and the footer is the
-          copy nobody notices has drifted.
-        */}
-        <nav className="site-footer__column" aria-label={t("footer.categories")}>
-          <h2 className="site-footer__heading">{t("footer.categories")}</h2>
-          <ul>
-            {navigation.map((item) => (
-              <li key={item.slug}>
-                <Link to={path(`/shop?categoria=${item.slug}`)}>{item.name}</Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
+        <section className="site-footer__column site-footer__brand">
+          <BrandLockup brand={brand} locale={locale} variant="footer" />
+          {tagline ? <p className="site-footer__tagline">{tagline}</p> : null}
+          {gates.store ? <Link to={path("/negozio")}>{t("home.visit_store")}</Link> : null}
+        </section>
         <nav className="site-footer__column" aria-label={t("footer.shop")}>
           <h2 className="site-footer__heading">{t("footer.shop")}</h2>
           <ul>
@@ -109,6 +80,11 @@ export function SiteFooter({
             <li>
               <Link to={path("/trova-dispositivo")}>{t("nav.find_by_device")}</Link>
             </li>
+            {navigation.map((item) => (
+              <li key={item.slug}>
+                <Link to={path(`/shop?categoria=${item.slug}`)}>{item.name}</Link>
+              </li>
+            ))}
             {extraNav.map((item) => (
               <li key={item.url}>
                 <Link to={path(item.url)}>{item.label}</Link>
@@ -116,34 +92,7 @@ export function SiteFooter({
             ))}
           </ul>
         </nav>
-
-        {/*
-          Services, in a column of their own.
-
-          They used to be a second heading inside "Acquista", which made them
-          look like a subsection of shopping. They are the half of the business
-          that happens at a counter, and burying them under a shop heading was
-          the layout disagreeing with the positioning.
-
-          Still not links: there is no page behind any of them yet, and a link
-          to nowhere is worse than plain text.
-        */}
-        {gates.store ? (
-          <section className="site-footer__column">
-            <h2 className="site-footer__heading">{t("footer.services")}</h2>
-            <ul className="site-footer__plain">
-              <li>{t("footer.repairs")}</li>
-              <li>{t("footer.screen_installation")}</li>
-              <li>{t("footer.device_assistance")}</li>
-            </ul>
-          </section>
-        ) : null}
-
-        {/*
-          The merchant's own pages. Absent entirely when none are published —
-          a heading over an empty list is the thing this footer exists to avoid.
-        */}
-        {pages.length > 0 ? (
+        {pages.length > 0 || legal.length > 0 ? (
           <nav className="site-footer__column" aria-label={t("footer.information")}>
             <h2 className="site-footer__heading">{t("footer.information")}</h2>
             <ul>
@@ -152,56 +101,46 @@ export function SiteFooter({
                   <Link to={path(`/pagine/${item.slug}`)}>{item.title}</Link>
                 </li>
               ))}
+              {legal.map((doc) => (
+                <li key={doc.code}>
+                  <Link to={path(`/legale/${doc.code}`)}>{doc.name}</Link>
+                </li>
+              ))}
             </ul>
           </nav>
         ) : null}
-
-        {/* The address is known, so this renders. The shop NAME is not, so the
-            store page link only appears once it is configured. */}
-        {street && postcode && city ? (
-          <section className="site-footer__column">
-            <h2 className="site-footer__heading">{t("store.address")}</h2>
-            <address className="small">
-              {street}
-              <br />
-              {postcode} {city}
-              {province ? ` (${province})` : ""}
-            </address>
-            {gates.store ? (
-              <p className="small">
-                <Link to={path("/negozio")}>{t("store.title")}</Link>
-              </p>
-            ) : null}
-            {hours ? <p className="small site-footer__hours">{hours}</p> : null}
-            {directions ? (
-              <p className="small">
-                {/* Opens a map application. `noreferrer` because the
-                    destination has no business knowing which page sent them. */}
-                <a href={directions} target="_blank" rel="noopener noreferrer">
-                  {t("store.directions")}
-                </a>
-              </p>
-            ) : null}
-          </section>
-        ) : null}
-
-        {gates.phone || gates.email ? (
+        {street || gates.phone || gates.email || gates.whatsapp ? (
           <section className="site-footer__column">
             <h2 className="site-footer__heading">{t("footer.support")}</h2>
-            <ul className="small">
-              {phone ? (
+            {street && postcode && city ? (
+              <address>
+                {street}
+                <br />
+                {postcode} {city}
+                {province ? ` (${province})` : ""}
+              </address>
+            ) : null}
+            {hours ? <p className="site-footer__hours">{hours}</p> : null}
+            <ul>
+              {directions ? (
+                <li>
+                  <a href={directions} target="_blank" rel="noopener noreferrer">
+                    {t("store.directions")}
+                  </a>
+                </li>
+              ) : null}
+              {gates.phone && phone ? (
                 <li>
                   <a href={`tel:${phone.replace(/\s+/g, "")}`}>{phone}</a>
                 </li>
               ) : null}
-              {email ? (
+              {gates.email && email ? (
                 <li>
                   <a href={`mailto:${email}`}>{email}</a>
                 </li>
               ) : null}
               {gates.whatsapp && whatsapp ? (
                 <li>
-                  {/* wa.me takes digits only — no plus, no spaces. */}
                   <a
                     href={`https://wa.me/${whatsapp.replace(/\D/g, "")}`}
                     target="_blank"
@@ -213,27 +152,6 @@ export function SiteFooter({
               ) : null}
             </ul>
           </section>
-        ) : null}
-
-        {/*
-          Legal.
-
-          Rendered only for documents that actually have a published version
-          with text in it. A footer that lists "Privacy" and links to nothing is
-          worse than one that does not mention it: the link is itself a claim
-          that the document exists.
-        */}
-        {legal.length > 0 ? (
-          <nav className="site-footer__column" aria-label={t("footer.legal")}>
-            <h2 className="site-footer__heading">{t("footer.legal")}</h2>
-            <ul>
-              {legal.map((doc) => (
-                <li key={doc.code}>
-                  <Link to={path(`/legale/${doc.code}`)}>{doc.name}</Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
         ) : null}
       </div>
 

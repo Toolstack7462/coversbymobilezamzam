@@ -1,3 +1,4 @@
+import { storefrontTitle } from "~/lib/storefront-meta";
 import { Form, Link, useLocation, redirect } from "react-router";
 import type { Route } from "./+types/checkout";
 import { appContext } from "~/runtime/context";
@@ -11,8 +12,11 @@ import { canOfferPickup, canOfferShipping, type SettingsMap } from "~/domain/con
 
 const VAT_BASIS_POINTS = 2200;
 
-export function meta() {
-  return [{ title: "Completa l'ordine" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  return [
+    { title: storefrontTitle("Completa l'ordine", matches) },
+    { name: "robots", content: "noindex, nofollow" },
+  ];
 }
 
 export async function loader({ context, request }: Route.LoaderArgs) {

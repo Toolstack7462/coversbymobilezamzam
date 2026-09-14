@@ -1,0 +1,93 @@
+[
+  {
+    "route": "/prodotti/demo-cover-trasparente-iphone-16-pro",
+    "status": 200,
+    "title": "[DEMO] Cover trasparente — iPhone 16 Pro | Covers by Mobile Zam Zam",
+    "titleCount": 1,
+    "contentType": "text/html; charset=utf-8"
+  },
+  {
+    "route": "/",
+    "status": 200,
+    "title": "Covers by Mobile Zam Zam | Accessori smartphone",
+    "titleCount": 1,
+    "contentType": "text/html; charset=utf-8"
+  },
+  {
+    "route": "/shop",
+    "status": 200,
+    "title": "Tutti gli accessori | Covers by Mobile Zam Zam",
+    "titleCount": 1,
+    "contentType": "text/html; charset=utf-8"
+  },
+  {
+    "route": "/shop?q=cover",
+    "status": 200,
+    "title": "Ricerca: cover | Covers by Mobile Zam Zam",
+    "titleCount": 1,
+    "contentType": "text/html; charset=utf-8"
+  },
+  {
+    "route": "/trova-dispositivo",
+    "status": 200,
+    "title": "Trova il tuo dispositivo | Covers by Mobile Zam Zam",
+    "titleCount": 1,
+    "contentType": "text/html; charset=utf-8"
+  },
+  {
+    "route": "/carrello",
+    "status": 200,
+    "title": "Carrello | Covers by Mobile Zam Zam",
+    "titleCount": 1,
+    "contentType": "text/html; charset=utf-8"
+  },
+  {
+    "route": "/cassa",
+    "status": 200,
+    "title": "Completa l&#x27;ordine | Covers by Mobile Zam Zam",
+    "titleCount": 1,
+    "contentType": "text/html; charset=utf-8"
+  },
+  {
+    "route": "/negozio",
+    "status": 200,
+    "title": "Il negozio | Covers by Mobile Zam Zam",
+    "titleCount": 1,
+    "contentType": "text/html; charset=utf-8"
+  },
+  {
+    "route": "/en/",
+    "status": 200,
+    "title": "Covers by Mobile Zam Zam | Accessori smartphone",
+    "titleCount": 1,
+    "contentType": "text/html; charset=utf-8"
+  },
+  {
+    "route": "/admin/accedi",
+    "status": 200,
+    "title": "Accesso staff",
+    "titleCount": 1,
+    "contentType": "text/html; charset=utf-8"
+  },
+  {
+    "route": "/favicon.svg",
+    "status": 200,
+    "title": null,
+    "titleCount": 0,
+    "contentType": "image/svg+xml"
+  },
+  {
+    "route": "/favicon.ico",
+    "status": 200,
+    "title": null,
+    "titleCount": 0,
+    "contentType": "image/vnd.microsoft.icon"
+  },
+  {
+    "route": "/apple-touch-icon.png",
+    "status": 200,
+    "title": null,
+    "titleCount": 0,
+    "contentType": "image/png"
+  }
+]

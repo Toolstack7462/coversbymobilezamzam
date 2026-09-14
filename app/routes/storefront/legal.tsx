@@ -1,3 +1,4 @@
+import { storefrontTitle } from "~/lib/storefront-meta";
 import { data } from "react-router";
 import type { Route } from "./+types/legal";
 import { appContext } from "~/runtime/context";
@@ -27,12 +28,12 @@ import { parsePageBody } from "~/domain/content/page-body";
  * version; an order references the version id it was placed under, and that
  * row stays exactly as it was.
  */
-export function meta({ loaderData }: Route.MetaArgs) {
+export function meta({ loaderData, matches }: Route.MetaArgs) {
   const doc = loaderData?.document;
-  if (!doc) return [{ title: "Documento non trovato" }];
+  if (!doc) return [{ title: storefrontTitle("Documento non trovato", matches) }];
 
   return [
-    { title: doc.name },
+    { title: storefrontTitle(doc.name, matches) },
     // Legal text is not a landing page. It should be readable and findable by
     // someone looking for it, and it has no business competing for a query.
     { name: "robots", content: "noindex, follow" },

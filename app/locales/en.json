@@ -55,13 +55,13 @@
     "browse_all": "See all accessories",
     "store_eyebrow": "The shop",
     "store_title": "A real shop, with real people.",
-    "store_body": "We are a physical shop in Sulmona. If you would rather see a product before buying it, or want someone to fit the screen protector for you, come in.",
-    "trust_compatibility": "Fit stated on every product",
-    "trust_compatibility_body": "Every accessory lists the models it is verified against. No guesswork.",
+    "store_body": "Find the store address, contacts and information before your visit.",
+    "trust_compatibility": "Check your model",
+    "trust_compatibility_body": "Review compatibility on the product page.",
     "trust_pickup": "Collect in store",
     "trust_pickup_body": "Order online, collect in Sulmona with no delivery charge.",
     "trust_help": "Help in Italian",
-    "trust_help_body": "You are answered by the people who work in the shop, not an outsourced desk.",
+    "trust_help_body": "Contact us for accessory information.",
     "shop_by_device_count": "accessories",
     "store_title_city": "Come and see us in {{city}}.",
     "services_title": "At the counter, not only online",
@@ -75,7 +75,12 @@
     "guides_more": "All the guides",
     "guides_read": "Read",
     "featured_title": "Our picks",
-    "shop_by_device_count_one": "accessory"
+    "shop_by_device_count_one": "accessory",
+    "showcase_eyebrow": "Your phone. Your everyday.",
+    "showcase_lead": "From the right case to the right cable. Explore accessories and check compatibility with your model.",
+    "showcase_illustration": "Brand illustration · not a product offered for sale",
+    "showcase_explore": "Explore the design",
+    "discovery_all_brands": "All brands"
   },
   "device": {
     "finder_title": "Find accessories for your device",
@@ -144,7 +149,8 @@
     "reviews_verified": "Verified purchase",
     "reviews_in_store": "Collected in store",
     "reviews_disclosure": "We publish only reviews whose origin we know, and we state it on each one: “verified purchase” means an order exists, “collected in store” means a customer left it at the counter. We do not edit the text of a review.",
-    "family_title": "The same item for other phones"
+    "family_title": "The same item for other phones",
+    "photo_pending": "Product photo awaiting verification"
   },
   "collection": {
     "results_one": "{{count}} product",

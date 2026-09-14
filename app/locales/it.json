@@ -55,13 +55,13 @@
     "browse_all": "Vedi tutti gli accessori",
     "store_eyebrow": "Il negozio",
     "store_title": "Un negozio vero, con persone vere.",
-    "store_body": "Siamo un negozio fisico a Sulmona. Se preferisci vedere il prodotto prima di comprarlo, o vuoi che sia qualcuno a montarti la pellicola, ti aspettiamo.",
-    "trust_compatibility": "Compatibilità indicata su ogni prodotto",
-    "trust_compatibility_body": "Ogni accessorio elenca i modelli su cui è verificato. Niente ipotesi.",
+    "store_body": "Consulta indirizzo, contatti e informazioni del negozio prima della tua visita.",
+    "trust_compatibility": "Controlla il tuo modello",
+    "trust_compatibility_body": "Consulta la compatibilità nella scheda prodotto.",
     "trust_pickup": "Ritiro in negozio",
     "trust_pickup_body": "Ordina online, ritira a Sulmona senza spese di spedizione.",
     "trust_help": "Assistenza in italiano",
-    "trust_help_body": "Ti risponde chi lavora in negozio, non un servizio esterno.",
+    "trust_help_body": "Contattaci per informazioni sugli accessori.",
     "shop_by_device_count": "accessori",
     "store_title_city": "Vieni a trovarci a {{city}}.",
     "services_title": "Al banco, non solo online",
@@ -75,7 +75,12 @@
     "guides_more": "Tutte le guide",
     "guides_read": "Leggi",
     "featured_title": "Scelti da noi",
-    "shop_by_device_count_one": "accessorio"
+    "shop_by_device_count_one": "accessorio",
+    "showcase_eyebrow": "Il tuo telefono. Il tuo stile.",
+    "showcase_lead": "Dalla cover al cavo giusto. Esplora gli accessori e controlla la compatibilità con il tuo modello.",
+    "showcase_illustration": "Illustrazione del brand · non raffigura un prodotto in vendita",
+    "showcase_explore": "Esplora il design",
+    "discovery_all_brands": "Tutte le marche"
   },
   "device": {
     "finder_title": "Trova accessori per il tuo dispositivo",
@@ -144,7 +149,8 @@
     "reviews_verified": "Acquisto verificato",
     "reviews_in_store": "Raccolta in negozio",
     "reviews_disclosure": "Pubblichiamo solo recensioni di cui conosciamo la provenienza, e la indichiamo su ognuna: «acquisto verificato» significa che risulta un ordine, «raccolta in negozio» che ce l'ha lasciata un cliente al banco. Non modifichiamo il testo di una recensione.",
-    "family_title": "Lo stesso articolo per altri telefoni"
+    "family_title": "Lo stesso articolo per altri telefoni",
+    "photo_pending": "Foto del prodotto da verificare"
   },
   "collection": {
     "results_one": "{{count}} prodotto",

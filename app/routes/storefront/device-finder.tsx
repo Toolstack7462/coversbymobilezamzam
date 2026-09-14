@@ -1,3 +1,4 @@
+import { storefrontTitle } from "~/lib/storefront-meta";
 import { Link, Form, useLocation } from "react-router";
 import type { Route } from "./+types/device-finder";
 import { appContext } from "~/runtime/context";
@@ -13,9 +14,9 @@ import { parseLocalePath, translator, localePath } from "~/lib/i18n";
  * Brands are read from the database, never hardcoded: this list changes every
  * year and a new brand must not require a deployment.
  */
-export function meta() {
+export function meta({ matches }: Route.MetaArgs) {
   return [
-    { title: "Trova il tuo dispositivo" },
+    { title: storefrontTitle("Trova il tuo dispositivo", matches) },
     {
       name: "description",
       content:

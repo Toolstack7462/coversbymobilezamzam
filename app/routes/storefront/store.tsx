@@ -1,3 +1,4 @@
+import { storefrontTitle } from "~/lib/storefront-meta";
 import { useLocation } from "react-router";
 import type { Route } from "./+types/store";
 import { appContext } from "~/runtime/context";
@@ -21,9 +22,9 @@ import {
  * shop name, hours and contact details do not exist yet and therefore render
  * nothing at all.
  */
-export function meta() {
+export function meta({ matches }: Route.MetaArgs) {
   return [
-    { title: "Il negozio" },
+    { title: storefrontTitle("Il negozio", matches) },
     {
       name: "description",
       content: "Dove siamo, quando siamo aperti e come ritirare un ordine in negozio.",

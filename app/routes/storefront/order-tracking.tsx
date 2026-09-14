@@ -1,3 +1,4 @@
+import { storefrontTitle } from "~/lib/storefront-meta";
 import { useLocation } from "react-router";
 import { data } from "react-router";
 import type { Route } from "./+types/order-tracking";
@@ -12,9 +13,12 @@ import { money, format as formatMoney } from "~/domain/pricing/money";
  * carries its own date and is therefore partly guessable, so it never grants
  * access on its own (docs/security-threat-model.md).
  */
-export function meta() {
+export function meta({ matches }: Route.MetaArgs) {
   // The URL carries a tracking token. Indexing it would publish the token.
-  return [{ title: "Stato dell'ordine" }, { name: "robots", content: "noindex, nofollow" }];
+  return [
+    { title: storefrontTitle("Stato dell'ordine", matches) },
+    { name: "robots", content: "noindex, nofollow" },
+  ];
 }
 
 export async function loader({ context, params }: Route.LoaderArgs) {

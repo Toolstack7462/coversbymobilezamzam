@@ -1,3 +1,4 @@
+import { BrandSymbol } from "./brand-symbol";
 import { Link } from "react-router";
 import { localePath, type Locale } from "~/lib/i18n";
 import type { StorefrontBrand } from "~/domain/content/brand";
@@ -33,12 +34,15 @@ export function BrandLockup({
       // two spans happen to be concatenated by a given screen reader.
       aria-label={brand.full}
     >
-      <span className="brand-lockup__primary">{brand.primary}</span>
-      {brand.secondary ? (
-        <span className="brand-lockup__secondary" aria-hidden="true">
-          {brand.secondary}
-        </span>
-      ) : null}
+      <BrandSymbol className="brand-lockup__symbol" />
+      <span className="brand-lockup__words">
+        <span className="brand-lockup__primary">{brand.primary}</span>
+        {brand.secondary ? (
+          <span className="brand-lockup__secondary" aria-hidden="true">
+            {brand.secondary}
+          </span>
+        ) : null}
+      </span>
     </Link>
   );
 }

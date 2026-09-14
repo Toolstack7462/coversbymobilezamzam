@@ -1,3 +1,4 @@
+import { storefrontTitle } from "~/lib/storefront-meta";
 import { Link, Form, useLocation, redirect, useRouteLoaderData } from "react-router";
 import type { Route } from "./+types/cart";
 import { appContext } from "~/runtime/context";
@@ -16,10 +17,13 @@ import {
 
 const VAT_BASIS_POINTS = 2200;
 
-export function meta() {
+export function meta({ matches }: Route.MetaArgs) {
   // noindex: a cart page is per-visitor and has nothing to offer a search
   // engine, and an indexed one leaks nothing useful but wastes crawl budget.
-  return [{ title: "Carrello" }, { name: "robots", content: "noindex, follow" }];
+  return [
+    { title: storefrontTitle("Carrello", matches) },
+    { name: "robots", content: "noindex, follow" },
+  ];
 }
 
 export async function loader({ context, request }: Route.LoaderArgs) {

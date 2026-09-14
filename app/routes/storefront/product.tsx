@@ -1,3 +1,5 @@
+import { storefrontTitle } from "~/lib/storefront-meta";
+import { saleableImageKey } from "~/domain/media/storefront-image";
 import { Link, Form, useLocation } from "react-router";
 import { data } from "react-router";
 import type { Route } from "./+types/product";
@@ -20,7 +22,7 @@ import {
   type SettingsMap,
 } from "~/domain/content/gates";
 
-export function meta({ loaderData }: Route.MetaArgs) {
+export function meta({ loaderData, matches }: Route.MetaArgs) {
   // Falls back rather than inventing: an untranslated product still needs a
   // title, and its slug is a real fact about it where a made-up name is not.
   const name = loaderData?.product?.name ?? loaderData?.product?.slug ?? "Prodotto";
@@ -38,7 +40,7 @@ export function meta({ loaderData }: Route.MetaArgs) {
   const summary = loaderData?.product?.short_description?.trim();
 
   return [
-    { title: name },
+    { title: storefrontTitle(name, matches) },
     ...(summary
       ? [
           {
@@ -279,7 +281,7 @@ export async function loader({ context, params }: Route.LoaderArgs) {
 
   return {
     product,
-    images: images.results,
+    images: images.results.filter((image) => saleableImageKey(image.object_key)),
     mediaBaseUrl: env.PUBLIC_MEDIA_BASE_URL?.replace(/\/$/, "") ?? "/media",
     variants: variants.results,
     /**
@@ -427,7 +429,9 @@ export default function ProductPage({ loaderData }: Route.ComponentProps) {
                 </figure>
               ))
             ) : (
-              <div className="product-card__media-empty" aria-hidden="true" />
+              <div className="product-card__media-empty">
+                <span>{t("product.photo_pending")}</span>
+              </div>
             )}
           </div>
 

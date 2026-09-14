@@ -1,3 +1,4 @@
+import { storefrontTitle } from "~/lib/storefront-meta";
 import { data, Link, useLocation } from "react-router";
 import type { Route } from "./+types/page";
 import { appContext } from "~/runtime/context";
@@ -17,12 +18,12 @@ import { parsePageBody } from "~/domain/content/page-body";
  * unpublish or rewrite a page without a deploy — which is the only version of
  * "the merchant owns their content" that is actually true.
  */
-export function meta({ loaderData }: Route.MetaArgs) {
+export function meta({ loaderData, matches }: Route.MetaArgs) {
   const page = loaderData?.page;
-  if (!page) return [{ title: "Pagina non trovata" }];
+  if (!page) return [{ title: storefrontTitle("Pagina non trovata", matches) }];
 
   return [
-    { title: page.seoTitle ?? page.title },
+    { title: storefrontTitle(page.seoTitle ?? page.title, matches) },
     ...((page.seoDescription ?? page.excerpt)
       ? [{ name: "description", content: (page.seoDescription ?? page.excerpt) as string }]
       : []),

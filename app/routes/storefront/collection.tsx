@@ -1,3 +1,4 @@
+import { storefrontTitle } from "~/lib/storefront-meta";
 import { Link, Form, useLocation, useRouteLoaderData } from "react-router";
 import type { Route } from "./+types/collection";
 import { categoryMembershipSql } from "~/domain/catalogue/category-membership";
@@ -17,9 +18,18 @@ const PER_PAGE = 24;
  * filtered view is shareable, and the no-JavaScript path is real pagination
  * rather than an inert button.
  */
-export function meta() {
+export function meta({ matches, loaderData }: Route.MetaArgs) {
   return [
-    { title: "Tutti gli accessori" },
+    {
+      title: storefrontTitle(
+        loaderData?.filters.q
+          ? `Ricerca: ${loaderData.filters.q}`
+          : (loaderData?.activeCategory?.name ??
+              loaderData?.activeDevice?.name ??
+              "Tutti gli accessori"),
+        matches,
+      ),
+    },
     {
       name: "description",
       content: "Cover, cavi, caricabatterie e pellicole per smartphone.",

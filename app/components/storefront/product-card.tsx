@@ -1,3 +1,4 @@
+import { saleableImageKey } from "~/domain/media/storefront-image";
 import { Link } from "react-router";
 import { money, format as formatMoney } from "~/domain/pricing/money";
 import { discountDisplay } from "~/domain/pricing/resolve";
@@ -60,6 +61,7 @@ interface Props {
 }
 
 export function ProductCard({ product, locale, t, mediaBaseUrl, priority = false }: Props) {
+  const imageKey = saleableImageKey(product.imageKey);
   const price = money(product.priceAmount);
 
   // The discount rules live in the domain layer, so no template can invent a
@@ -74,9 +76,9 @@ export function ProductCard({ product, locale, t, mediaBaseUrl, priority = false
     <article className="card product-card">
       <Link to={localePath(locale, `/prodotti/${product.slug}`)} className="product-card__link">
         <div className="product-card__media">
-          {product.imageKey && mediaBaseUrl ? (
+          {imageKey && mediaBaseUrl ? (
             <img
-              src={`${mediaBaseUrl}/${product.imageKey}`}
+              src={`${mediaBaseUrl}/${imageKey}`}
               alt=""
               /* Dimensions reserve the space so the card does not shift when
                  the image arrives (CLS). */
@@ -89,7 +91,9 @@ export function ProductCard({ product, locale, t, mediaBaseUrl, priority = false
           ) : (
             /* No stock photography and no competitor imagery. An honest empty
                frame beats a picture of something the shop may not stock. */
-            <div className="product-card__media-empty" aria-hidden="true" />
+            <div className="product-card__media-empty">
+              <span>{t("product.photo_pending")}</span>
+            </div>
           )}
         </div>
 

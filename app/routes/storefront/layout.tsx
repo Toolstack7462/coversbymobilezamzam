@@ -1,3 +1,4 @@
+import storefrontStyles from "~/styles/storefront.css?url";
 import { Outlet, useLocation } from "react-router";
 import type { Route } from "./+types/layout";
 import { appContext } from "~/runtime/context";
@@ -185,13 +186,15 @@ export async function loader({ context, request }: Route.LoaderArgs) {
   };
 }
 
+export const links = () => [{ rel: "stylesheet", href: storefrontStyles }];
+
 export default function StorefrontLayout({ loaderData }: Route.ComponentProps) {
   const { pathname } = useLocation();
   const { locale } = parseLocalePath(pathname);
   const t = translator(locale);
 
   return (
-    <>
+    <div className="storefront">
       {/*
         The brand, for anything that quotes the site rather than the page.
 
@@ -242,7 +245,7 @@ export default function StorefrontLayout({ loaderData }: Route.ComponentProps) {
         content, quietly.
       */}
       {loaderData.appEnv !== "production" ? <PreviewBanner env={loaderData.appEnv} /> : null}
-    </>
+    </div>
   );
 }
 

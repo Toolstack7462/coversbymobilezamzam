@@ -1,3 +1,4 @@
+import { storefrontTitle } from "~/lib/storefront-meta";
 import { Link, useLocation } from "react-router";
 import { data } from "react-router";
 import type { Route } from "./+types/order-confirmation";
@@ -7,9 +8,12 @@ import { money, format as formatMoney } from "~/domain/pricing/money";
 import { buildWhatsAppMessage, buildWhatsAppUrl } from "~/domain/orders/whatsapp-message";
 import { settingValue, SETTING_KEYS, type SettingsMap } from "~/domain/content/gates";
 
-export function meta() {
+export function meta({ matches }: Route.MetaArgs) {
   // Never indexed: this page is reached with an order number in the URL.
-  return [{ title: "Ordine ricevuto" }, { name: "robots", content: "noindex, nofollow" }];
+  return [
+    { title: storefrontTitle("Ordine ricevuto", matches) },
+    { name: "robots", content: "noindex, nofollow" },
+  ];
 }
 
 export async function loader({ context, request, params }: Route.LoaderArgs) {

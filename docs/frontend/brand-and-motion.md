@@ -39,3 +39,5 @@ This intentionally follows the user's newer entrance/depth direction over the ol
 - Homepage section visibility/order: existing homepage editor.
 - Service content: existing Pagine editor gains `Servizio verificato` (`page_type=service`). Uses the existing free-text column and publishing lifecycle, with no migration, new URL or replacement CMS. Publish only confirmed service descriptions; unpublished services disappear from the homepage. Existing guide/page records remain compatible.
 - Footer help/legal links continue to derive from published content.
+
+Final browser evidence: hero keyboard interaction, pressed state, axe checks in all three modes, reduced-motion stationary transforms and zero active animations passed in Chromium at app revision `8c07f39`. Showcase descendant transitions are explicitly disabled for reduced motion. `evidence/hero-interaction.webm` is the 3.92-second CI capture, not a simulated animation.

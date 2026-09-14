@@ -269,6 +269,27 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
     ),
   ];
 
+  /*
+   * The database credentials are read HERE, above the check.
+   *
+   * They used to be read inside the returned object literal below, which is
+   * evaluated AFTER this line. So on a deployment missing DB_HOST, required()
+   * dutifully recorded "DB_HOST is not set" into an array nobody looked at
+   * again, and loadConfig returned a config carrying empty credentials. The
+   * server then started normally and failed on the first query with a MySQL
+   * access-denied error for an empty user — which reads like a wrong password
+   * on the database server, and sends you to hPanel to check a credential that
+   * was never the problem.
+   *
+   * Anything using required() must be evaluated before this check. That is the
+   * entire contract of the helper, and it is easy to break by moving a read
+   * into the return.
+   */
+  const dbHost = required("DB_HOST");
+  const dbUser = required("DB_USER");
+  const dbPassword = required("DB_PASSWORD");
+  const dbName = required("DB_NAME");
+
   if (problems.length > 0) throw new ConfigError(problems);
 
   return {
@@ -278,11 +299,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
     port,
     host: optional("HOST") ?? "0.0.0.0",
     database: {
-      host: required("DB_HOST"),
+      host: dbHost,
       port: dbPort,
-      user: required("DB_USER"),
-      password: required("DB_PASSWORD"),
-      name: required("DB_NAME"),
+      user: dbUser,
+      password: dbPassword,
+      name: dbName,
       ssl,
       connectionLimit,
     },

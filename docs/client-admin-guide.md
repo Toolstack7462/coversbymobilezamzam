@@ -98,6 +98,38 @@ Il pulsante **Pubblica sul sito** è nella sezione Pubblicazione.
 spiega perché: sul sito comparirebbe una pagina che nessuno può acquistare.
 Mettete prima il prezzo.
 
+### Le specifiche tecniche
+
+Nella sezione **Varianti**, sotto la tabella, ci sono le **specifiche
+tecniche**: lunghezza, connettori, capacità, peso, dimensioni, pezzi nella
+confezione.
+
+**I campi cambiano a seconda del tipo di prodotto.** Un cavo vi chiede la
+lunghezza e i connettori. Una cover no, e non vi chiede la capacità della
+batteria: non ne ha una. Il tipo si sceglie in **Dettagli → Tipo di prodotto**,
+e cambiandolo cambiano i campi.
+
+Se il tipo non è impostato, i campi non compaiono affatto e il pannello ve lo
+dice. Non è un errore: è che nessuno sa ancora che cosa chiedervi.
+
+I numeri si scrivono come vengono: **10.000** e **10000** vanno bene entrambi.
+Una lunghezza in millimetri: un cavo da un metro è **1000**.
+
+### Duplicare un prodotto
+
+Lo stesso articolo in un altro colore non si riscrive da capo. In fondo alla
+pagina del prodotto c'è **Duplica prodotto**.
+
+La copia arriva **in bozza**, con lo stesso nome più «(copia)», le stesse
+descrizioni, le stesse foto, le stesse compatibilità e gli stessi prezzi.
+
+> **Le giacenze partono da zero, sempre.** Una copia non è merce che avete in
+> negozio: quanti pezzi ci sono davvero lo dite voi dall'inventario. I codici
+> delle varianti finiscono con `-C`, così li riconoscete sulle scatole.
+
+Dopo aver duplicato: cambiate il nome, controllate le compatibilità, registrate
+le giacenze, poi pubblicate.
+
 ### Se due persone modificano insieme
 
 Se qualcun altro salva lo stesso prodotto mentre voi lo avete aperto, il vostro

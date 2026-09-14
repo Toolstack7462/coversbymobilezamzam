@@ -315,6 +315,47 @@ Rules that exist because each was broken once. Every one names the defect.
   `desktop`/`mobile`: one shared `wrangler dev` and one SQLite file stop
   answering, and the run reports "passed" for tests that never executed.
 
+### Product types and duplication
+
+- **Which specification fields a product asks for comes from
+  `app/domain/catalogue/product-types.ts`, and nowhere else.** One table drives
+  the editor, the validation and the tests. A field shown by a form that the
+  action does not save is worse than no field, because it looks like it worked.
+- **The type also decides which COLUMNS a submitted form may write.** Those
+  column names are interpolated into an `UPDATE` — an identifier cannot be
+  bound as a parameter — so `specColumnAllowed` is checked again in the action,
+  one line before the name reaches the statement. Never widen that without
+  widening the allowlist.
+- An unknown or unset type offers **no** fields and says so. Never fall back to
+  a default set: a form that guesses which fields a product needs collects the
+  wrong data confidently.
+- **A duplicate never copies stock and never copies publication.** Stock is a
+  physical fact about a shelf; a copy claiming twelve in hand oversells on its
+  first day. The copy is a draft, always.
+
+### Response caching (Node runtime only)
+
+- The rule is **any cookie at all bypasses the cache**, in both directions.
+  Not "any session cookie" — a rule that names the cookies it knows about is
+  correct until something adds one.
+- `server/cache-middleware.ts` must stay mounted **after** `compression()` and
+  **after** `responsePolicy`. The first decides whether it stores identity or
+  gzipped bytes; the second decides whether a cache HIT carries a CSP.
+- Invalidation defaults to **over**-invalidating. A new route that changes a
+  price must not need anybody to remember `NON_INVALIDATING_PREFIXES`.
+- Run `npm run test:cache-isolation` after touching any of it. The unit tests
+  pin the rules; only the end-to-end run proves the wiring, and every real
+  failure of a cache like this has been wiring.
+
+### Scheduled work
+
+- `workers/app.ts` exports `scheduled`; **nothing calls it on Node.**
+  `server/jobs.ts` is the equivalent and it is not optional — without the
+  reservation sweeper, stock stays reserved against abandoned orders and the
+  shop stops being able to sell what is on its shelf.
+- Every job must be idempotent. The in-process overlap guard is not a
+  distributed lock and must never be relied on as one.
+
 ### Performance budgets
 
 - Admin assets never reach the customer bundle. `admin.css` is loaded by the

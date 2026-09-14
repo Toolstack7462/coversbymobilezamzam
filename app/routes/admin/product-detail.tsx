@@ -1,10 +1,20 @@
-import { Form, Link, useLocation, useSearchParams } from "react-router";
+import { Form, Link, redirect, useLocation, useSearchParams } from "react-router";
 import type { Route } from "./+types/product-detail";
 import { appContext, type AppEnv } from "~/runtime/context";
 import { requireStaff } from "~/infrastructure/auth/session.server";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
 import { money, format as formatMoney, parseAmountToMinorUnits } from "~/domain/pricing/money";
 import { isCompatibilityLevel, COMPATIBILITY_LEVELS } from "~/domain/compatibility/resolve";
+import {
+  ACCESSORY_TYPES,
+  ACCESSORY_TYPE_LABELS,
+  accessoryTypeLabel,
+  isAccessoryType,
+  parseSpecValues,
+  specColumnAllowed,
+  specFieldsFor,
+  type SpecColumn,
+} from "~/domain/catalogue/product-types";
 import {
   inspectImage,
   hashImage,
@@ -17,6 +27,7 @@ import {
   COMPATIBILITY_MEANING,
   compatibilityTone,
 } from "~/lib/compatibility-views";
+import { slugify, uniqueSlug } from "~/domain/catalogue/slug";
 import { formatDateTime } from "~/lib/i18n";
 import { breadcrumbsFor } from "~/lib/admin-nav";
 import { PageHeader } from "~/components/admin/admin-shell";
@@ -94,6 +105,8 @@ export async function loadProductDetail(env: AppEnv, productId: string) {
     await Promise.all([
       env.DB.prepare(
         `SELECT v.id, v.sku, v.variant_label, v.colour, v.is_default, v.active,
+              v.capacity_mah, v.length_mm, v.connector, v.pack_size,
+              v.weight_grams, v.dimensions_mm,
               vp.amount, vp.currency,
               il.on_hand, il.reserved, il.reorder_threshold
          FROM product_variants v
@@ -111,6 +124,12 @@ export async function loadProductDetail(env: AppEnv, productId: string) {
           colour: string | null;
           is_default: number;
           active: number;
+          capacity_mah: number | null;
+          length_mm: number | null;
+          connector: string | null;
+          pack_size: number | null;
+          weight_grams: number | null;
+          dimensions_mm: string | null;
           amount: number | null;
           currency: string | null;
           on_hand: number | null;
@@ -274,6 +293,20 @@ export async function action({ request, params, context }: Route.ActionArgs) {
     const categoryId = String(form.get("categoryId") ?? "") || null;
 
     /*
+     * The kind of accessory this is.
+     *
+     * It decides which specification fields the variants section offers, so a
+     * value outside the known list would produce a product with no fields and
+     * no explanation. Validated here rather than trusted: the column is a
+     * free-text VARCHAR and the select is only a suggestion to a browser.
+     */
+    const rawType = String(form.get("accessoryType") ?? "").trim();
+    if (rawType !== "" && !isAccessoryType(rawType)) {
+      return { error: "Tipo di prodotto non riconosciuto." };
+    }
+    const accessoryType = rawType === "" ? null : rawType;
+
+    /*
      * ── THE CONFLICT GUARD ──────────────────────────────────────────────────
      *
      * The form carries the `updated_at` the page was LOADED with. If the row
@@ -312,8 +345,10 @@ export async function action({ request, params, context }: Route.ActionArgs) {
 
     await env.DB.batch([
       env.DB.prepare(
-        `UPDATE products SET brand_id = ?1, primary_category_id = ?2, updated_at = ?3 WHERE id = ?4`,
-      ).bind(brandId, categoryId, now, productId),
+        `UPDATE products SET brand_id = ?1, primary_category_id = ?2, accessory_type = ?3,
+                             updated_at = ?4
+          WHERE id = ?5`,
+      ).bind(brandId, categoryId, accessoryType, now, productId),
 
       // The translation row may not exist for a product imported without one.
       env.DB.prepare(
@@ -330,10 +365,97 @@ export async function action({ request, params, context }: Route.ActionArgs) {
         name,
         brandId,
         categoryId,
+        accessoryType,
       }),
     ]);
 
     return { success: "Dettagli salvati.", savedAt: now };
+  }
+
+  /*
+   * ── SPECIFICATIONS, PER PRODUCT TYPE ────────────────────────────────────
+   *
+   * `product_variants` has carried `capacity_mah`, `length_mm`, `connector`,
+   * `pack_size`, `weight_grams` and `dimensions_mm` since the first migration
+   * and the admin surfaced NONE of them. The wattage of a charger — the first
+   * thing a customer asks — could only go in the free-text description.
+   *
+   * Which of those six a given variant may write is decided by the PRODUCT's
+   * accessory type, not by the form. A form field is a suggestion; this is the
+   * rule, and it is applied again here so that a crafted post cannot put a
+   * battery capacity on a phone case.
+   */
+  if (intent === "save-variant-specs") {
+    const actor = await requireStaff(request, env, "product.write");
+    const variantId = String(form.get("variantId") ?? "");
+
+    const variant = await env.DB.prepare(
+      `SELECT id FROM product_variants WHERE id = ?1 AND product_id = ?2 AND archived_at IS NULL`,
+    )
+      .bind(variantId, productId)
+      .first<{ id: string }>();
+    // Scoped to THIS product: a variant id from another product would
+    // otherwise be editable by anybody who could guess one.
+    if (!variant) return { error: "Variante non trovata." };
+
+    const typeRow = await env.DB.prepare(`SELECT accessory_type FROM products WHERE id = ?1`)
+      .bind(productId)
+      .first<{ accessory_type: string | null }>();
+    const accessoryType = typeRow?.accessory_type ?? null;
+
+    if (!isAccessoryType(accessoryType)) {
+      return {
+        error:
+          "Scegliete prima il tipo di prodotto in Dettagli: sono le specifiche da chiedere a " +
+          "cambiare, non solo le etichette.",
+      };
+    }
+
+    const parsed = parseSpecValues(accessoryType, (name) => {
+      const value = form.get(name);
+      return typeof value === "string" ? value : null;
+    });
+
+    if (parsed.errors.length > 0) return { error: parsed.errors.join(" ") };
+
+    const columns = Object.keys(parsed.values) as SpecColumn[];
+    if (columns.length === 0) return { error: "Nessuna specifica da salvare per questo tipo." };
+
+    /*
+     * The column names come from the template, and are checked against it
+     * again before being interpolated.
+     *
+     * They cannot be bound as parameters — an identifier is not a value — so
+     * the only thing standing between this and an injected identifier is that
+     * every name came from a fixed table and is verified against that same
+     * table one line before it is used.
+     */
+    for (const column of columns) {
+      if (!specColumnAllowed(accessoryType, column)) {
+        return { error: "Specifica non valida per questo tipo di prodotto." };
+      }
+    }
+
+    const assignments = columns.map((column, index) => `${column} = ?${index + 1}`).join(", ");
+    const binds = columns.map((column) => parsed.values[column] ?? null);
+
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE product_variants SET ${assignments}, updated_at = ?${columns.length + 1}
+          WHERE id = ?${columns.length + 2}`,
+      ).bind(...binds, now, variantId),
+      audit(
+        actor.userId,
+        actor.displayName,
+        "product.variant.specs",
+        "product_variant",
+        variantId,
+        null,
+        parsed.values,
+      ),
+    ]);
+
+    return { success: "Specifiche salvate.", savedAt: now };
   }
 
   if (intent === "set-price") {
@@ -924,6 +1046,330 @@ export async function action({ request, params, context }: Route.ActionArgs) {
     return { success: "Prodotto ripristinato in bozza." };
   }
 
+  /*
+   * ── DUPLICATE ───────────────────────────────────────────────────────────
+   *
+   * "The same case, in a second colour" was a full re-entry: name, brand,
+   * category, type, descriptions, every device it fits. For a shop whose whole
+   * catalogue is variations on a theme, that is the most repeated task in the
+   * admin and it was the one with no support at all.
+   *
+   * ── WHAT IS COPIED, AND WHAT IS DELIBERATELY NOT ────────────────────────
+   *
+   *   Copied      name, descriptions, brand, category, accessory type, the
+   *               variants and their specifications, prices, the photographs
+   *               (as references to the SAME stored objects — the picture of a
+   *               case is the picture of a case), and device compatibility,
+   *               which is the field that takes longest to enter by hand.
+   *
+   *   NOT copied  STOCK. Inventory rows are created at zero. Stock is a
+   *               physical fact about a shelf, and a duplicate that arrives
+   *               claiming twelve in hand is a duplicate that oversells on its
+   *               first day.
+   *
+   *   NOT copied  publication. The copy is a DRAFT, always. A duplicate that
+   *               went live on save would put a product named "… (copia)" in
+   *               front of customers.
+   */
+  if (intent === "duplicate") {
+    const actor = await requireStaff(request, env, "product.write");
+
+    const source = await env.DB.prepare(
+      `SELECT p.id, p.slug, p.brand_id, p.primary_category_id, p.accessory_type,
+              p.product_family_id, pt.name, pt.short_description, pt.full_description
+         FROM products p
+         LEFT JOIN product_translations pt ON pt.product_id = p.id AND pt.locale = 'it'
+        WHERE p.id = ?1`,
+    )
+      .bind(productId)
+      .first<{
+        id: string;
+        slug: string;
+        brand_id: string | null;
+        primary_category_id: string | null;
+        accessory_type: string | null;
+        product_family_id: string | null;
+        name: string | null;
+        short_description: string | null;
+        full_description: string | null;
+      }>();
+
+    if (!source) return { error: "Prodotto non trovato." };
+
+    const newId = cryptoIds.generate();
+    const newName = `${source.name ?? source.slug} (copia)`;
+
+    /*
+     * Every slug in the catalogue, so `uniqueSlug` can append the first free
+     * suffix. Reading them all is fine at this size and the reason is honest:
+     * there is no way to ask the database for "the next free variant of this
+     * slug" without either a scan or a loop of failing inserts.
+     */
+    const { results: slugRows } = await env.DB.prepare(`SELECT slug FROM products`).all<{
+      slug: string;
+    }>();
+    const newSlug = uniqueSlug(
+      slugify(newName),
+      slugRows.map((r) => r.slug),
+    );
+
+    const { results: skuRows } = await env.DB.prepare(`SELECT sku FROM product_variants`).all<{
+      sku: string;
+    }>();
+    const takenSkus = new Set(skuRows.map((r) => r.sku));
+
+    const { results: sourceVariants } = await env.DB.prepare(
+      `SELECT id, sku, variant_label, colour, capacity_mah, length_mm, connector,
+              pack_size, weight_grams, dimensions_mm, allow_backorder, is_default, sort_order
+         FROM product_variants
+        WHERE product_id = ?1 AND archived_at IS NULL
+        ORDER BY is_default DESC, sort_order`,
+    )
+      .bind(productId)
+      .all<{
+        id: string;
+        sku: string;
+        variant_label: string | null;
+        colour: string | null;
+        capacity_mah: number | null;
+        length_mm: number | null;
+        connector: string | null;
+        pack_size: number | null;
+        weight_grams: number | null;
+        dimensions_mm: string | null;
+        allow_backorder: number;
+        is_default: number;
+        sort_order: number;
+      }>();
+
+    if (sourceVariants.length === 0) {
+      return { error: "Questo prodotto non ha varianti da duplicare." };
+    }
+
+    const location = await env.DB.prepare(
+      `SELECT id FROM inventory_locations ORDER BY created_at LIMIT 1`,
+    ).first<{ id: string }>();
+    const priceList = await env.DB.prepare(
+      `SELECT id FROM price_lists WHERE is_default = 1 LIMIT 1`,
+    ).first<{ id: string }>();
+    if (!location || !priceList) {
+      return { error: "Sede di magazzino o listino predefinito mancante." };
+    }
+
+    const statements: SqlStatement[] = [
+      env.DB.prepare(
+        `INSERT INTO products
+           (id, slug, status, brand_id, primary_category_id, accessory_type,
+            product_family_id, is_featured, is_new, is_bestseller, published_at,
+            created_at, updated_at)
+         VALUES (?1, ?2, 'draft', ?3, ?4, ?5, ?6, 0, 0, 0, NULL, ?7, ?7)`,
+      ).bind(
+        newId,
+        newSlug,
+        source.brand_id,
+        source.primary_category_id,
+        source.accessory_type,
+        source.product_family_id,
+        now,
+      ),
+      env.DB.prepare(
+        `INSERT INTO product_translations
+           (id, product_id, locale, name, short_description, full_description)
+         VALUES (?1, ?2, 'it', ?3, ?4, ?5)`,
+      ).bind(
+        cryptoIds.generate(),
+        newId,
+        newName,
+        source.short_description,
+        source.full_description,
+      ),
+    ];
+
+    const variantIdMap = new Map<string, string>();
+
+    for (const variant of sourceVariants) {
+      const copyId = cryptoIds.generate();
+      variantIdMap.set(variant.id, copyId);
+
+      /*
+       * A SKU is what a person reads off a box, so the copy's SKU has to be
+       * both unique AND recognisably related to the original: `-C`, then `-C2`,
+       * `-C3`. Checked against every SKU in the catalogue rather than against
+       * this product's, because the unique index is global and a collision here
+       * is a failed insert in the middle of a batch.
+       */
+      let sku = `${variant.sku}-C`;
+      let attempt = 2;
+      while (takenSkus.has(sku)) {
+        sku = `${variant.sku}-C${attempt}`;
+        attempt += 1;
+      }
+      takenSkus.add(sku);
+
+      statements.push(
+        env.DB.prepare(
+          `INSERT INTO product_variants
+             (id, product_id, sku, variant_label, colour, capacity_mah, length_mm,
+              connector, pack_size, weight_grams, dimensions_mm, allow_backorder,
+              active, is_default, available_online, available_for_pickup,
+              sort_order, created_at, updated_at)
+           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, 1, ?13, 1, 1, ?14, ?15, ?15)`,
+        ).bind(
+          copyId,
+          newId,
+          sku,
+          variant.variant_label,
+          variant.colour,
+          variant.capacity_mah,
+          variant.length_mm,
+          variant.connector,
+          variant.pack_size,
+          variant.weight_grams,
+          variant.dimensions_mm,
+          variant.allow_backorder,
+          variant.is_default,
+          variant.sort_order,
+          now,
+        ),
+
+        // Zero on hand, always. See the note above the action.
+        env.DB.prepare(
+          `INSERT INTO inventory_levels
+             (id, variant_id, location_id, on_hand, reserved, incoming, allow_backorder,
+              created_at, updated_at)
+           VALUES (?1, ?2, ?3, 0, 0, 0, ?4, ?5, ?5)`,
+        ).bind(cryptoIds.generate(), copyId, location.id, variant.allow_backorder, now),
+      );
+    }
+
+    // Prices, read once for every source variant rather than once per variant.
+    const { results: sourcePrices } = await env.DB.prepare(
+      `SELECT vp.variant_id, vp.amount, vp.currency
+         FROM variant_prices vp
+         JOIN product_variants v ON v.id = vp.variant_id
+        WHERE v.product_id = ?1 AND vp.price_list_id = ?2`,
+    )
+      .bind(productId, priceList.id)
+      .all<{ variant_id: string; amount: number; currency: string }>();
+
+    for (const price of sourcePrices) {
+      const copyId = variantIdMap.get(price.variant_id);
+      if (copyId === undefined) continue;
+      statements.push(
+        env.DB.prepare(
+          `INSERT INTO variant_prices
+             (id, variant_id, price_list_id, amount, currency, created_at, updated_at)
+           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6)`,
+        ).bind(cryptoIds.generate(), copyId, priceList.id, price.amount, price.currency, now),
+      );
+    }
+
+    /*
+     * Photographs: new rows, the SAME object keys.
+     *
+     * The stored bytes are shared, so duplicating a product costs no storage
+     * and the copy is not sitting there waiting for somebody to re-upload a
+     * photograph of the identical object.
+     */
+    const { results: sourceImages } = await env.DB.prepare(
+      `SELECT object_key, alt_it, alt_en, width, height, mime_type, file_size,
+              file_hash, is_primary, sort_order
+         FROM product_images WHERE product_id = ?1`,
+    )
+      .bind(productId)
+      .all<{
+        object_key: string;
+        alt_it: string | null;
+        alt_en: string | null;
+        width: number;
+        height: number;
+        mime_type: string;
+        file_size: number;
+        file_hash: string | null;
+        is_primary: number;
+        sort_order: number;
+      }>();
+
+    for (const image of sourceImages) {
+      statements.push(
+        env.DB.prepare(
+          `INSERT INTO product_images
+             (id, product_id, object_key, alt_it, alt_en, width, height, mime_type,
+              file_size, file_hash, is_primary, sort_order, created_at)
+           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)`,
+        ).bind(
+          cryptoIds.generate(),
+          newId,
+          image.object_key,
+          image.alt_it,
+          image.alt_en,
+          image.width,
+          image.height,
+          image.mime_type,
+          image.file_size,
+          image.file_hash,
+          image.is_primary,
+          image.sort_order,
+          now,
+        ),
+      );
+    }
+
+    /*
+     * Compatibility, at PRODUCT level only.
+     *
+     * Rows scoped to one variant are skipped rather than remapped. A
+     * variant-scoped statement says "the 2 m version fits this phone", and
+     * re-asserting that about a copy nobody has looked at yet would be
+     * inventing a claim about fit — which is the one thing this catalogue
+     * exists to get right. The copy keeps the product-wide statements, which
+     * are the part that takes twenty minutes to type, and anything
+     * variant-specific is re-confirmed by a person.
+     */
+    const { results: sourceCompat } = await env.DB.prepare(
+      `SELECT device_model_id, compatibility_level, note
+         FROM product_compatibility
+        WHERE product_id = ?1 AND variant_id IS NULL`,
+    )
+      .bind(productId)
+      .all<{ device_model_id: string; compatibility_level: string; note: string | null }>();
+
+    for (const row of sourceCompat) {
+      statements.push(
+        env.DB.prepare(
+          `INSERT INTO product_compatibility
+             (id, product_id, variant_id, device_model_id, compatibility_level, note,
+              verified, created_at, updated_at)
+           VALUES (?1, ?2, NULL, ?3, ?4, ?5, 0, ?6, ?6)`,
+        ).bind(
+          cryptoIds.generate(),
+          newId,
+          row.device_model_id,
+          row.compatibility_level,
+          row.note,
+          now,
+        ),
+      );
+    }
+
+    statements.push(
+      audit(actor.userId, actor.displayName, "product.duplicate", "product", newId, null, {
+        copiedFrom: productId,
+        slug: newSlug,
+        variants: sourceVariants.length,
+        images: sourceImages.length,
+        compatibility: sourceCompat.length,
+      }),
+    );
+
+    await env.DB.batch(statements);
+
+    // Straight to the copy. The merchant duplicated it in order to change
+    // something, and landing back on the original means finding the copy by
+    // hand in a list where its name differs by one word.
+    return redirect(`/admin/prodotti/${newId}?duplicato=1`);
+  }
+
   if (intent === "set-stock") {
     const actor = await requireStaff(request, env, "inventory.adjust");
     // Stock changes go through the inventory screen, which requires a reason
@@ -957,6 +1403,7 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
   } = loaderData;
 
   const justCreated = searchParams.get("creato") === "1";
+  const justDuplicated = searchParams.get("duplicato") === "1";
   const unverifiedExact = compatibility.filter(
     (c) => c.compatibility_level === "exact_fit" && c.verified === 0,
   ).length;
@@ -974,6 +1421,22 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
         <p className="notice notice--success" role="status">
           Prodotto creato. È in bozza: non è ancora visibile sul sito. Da qui potete aggiungere
           foto, compatibilità e descrizione, poi pubblicarlo.
+        </p>
+      ) : null}
+
+      {/*
+        A copy says what it did NOT copy.
+
+        The dangerous half of a duplicate is the part a merchant assumes came
+        across. Stock did not — it starts at zero, because a copy is not merch-
+        andise on a shelf — and saying so here is the difference between a
+        deliberate zero and one discovered when the shop refuses a sale.
+      */}
+      {justDuplicated ? (
+        <p className="notice notice--success" role="status">
+          Copia creata, in bozza. Foto, compatibilità e prezzi sono stati copiati.{" "}
+          <strong>Le giacenze sono a zero</strong> e i codici finiscono con <code>-C</code>:
+          cambiate il nome, poi registrate le giacenze reali dall&apos;inventario.
         </p>
       ) : null}
 
@@ -1185,6 +1648,41 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
             </select>
           </div>
 
+          {/*
+            The kind of accessory — and therefore which specifications the
+            variants section asks for.
+
+            Placed in Dettagli rather than in Varianti because it is a fact
+            about the PRODUCT: every variant of one product is the same kind of
+            thing. A per-variant type would allow a product whose blue version
+            is a cable and whose red version is a power bank.
+          */}
+          <div className="field">
+            <label className="field__label" htmlFor="accessoryType">
+              Tipo di prodotto
+            </label>
+            <select
+              id="accessoryType"
+              name="accessoryType"
+              className="input"
+              defaultValue={product.accessory_type ?? ""}
+              disabled={!canWrite}
+              aria-describedby="accessoryType-help"
+            >
+              <option value="">— non impostato —</option>
+              {ACCESSORY_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {ACCESSORY_TYPE_LABELS[type]}
+                </option>
+              ))}
+            </select>
+            <span className="field__hint" id="accessoryType-help">
+              Decide quali specifiche vi vengono chieste nelle varianti: un caricabatterie e una
+              cover non si descrivono con gli stessi campi. Cambiandolo e salvando, i campi qui
+              sotto cambiano.
+            </span>
+          </div>
+
           <div className="field">
             <label className="field__label" htmlFor="categoryId">
               Categoria
@@ -1331,6 +1829,24 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
           Le giacenze si modificano dall&apos;<Link to="/admin/inventario">inventario</Link>, dove
           ogni rettifica registra un motivo e resta nel registro.
         </p>
+
+        {/*
+          ── SPECIFICATIONS, DRIVEN BY THE PRODUCT TYPE ────────────────────
+
+          Not a fixed set of fields. A charger is asked for its connector, a
+          cable for its length, a power bank for its capacity, and none of them
+          is asked for a field that means nothing to it — which is what the
+          editor did before, for the excellent reason that it asked for none of
+          them at all.
+
+          Collapsed by default: most visits to this screen are to change a
+          price, and a specification is filled in once.
+        */}
+        <SpecificationEditor
+          accessoryType={product.accessory_type}
+          variants={variants}
+          canWrite={canWrite}
+        />
 
         {canWrite ? (
           <details className="panel">
@@ -1687,6 +2203,28 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
         ) : null}
       </section>
 
+      {/* ── Duplicate ─────────────────────────────────────────────────────── */}
+      {canWrite ? (
+        <section className="panel stack">
+          <h2>Duplica</h2>
+          <p className="small muted">
+            Crea una copia di questo prodotto in <strong>bozza</strong>: stesso nome con
+            &laquo;(copia)&raquo;, stesse descrizioni, stesse foto, stesse compatibilità e stessi
+            prezzi. Serve quando vendete lo stesso articolo in un altro colore.
+          </p>
+          <p className="small muted">
+            <strong>Le giacenze partono da zero.</strong> La copia non è merce che avete: quanti
+            pezzi ci sono davvero si dice dall&apos;inventario. I codici delle varianti finiscono
+            con <code>-C</code>, così sono riconoscibili sulle scatole.
+          </p>
+          <Form method="post">
+            <button type="submit" name="intent" value="duplicate" className="btn btn--secondary">
+              Duplica prodotto
+            </button>
+          </Form>
+        </section>
+      ) : null}
+
       {/* ── Archive ───────────────────────────────────────────────────────── */}
       {canArchive ? (
         <section className="panel stack">
@@ -1732,5 +2270,119 @@ function Check({ done, label, missing }: { done: boolean; label: string; missing
         {!done ? <p className="ac-action__detail small muted">{missing}</p> : null}
       </div>
     </li>
+  );
+}
+
+/**
+ * The per-type specification fields, one collapsible block per variant.
+ *
+ * A separate component because the variants table is already the densest thing
+ * on the page and a second form inside each row would make it unreadable on a
+ * phone. Below the table, one `<details>` per variant, each naming the variant
+ * it belongs to — so a merchant with three colours is never editing the wrong
+ * one because two identical forms sat next to each other.
+ */
+function SpecificationEditor({
+  accessoryType,
+  variants,
+  canWrite,
+}: {
+  accessoryType: string | null;
+  variants: readonly {
+    id: string;
+    sku: string;
+    variant_label: string | null;
+    colour: string | null;
+    capacity_mah: number | null;
+    length_mm: number | null;
+    connector: string | null;
+    pack_size: number | null;
+    weight_grams: number | null;
+    dimensions_mm: string | null;
+  }[];
+  canWrite: boolean;
+}) {
+  const fields = specFieldsFor(accessoryType);
+
+  /*
+   * No type, no fields, and a sentence saying what to do about it.
+   *
+   * The alternative — showing every field for every product — is how a
+   * merchant ends up being asked for the battery capacity of a screen
+   * protector and concluding the panel is broken.
+   */
+  if (fields.length === 0) {
+    return (
+      <p className="small muted">
+        <strong>Specifiche tecniche.</strong> Scegliete il{" "}
+        <a href="#sez-dettagli">tipo di prodotto</a> in Dettagli e salvate: qui compariranno solo i
+        campi che servono davvero a questo tipo di prodotto.
+      </p>
+    );
+  }
+
+  return (
+    <div className="stack">
+      <h3>Specifiche tecniche</h3>
+      <p className="small muted">
+        I campi qui sotto sono quelli di <strong>{accessoryTypeLabel(accessoryType)}</strong>. Un
+        altro tipo di prodotto ne chiede altri.
+      </p>
+
+      {variants.map((variant) => {
+        const name = variant.variant_label ?? variant.colour ?? variant.sku;
+        return (
+          <details key={variant.id} className="panel" data-variant={variant.sku}>
+            <summary>
+              {name} <span className="small muted">({variant.sku})</span>
+            </summary>
+            <Form method="post" className="stack">
+              <input type="hidden" name="intent" value="save-variant-specs" />
+              <input type="hidden" name="variantId" value={variant.id} />
+
+              {fields.map((field) => {
+                const id = `spec-${variant.id}-${field.column}`;
+                const current = variant[field.column];
+                return (
+                  <div className="field" key={field.column}>
+                    <label className="field__label" htmlFor={id}>
+                      {name} — {field.label}
+                      {field.unit ? ` (${field.unit})` : ""}
+                    </label>
+                    <input
+                      id={id}
+                      name={field.column}
+                      className="input"
+                      /*
+                       * `inputMode`, not `type="number"`. A number input on a
+                       * phone hides the value when it cannot parse it, and
+                       * silently drops a comma an Italian keyboard produces.
+                       * The action normalises "1.000" and "1,5" itself.
+                       */
+                      inputMode={field.kind === "integer" ? "numeric" : "text"}
+                      defaultValue={current === null ? "" : String(current)}
+                      disabled={!canWrite}
+                      {...(field.maxLength === undefined ? {} : { maxLength: field.maxLength })}
+                      aria-describedby={field.help ? `${id}-help` : undefined}
+                    />
+                    {field.help ? (
+                      <span className="field__hint" id={`${id}-help`}>
+                        {field.help}
+                      </span>
+                    ) : null}
+                  </div>
+                );
+              })}
+
+              {canWrite ? (
+                <button type="submit" className="btn btn--secondary btn--small">
+                  Salva specifiche
+                </button>
+              ) : null}
+            </Form>
+          </details>
+        );
+      })}
+    </div>
   );
 }

@@ -188,6 +188,7 @@ for (const [id, slug, name, type] of categories) {
 const products = [
   {
     id: "prod_demo_cover16pro",
+    accessoryType: "case",
     slug: "demo-cover-trasparente-iphone-16-pro",
     name: "[DEMO] Cover trasparente — iPhone 16 Pro",
     description: "Prodotto dimostrativo. Cover trasparente antiurto, bordi rialzati.",
@@ -226,6 +227,7 @@ const products = [
   },
   {
     id: "prod_demo_carica25",
+    accessoryType: "charger",
     slug: "demo-caricatore-usb-c-25w",
     name: "[DEMO] Caricatore USB-C 25W",
     description: "Prodotto dimostrativo. Alimentatore da rete con ricarica rapida.",
@@ -248,6 +250,7 @@ const products = [
   },
   {
     id: "prod_demo_cavo100",
+    accessoryType: "cable",
     slug: "demo-cavo-usb-c-100w",
     name: "[DEMO] Cavo USB-C 100W — 1 m",
     description: "Prodotto dimostrativo. Cavo intrecciato per ricarica e dati.",
@@ -279,6 +282,7 @@ const products = [
   },
   {
     id: "prod_demo_powerbank",
+    accessoryType: "powerbank",
     slug: "demo-power-bank-magnetico",
     name: "[DEMO] Power bank magnetico 5000 mAh",
     description: "Prodotto dimostrativo. Batteria magnetica per ricarica senza cavo.",
@@ -305,10 +309,21 @@ const products = [
 ];
 
 for (const product of products) {
+  /*
+   * `accessory_type` is seeded, not left null.
+   *
+   * It decides which specification fields the product editor offers, so a
+   * catalogue with none of them set exercises only the "no type chosen" path.
+   * Seeding it also keeps the browser tests off `save-details` for products
+   * another test is editing — two tests saving one product is a conflict, and
+   * the conflict guard is itself under test elsewhere in the same file.
+   */
   sql(`INSERT INTO products
-         (id, slug, status, brand_id, primary_category_id, published_at, created_at, updated_at)
+         (id, slug, status, brand_id, primary_category_id, accessory_type,
+          published_at, created_at, updated_at)
        VALUES ('${product.id}', '${product.slug}', 'active', 'brand_demo_generico',
-               '${product.category}', ${NOW}, ${NOW}, ${NOW})
+               '${product.category}', ${product.accessoryType ? `'${product.accessoryType}'` : "NULL"},
+               ${NOW}, ${NOW}, ${NOW})
        ON CONFLICT(id) DO NOTHING`);
 
   sql(`INSERT INTO product_translations (id, product_id, locale, name, short_description)

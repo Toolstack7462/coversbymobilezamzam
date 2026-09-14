@@ -166,21 +166,34 @@ test.describe("inventory", () => {
     expect(await reservedInputs.count()).toBe(0);
   });
 
-  test("an adjustment demands a reason, and the reason reaches the ledger", async ({ page }) => {
+  test("an adjustment demands a reason, and the reason reaches the ledger", async ({
+    page,
+  }, testInfo) => {
     await page.goto("/admin/inventario");
 
     /*
-     * Scoped to ONE disclosure, not to the page.
+     * Scoped to ONE disclosure, on ONE named row, chosen by PROJECT.
      *
-     * Every row has its own adjustment form, so `.first()` and `.last()` across
-     * the page pick controls from different rows — which on the phone layout
-     * meant filling one product's quantity and pressing another product's save
-     * button, and the movement then never appeared under the note this test was
-     * looking for.
+     * Two things went wrong here in turn and both are worth keeping written
+     * down, because the symptom of each was "the movement never appeared".
+     *
+     *   1. `.first()` and `.last()` taken across the PAGE pick controls from
+     *      different rows, so the phone layout filled one product's quantity
+     *      and pressed another product's save button.
+     *   2. Scoping to the first row fixed that and left a worse one: the
+     *      desktop and mobile projects share one server and one database, so
+     *      both copies of this test adjusted the SAME row at the same moment
+     *      and one of the two submissions was lost.
+     *
+     * A stable SKU per project fixes both. It also means the test says which
+     * row it is about instead of "whichever sorts first", which is a property
+     * that changes whenever the catalogue does.
      */
-    const panel = page
-      .locator("details", { has: page.locator("summary", { hasText: "Rettifica" }) })
-      .first();
+    const sku = testInfo.project.name === "mobile" ? "DEMO-CAB-100W-2M" : "DEMO-COV-16P-BLU";
+    const row = page.locator("tr", { hasText: sku });
+    const panel = row.locator("details", {
+      has: page.locator("summary", { hasText: "Rettifica" }),
+    });
     if ((await panel.count()) === 0) test.skip(true, "this actor cannot adjust stock");
 
     await panel.locator("summary").click();
@@ -201,7 +214,22 @@ test.describe("inventory", () => {
     const marker = `Test automatico ${Date.now()}`;
     await onHand.fill(String(current + 2));
     await note.fill(marker);
-    await panel.getByRole("button").click();
+
+    /*
+     * Wait for the WRITE, not for the network to go quiet.
+     *
+     * `waitForLoadState("networkidle")` returns when nothing is in flight,
+     * which is also true when the submission never left. Under two projects
+     * sharing one server that is a real timing window, and the failure it
+     * produced pointed at the movements page — a missing row — rather than at
+     * the save that never happened.
+     */
+    await Promise.all([
+      page.waitForResponse(
+        (response) => response.request().method() === "POST" && response.status() < 400,
+      ),
+      panel.getByRole("button").click(),
+    ]);
     await page.waitForLoadState("networkidle");
 
     // The movement is recorded, which is what makes an adjustment auditable.
@@ -402,5 +430,204 @@ test.describe("the product editor", () => {
       await first.close().catch(() => {});
       await second.close().catch(() => {});
     }
+  });
+});
+
+/**
+ * Opens one variant's specification panel, whether or not it is already open.
+ *
+ * A `<details>` survives a React Router form submission — the DOM is patched,
+ * not replaced — so a blind `summary.click()` after a save CLOSES the panel
+ * that was already open, and every assertion after it fails on an element that
+ * is present and hidden. Ask, then act.
+ */
+async function openSpecs(page: Page, sku: string) {
+  const block = page.locator(`details[data-variant='${sku}']`);
+  await expect(block).toBeVisible();
+  if (!(await block.evaluate((el: HTMLDetailsElement) => el.open))) {
+    await block.locator("summary").click();
+  }
+  await expect(block).toHaveAttribute("open", "");
+  return block;
+}
+
+test.describe("product-type templates", () => {
+  /**
+   * The example the brief names: a charger's wattage must not be asked of a
+   * phone case.
+   *
+   * Six specification columns have existed on `product_variants` since the
+   * first migration and the editor surfaced none of them, so this is not a
+   * test that a field moved — it is a test that the fields exist at all, and
+   * that the set of them changes with the kind of product.
+   *
+   * ── WHY THESE READ RATHER THAN SET THE TYPE ──────────────────────────────
+   *
+   * The demo catalogue seeds `accessory_type`, so these open a product whose
+   * type is already right and assert what it asks for. Setting it here would
+   * mean saving Dettagli on a product the concurrent-edit test also saves, and
+   * two tests writing one row is a conflict — which the conflict guard would
+   * correctly report, and which would look like a broken feature. The
+   * type-CHANGES-the-fields path is exercised further down on a product
+   * nothing else touches.
+   */
+  /*
+   * The two projects share one `wrangler dev` and one database, so the desktop
+   * and mobile copies of a WRITING test run against the same rows at the same
+   * moment. That is not a bug being found, it is two tests fighting, and it
+   * makes the failure look like the feature.
+   *
+   * Reading tests stay on both viewports — layout is exactly what mobile is
+   * for. The ones that save run on desktop only.
+   */
+  test("asks a cable for its length and connectors, never for a battery", async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name === "mobile", "writes shared rows; see the note above");
+    await page.goto("/admin/cerca?q=DEMO-CAB-100W-1M");
+    await page
+      .getByRole("link", { name: /cavo usb-c/i })
+      .first()
+      .click();
+    await page.waitForURL(/\/admin\/prodotti\/[^/]+$/);
+
+    const specs = await openSpecs(page, "DEMO-CAB-100W-1M");
+
+    await expect(specs.getByLabel(/Lunghezza/)).toBeVisible();
+    await expect(specs.getByLabel(/Connettori/)).toBeVisible();
+    // The point of the whole feature.
+    await expect(specs.getByLabel(/Capacità/)).toHaveCount(0);
+
+    await specs.getByLabel(/Lunghezza/).fill("1000");
+    await specs.getByLabel(/Connettori/).fill("USB-C a USB-C");
+    await specs.getByRole("button", { name: /salva specifiche/i }).click();
+    await page.waitForLoadState("networkidle");
+
+    // The server's answer, not the optimistic one.
+    const saved = await reloadAnd(page, async () => {
+      const block = await openSpecs(page, "DEMO-CAB-100W-1M");
+      return {
+        length: await block.getByLabel(/Lunghezza/).inputValue(),
+        connector: await block.getByLabel(/Connettori/).inputValue(),
+      };
+    });
+
+    expect(saved.length).toBe("1000");
+    expect(saved.connector).toBe("USB-C a USB-C");
+  });
+
+  test("a phone case is never asked for a battery capacity", async ({ page }) => {
+    await page.goto("/admin/cerca?q=DEMO-COV-16P-CLR");
+    await page
+      .getByRole("link", { name: /cover trasparente/i })
+      .first()
+      .click();
+    await page.waitForURL(/\/admin\/prodotti\/[^/]+$/);
+
+    const specs = await openSpecs(page, "DEMO-COV-16P-CLR");
+
+    await expect(specs.getByLabel(/Dimensioni/)).toBeVisible();
+    await expect(specs.getByLabel(/Capacità/)).toHaveCount(0);
+    await expect(specs.getByLabel(/Lunghezza/)).toHaveCount(0);
+  });
+
+  test("choosing a type changes which fields are asked for", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === "mobile", "writes shared rows; see the note above");
+    /*
+     * On the deliberately incomplete draft — the one product no other test in
+     * this file writes to. It is seeded with NO type, so it also covers the
+     * state a merchant sees before they have chosen one.
+     */
+    await page.goto("/admin/prodotti/prod_demo_incomplete");
+
+    // No type: no fields, and a sentence saying what to do about it rather
+    // than an empty section.
+    await expect(page.getByText(/scegliete il/i)).toBeVisible();
+    await expect(page.locator("details[data-variant='DEMO-SUP-MAG-01']")).toHaveCount(0);
+
+    await page.selectOption("#accessoryType", "powerbank");
+    await page.getByRole("button", { name: /salva dettagli/i }).click();
+    await page.waitForLoadState("networkidle");
+    await expect(page.getByText(/Salvato alle/)).toBeVisible();
+
+    const asPowerbank = await openSpecs(page, "DEMO-SUP-MAG-01");
+    await expect(asPowerbank.getByLabel(/Capacità/)).toBeVisible();
+
+    // Change the type: the fields change with it.
+    await page.selectOption("#accessoryType", "car_mount");
+    await page.getByRole("button", { name: /salva dettagli/i }).click();
+    await page.waitForLoadState("networkidle");
+
+    const asMount = await openSpecs(page, "DEMO-SUP-MAG-01");
+    await expect(asMount.getByLabel(/Peso/)).toBeVisible();
+    await expect(asMount.getByLabel(/Capacità/)).toHaveCount(0);
+  });
+});
+
+test.describe("duplicating a product", () => {
+  /**
+   * "The same case in a second colour" was a full re-entry of everything,
+   * including the device compatibility that takes longest to type.
+   *
+   * The assertions below are as much about what a copy must NOT inherit as
+   * about what it does: a duplicate that arrives published, or claiming stock
+   * on a shelf, is worse than no duplicate button.
+   */
+  test("creates a draft copy with the compatibility and none of the stock", async ({
+    page,
+  }, testInfo) => {
+    // Desktop only: two concurrent duplicates of one product would race for
+    // the same `-C` suffix. That race is real and it fails safely — the batch
+    // rolls back — but reproducing it here proves nothing about the feature.
+    test.skip(testInfo.project.name === "mobile", "writes shared rows");
+    await page.goto("/admin/cerca?q=DEMO-CHG-25W-WHT");
+    await page
+      .getByRole("link", { name: /caricatore/i })
+      .first()
+      .click();
+    await page.waitForURL(/\/admin\/prodotti\/[^/]+$/);
+    const original = page.url();
+
+    /*
+     * Wait for a row before counting.
+     *
+     * `locator.count()` does NOT auto-wait: it answers about the DOM at that
+     * instant, and `waitForURL` resolves on navigation rather than on render.
+     * Counting straight after it reads zero from a page that is about to have
+     * two rows, and the failure then looks like missing data instead of a race.
+     */
+    const compatibilityRows = page.locator("#sez-compatibilita li.ac-action");
+    await expect(compatibilityRows.first()).toBeVisible();
+    const compatibilityBefore = await compatibilityRows.count();
+    expect(compatibilityBefore).toBeGreaterThan(0);
+
+    await page.getByRole("button", { name: /duplica prodotto/i }).click();
+    await page.waitForURL(/\/admin\/prodotti\/[^/]+\?duplicato=1$/);
+
+    // A different product, not a re-render of the same one.
+    expect(page.url()).not.toBe(original);
+
+    await expect(page.getByRole("status").first()).toContainText(/copia creata/i);
+    await expect(page.locator("h1")).toContainText(/\(copia\)/i);
+
+    // Draft. Never live.
+    await expect(page.getByText(/bozza/i).first()).toBeVisible();
+
+    // The compatibility came across — the expensive part.
+    await expect(page.locator("#sez-compatibilita li.ac-action")).toHaveCount(compatibilityBefore);
+
+    // The stock did not.
+    const stockCells = page.locator("#sez-varianti td[data-label='Disponibile']");
+    for (let i = 0; i < (await stockCells.count()); i += 1) {
+      await expect(stockCells.nth(i)).toHaveText(/^0$/);
+    }
+
+    // And the SKU is recognisably a copy, so a person holding the box can tell.
+    await expect(page.locator("#sez-varianti")).toContainText("DEMO-CHG-25W-WHT-C");
+
+    // The original is untouched.
+    await page.goto(original, { waitUntil: "networkidle" });
+    await expect(page.locator("h1")).not.toContainText(/\(copia\)/i);
+    await expect(page.locator("#sez-varianti")).toContainText("DEMO-CHG-25W-WHT");
   });
 });

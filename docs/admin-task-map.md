@@ -35,8 +35,35 @@ approximate.
 | Add a photo                                   | Product → Foto → upload             | 4        | not yet                                                                      |
 | Choose the primary photo                      | Product → Foto → "Rendi principale" | 4        | not yet                                                                      |
 | Record device compatibility                   | Product → Compatibilità → add       | 5        | `admin.spec`                                                                 |
+| Record a technical specification              | Product → Varianti → variant → save | **5**    | `admin-workflows` — a cable's length survives a reload **(measured)**        |
+| Duplicate a product in another colour         | Product → Duplica prodotto          | **2**    | `admin-workflows` — a draft copy with no stock **(measured)**                |
 | Publish a product                             | Product → Pubblicazione → Pubblica  | 3        | `admin-workflows` — refuses without a price **(measured)**                   |
 | Archive a product                             | Product → Archivia                  | 3        | `admin.spec`                                                                 |
+
+### The specification fields change with the kind of product
+
+A cable is asked for its length and its connectors. A phone case is asked for
+neither, and never for a battery capacity. Six columns have existed on
+`product_variants` since the first migration and the editor surfaced none of
+them, so a charger's wattage could only go in the free-text description.
+
+The type also decides which columns a submitted form may **write**, which is a
+security property rather than a convenience: the column names are interpolated
+into an `UPDATE`, because an identifier cannot be bound as a parameter.
+
+### What a duplicate copies, and what it refuses to
+
+| Copied                                                     | Not copied                       |
+| ---------------------------------------------------------- | -------------------------------- |
+| Name (with "(copia)"), descriptions, brand, category, type | **Stock — always zero**          |
+| Variants, their specifications, and their prices           | **Publication — always a draft** |
+| Photographs, as references to the same stored objects      | Variant-scoped compatibility     |
+| Product-level device compatibility                         |                                  |
+
+Stock is a physical fact about a shelf. A copy that arrived claiming twelve in
+hand would oversell on its first day, so inventory rows are created at zero and
+the confirmation notice says so in the first sentence. Variant SKUs get a `-C`
+suffix, so a person holding the box can tell which is which.
 
 ### What the publication guard refuses, and why
 
@@ -130,11 +157,12 @@ that handles one row where the merchant is thinking in batches.
 
 ## 8. What has no browser proof yet
 
-|                                                    |                                                                                                                                             |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Photo upload, reorder, primary selection, alt text | The media manager is unchanged by this work.                                                                                                |
-| WhatsApp message composition                       | Opens an external URL; asserting the URL is possible, opening it is not.                                                                    |
-| Internal notes                                     |                                                                                                                                             |
-| Payment verification through the UI                | Covered server-side in `tests/security/payment-verification`, which exercises the rules including step-up. The screen itself is not walked. |
-| Anything on the MariaDB runtime                    | The browser suite runs against `wrangler dev` and D1.                                                                                       |
-| Firefox, WebKit                                    | Chromium only.                                                                                                                              |
+|                                                    |                                                                                                                                                                                 |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Photo upload, reorder, primary selection, alt text | The media manager is unchanged by this work.                                                                                                                                    |
+| The two write-heavy workflow tests on a phone      | They run on desktop only. Both Playwright projects share one server and one database, so running a writing test twice concurrently tests the scheduler rather than the feature. |
+| WhatsApp message composition                       | Opens an external URL; asserting the URL is possible, opening it is not.                                                                                                        |
+| Internal notes                                     |                                                                                                                                                                                 |
+| Payment verification through the UI                | Covered server-side in `tests/security/payment-verification`, which exercises the rules including step-up. The screen itself is not walked.                                     |
+| Anything on the MariaDB runtime                    | The browser suite runs against `wrangler dev` and D1.                                                                                                                           |
+| Firefox, WebKit                                    | Chromium only.                                                                                                                                                                  |

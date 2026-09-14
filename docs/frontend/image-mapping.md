@@ -2,7 +2,7 @@
 
 ## Language-pass consistency check — 14 September 2026
 
-Cart image selection now applies the same saleable-image predicate as catalogue cards, so an excluded old primary cannot hide a usable secondary photo. Product alt text falls back to the merchant's Italian description when English alt text is empty. Language changes preserve product/variant IDs and do not create or relabel merchant media. The previously recorded 26 missing/unverified merchant photographs remain outstanding.
+Cart image selection now applies the same saleable-image predicate as catalogue cards, so an excluded old primary cannot hide a usable secondary photo. Product alt text falls back to the merchant's Italian description when English alt text is empty. Language changes preserve product/variant IDs and do not create or relabel merchant media. The previously recorded 26 missing/unverified merchant photographs remain outstanding. With English selected, the same existing upload workflow is Dashboard → Review photos → Complete photos; language switching does not alter the uploaded file, its key or its product assignment.
 
 ## 14 September 2026 — existing media selection and repair queue
 

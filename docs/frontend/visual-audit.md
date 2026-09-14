@@ -8,7 +8,7 @@ Confirmed defects: the footer sent visitors to the language homepage instead of 
 
 The admin now has a native, persistent language menu, including sign-in/setup/2FA screens. Controlled menus, table headings, statuses, help copy, feedback and metadata are translated on the server. Dates retain Europe/Rome and prices retain EUR. Merchant names, entered values, SKUs, stored status codes and audit records are preserved. Product text still uses the existing merchant translation records; switching the interface does not write translated merchandise.
 
-The footer preserves route, query and (with JavaScript) fragment. Storefront locale remains URL-based; the admin preference is private. English queries use existing translation tables with per-field Italian fallback. Cart reads also use the same usable-photo selection as the catalogue.
+Manual four-width image review also found untranslated metric notes and mobile table labels. Both are corrected, with browser assertions for the notes, currency format and order-item labels. The footer preserves route, query and (with JavaScript) fragment. Storefront locale remains URL-based; the admin preference is private. English queries use existing translation tables with per-field Italian fallback. Cart reads also use the same usable-photo selection as the catalogue.
 
 ## 14 September 2026 — media, footer and admin follow-up
 

@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, Link } from "react-router";
 import type { Route } from "./+types/pages";
 import { appContext } from "~/runtime/context";
@@ -23,8 +26,9 @@ import { parsePageBody } from "~/domain/content/page-body";
  * obligations are different.
  */
 
-export function meta() {
-  return [{ title: "Pagine" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Pagine") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 /** Both storefront locales. Italian is the fallback the storefront reads. */
@@ -119,7 +123,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     const title = String(form.get("title") ?? "").trim();
     const pageType = String(form.get("page_type") ?? "page");
 
-    if (!PAGE_TYPES.some((t) => t.value === pageType)) {
+    if (!PAGE_TYPES.some((type) => type.value === pageType)) {
       return { error: "Tipo di pagina non riconosciuto." };
     }
     if (!SLUG_PATTERN.test(slug)) {
@@ -240,85 +244,87 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function AdminPages({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { pages, canWrite, canPublish, typeFilter, pageTypes } = loaderData;
   const published = pages.filter((p) => p.status === "published").length;
 
   return (
     <>
-      <PageHeader title="Pagine" breadcrumbs={breadcrumbsFor("/admin/contenuti/pagine")} />
+      <PageHeader title={t("Pagine")} breadcrumbs={breadcrumbsFor("/admin/contenuti/pagine")} />
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
       {actionData && "success" in actionData && actionData.success ? (
         <p className="notice notice--info" role="status">
-          {actionData.success}
+          {t(actionData.success)}
         </p>
       ) : null}
 
       <section className="panel">
         <div className="ac-metrics">
           <div className="ac-metric">
-            <span className="ac-metric__label">Pubblicate</span>
+            <span className="ac-metric__label">{t("Pubblicate")}</span>
             <span className="ac-metric__value numeric">
               {published} / {pages.length}
             </span>
           </div>
         </div>
         <p className="small">
-          Queste sono le pagine di testo del sito: chi siamo, contatti, guide. Le condizioni di
-          vendita, la privacy e il diritto di recesso non stanno qui — hanno una sezione propria
-          perché sono documenti vincolanti e vanno versionati.
+          {t(
+            "Queste sono le pagine di testo del sito: chi siamo, contatti, guide. Le condizioni di vendita, la privacy e il diritto di recesso non stanno qui — hanno una sezione propria perché sono documenti vincolanti e vanno versionati.",
+          )}
         </p>
       </section>
 
-      <nav className="cluster" aria-label="Filtra per tipo">
+      <nav className="cluster" aria-label={t("Filtra per tipo")}>
         <Link
           className="chip"
           to="/admin/contenuti/pagine"
           aria-current={typeFilter === "" || undefined}
         >
-          Tutte
+          {t("Tutte")}
         </Link>
-        {pageTypes.map((t) => (
+        {pageTypes.map((pageType) => (
           <Link
-            key={t.value}
+            key={pageType.value}
             className="chip"
-            to={`/admin/contenuti/pagine?tipo=${t.value}`}
-            aria-current={typeFilter === t.value || undefined}
+            to={`/admin/contenuti/pagine?tipo=${pageType.value}`}
+            aria-current={typeFilter === pageType.value || undefined}
           >
-            {t.label}
+            {t(pageType.label)}
           </Link>
         ))}
       </nav>
 
       {canWrite ? (
         <section className="panel">
-          <h2>Nuova pagina</h2>
+          <h2>{t("Nuova pagina")}</h2>
           <Form method="post" className="stack">
             <input type="hidden" name="intent" value="create" />
             <label>
-              Titolo
+              {t("Titolo")}
               <input name="title" required maxLength={120} />
             </label>
             <label>
-              Tipo
+              {t("Tipo")}
               <select name="page_type" defaultValue={typeFilter || "page"}>
-                {pageTypes.map((t) => (
-                  <option key={t.value} value={t.value}>
-                    {t.label}
+                {pageTypes.map((pageType) => (
+                  <option key={pageType.value} value={pageType.value}>
+                    {t(pageType.label)}
                   </option>
                 ))}
               </select>
               <span className="field-help">
-                Una guida è una pagina: stesso editor, stesse regole. Il tipo serve solo a
-                ritrovarla.
+                {t(
+                  "Una guida è una pagina: stesso editor, stesse regole. Il tipo serve solo a ritrovarla.",
+                )}
               </span>
             </label>
             <label>
-              Indirizzo
+              {t("Indirizzo")}
               <input
                 name="slug"
                 required
@@ -327,12 +333,13 @@ export default function AdminPages({ loaderData, actionData }: Route.ComponentPr
                 placeholder="chi-siamo"
               />
               <span className="field-help">
-                Diventa l&apos;indirizzo della pagina: /pagine/chi-siamo. Solo minuscole, numeri e
-                trattini. Cambiarlo dopo rompe i link già condivisi.
+                {t(
+                  "Diventa l'indirizzo della pagina: /pagine/chi-siamo. Solo minuscole, numeri e trattini. Cambiarlo dopo rompe i link già condivisi.",
+                )}
               </span>
             </label>
             <button className="btn btn--primary" type="submit">
-              Crea come bozza
+              {t("Crea come bozza")}
             </button>
           </Form>
         </section>
@@ -347,14 +354,17 @@ export default function AdminPages({ loaderData, actionData }: Route.ComponentPr
               <summary>
                 <strong>{page.translations.it?.title ?? page.slug}</strong>{" "}
                 {isPublished ? (
-                  <span className="badge badge--success">pubblicata</span>
+                  <span className="badge badge--success">{t("pubblicata")}</span>
                 ) : (
-                  <span className="badge badge--warning">bozza</span>
+                  <span className="badge badge--warning">{t("bozza")}</span>
                 )}{" "}
                 <code className="small">/pagine/{page.slug}</code>{" "}
                 {page.page_type !== "page" ? (
                   <span className="badge">
-                    {pageTypes.find((t) => t.value === page.page_type)?.label ?? page.page_type}
+                    {t(
+                      pageTypes.find((type) => type.value === page.page_type)?.label ??
+                        page.page_type,
+                    )}
                   </span>
                 ) : null}
               </summary>
@@ -372,7 +382,7 @@ export default function AdminPages({ loaderData, actionData }: Route.ComponentPr
                     <h3>{locale.label}</h3>
 
                     <label>
-                      Titolo
+                      {t("Titolo")}
                       <input
                         name="title"
                         defaultValue={translation?.title ?? ""}
@@ -383,7 +393,7 @@ export default function AdminPages({ loaderData, actionData }: Route.ComponentPr
                     </label>
 
                     <label>
-                      Sommario
+                      {t("Sommario")}
                       <input
                         name="excerpt"
                         defaultValue={translation?.excerpt ?? ""}
@@ -391,13 +401,14 @@ export default function AdminPages({ loaderData, actionData }: Route.ComponentPr
                         disabled={!canWrite}
                       />
                       <span className="field-help">
-                        La frase sotto il titolo, e la descrizione che compare su Google se non ne
-                        scrivi un&apos;altra.
+                        {t(
+                          "La frase sotto il titolo, e la descrizione che compare su Google se non ne scrivi un'altra.",
+                        )}
                       </span>
                     </label>
 
                     <label>
-                      Testo
+                      {t("Testo")}
                       <textarea
                         name="body"
                         rows={14}
@@ -405,22 +416,25 @@ export default function AdminPages({ loaderData, actionData }: Route.ComponentPr
                         disabled={!canWrite}
                       />
                       <span className="field-help">
-                        Una riga vuota separa i paragrafi. Una riga che inizia con <code>## </code>{" "}
-                        è un sottotitolo, una che inizia con <code>- </code> è un punto elenco. Non
-                        si possono inserire link o HTML: è una scelta di sicurezza, non una
-                        mancanza.
+                        {t("Una riga vuota separa i paragrafi. Una riga che inizia con ")}
+                        <code>## </code> {t("è un sottotitolo, una che inizia con ")}
+                        <code>- </code>{" "}
+                        {t(
+                          " è un punto elenco. Non si possono inserire link o HTML: è una scelta di sicurezza, non una mancanza.",
+                        )}
                       </span>
                       {blocks.length > 0 ? (
                         <span className="field-help">
-                          Al momento: {blocks.filter((b) => b.kind === "heading").length}{" "}
-                          sottotitoli, {blocks.filter((b) => b.kind === "paragraph").length}{" "}
-                          paragrafi, {blocks.filter((b) => b.kind === "list").length} elenchi.
+                          {t("Al momento: ")}
+                          {blocks.filter((b) => b.kind === "heading").length} {t("sottotitoli, ")}
+                          {blocks.filter((b) => b.kind === "paragraph").length} {t("paragrafi, ")}
+                          {blocks.filter((b) => b.kind === "list").length} {t(" elenchi.")}
                         </span>
                       ) : null}
                     </label>
 
                     <label>
-                      Descrizione per i motori di ricerca
+                      {t("Descrizione per i motori di ricerca")}
                       <input
                         name="seo_description"
                         defaultValue={translation?.seo_description ?? ""}
@@ -428,14 +442,16 @@ export default function AdminPages({ loaderData, actionData }: Route.ComponentPr
                         disabled={!canWrite}
                       />
                       <span className="field-help">
-                        Facoltativa. Se vuota viene usato il sommario. Oltre i 160 caratteri Google
-                        taglia.
+                        {t(
+                          "Facoltativa. Se vuota viene usato il sommario. Oltre i 160 caratteri Google taglia.",
+                        )}
                       </span>
                     </label>
 
                     {canWrite ? (
                       <button className="btn" type="submit">
-                        Salva {locale.label}
+                        {t("Salva ")}
+                        {locale.label}
                       </button>
                     ) : null}
                   </Form>
@@ -452,7 +468,7 @@ export default function AdminPages({ loaderData, actionData }: Route.ComponentPr
                     />
                     <input type="hidden" name="pageId" value={page.id} />
                     <button className={isPublished ? "btn" : "btn btn--primary"} type="submit">
-                      {isPublished ? "Ritira dal sito" : "Pubblica"}
+                      {isPublished ? t("Ritira dal sito") : t("Pubblica")}
                     </button>
                   </Form>
 
@@ -460,7 +476,7 @@ export default function AdminPages({ loaderData, actionData }: Route.ComponentPr
                     <input type="hidden" name="intent" value="archive" />
                     <input type="hidden" name="pageId" value={page.id} />
                     <button className="btn btn--danger" type="submit">
-                      Archivia
+                      {t("Archivia")}
                     </button>
                   </Form>
                 </div>

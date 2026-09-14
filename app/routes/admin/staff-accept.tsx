@@ -1,3 +1,9 @@
+import adminStyles from "~/styles/admin.css?url";
+export const links = () => [{ rel: "stylesheet", href: adminStyles }];
+import { AdminLanguageSwitcher } from "~/components/admin/language-switcher";
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, redirect } from "react-router";
 import type { Route } from "./+types/staff-accept";
 import { appContext } from "~/runtime/context";
@@ -18,8 +24,9 @@ import {
  * it is single-use, expiring, scoped to one email address, and stored hashed.
  */
 
-export function meta() {
-  return [{ title: "Accetta l'invito" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Accetta l'invito") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 export async function loader({ params, context }: Route.LoaderArgs) {
@@ -104,14 +111,19 @@ export async function action({ request, params, context }: Route.ActionArgs) {
 }
 
 export default function AcceptInvite({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   if (!loaderData.valid) {
     return (
       <main id="main" className="admin-auth">
         <div className="panel stack admin-auth__panel">
-          <h1>Invito non valido</h1>
+          <div className="admin-auth__language">
+            <AdminLanguageSwitcher />
+          </div>
+          <h1>{t("Invito non valido")}</h1>
           <p className="muted">
-            Questo invito non è valido, è già stato usato o è scaduto. Chiedi a chi ti ha invitato
-            di crearne uno nuovo.
+            {t(
+              "Questo invito non è valido, è già stato usato o è scaduto. Chiedi a chi ti ha invitato di crearne uno nuovo.",
+            )}
           </p>
         </div>
       </main>
@@ -121,22 +133,26 @@ export default function AcceptInvite({ loaderData, actionData }: Route.Component
   return (
     <main id="main" className="admin-auth">
       <div className="panel stack admin-auth__panel">
-        <h1>Accetta l&apos;invito</h1>
+        <div className="admin-auth__language">
+          <AdminLanguageSwitcher />
+        </div>
+        <h1>{t("Accetta l'invito")}</h1>
         <p className="small muted">
-          Stai creando un account per <strong>{loaderData.email}</strong>. Scegli tu la password:
-          nessun altro la conosce.
+          {t("Stai creando un account per ")}
+          <strong>{loaderData.email}</strong>
+          {t(". Scegli tu la password: nessun altro la conosce.")}
         </p>
 
         {actionData?.error ? (
           <p className="notice notice--danger" role="alert">
-            {actionData.error}
+            {t(actionData.error)}
           </p>
         ) : null}
 
         <Form method="post" className="stack">
           <div className="field">
             <label className="field__label" htmlFor="name">
-              Nome e cognome
+              {t("Nome e cognome")}
             </label>
             <input id="name" name="name" className="input" required autoComplete="name" />
           </div>
@@ -154,12 +170,12 @@ export default function AcceptInvite({ loaderData, actionData }: Route.Component
               minLength={12}
               autoComplete="new-password"
             />
-            <span className="field__hint">Almeno 12 caratteri.</span>
+            <span className="field__hint">{t("Almeno 12 caratteri.")}</span>
           </div>
 
           <div className="field">
             <label className="field__label" htmlFor="confirm">
-              Ripeti la password
+              {t("Ripeti la password")}
             </label>
             <input
               id="confirm"
@@ -173,13 +189,14 @@ export default function AcceptInvite({ loaderData, actionData }: Route.Component
           </div>
 
           <button type="submit" className="btn btn--primary">
-            Crea account
+            {t("Crea account")}
           </button>
         </Form>
 
         <p className="caption muted">
-          Se il tuo ruolo lo richiede, subito dopo ti verrà chiesto di attivare
-          l&apos;autenticazione a due fattori.
+          {t(
+            "Se il tuo ruolo lo richiede, subito dopo ti verrà chiesto di attivare l'autenticazione a due fattori.",
+          )}
         </p>
       </div>
     </main>

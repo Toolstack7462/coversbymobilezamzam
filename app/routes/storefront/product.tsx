@@ -24,10 +24,11 @@ import {
   type SettingsMap,
 } from "~/domain/content/gates";
 
-export function meta({ loaderData, matches }: Route.MetaArgs) {
+export function meta({ loaderData, matches, location }: Route.MetaArgs) {
+  const t = translator(parseLocalePath(location.pathname).locale);
   // Falls back rather than inventing: an untranslated product still needs a
   // title, and its slug is a real fact about it where a made-up name is not.
-  const name = loaderData?.product?.name ?? loaderData?.product?.slug ?? "Prodotto";
+  const name = loaderData?.product?.name ?? loaderData?.product?.slug ?? t("meta.product");
 
   /*
    * The description is the product's OWN summary, trimmed to the length a
@@ -54,14 +55,16 @@ export function meta({ loaderData, matches }: Route.MetaArgs) {
   ];
 }
 
-export async function loader({ context, params }: Route.LoaderArgs) {
+export async function loader({ context, params, request }: Route.LoaderArgs) {
+  const { locale } = parseLocalePath(new URL(request.url).pathname);
   const { env } = context.get(appContext);
 
   const product = await env.DB.prepare(
-    `SELECT p.id, p.slug, pt.name, pt.short_description, pt.full_description,
+    `SELECT p.id, p.slug, COALESCE(NULLIF(pt_local.name, ''), pt.name) AS name, COALESCE(NULLIF(pt_local.short_description, ''), pt.short_description) AS short_description, COALESCE(NULLIF(pt_local.full_description, ''), pt.full_description) AS full_description,
             b.name AS brand_name, p.accessory_type
        FROM products p
-       LEFT JOIN product_translations pt ON pt.product_id = p.id AND pt.locale = 'it'
+       LEFT JOIN product_translations pt_local ON pt_local.product_id = p.id AND pt_local.locale = '${locale}'
+         LEFT JOIN product_translations pt ON pt.product_id = p.id AND pt.locale = 'it'
        LEFT JOIN brands b ON b.id = p.brand_id
       WHERE p.slug = ?1 AND p.status = 'active' AND p.archived_at IS NULL`,
   )
@@ -188,7 +191,7 @@ export async function loader({ context, params }: Route.LoaderArgs) {
      * relationship the data can actually prove.
      */
     env.DB.prepare(
-      `SELECT DISTINCT p.slug, pt.name, b.name AS brand_name,
+      `SELECT DISTINCT p.slug, COALESCE(NULLIF(pt_local.name, ''), pt.name) AS name, b.name AS brand_name,
               (SELECT amount FROM variant_prices vp
                  JOIN product_variants v ON v.id = vp.variant_id
                 WHERE v.product_id = p.id ORDER BY vp.amount ASC LIMIT 1) AS price_amount,
@@ -202,6 +205,7 @@ export async function loader({ context, params }: Route.LoaderArgs) {
              AND theirs.compatibility_level <> 'incompatible'
          JOIN products p ON p.id = theirs.product_id
                         AND p.status = 'active' AND p.archived_at IS NULL
+         LEFT JOIN product_translations pt_local ON pt_local.product_id = p.id AND pt_local.locale = '${locale}'
          LEFT JOIN product_translations pt ON pt.product_id = p.id AND pt.locale = 'it'
          LEFT JOIN brands b ON b.id = p.brand_id
         WHERE mine.product_id = ?1 AND mine.compatibility_level <> 'incompatible'
@@ -250,7 +254,7 @@ export async function loader({ context, params }: Route.LoaderArgs) {
      * case for an iPhone fits a Galaxy.
      */
     env.DB.prepare(
-      `SELECT p.slug, COALESCE(pt.name, p.slug) AS name,
+      `SELECT p.slug, COALESCE(COALESCE(NULLIF(pt_local.name, ''), pt.name), p.slug) AS name,
               (SELECT amount FROM variant_prices vp
                  JOIN product_variants v ON v.id = vp.variant_id
                 WHERE v.product_id = p.id ORDER BY vp.amount ASC LIMIT 1) AS price_amount,
@@ -263,6 +267,7 @@ export async function loader({ context, params }: Route.LoaderArgs) {
           AND theirs.product_id <> mine.product_id
          JOIN products p ON p.id = theirs.product_id
                         AND p.status = 'active' AND p.archived_at IS NULL
+         LEFT JOIN product_translations pt_local ON pt_local.product_id = p.id AND pt_local.locale = '${locale}'
          LEFT JOIN product_translations pt ON pt.product_id = p.id AND pt.locale = 'it'
         WHERE mine.product_id = ?1
         ORDER BY theirs.sort_order
@@ -419,7 +424,7 @@ export default function ProductPage({ loaderData }: Route.ComponentProps) {
                     src={`${mediaBaseUrl}/${img.object_key}`}
                     /* The alt belongs to the image, not the product: these are
                        placeholder illustrations and say so. */
-                    alt={(locale === "en" ? img.alt_en : img.alt_it) ?? ""}
+                    alt={(locale === "en" ? img.alt_en || img.alt_it : img.alt_it) ?? ""}
                     width={img.width}
                     height={img.height}
                     /* The first is the LCP element of this page. The rest are

@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Link, useLocation } from "react-router";
 import type { Route } from "./+types/customers";
 import { appContext } from "~/runtime/context";
@@ -33,8 +36,9 @@ import { DataTable, type Column } from "~/components/admin/data-table";
  * pretending otherwise would require guessing.
  */
 
-export function meta() {
-  return [{ title: "Clienti" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Clienti") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 const SPEC: TableSpec = {
@@ -181,6 +185,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export default function Customers({ loaderData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { pathname } = useLocation();
   const { rows, state, pagination, views, canSeePayments } = loaderData;
 
@@ -214,7 +219,7 @@ export default function Customers({ loaderData }: Route.ComponentProps) {
       key: "spent",
       header: "Ordinato",
       numeric: true,
-      render: (row) => formatMoney(money(row.total_spent)),
+      render: (row) => formatMoney(money(row.total_spent), t.intl),
     },
     ...(canSeePayments
       ? [
@@ -225,7 +230,7 @@ export default function Customers({ loaderData }: Route.ComponentProps) {
             secondary: true,
             // The two differ by everything ordered and never paid for. Showing
             // only the first would overstate every abandoned order as revenue.
-            render: (row: CustomerRow) => formatMoney(money(row.verified_spent)),
+            render: (row: CustomerRow) => formatMoney(money(row.verified_spent), t.intl),
           },
         ]
       : []),
@@ -233,23 +238,26 @@ export default function Customers({ loaderData }: Route.ComponentProps) {
       key: "last",
       header: "Ultimo ordine",
       secondary: true,
-      render: (row) => <span className="small">{formatDateTime(row.last_order_at, "it")}</span>,
+      render: (row) => <span className="small">{formatDateTime(row.last_order_at, t.locale)}</span>,
     },
   ];
 
   return (
     <>
       <PageHeader
-        title="Clienti"
-        description="Chi ha comprato, quante volte. Ricavato dagli ordini: il negozio non tiene una rubrica separata."
+        title={t("Clienti")}
+        description={t(
+          "Chi ha comprato, quante volte. Ricavato dagli ordini: il negozio non tiene una rubrica separata.",
+        )}
         breadcrumbs={breadcrumbsFor(pathname)}
       />
 
       <p className="notice notice--info small">
-        Questi dati vivono <strong>dentro gli ordini</strong>, non in un archivio clienti a parte.
-        Significa una sola copia dei dati personali di ognuno: se un cliente chiede la
-        cancellazione, c&apos;è un solo posto da cui toglierla. Due indirizzi email diversi restano
-        due clienti diversi, perché il negozio non ha modo di sapere che sono la stessa persona.
+        {t("Questi dati vivono ")}
+        <strong>{t("dentro gli ordini")}</strong>
+        {t(
+          ", non in un archivio clienti a parte. Significa una sola copia dei dati personali di ognuno: se un cliente chiede la cancellazione, c'è un solo posto da cui toglierla. Due indirizzi email diversi restano due clienti diversi, perché il negozio non ha modo di sapere che sono la stessa persona.",
+        )}
       </p>
 
       <DataTable
@@ -260,10 +268,12 @@ export default function Customers({ loaderData }: Route.ComponentProps) {
         rows={rows}
         rowKey={(row) => row.email}
         views={views}
-        searchLabel="Cerca per nome o email"
+        searchLabel={t("Cerca per nome o email")}
         emptyState={{
-          title: "Nessun cliente",
-          body: "Comparirà qui chiunque completi un ordine. Non serve che si registri: il negozio vende anche agli ospiti.",
+          title: t("Nessun cliente"),
+          body: t(
+            "Comparirà qui chiunque completi un ordine. Non serve che si registri: il negozio vende anche agli ospiti.",
+          ),
         }}
       />
     </>

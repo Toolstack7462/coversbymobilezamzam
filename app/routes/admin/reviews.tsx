@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, Link } from "react-router";
 import type { Route } from "./+types/reviews";
 import { appContext } from "~/runtime/context";
@@ -37,8 +40,9 @@ import { PageHeader } from "~/components/admin/admin-shell";
  * between those two numbers is the honest measure of whether this is being done
  * properly, and it should be visible to whoever is doing it.
  */
-export function meta() {
-  return [{ title: "Recensioni" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Recensioni") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 const PROVENANCE_LABELS: Record<string, string> = {
@@ -206,6 +210,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function AdminReviews({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { reviews, products, stats, filter, canModerate, canWrite } = loaderData;
 
   const tab = (slug: string, label: string, count?: number) => (
@@ -214,7 +219,7 @@ export default function AdminReviews({ loaderData, actionData }: Route.Component
       to={`/admin/recensioni?stato=${slug}`}
       aria-current={filter === slug || undefined}
     >
-      {label}
+      {t(label)}
       {count !== undefined ? ` (${count})` : ""}
     </Link>
   );
@@ -225,80 +230,83 @@ export default function AdminReviews({ loaderData, actionData }: Route.Component
 
   return (
     <>
-      <PageHeader title="Recensioni" breadcrumbs={breadcrumbsFor("/admin/recensioni")} />
+      <PageHeader title={t("Recensioni")} breadcrumbs={breadcrumbsFor("/admin/recensioni")} />
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
       {actionData && "success" in actionData && actionData.success ? (
         <p className="notice notice--info" role="status">
-          {actionData.success}
+          {t(actionData.success)}
         </p>
       ) : null}
 
       <section className="panel">
         <div className="ac-metrics">
           <div className="ac-metric">
-            <span className="ac-metric__label">Da esaminare</span>
+            <span className="ac-metric__label">{t("Da esaminare")}</span>
             <span className="ac-metric__value numeric">{stats?.pending ?? 0}</span>
           </div>
           <div className="ac-metric">
-            <span className="ac-metric__label">Pubblicate</span>
+            <span className="ac-metric__label">{t("Pubblicate")}</span>
             <span className="ac-metric__value numeric">{stats?.published ?? 0}</span>
           </div>
           <div className="ac-metric">
-            <span className="ac-metric__label">Rifiutate</span>
+            <span className="ac-metric__label">{t("Rifiutate")}</span>
             <span className="ac-metric__value numeric">{stats?.rejected ?? 0}</span>
           </div>
           <div className="ac-metric">
-            <span className="ac-metric__label">Media ricevuta</span>
+            <span className="ac-metric__label">{t("Media ricevuta")}</span>
             <span className="ac-metric__value numeric">
               {avgAll !== null ? avgAll.toFixed(1) : "—"}
             </span>
           </div>
           <div className="ac-metric">
-            <span className="ac-metric__label">Media pubblicata</span>
+            <span className="ac-metric__label">{t("Media pubblicata")}</span>
             <span className="ac-metric__value numeric">
               {avgPublished !== null ? avgPublished.toFixed(1) : "—"}
             </span>
             {gap !== null ? (
               <span className="ac-metric__note numeric">
                 {gap > 0 ? "+" : ""}
-                {gap.toFixed(1)} rispetto a quanto ricevuto
+                {gap.toFixed(1)} {t(" rispetto a quanto ricevuto")}
               </span>
             ) : null}
           </div>
         </div>
 
         <p className="small">
-          Una recensione si pubblica o si rifiuta. Non si modifica: un negozio che riscrive le
-          recensioni non sta mostrando recensioni.
+          {t(
+            "Una recensione si pubblica o si rifiuta. Non si modifica: un negozio che riscrive le recensioni non sta mostrando recensioni.",
+          )}
         </p>
         <p className="notice notice--warning">
-          <strong>Le due medie qui sopra vanno guardate insieme.</strong> Se quella pubblicata è
-          molto più alta di quella ricevuta, vuol dire che si stanno filtrando le critiche e non lo
-          spam — ed è esattamente la pratica che il D.Lgs. 26/2023 vieta. Nessun vincolo tecnico può
-          impedirlo: è una decisione, e la prende chi sta leggendo questa riga.
+          <strong>{t("Le due medie qui sopra vanno guardate insieme.")}</strong>{" "}
+          {t(
+            " Se quella pubblicata è molto più alta di quella ricevuta, vuol dire che si stanno filtrando le critiche e non lo spam — ed è esattamente la pratica che il D.Lgs. 26/2023 vieta. Nessun vincolo tecnico può impedirlo: è una decisione, e la prende chi sta leggendo questa riga.",
+          )}
         </p>
       </section>
 
       {canWrite ? (
         <section className="panel">
-          <h2>Registra una recensione raccolta in negozio</h2>
+          <h2>{t("Registra una recensione raccolta in negozio")}</h2>
           <p className="small">
-            Viene salvata come <strong>raccolta in negozio</strong>, e sul sito compare con quella
-            dicitura. Non può diventare &ldquo;acquisto verificato&rdquo;: quella dicitura la crea
-            soltanto un ordine reale, e il database rifiuta il contrario.
+            {t("Viene salvata come ")}
+            <strong>{t("raccolta in negozio")}</strong>
+            {t(
+              ", e sul sito compare con quella dicitura. Non può diventare “acquisto verificato”: quella dicitura la crea soltanto un ordine reale, e il database rifiuta il contrario.",
+            )}
           </p>
           <Form method="post" className="stack">
             <input type="hidden" name="intent" value="record" />
             <label>
-              Prodotto
+              {t("Prodotto")}
               <select name="product" required defaultValue="">
                 <option value="" disabled>
-                  Scegli…
+                  {t("Scegli…")}
                 </option>
                 {products.map((p) => (
                   <option key={p.slug} value={p.slug}>
@@ -308,12 +316,14 @@ export default function AdminReviews({ loaderData, actionData }: Route.Component
               </select>
             </label>
             <label>
-              Nome
+              {t("Nome")}
               <input name="author_name" required maxLength={60} placeholder="Marco R." />
-              <span className="field-help">Pubblico. Nome e iniziale bastano, mai una email.</span>
+              <span className="field-help">
+                {t("Pubblico. Nome e iniziale bastano, mai una email.")}
+              </span>
             </label>
             <label>
-              Voto
+              {t("Voto")}
               <select name="rating" defaultValue="5">
                 {[5, 4, 3, 2, 1].map((n) => (
                   <option key={n} value={n}>
@@ -323,33 +333,34 @@ export default function AdminReviews({ loaderData, actionData }: Route.Component
               </select>
             </label>
             <label>
-              Titolo
+              {t("Titolo")}
               <input name="title" maxLength={80} />
             </label>
             <label>
-              Testo
+              {t("Testo")}
               <textarea name="body" rows={4} required maxLength={1500} />
             </label>
             <button className="btn" type="submit">
-              Registra
+              {t("Registra")}
             </button>
           </Form>
         </section>
       ) : null}
 
-      <nav className="cluster" aria-label="Filtra per stato">
-        {tab("pending", "Da esaminare", stats?.pending ?? 0)}
-        {tab("published", "Pubblicate", stats?.published ?? 0)}
-        {tab("rejected", "Rifiutate", stats?.rejected ?? 0)}
-        {tab("tutte", "Tutte", stats?.total ?? 0)}
+      <nav className="cluster" aria-label={t("Filtra per stato")}>
+        {tab("pending", t("Da esaminare"), stats?.pending ?? 0)}
+        {tab("published", t("Pubblicate"), stats?.published ?? 0)}
+        {tab("rejected", t("Rifiutate"), stats?.rejected ?? 0)}
+        {tab("tutte", t("Tutte"), stats?.total ?? 0)}
       </nav>
 
       {reviews.length === 0 ? (
         <div className="empty-state">
-          <p>Nessuna recensione in questo stato.</p>
+          <p>{t("Nessuna recensione in questo stato.")}</p>
           <p className="small">
-            Le recensioni da acquisto verificato nascono dagli ordini. Quelle raccolte al banco si
-            registrano qui sopra.
+            {t(
+              "Le recensioni da acquisto verificato nascono dagli ordini. Quelle raccolte al banco si registrano qui sopra.",
+            )}
           </p>
         </div>
       ) : (
@@ -367,9 +378,9 @@ export default function AdminReviews({ loaderData, actionData }: Route.Component
                     r.provenance === "verified_purchase" ? "badge badge--success" : "badge"
                   }
                 >
-                  {PROVENANCE_LABELS[r.provenance] ?? r.provenance}
+                  {t(PROVENANCE_LABELS[r.provenance] ?? r.provenance)}
                 </span>
-                <span className="small muted">{formatDateTime(r.created_at, "it")}</span>
+                <span className="small muted">{formatDateTime(r.created_at, t.locale)}</span>
               </header>
 
               <p className="small">
@@ -382,7 +393,10 @@ export default function AdminReviews({ loaderData, actionData }: Route.Component
               <p>{r.body}</p>
 
               {r.moderation_note ? (
-                <p className="small muted">Motivazione: {r.moderation_note}</p>
+                <p className="small muted">
+                  {t("Motivazione: ")}
+                  {r.moderation_note}
+                </p>
               ) : null}
 
               {canModerate && r.status === "pending" ? (
@@ -391,28 +405,30 @@ export default function AdminReviews({ loaderData, actionData }: Route.Component
                     <input type="hidden" name="intent" value="publish" />
                     <input type="hidden" name="reviewId" value={r.id} />
                     <button className="btn btn--primary" type="submit">
-                      Pubblica
+                      {t("Pubblica")}
                     </button>
                   </Form>
                   <Form method="post" className="stack">
                     <input type="hidden" name="intent" value="reject" />
                     <input type="hidden" name="reviewId" value={r.id} />
                     <label>
-                      Motivazione del rifiuto
+                      {t("Motivazione del rifiuto")}
                       <input name="moderation_note" required maxLength={200} />
                       <span className="field-help">
-                        Obbligatoria. Un rifiuto senza motivo non si distingue da un insabbiamento.
+                        {t(
+                          "Obbligatoria. Un rifiuto senza motivo non si distingue da un insabbiamento.",
+                        )}
                       </span>
                     </label>
                     <button className="btn btn--danger" type="submit">
-                      Rifiuta
+                      {t("Rifiuta")}
                     </button>
                   </Form>
                 </div>
               ) : (
                 <p className="small muted">
-                  {r.status === "published" ? "Pubblicata" : "Rifiutata"}
-                  {r.moderated_at ? ` — ${formatDateTime(r.moderated_at, "it")}` : ""}
+                  {r.status === "published" ? t("Pubblicata") : t("Rifiutata")}
+                  {r.moderated_at ? ` — ${formatDateTime(r.moderated_at, t.locale)}` : ""}
                 </p>
               )}
             </article>

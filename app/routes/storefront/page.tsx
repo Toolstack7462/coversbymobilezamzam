@@ -18,9 +18,10 @@ import { parsePageBody } from "~/domain/content/page-body";
  * unpublish or rewrite a page without a deploy — which is the only version of
  * "the merchant owns their content" that is actually true.
  */
-export function meta({ loaderData, matches }: Route.MetaArgs) {
+export function meta({ loaderData, matches, location }: Route.MetaArgs) {
+  const t = translator(parseLocalePath(location.pathname).locale);
   const page = loaderData?.page;
-  if (!page) return [{ title: storefrontTitle("Pagina non trovata", matches) }];
+  if (!page) return [{ title: storefrontTitle(t("meta.page_missing"), matches) }];
 
   return [
     { title: storefrontTitle(page.seoTitle ?? page.title, matches) },
@@ -41,11 +42,11 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
    */
   const row = await env.DB.prepare(
     `SELECT p.slug, p.page_type,
-            COALESCE(t.title, fallback.title)                     AS title,
-            COALESCE(t.excerpt, fallback.excerpt)                 AS excerpt,
-            COALESCE(t.body, fallback.body)                       AS body,
-            COALESCE(t.seo_title, fallback.seo_title)             AS seo_title,
-            COALESCE(t.seo_description, fallback.seo_description) AS seo_description
+            COALESCE(NULLIF(t.title, ''), fallback.title)                     AS title,
+            COALESCE(NULLIF(t.excerpt, ''), fallback.excerpt)                 AS excerpt,
+            COALESCE(NULLIF(t.body, ''), fallback.body)                       AS body,
+            COALESCE(NULLIF(t.seo_title, ''), fallback.seo_title)             AS seo_title,
+            COALESCE(NULLIF(t.seo_description, ''), fallback.seo_description) AS seo_description
        FROM pages p
        LEFT JOIN page_translations t        ON t.page_id = p.id AND t.locale = ?2
        LEFT JOIN page_translations fallback ON fallback.page_id = p.id AND fallback.locale = 'it'
@@ -82,7 +83,7 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
   const siblings =
     row.page_type === "guide"
       ? await env.DB.prepare(
-          `SELECT p.slug, COALESCE(t.title, fallback.title) AS title, t.excerpt
+          `SELECT p.slug, COALESCE(NULLIF(t.title, ''), fallback.title) AS title, t.excerpt
              FROM pages p
              LEFT JOIN page_translations t        ON t.page_id = p.id AND t.locale = ?2
              LEFT JOIN page_translations fallback ON fallback.page_id = p.id AND fallback.locale = 'it'

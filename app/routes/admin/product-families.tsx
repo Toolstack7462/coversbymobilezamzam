@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, Link } from "react-router";
 import type { Route } from "./+types/product-families";
 import { appContext } from "~/runtime/context";
@@ -32,8 +35,9 @@ import { PageHeader } from "~/components/admin/admin-shell";
  * would quietly stop, with no error and no way to notice. A person says these
  * are the same product; the database records that they said so.
  */
-export function meta() {
-  return [{ title: "Famiglie prodotto" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Famiglie prodotto") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -187,53 +191,55 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function AdminProductFamilies({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { families, unassigned, canWrite } = loaderData;
 
   return (
     <>
-      <PageHeader title="Famiglie prodotto" breadcrumbs={breadcrumbsFor("/admin/famiglie")} />
+      <PageHeader title={t("Famiglie prodotto")} breadcrumbs={breadcrumbsFor("/admin/famiglie")} />
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
       {actionData && "success" in actionData && actionData.success ? (
         <p className="notice notice--info" role="status">
-          {actionData.success}
+          {t(actionData.success)}
         </p>
       ) : null}
 
       <section className="panel">
         <p className="small">
-          Una famiglia raggruppa lo stesso identico articolo tagliato per telefoni diversi: una
-          cover in silicone, undici modelli. Serve perché la scheda prodotto possa dire
-          &ldquo;disponibile anche per il tuo telefono&rdquo; e sia vero.
+          {t(
+            "Una famiglia raggruppa lo stesso identico articolo tagliato per telefoni diversi: una cover in silicone, undici modelli. Serve perché la scheda prodotto possa dire “disponibile anche per il tuo telefono” e sia vero.",
+          )}
         </p>
         <p className="small">
-          Non è la compatibilità. La compatibilità risponde a &ldquo;questo va bene per il mio
-          telefono?&rdquo;; una famiglia risponde a &ldquo;ne esiste una versione per il mio
-          telefono?&rdquo;. Sono due domande diverse con due risposte diverse, e confonderle è il
-          modo in cui un cliente si sente dire che una cover per iPhone va bene su un Galaxy.
+          {t(
+            "Non è la compatibilità. La compatibilità risponde a “questo va bene per il mio telefono?”; una famiglia risponde a “ne esiste una versione per il mio telefono?”. Sono due domande diverse con due risposte diverse, e confonderle è il modo in cui un cliente si sente dire che una cover per iPhone va bene su un Galaxy.",
+          )}
         </p>
       </section>
 
       {canWrite ? (
         <section className="panel">
-          <h2>Nuova famiglia</h2>
+          <h2>{t("Nuova famiglia")}</h2>
           <Form method="post" className="stack">
             <input type="hidden" name="intent" value="create" />
             <label>
-              Nome
-              <input name="name" required maxLength={80} placeholder="Cover in silicone" />
+              {t("Nome")}
+              <input name="name" required maxLength={80} placeholder={t("Cover in silicone")} />
             </label>
             <label>
-              Identificativo
+              {t("Identificativo")}
               <input name="handle" required maxLength={60} placeholder="cover-silicone" />
-              <span className="field-help">Minuscole, numeri e trattini. Non è pubblico.</span>
+              <span className="field-help">
+                {t("Minuscole, numeri e trattini. Non è pubblico.")}
+              </span>
             </label>
             <button className="btn btn--primary" type="submit">
-              Crea famiglia
+              {t("Crea famiglia")}
             </button>
           </Form>
         </section>
@@ -241,9 +247,11 @@ export default function AdminProductFamilies({ loaderData, actionData }: Route.C
 
       {families.length === 0 ? (
         <div className="empty-state">
-          <p>Nessuna famiglia.</p>
+          <p>{t("Nessuna famiglia.")}</p>
           <p className="small">
-            Ha senso crearne una quando lo stesso articolo esiste per più modelli di telefono.
+            {t(
+              "Ha senso crearne una quando lo stesso articolo esiste per più modelli di telefono.",
+            )}
           </p>
         </div>
       ) : (
@@ -252,14 +260,17 @@ export default function AdminProductFamilies({ loaderData, actionData }: Route.C
             <details className="panel" key={family.id} open={family.members.length === 0}>
               <summary>
                 <strong>{family.name_it}</strong>{" "}
-                <span className="badge">{family.members.length} prodotti</span>{" "}
+                <span className="badge">
+                  {family.members.length} {t(" prodotti")}
+                </span>{" "}
                 <code className="small">{family.handle}</code>
               </summary>
 
               {family.members.length === 0 ? (
                 <p className="small muted">
-                  Ancora vuota. Una famiglia con meno di due prodotti non compare sul sito: non
-                  avrebbe niente da suggerire.
+                  {t(
+                    "Ancora vuota. Una famiglia con meno di due prodotti non compare sul sito: non avrebbe niente da suggerire.",
+                  )}
                 </p>
               ) : (
                 <ul className="stack">
@@ -271,7 +282,7 @@ export default function AdminProductFamilies({ loaderData, actionData }: Route.C
                           <input type="hidden" name="intent" value="remove-member" />
                           <input type="hidden" name="memberId" value={m.id} />
                           <button className="btn" type="submit">
-                            Togli
+                            {t("Togli")}
                           </button>
                         </Form>
                       ) : null}
@@ -285,10 +296,10 @@ export default function AdminProductFamilies({ loaderData, actionData }: Route.C
                   <input type="hidden" name="intent" value="add-member" />
                   <input type="hidden" name="familyId" value={family.id} />
                   <label>
-                    Aggiungi un prodotto
+                    {t("Aggiungi un prodotto")}
                     <select name="product" required defaultValue="">
                       <option value="" disabled>
-                        Scegli…
+                        {t("Scegli…")}
                       </option>
                       {unassigned.map((p) => (
                         <option key={p.slug} value={p.slug}>
@@ -297,11 +308,13 @@ export default function AdminProductFamilies({ loaderData, actionData }: Route.C
                       ))}
                     </select>
                     <span className="field-help">
-                      Solo i prodotti non ancora in una famiglia: un articolo può stare in una sola.
+                      {t(
+                        "Solo i prodotti non ancora in una famiglia: un articolo può stare in una sola.",
+                      )}
                     </span>
                   </label>
                   <button className="btn" type="submit">
-                    Aggiungi
+                    {t("Aggiungi")}
                   </button>
                 </Form>
               ) : null}
@@ -311,7 +324,7 @@ export default function AdminProductFamilies({ loaderData, actionData }: Route.C
                   <input type="hidden" name="intent" value="archive" />
                   <input type="hidden" name="familyId" value={family.id} />
                   <button className="btn btn--danger" type="submit">
-                    Archivia famiglia
+                    {t("Archivia famiglia")}
                   </button>
                 </Form>
               ) : null}

@@ -299,5 +299,24 @@
   "guides": {
     "more": "Altre guide",
     "read": "Leggi"
+  },
+  "meta": {
+    "home": "Accessori smartphone",
+    "device": "Trova il tuo dispositivo",
+    "store": "Il negozio",
+    "tracking": "Stato dell'ordine",
+    "cart": "Carrello",
+    "confirmation": "Ordine ricevuto",
+    "checkout": "Completa l'ordine",
+    "all": "Tutti gli accessori",
+    "product": "Prodotto",
+    "page_missing": "Pagina non trovata",
+    "document_missing": "Documento non trovato",
+    "search": "Ricerca: {{query}}",
+    "description": "Cover, cavi, caricabatterie e pellicole per smartphone."
+  },
+  "preview": {
+    "title": "Ambiente di prova",
+    "body": "prodotti e prezzi non sono reali"
   }
 }

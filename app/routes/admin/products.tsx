@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { saleableImagePredicate } from "~/domain/media/storefront-image";
 import type { Route } from "./+types/products";
 import { Link } from "react-router";
@@ -27,8 +30,9 @@ import { StatusBadge } from "~/components/admin/status-badge";
  *     (invariant 13). The foreign key would refuse a delete anyway.
  */
 
-export function meta() {
-  return [{ title: "Prodotti" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Prodotti") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 const SPEC: TableSpec = {
@@ -305,6 +309,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function AdminProducts({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { rows, state, pagination, views, canWrite, mediaBaseUrl } = loaderData;
 
   const columns: Column<ProductRow>[] = [
@@ -336,8 +341,8 @@ export default function AdminProducts({ loaderData, actionData }: Route.Componen
              * a "Senza immagine" view for exactly this — so the cell says so
              * rather than pretending to be a picture that failed to load.
              */
-            <span className="ac-row-thumb ac-row-thumb--empty" title="Nessuna immagine">
-              <span className="visually-hidden">Nessuna immagine</span>
+            <span className="ac-row-thumb ac-row-thumb--empty" title={t("Nessuna immagine")}>
+              <span className="visually-hidden">{t("Nessuna immagine")}</span>
               <span aria-hidden="true">—</span>
             </span>
           )}
@@ -345,13 +350,14 @@ export default function AdminProducts({ loaderData, actionData }: Route.Componen
             <Link to={`/admin/prodotti/${row.id}`}>{row.name ?? row.slug}</Link>
             {!row.image_key && canWrite ? (
               <Link className="ac-photo-task" to={`/admin/prodotti/${row.id}#sez-foto`}>
-                Completa le foto <span aria-hidden="true">↗</span>
+                {t("Completa le foto ")}
+                <span aria-hidden="true">↗</span>
               </Link>
             ) : null}
             {/* A product with no Italian name is not a blank row; it is a row
               whose translation is missing, and saying so is more useful. */}
             {row.name === null ? (
-              <span className="badge badge--warning"> traduzione mancante</span>
+              <span className="badge badge--warning"> {t(" traduzione mancante")}</span>
             ) : null}
           </span>
         </div>
@@ -402,9 +408,9 @@ export default function AdminProducts({ loaderData, actionData }: Route.Componen
       render: (row) =>
         row.min_price === null ? (
           // Not "€0,00". A missing price and a free product are different facts.
-          <span className="badge badge--warning">nessun prezzo</span>
+          <span className="badge badge--warning">{t("nessun prezzo")}</span>
         ) : (
-          formatMoney(money(row.min_price))
+          formatMoney(money(row.min_price), t.intl)
         ),
     },
     {
@@ -436,7 +442,8 @@ export default function AdminProducts({ loaderData, actionData }: Route.Componen
                * the customer asked for".
                */
               <span className="badge badge--warning">
-                {row.depleted_variants} esaurit{row.depleted_variants === 1 ? "a" : "e"}
+                {row.depleted_variants} {t(" esaurit")}
+                {row.depleted_variants === 1 ? t("a") : "e"}
               </span>
             ) : null}
           </span>
@@ -457,10 +464,10 @@ export default function AdminProducts({ loaderData, actionData }: Route.Componen
       secondary: true,
       render: (row) =>
         row.compat_count === 0 ? (
-          <span className="muted">nessuna</span>
+          <span className="muted">{t("nessuna")}</span>
         ) : (
           <span className="numeric">
-            {row.verified_count}/{row.compat_count} verificate
+            {row.verified_count}/{row.compat_count} {t(" verificate")}
           </span>
         ),
     },
@@ -469,8 +476,8 @@ export default function AdminProducts({ loaderData, actionData }: Route.Componen
   return (
     <>
       <PageHeader
-        title="Prodotti"
-        description="Il catalogo. Ogni riga porta alla scheda completa."
+        title={t("Prodotti")}
+        description={t("Il catalogo. Ogni riga porta alla scheda completa.")}
         breadcrumbs={breadcrumbsFor("/admin/prodotti")}
         {...(canWrite
           ? { primaryAction: { label: "Aggiungi prodotto", to: "/admin/prodotti/nuovo" } }
@@ -479,12 +486,12 @@ export default function AdminProducts({ loaderData, actionData }: Route.Componen
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
       {actionData && "success" in actionData && actionData.success ? (
         <p className="notice notice--info" role="status">
-          {actionData.success}
+          {t(actionData.success)}
         </p>
       ) : null}
 
@@ -497,12 +504,14 @@ export default function AdminProducts({ loaderData, actionData }: Route.Componen
         rowKey={(row) => row.id}
         rowHref={(row) => `/admin/prodotti/${row.id}`}
         views={views}
-        searchLabel="Cerca per nome, slug o SKU"
+        searchLabel={t("Cerca per nome, slug o SKU")}
         emptyState={{
-          title: "Nessun prodotto",
-          body: "Il catalogo è vuoto. Il primo prodotto è anche il modo più rapido per vedere come appare il sito.",
+          title: t("Nessun prodotto"),
+          body: t(
+            "Il catalogo è vuoto. Il primo prodotto è anche il modo più rapido per vedere come appare il sito.",
+          ),
           ...(canWrite
-            ? { action: { label: "Aggiungi il primo prodotto", to: "/admin/prodotti/nuovo" } }
+            ? { action: { label: t("Aggiungi il primo prodotto"), to: "/admin/prodotti/nuovo" } }
             : {}),
         }}
       />

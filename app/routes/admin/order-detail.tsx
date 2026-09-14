@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, Link, useLocation } from "react-router";
 import type { Route } from "./+types/order-detail";
 import { appContext, type AppEnv } from "~/runtime/context";
@@ -38,9 +41,13 @@ import { PageHeader } from "~/components/admin/admin-shell";
  * or a product is renamed six months later.
  */
 
-export function meta({ loaderData }: Route.MetaArgs) {
-  const number = loaderData?.order?.order_number ?? "Ordine";
-  return [{ title: `Ordine ${number}` }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ loaderData, matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  const number = loaderData?.order?.order_number ?? t("Ordine");
+  return [
+    { title: t("Ordine {{v0}}", { v0: number }) },
+    { name: "robots", content: "noindex, nofollow" },
+  ];
 }
 
 /**
@@ -251,6 +258,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
 }
 
 export default function OrderDetail({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { pathname } = useLocation();
   const {
     order,
@@ -273,20 +281,20 @@ export default function OrderDetail({ loaderData, actionData }: Route.ComponentP
   return (
     <>
       <PageHeader
-        title={`Ordine ${order.order_number}`}
-        description={`${order.customer_first_name} ${order.customer_last_name} · ${formatDateTime(Number(order.created_at), "it")}`}
+        title={t("Ordine {{v0}}", { v0: String(order.order_number ?? "") })}
+        description={`${order.customer_first_name} ${order.customer_last_name} · ${formatDateTime(Number(order.created_at), t.locale)}`}
         breadcrumbs={breadcrumbsFor(pathname)}
-        secondaryActions={[{ label: "Torna agli ordini", to: "/admin/ordini" }]}
+        secondaryActions={[{ label: t("Torna agli ordini"), to: "/admin/ordini" }]}
       />
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
       {actionData && "success" in actionData && actionData.success ? (
         <p className="notice notice--info" role="status">
-          {actionData.success}
+          {t(actionData.success)}
         </p>
       ) : null}
 
@@ -298,18 +306,19 @@ export default function OrderDetail({ loaderData, actionData }: Route.ComponentP
         >
           {minutesLeft <= 0 ? (
             <>
-              La prenotazione delle scorte è <strong>scaduta</strong>. I pezzi sono tornati
-              disponibili per altri clienti.
+              {t("La prenotazione delle scorte è ")}
+              <strong>{t("scaduta")}</strong>
+              {t(". I pezzi sono tornati disponibili per altri clienti.")}
             </>
           ) : (
             <>
-              Le scorte restano prenotate per{" "}
+              {t("Le scorte restano prenotate per")}{" "}
               <strong className="numeric">
                 {minutesLeft < 120
-                  ? `${minutesLeft} minuti`
-                  : `${Math.floor(minutesLeft / 60)} ore`}
+                  ? t("{{v0}} minuti", { v0: minutesLeft })
+                  : t("{{v0}} ore", { v0: Math.floor(minutesLeft / 60) })}
               </strong>
-              . Dopo tornano disponibili automaticamente.
+              {t(". Dopo tornano disponibili automaticamente.")}
             </>
           )}
         </p>
@@ -345,42 +354,50 @@ export default function OrderDetail({ loaderData, actionData }: Route.ComponentP
         <div className="ac-workspace__side">
           {/* ── What to do now ────────────────────────────────────────────────── */}
           <section className="panel stack ac-workspace__side">
-            <h2>Cosa fare adesso</h2>
+            <h2>{t("Cosa fare adesso")}</h2>
 
             <p className="cluster">
               <span className={`badge ${orderStatusTone(status)}`}>
-                {isOrderStatus(status) ? ORDER_STATUS_LABELS[status] : status}
+                {t(isOrderStatus(status) ? ORDER_STATUS_LABELS[status] : status)}
               </span>
               {paymentStatus ? (
                 <span className={`badge ${paymentStatusTone(paymentStatus)}`}>
-                  Pagamento:{" "}
-                  {PAYMENT_STATUS_LABELS[paymentStatus as keyof typeof PAYMENT_STATUS_LABELS] ??
-                    paymentStatus}
+                  {t("Pagamento:")}{" "}
+                  {t(
+                    PAYMENT_STATUS_LABELS[paymentStatus as keyof typeof PAYMENT_STATUS_LABELS] ??
+                      paymentStatus,
+                  )}
                 </span>
               ) : null}
               <span className="badge badge--muted">
-                {DELIVERY_LABELS[String(order.delivery_method)] ?? String(order.delivery_method)}
+                {t(DELIVERY_LABELS[String(order.delivery_method)] ?? String(order.delivery_method))}
               </span>
             </p>
 
             {whatsappUrl ? (
               <p className="stack">
                 <a className="btn btn--primary" href={whatsappUrl} target="_blank" rel="noreferrer">
-                  Apri WhatsApp con il messaggio pronto
+                  {t("Apri WhatsApp con il messaggio pronto")}
                 </a>
                 <span className="field__hint">
                   {whatsappIsCustomer
-                    ? "Si apre una chat con il numero lasciato dal cliente, con il riepilogo già scritto. Potete modificarlo prima di inviarlo."
-                    : "Il cliente non ha lasciato un numero, quindi si apre una chat con il numero del negozio: da lì potete inoltrare il messaggio."}{" "}
-                  Il messaggio contiene solo numero d&apos;ordine, articoli e totale — mai
-                  l&apos;indirizzo né codici interni, perché una chat viene inoltrata e salvata
-                  altrove.
+                    ? t(
+                        "Si apre una chat con il numero lasciato dal cliente, con il riepilogo già scritto. Potete modificarlo prima di inviarlo.",
+                      )
+                    : t(
+                        "Il cliente non ha lasciato un numero, quindi si apre una chat con il numero del negozio: da lì potete inoltrare il messaggio.",
+                      )}{" "}
+                  {t(
+                    "Il messaggio contiene solo numero d'ordine, articoli e totale — mai l'indirizzo né codici interni, perché una chat viene inoltrata e salvata altrove.",
+                  )}
                 </span>
               </p>
             ) : (
               <p className="notice notice--warning small">
-                Nessun numero WhatsApp configurato e nessun numero lasciato dal cliente. Impostate
-                il numero del negozio nelle <Link to="/admin/impostazioni">impostazioni</Link>.
+                {t(
+                  "Nessun numero WhatsApp configurato e nessun numero lasciato dal cliente. Impostate il numero del negozio nelle ",
+                )}
+                <Link to="/admin/impostazioni">{t("impostazioni")}</Link>.
               </p>
             )}
 
@@ -388,7 +405,7 @@ export default function OrderDetail({ loaderData, actionData }: Route.ComponentP
               <Form method="post" className="cluster">
                 <input type="hidden" name="intent" value="set-status" />
                 <label className="field__label" htmlFor="next-status">
-                  Sposta l&apos;ordine a
+                  {t("Sposta l'ordine a")}
                 </label>
                 <select id="next-status" name="status" className="input">
                   {/* `paid` is absent on purpose: only the verification queue can
@@ -397,12 +414,12 @@ export default function OrderDetail({ loaderData, actionData }: Route.ComponentP
                     .filter((s: OrderStatus) => s !== "paid")
                     .map((s: OrderStatus) => (
                       <option key={s} value={s}>
-                        {ORDER_STATUS_LABELS[s]}
+                        {t(ORDER_STATUS_LABELS[s])}
                       </option>
                     ))}
                 </select>
                 <button type="submit" className="btn btn--secondary">
-                  Applica
+                  {t("Applica")}
                 </button>
               </Form>
             ) : null}
@@ -410,7 +427,7 @@ export default function OrderDetail({ loaderData, actionData }: Route.ComponentP
             {canSeePayments && paymentStatus && paymentStatus !== "verified" ? (
               <p>
                 <Link className="btn btn--secondary" to="/admin/pagamenti?vista=da-verificare">
-                  Vai alla verifica pagamenti
+                  {t("Vai alla verifica pagamenti")}
                 </Link>
               </p>
             ) : null}
@@ -418,17 +435,17 @@ export default function OrderDetail({ loaderData, actionData }: Route.ComponentP
 
           {/* ── Customer ──────────────────────────────────────────────────────── */}
           <section className="panel stack ac-workspace__side">
-            <h2>Cliente</h2>
+            <h2>{t("Cliente")}</h2>
             <dl className="ac-facts">
-              <Fact label="Nome">
+              <Fact label={t("Nome")}>
                 {order.customer_first_name} {order.customer_last_name}
               </Fact>
               <Fact label="Email">{String(order.customer_email)}</Fact>
               {order.customer_phone ? (
-                <Fact label="Telefono">{String(order.customer_phone)}</Fact>
+                <Fact label={t("Telefono")}>{String(order.customer_phone)}</Fact>
               ) : null}
               {address ? (
-                <Fact label="Indirizzo">
+                <Fact label={t("Indirizzo")}>
                   {address.street} {address.street_number ?? ""}
                   <br />
                   {address.postcode} {address.city}{" "}
@@ -437,12 +454,14 @@ export default function OrderDetail({ loaderData, actionData }: Route.ComponentP
                   {address.country}
                 </Fact>
               ) : (
-                <Fact label="Indirizzo">
-                  <span className="muted">Ritiro in negozio: nessun indirizzo di spedizione.</span>
+                <Fact label={t("Indirizzo")}>
+                  <span className="muted">
+                    {t("Ritiro in negozio: nessun indirizzo di spedizione.")}
+                  </span>
                 </Fact>
               )}
               {order.customer_note ? (
-                <Fact label="Nota del cliente">{String(order.customer_note)}</Fact>
+                <Fact label={t("Nota del cliente")}>{String(order.customer_note)}</Fact>
               ) : null}
             </dl>
           </section>
@@ -450,27 +469,28 @@ export default function OrderDetail({ loaderData, actionData }: Route.ComponentP
         <div className="ac-workspace__main">
           {/* ── Items ─────────────────────────────────────────────────────────── */}
           <section className="panel stack ac-workspace__main">
-            <h2>Articoli</h2>
+            <h2>{t("Articoli")}</h2>
             <p className="small muted">
-              Questi valori sono la fotografia dell&apos;ordine al momento dell&apos;acquisto. Non
-              cambiano se il prodotto viene rinominato o se il prezzo cambia dopo.
+              {t(
+                "Questi valori sono la fotografia dell'ordine al momento dell'acquisto. Non cambiano se il prodotto viene rinominato o se il prezzo cambia dopo.",
+              )}
             </p>
 
             <div className="ac-table-scroll">
               <table className="ac-table">
-                <caption className="visually-hidden">Articoli dell&apos;ordine</caption>
+                <caption className="visually-hidden">{t("Articoli dell'ordine")}</caption>
                 <thead>
                   <tr>
-                    <th scope="col">Articolo</th>
+                    <th scope="col">{t("Articolo")}</th>
                     <th scope="col">SKU</th>
                     <th scope="col" className="ac-table__numeric">
-                      Qtà
+                      {t("Qtà")}
                     </th>
                     <th scope="col" className="ac-table__numeric">
-                      Prezzo
+                      {t("Prezzo")}
                     </th>
                     <th scope="col" className="ac-table__numeric">
-                      Totale
+                      {t("Totale")}
                     </th>
                   </tr>
                 </thead>
@@ -493,7 +513,8 @@ export default function OrderDetail({ loaderData, actionData }: Route.ComponentP
                           <>
                             <br />
                             <span className="caption muted">
-                              per {item.device_model_name}
+                              {t("per ")}
+                              {item.device_model_name}
                               {item.compatibility_state ? ` · ${item.compatibility_state}` : ""}
                             </span>
                           </>
@@ -506,10 +527,10 @@ export default function OrderDetail({ loaderData, actionData }: Route.ComponentP
                         {item.quantity}
                       </td>
                       <td data-label="Prezzo" className="ac-table__numeric numeric">
-                        {formatMoney(money(item.unit_price))}
+                        {formatMoney(money(item.unit_price), t.intl)}
                       </td>
                       <td data-label="Totale" className="ac-table__numeric numeric">
-                        {formatMoney(money(item.line_total))}
+                        {formatMoney(money(item.line_total), t.intl)}
                       </td>
                     </tr>
                   ))}
@@ -518,40 +539,42 @@ export default function OrderDetail({ loaderData, actionData }: Route.ComponentP
             </div>
 
             <dl className="ac-totals">
-              <Total label="Subtotale" amount={Number(order.item_subtotal)} />
+              <Total label={t("Subtotale")} amount={Number(order.item_subtotal)} />
               {Number(order.discount_total) > 0 ? (
-                <Total label="Sconto" amount={-Number(order.discount_total)} />
+                <Total label={t("Sconto")} amount={-Number(order.discount_total)} />
               ) : null}
               {Number(order.shipping_total) > 0 ? (
-                <Total label="Spedizione" amount={Number(order.shipping_total)} />
+                <Total label={t("Spedizione")} amount={Number(order.shipping_total)} />
               ) : null}
-              <Total label="di cui IVA" amount={Number(order.tax_total)} muted />
-              <Total label="Totale" amount={Number(order.grand_total)} strong />
+              <Total label={t("di cui IVA")} amount={Number(order.tax_total)} muted />
+              <Total label={t("Totale")} amount={Number(order.grand_total)} strong />
             </dl>
           </section>
 
           {/* ── Payment ───────────────────────────────────────────────────────── */}
           {canSeePayments ? (
             <section className="panel stack ac-workspace__main">
-              <h2>Pagamento</h2>
+              <h2>{t("Pagamento")}</h2>
               <dl className="ac-facts">
-                <Fact label="Metodo">{String(order.payment_method_name ?? "—")}</Fact>
-                <Fact label="Atteso">{formatMoney(money(Number(order.amount_expected ?? 0)))}</Fact>
-                <Fact label="Ricevuto">
+                <Fact label={t("Metodo")}>{String(order.payment_method_name ?? "—")}</Fact>
+                <Fact label={t("Atteso")}>
+                  {formatMoney(money(Number(order.amount_expected ?? 0)), t.intl)}
+                </Fact>
+                <Fact label={t("Ricevuto")}>
                   {order.amount_received === null ? (
-                    <span className="muted">non ancora verificato</span>
+                    <span className="muted">{t("non ancora verificato")}</span>
                   ) : (
-                    formatMoney(money(Number(order.amount_received)))
+                    formatMoney(money(Number(order.amount_received)), t.intl)
                   )}
                 </Fact>
                 {order.transaction_reference ? (
-                  <Fact label="Riferimento">
+                  <Fact label={t("Riferimento")}>
                     <span className="numeric">{String(order.transaction_reference)}</span>
                   </Fact>
                 ) : null}
                 {order.verified_at ? (
-                  <Fact label="Verificato il">
-                    {formatDateTime(Number(order.verified_at), "it")}
+                  <Fact label={t("Verificato il")}>
+                    {formatDateTime(Number(order.verified_at), t.locale)}
                   </Fact>
                 ) : null}
               </dl>
@@ -560,22 +583,26 @@ export default function OrderDetail({ loaderData, actionData }: Route.ComponentP
 
           {/* ── History ───────────────────────────────────────────────────────── */}
           <section className="panel stack ac-workspace__main">
-            <h2>Cronologia</h2>
+            <h2>{t("Cronologia")}</h2>
             {history.length === 0 ? (
-              <p className="small muted">Nessun cambio di stato registrato.</p>
+              <p className="small muted">{t("Nessun cambio di stato registrato.")}</p>
             ) : (
               <ul className="stack small">
                 {history.map((row, i) => (
                   <li key={i}>
-                    <span className="numeric">{formatDateTime(row.created_at, "it")}</span> —{" "}
-                    {row.from_status && isOrderStatus(row.from_status)
-                      ? ORDER_STATUS_LABELS[row.from_status]
-                      : (row.from_status ?? "creato")}{" "}
+                    <span className="numeric">{formatDateTime(row.created_at, t.locale)}</span> —{" "}
+                    {t(
+                      row.from_status && isOrderStatus(row.from_status)
+                        ? ORDER_STATUS_LABELS[row.from_status]
+                        : (row.from_status ?? "creato"),
+                    )}{" "}
                     →{" "}
                     <strong>
-                      {isOrderStatus(row.to_status)
-                        ? ORDER_STATUS_LABELS[row.to_status]
-                        : row.to_status}
+                      {t(
+                        isOrderStatus(row.to_status)
+                          ? ORDER_STATUS_LABELS[row.to_status]
+                          : row.to_status,
+                      )}
                     </strong>
                     {row.reason ? <span className="muted"> · {row.reason}</span> : null}
                   </li>
@@ -587,21 +614,22 @@ export default function OrderDetail({ loaderData, actionData }: Route.ComponentP
           {/* ── Internal note ─────────────────────────────────────────────────── */}
           {canWrite ? (
             <section className="panel stack ac-workspace__main">
-              <h2>Nota interna</h2>
+              <h2>{t("Nota interna")}</h2>
               <p className="small muted">
-                Visibile solo allo staff. Il cliente non la vede mai, e non compare nel messaggio
-                WhatsApp.
+                {t(
+                  "Visibile solo allo staff. Il cliente non la vede mai, e non compare nel messaggio WhatsApp.",
+                )}
               </p>
               <Form method="post" className="stack">
                 <input type="hidden" name="intent" value="add-note" />
                 <div className="field">
                   <label className="visually-hidden" htmlFor="note">
-                    Nota
+                    {t("Nota")}
                   </label>
                   <textarea id="note" name="note" className="input" rows={2} maxLength={1000} />
                 </div>
                 <button type="submit" className="btn btn--secondary">
-                  Aggiungi nota
+                  {t("Aggiungi nota")}
                 </button>
               </Form>
             </section>
@@ -623,20 +651,26 @@ function Total({
   strong?: boolean;
   muted?: boolean;
 }) {
+  const t = useAdminTranslator();
   return (
     <div className={`ac-total ${muted ? "muted" : ""}`}>
-      <dt>{label}</dt>
+      <dt>{t(label)}</dt>
       <dd className="numeric">
-        {strong ? <strong>{formatMoney(money(amount))}</strong> : formatMoney(money(amount))}
+        {strong ? (
+          <strong>{formatMoney(money(amount), t.intl)}</strong>
+        ) : (
+          formatMoney(money(amount), t.intl)
+        )}
       </dd>
     </div>
   );
 }
 
 function Fact({ label, children }: { label: string; children: React.ReactNode }) {
+  const t = useAdminTranslator();
   return (
     <div className="ac-fact">
-      <dt>{label}</dt>
+      <dt>{t(label)}</dt>
       <dd>{children}</dd>
     </div>
   );

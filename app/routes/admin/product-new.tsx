@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, Link, redirect } from "react-router";
 import type { Route } from "./+types/product-new";
 import { appContext } from "~/runtime/context";
@@ -33,8 +36,9 @@ import { PageHeader } from "~/components/admin/admin-shell";
  * and none of them silent.
  */
 
-export function meta() {
-  return [{ title: "Aggiungi prodotto" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Aggiungi prodotto") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -120,6 +124,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function NewProduct({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { brands, categories, locationName } = loaderData;
   const values = (actionData && "values" in actionData ? actionData.values : {}) as Record<
     string,
@@ -129,22 +134,24 @@ export default function NewProduct({ loaderData, actionData }: Route.ComponentPr
   return (
     <>
       <PageHeader
-        title="Aggiungi prodotto"
-        description="Solo l'essenziale. Foto, descrizione e compatibilità si aggiungono dopo, con il prodotto già salvato."
+        title={t("Aggiungi prodotto")}
+        description={t(
+          "Solo l'essenziale. Foto, descrizione e compatibilità si aggiungono dopo, con il prodotto già salvato.",
+        )}
         breadcrumbs={breadcrumbsFor("/admin/prodotti/nuovo")}
       />
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
 
       <Form method="post" className="panel stack">
         <div className="field">
           <label className="field__label" htmlFor="name">
-            Nome del prodotto
-            <span className="badge badge--warning"> obbligatorio</span>
+            {t("Nome del prodotto")}
+            <span className="badge badge--warning"> {t(" obbligatorio")}</span>
           </label>
           <input
             id="name"
@@ -156,15 +163,16 @@ export default function NewProduct({ loaderData, actionData }: Route.ComponentPr
             aria-describedby="name-help"
           />
           <span className="field__hint" id="name-help">
-            Come lo chiamereste a un cliente. L&apos;indirizzo della pagina viene creato da questo
-            nome, quindi conviene scriverlo per esteso.
+            {t(
+              "Come lo chiamereste a un cliente. L'indirizzo della pagina viene creato da questo nome, quindi conviene scriverlo per esteso.",
+            )}
           </span>
         </div>
 
         <div className="field">
           <label className="field__label" htmlFor="sku">
-            Codice SKU
-            <span className="badge badge--warning"> obbligatorio</span>
+            {t("Codice SKU")}
+            <span className="badge badge--warning"> {t(" obbligatorio")}</span>
           </label>
           <input
             id="sku"
@@ -176,15 +184,15 @@ export default function NewProduct({ loaderData, actionData }: Route.ComponentPr
             aria-describedby="sku-help"
           />
           <span className="field__hint" id="sku-help">
-            Il codice con cui riconoscete il prodotto in magazzino. Deve essere diverso da ogni
-            altro: due prodotti con lo stesso codice diventano un inventario che non torna. Viene
-            salvato in maiuscolo.
+            {t(
+              "Il codice con cui riconoscete il prodotto in magazzino. Deve essere diverso da ogni altro: due prodotti con lo stesso codice diventano un inventario che non torna. Viene salvato in maiuscolo.",
+            )}
           </span>
         </div>
 
         <div className="field">
           <label className="field__label" htmlFor="price">
-            Prezzo di vendita
+            {t("Prezzo di vendita")}
           </label>
           <input
             id="price"
@@ -196,14 +204,15 @@ export default function NewProduct({ loaderData, actionData }: Route.ComponentPr
             aria-describedby="price-help"
           />
           <span className="field__hint" id="price-help">
-            IVA inclusa. Potete lasciarlo vuoto e deciderlo dopo: il prodotto resta in bozza e
-            compare nell&apos;elenco &ldquo;Senza prezzo&rdquo; finché non lo impostate.
+            {t(
+              "IVA inclusa. Potete lasciarlo vuoto e deciderlo dopo: il prodotto resta in bozza e compare nell'elenco “Senza prezzo” finché non lo impostate.",
+            )}
           </span>
         </div>
 
         <div className="field">
           <label className="field__label" htmlFor="onHand">
-            Quantità disponibile
+            {t("Quantità disponibile")}
           </label>
           <input
             id="onHand"
@@ -216,17 +225,18 @@ export default function NewProduct({ loaderData, actionData }: Route.ComponentPr
             aria-describedby="onhand-help"
           />
           <span className="field__hint" id="onhand-help">
-            Quanti pezzi avete adesso{locationName ? ` in ${locationName}` : ""}. Si corregge in
-            qualsiasi momento dall&apos;inventario, indicando un motivo.
+            {t("Quanti pezzi avete adesso")}
+            {locationName ? t("in {{v0}}", { v0: locationName }) : ""}
+            {t(". Si corregge in qualsiasi momento dall'inventario, indicando un motivo.")}
           </span>
         </div>
 
         <div className="field">
           <label className="field__label" htmlFor="brandId">
-            Marchio
+            {t("Marchio")}
           </label>
           <select id="brandId" name="brandId" className="input" defaultValue={values.brandId ?? ""}>
-            <option value="">— nessuno —</option>
+            <option value="">{t("— nessuno —")}</option>
             {brands.map((brand) => (
               <option key={brand.id} value={brand.id}>
                 {brand.name}
@@ -235,15 +245,16 @@ export default function NewProduct({ loaderData, actionData }: Route.ComponentPr
           </select>
           {brands.length === 0 ? (
             <span className="field__hint">
-              Non ci sono ancora marchi. Il prodotto si crea lo stesso e il marchio si aggiunge
-              dopo.
+              {t(
+                "Non ci sono ancora marchi. Il prodotto si crea lo stesso e il marchio si aggiunge dopo.",
+              )}
             </span>
           ) : null}
         </div>
 
         <div className="field">
           <label className="field__label" htmlFor="categoryId">
-            Categoria
+            {t("Categoria")}
           </label>
           <select
             id="categoryId"
@@ -251,7 +262,7 @@ export default function NewProduct({ loaderData, actionData }: Route.ComponentPr
             className="input"
             defaultValue={values.categoryId ?? ""}
           >
-            <option value="">— nessuna —</option>
+            <option value="">{t("— nessuna —")}</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
                 {category.name}
@@ -262,7 +273,7 @@ export default function NewProduct({ loaderData, actionData }: Route.ComponentPr
 
         <div className="field">
           <label className="field__label" htmlFor="shortDescription">
-            Descrizione breve
+            {t("Descrizione breve")}
           </label>
           <textarea
             id="shortDescription"
@@ -274,7 +285,7 @@ export default function NewProduct({ loaderData, actionData }: Route.ComponentPr
             aria-describedby="desc-help"
           />
           <span className="field__hint" id="desc-help">
-            Una o due righe, quelle che compaiono sotto il nome negli elenchi.
+            {t("Una o due righe, quelle che compaiono sotto il nome negli elenchi.")}
           </span>
         </div>
 
@@ -287,21 +298,21 @@ export default function NewProduct({ loaderData, actionData }: Route.ComponentPr
           <input type="hidden" name="publish" value="false" />
           <label className="field__checkbox" htmlFor="publish">
             <input id="publish" name="publish" type="checkbox" value="true" />
-            <span>Pubblica subito sul sito</span>
+            <span>{t("Pubblica subito sul sito")}</span>
           </label>
           <span className="field__hint">
-            Se lasciate la casella vuota il prodotto resta in bozza: visibile solo a voi, finché non
-            decidete di pubblicarlo. È quasi sempre la scelta giusta, perché mancano ancora foto e
-            compatibilità.
+            {t(
+              "Se lasciate la casella vuota il prodotto resta in bozza: visibile solo a voi, finché non decidete di pubblicarlo. È quasi sempre la scelta giusta, perché mancano ancora foto e compatibilità.",
+            )}
           </span>
         </div>
 
         <div className="cluster">
           <button type="submit" className="btn btn--primary">
-            Crea prodotto
+            {t("Crea prodotto")}
           </button>
           <Link to="/admin/prodotti" className="btn btn--ghost">
-            Annulla
+            {t("Annulla")}
           </Link>
         </div>
       </Form>

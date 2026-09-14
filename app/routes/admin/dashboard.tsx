@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Link, useLocation } from "react-router";
 import type { Route } from "./+types/dashboard";
 import { appContext } from "~/runtime/context";
@@ -55,8 +58,9 @@ const badgeClauses = (nowMs: number) => ({
   outOfStock: clause(INVENTORY_VIEWS, "esauriti", nowMs),
 });
 
-export function meta() {
-  return [{ title: "Panoramica" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Panoramica") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -181,11 +185,12 @@ function Metric({
   /** `headline` is one of the two figures the page exists for. */
   variant?: "headline";
 }) {
+  const t = useAdminTranslator();
   const body = (
     <>
-      <span className="ac-metric__label">{label}</span>
+      <span className="ac-metric__label">{t(label)}</span>
       <span className="ac-metric__value numeric">{value}</span>
-      {note ? <span className="ac-metric__note">{note}</span> : null}
+      {note ? <span className="ac-metric__note">{t(note)}</span> : null}
     </>
   );
   return to ? (
@@ -207,6 +212,7 @@ const SEVERITY_CLASS = {
 } as const;
 
 function ActionRow({ item }: { item: ActionItem }) {
+  const t = useAdminTranslator();
   return (
     <li className={`ac-action ${SEVERITY_CLASS[item.severity]}`}>
       <span className="ac-action__count numeric" aria-hidden="true">
@@ -214,23 +220,24 @@ function ActionRow({ item }: { item: ActionItem }) {
       </span>
       <div className="ac-action__body">
         <p className="ac-action__label">
-          {item.label}
+          {t(item.label)}
           {/*
             The badge is hidden from assistive tech because a bare number read
             before its label is noise; it is spoken here as part of a sentence.
           */}
           <span className="visually-hidden">: {item.count}</span>
         </p>
-        <p className="ac-action__detail small muted">{item.detail}</p>
+        <p className="ac-action__detail small muted">{t(item.detail)}</p>
       </div>
       <Link to={item.href} className="btn btn--secondary">
-        Apri
+        {t("Apri")}
       </Link>
     </li>
   );
 }
 
 export default function AdminDashboard({ loaderData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { pathname } = useLocation();
   const {
     displayName,
@@ -250,8 +257,8 @@ export default function AdminDashboard({ loaderData }: Route.ComponentProps) {
   return (
     <>
       <PageHeader
-        title={`Ciao, ${displayName}`}
-        description="Ordini, pagamenti e catalogo: il lavoro di oggi."
+        title={t("Ciao, {{v0}}", { v0: displayName })}
+        description={t("Ordini, pagamenti e catalogo: il lavoro di oggi.")}
         breadcrumbs={breadcrumbsFor(pathname)}
         {...(canManageProducts
           ? { primaryAction: { label: "Aggiungi prodotto", to: "/admin/prodotti/nuovo" } }
@@ -260,21 +267,22 @@ export default function AdminDashboard({ loaderData }: Route.ComponentProps) {
       <div className="ac-dashboard">
         <section className="ac-dashboard__overview" aria-labelledby="riepilogo">
           <div className="ac-dashboard__section-head">
-            <h2 id="riepilogo">Ultime 24 ore</h2>
+            <h2 id="riepilogo">{t("Ultime 24 ore")}</h2>
             <p className="small muted">
-              Ultimi 7 giorni: <strong className="numeric">{metrics.ordersWeek}</strong> ordini
+              {t("Ultimi 7 giorni: ")}
+              <strong className="numeric">{metrics.ordersWeek}</strong> {t(" ordini")}
             </p>
           </div>
           <div className="ac-headline">
             <Metric
               variant="headline"
-              label="Ordini ricevuti"
+              label={t("Ordini ricevuti")}
               value={metrics.ordersToday}
               to="/admin/ordini"
             />
             <Metric
               variant="headline"
-              label="Valore degli ordini"
+              label={t("Valore degli ordini")}
               value={formatMoney(money(metrics.valueToday))}
               note="Ordini creati, non incassati"
             />
@@ -283,24 +291,24 @@ export default function AdminDashboard({ loaderData }: Route.ComponentProps) {
             {canSeePayments ? (
               <>
                 <Metric
-                  label="Pagamenti verificati"
+                  label={t("Pagamenti verificati")}
                   value={formatMoney(money(metrics.verifiedToday))}
                   note="Confermati da una persona"
                 />
                 <Metric
-                  label="Pagamenti da verificare"
+                  label={t("Pagamenti da verificare")}
                   value={metrics.toVerify}
                   to="/admin/pagamenti?vista=da-verificare"
                 />
               </>
             ) : null}
             <Metric
-              label="Ritiri da preparare"
+              label={t("Ritiri da preparare")}
               value={metrics.pickupsToPrepare}
               to="/admin/ordini?vista=da-preparare&consegna=ritiro"
             />
             <Metric
-              label="Scorte in esaurimento"
+              label={t("Scorte in esaurimento")}
               value={metrics.lowStock}
               to="/admin/inventario?vista=scorte-basse"
             />
@@ -310,20 +318,21 @@ export default function AdminDashboard({ loaderData }: Route.ComponentProps) {
           <section className="ac-panel ac-dashboard__priorities" aria-labelledby="azioni">
             <div className="ac-dashboard__section-head">
               <div>
-                <h2 id="azioni">Da fare adesso</h2>
-                <p className="small muted">Le attività in ordine di priorità.</p>
+                <h2 id="azioni">{t("Da fare adesso")}</h2>
+                <p className="small muted">{t("Le attività in ordine di priorità.")}</p>
               </div>
               <span
                 className="ac-dashboard__count numeric"
-                aria-label={`${actions.length} tipi di attività`}
+                aria-label={t("{{v0}} tipi di attività", { v0: actions.length })}
               >
                 {actions.length}
               </span>
             </div>
             {isClear(actions) ? (
               <p className="notice notice--success" role="status">
-                Non c&apos;è nulla in attesa. Nessun pagamento da verificare, nessun ordine da
-                preparare, nessuna scorta esaurita.
+                {t(
+                  "Non c'è nulla in attesa. Nessun pagamento da verificare, nessun ordine da preparare, nessuna scorta esaurita.",
+                )}
               </p>
             ) : (
               <>
@@ -334,7 +343,10 @@ export default function AdminDashboard({ loaderData }: Route.ComponentProps) {
                 </ul>
                 {otherActions.length > 0 ? (
                   <details className="ac-dashboard__more">
-                    <summary>Altre attività ({otherActions.length})</summary>
+                    <summary>
+                      {t("Altre attività (")}
+                      {otherActions.length})
+                    </summary>
                     <ul className="ac-actions">
                       {otherActions.map((item) => (
                         <ActionRow key={item.id} item={item} />
@@ -345,64 +357,70 @@ export default function AdminDashboard({ loaderData }: Route.ComponentProps) {
               </>
             )}
           </section>
-          <aside className="ac-dashboard__side" aria-label="Preparazione del negozio">
+          <aside className="ac-dashboard__side" aria-label={t("Preparazione del negozio")}>
             {canReadProducts ? (
               <section className="ac-panel ac-dashboard__photos" aria-labelledby="foto-catalogo">
-                <p className="ac-dashboard__eyebrow">Catalogo</p>
-                <h2 id="foto-catalogo">Le foto fanno la differenza</h2>
+                <p className="ac-dashboard__eyebrow">{t("Catalogo")}</p>
+                <h2 id="foto-catalogo">{t("Le foto fanno la differenza")}</h2>
                 <p className="small muted">
                   {photoTasks > 0
-                    ? `${photoTasks} prodotti senza una foto utilizzabile sul sito.`
-                    : "Ogni prodotto ha almeno una foto utilizzabile sul sito."}
+                    ? t("{{v0}} prodotti senza una foto utilizzabile sul sito.", { v0: photoTasks })
+                    : t("Ogni prodotto ha almeno una foto utilizzabile sul sito.")}
                 </p>
                 <Link className="btn btn--secondary" to="/admin/prodotti?vista=senza-immagine">
-                  Rivedi le foto <span aria-hidden="true">↗</span>
+                  {t("Rivedi le foto ")}
+                  <span aria-hidden="true">↗</span>
                 </Link>
               </section>
             ) : null}
             <section className="ac-panel" aria-labelledby="stato-negozio">
-              <h2 id="stato-negozio">Il tuo negozio</h2>
+              <h2 id="stato-negozio">{t("Il tuo negozio")}</h2>
               <div className="ac-dashboard__progress-label">
-                <span>Configurazione</span>
+                <span>{t("Configurazione")}</span>
                 <strong className="numeric">{setup.percentage}%</strong>
               </div>
               <progress
                 className="ac-dashboard__progress"
                 max="100"
                 value={setup.percentage}
-                aria-label="Configurazione del negozio"
+                aria-label={t("Configurazione del negozio")}
               />
               <p className="small muted">
                 {setup.readyToTrade
-                  ? "I passaggi obbligatori sono completati."
-                  : "Completa i passaggi obbligatori prima di vendere."}
+                  ? t("I passaggi obbligatori sono completati.")
+                  : t("Completa i passaggi obbligatori prima di vendere.")}
               </p>
               <Link className="ac-dashboard__text-link" to="/admin/configurazione">
-                Apri configurazione <span aria-hidden="true">↗</span>
+                {t("Apri configurazione ")}
+                <span aria-hidden="true">↗</span>
               </Link>
             </section>
             {gates.length > 0 ? (
               <details className="ac-panel ac-dashboard__settings">
-                <summary>Dati da completare ({gates.length})</summary>
+                <summary>
+                  {t("Dati da completare (")}
+                  {gates.length})
+                </summary>
                 <p className="small muted">
-                  Queste sezioni del sito sono nascoste finché non completi i dati.
+                  {t("Queste sezioni del sito sono nascoste finché non completi i dati.")}
                 </p>
                 <ul className="ac-gates">
                   {gates.map((gate) => {
                     const label = GATE_LABELS[gate.feature];
                     return (
                       <li className="ac-gate" key={gate.feature}>
-                        <span className="ac-gate__what">{label?.what ?? gate.feature}</span>
-                        {label ? <span className="ac-gate__where">{label.where}</span> : null}
+                        <span className="ac-gate__what">{t(label?.what ?? gate.feature)}</span>
+                        {label ? <span className="ac-gate__where">{t(label.where)}</span> : null}
                         <span className="ac-gate__missing">
-                          Manca: {gate.missingKeys.map((k) => SETTING_LABELS[k] ?? k).join(", ")}
+                          {t("Manca: ")}
+                          {gate.missingKeys.map((k) => t(SETTING_LABELS[k] ?? k)).join(", ")}
                         </span>
                       </li>
                     );
                   })}
                 </ul>
                 <Link className="ac-dashboard__text-link" to="/admin/impostazioni">
-                  Completa le impostazioni
+                  {t("Completa le impostazioni")}
                 </Link>
               </details>
             ) : null}

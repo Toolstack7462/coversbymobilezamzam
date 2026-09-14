@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form } from "react-router";
 import type { Route } from "./+types/settings";
 import { appContext } from "~/runtime/context";
@@ -40,8 +43,9 @@ import type { SqlStatement } from "~/infrastructure/db/sql";
  * was shown a form field called `business.vat_number`.
  */
 
-export function meta() {
-  return [{ title: "Impostazioni" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Impostazioni") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -296,6 +300,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function AdminSettings({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { settings, methods, gates, canWrite, canWritePayments, paymentStepUp } = loaderData;
 
   const valueOf = new Map(settings.map((setting) => [setting.key, setting.value]));
@@ -308,19 +313,21 @@ export default function AdminSettings({ loaderData, actionData }: Route.Componen
   return (
     <>
       <PageHeader
-        title="Impostazioni"
-        description="I dati del negozio. Un campo vuoto nasconde una funzione: non produce mai un segnaposto."
+        title={t("Impostazioni")}
+        description={t(
+          "I dati del negozio. Un campo vuoto nasconde una funzione: non produce mai un segnaposto.",
+        )}
         breadcrumbs={breadcrumbsFor("/admin/impostazioni")}
       />
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
       {actionData && "success" in actionData && actionData.success ? (
         <p className="notice notice--info" role="status">
-          {actionData.success}
+          {t(actionData.success)}
         </p>
       ) : null}
 
@@ -330,9 +337,9 @@ export default function AdminSettings({ loaderData, actionData }: Route.Componen
         {SETTING_GROUPS.map((group) => (
           <fieldset key={group.slug} className="panel stack">
             <legend>
-              <h2>{group.title}</h2>
+              <h2>{t(group.title)}</h2>
             </legend>
-            <p className="small muted">{group.blurb}</p>
+            <p className="small muted">{t(group.blurb)}</p>
 
             {group.fields.map((field) => (
               <SettingInput
@@ -348,11 +355,12 @@ export default function AdminSettings({ loaderData, actionData }: Route.Componen
         {undescribed.length > 0 ? (
           <fieldset className="panel stack">
             <legend>
-              <h2>Altre impostazioni</h2>
+              <h2>{t("Altre impostazioni")}</h2>
             </legend>
             <p className="small muted">
-              Impostazioni tecniche senza una descrizione. Modificatele solo se sapete a cosa
-              servono.
+              {t(
+                "Impostazioni tecniche senza una descrizione. Modificatele solo se sapete a cosa servono.",
+              )}
             </p>
             {undescribed.map((key) => (
               <div className="field" key={key}>
@@ -373,34 +381,38 @@ export default function AdminSettings({ loaderData, actionData }: Route.Componen
 
         {canWrite ? (
           <button type="submit" className="btn btn--primary">
-            Salva impostazioni
+            {t("Salva impostazioni")}
           </button>
         ) : (
           <p className="small muted">
-            Serve il permesso <code>settings.write</code> per modificare.
+            {t("Serve il permesso ")}
+            <code>settings.write</code> {t(" per modificare.")}
           </p>
         )}
       </Form>
 
       <section className="stack">
-        <h2>Metodi di pagamento</h2>
+        <h2>{t("Metodi di pagamento")}</h2>
         <p className="notice notice--warning small">
-          L&apos;IBAN è il dato più sensibile del sistema: chi lo modifica dirotta tutti i pagamenti
-          futuri. Viene cifrato, non compare mai nei log e ogni modifica è registrata.
+          {t(
+            "L'IBAN è il dato più sensibile del sistema: chi lo modifica dirotta tutti i pagamenti futuri. Viene cifrato, non compare mai nei log e ogni modifica è registrata.",
+          )}
           <br />
-          Usa <strong>sempre</strong> un conto aziendale, mai un conto personale.
+          {t("Usa ")}
+          <strong>{t("sempre")}</strong> {t(" un conto aziendale, mai un conto personale.")}
         </p>
 
         {!canWritePayments ? (
           <p className="small muted">
-            Serve il permesso <code>payment.settings</code>.
+            {t("Serve il permesso ")}
+            <code>payment.settings</code>.
           </p>
         ) : !paymentStepUp ? (
           <Form method="post" className="panel cluster">
             <input type="hidden" name="intent" value="payment-step-up" />
             <div className="field">
               <label className="field__label" htmlFor="pay-stepup">
-                Conferma la password per modificare i dati di pagamento
+                {t("Conferma la password per modificare i dati di pagamento")}
               </label>
               <input
                 id="pay-stepup"
@@ -412,7 +424,7 @@ export default function AdminSettings({ loaderData, actionData }: Route.Componen
               />
             </div>
             <button type="submit" className="btn btn--primary">
-              Conferma
+              {t("Conferma")}
             </button>
           </Form>
         ) : null}
@@ -422,12 +434,12 @@ export default function AdminSettings({ loaderData, actionData }: Route.Componen
             <summary>
               <strong>{method.name_it}</strong>{" "}
               <span className={method.active === 1 ? "badge" : "badge badge--muted"}>
-                {method.active === 1 ? "attivo" : "disattivato"}
+                {method.active === 1 ? t("attivo") : t("disattivato")}
               </span>{" "}
               {method.account_identifier_masked ? (
                 <span className="numeric small muted">{method.account_identifier_masked}</span>
               ) : (
-                <span className="small muted">nessun identificativo</span>
+                <span className="small muted">{t("nessun identificativo")}</span>
               )}
             </summary>
 
@@ -437,7 +449,7 @@ export default function AdminSettings({ loaderData, actionData }: Route.Componen
 
               <div className="field">
                 <label className="field__label" htmlFor={`ben-${method.id}`}>
-                  Beneficiario
+                  {t("Beneficiario")}
                 </label>
                 <input
                   id={`ben-${method.id}`}
@@ -450,7 +462,7 @@ export default function AdminSettings({ loaderData, actionData }: Route.Componen
 
               <div className="field">
                 <label className="field__label" htmlFor={`iban-${method.id}`}>
-                  IBAN / identificativo
+                  {t("IBAN / identificativo")}
                 </label>
                 {/* Never pre-filled with the real value: the decrypted
                     identifier does not belong in an ordinary page render. */}
@@ -458,19 +470,20 @@ export default function AdminSettings({ loaderData, actionData }: Route.Componen
                   id={`iban-${method.id}`}
                   name="accountIdentifier"
                   className="input numeric"
-                  placeholder={method.account_identifier_masked ?? "non configurato"}
+                  placeholder={method.account_identifier_masked ?? t("non configurato")}
                   disabled={!canWritePayments || !paymentStepUp}
                   autoComplete="off"
                 />
                 <span className="field__hint">
-                  Lascia vuoto per non modificarlo. Il valore attuale non viene mai mostrato per
-                  intero.
+                  {t(
+                    "Lascia vuoto per non modificarlo. Il valore attuale non viene mai mostrato per intero.",
+                  )}
                 </span>
               </div>
 
               <div className="field">
                 <label className="field__label" htmlFor={`instr-${method.id}`}>
-                  Istruzioni per il cliente
+                  {t("Istruzioni per il cliente")}
                 </label>
                 <textarea
                   id={`instr-${method.id}`}
@@ -489,7 +502,7 @@ export default function AdminSettings({ loaderData, actionData }: Route.Componen
                   defaultChecked={method.active === 1}
                   disabled={!canWritePayments || !paymentStepUp}
                 />
-                <span>Attivo (mostrato al cliente in cassa)</span>
+                <span>{t("Attivo (mostrato al cliente in cassa)")}</span>
               </label>
 
               <button
@@ -497,7 +510,7 @@ export default function AdminSettings({ loaderData, actionData }: Route.Componen
                 className="btn btn--primary"
                 disabled={!canWritePayments || !paymentStepUp}
               >
-                Salva metodo
+                {t("Salva metodo")}
               </button>
             </Form>
           </details>
@@ -505,7 +518,7 @@ export default function AdminSettings({ loaderData, actionData }: Route.Componen
       </section>
 
       <section className="stack">
-        <h2>Stato delle funzioni</h2>
+        <h2>{t("Stato delle funzioni")}</h2>
         <ul className="small stack">
           {gates.map((gate) => (
             <li key={gate.feature}>
@@ -513,7 +526,8 @@ export default function AdminSettings({ loaderData, actionData }: Route.Componen
               {gate.missingKeys.length > 0 ? (
                 <>
                   {" "}
-                  (mancano <code>{gate.missingKeys.join(", ")}</code>)
+                  {t("(mancano ")}
+                  <code>{gate.missingKeys.join(", ")}</code>)
                 </>
               ) : null}
             </li>
@@ -549,6 +563,7 @@ function SettingInput({
   value: string;
   disabled: boolean;
 }) {
+  const t = useAdminTranslator();
   const id = `setting-${field.key}`;
   const describedBy = `${id}-help`;
   const filled = value.trim() !== "";
@@ -573,10 +588,10 @@ function SettingInput({
             disabled={disabled}
             aria-describedby={describedBy}
           />
-          <span>{field.label}</span>
+          <span>{t(field.label)}</span>
         </label>
         <span className="field__hint" id={describedBy}>
-          {field.help}
+          {t(field.help)}
         </span>
       </div>
     );
@@ -585,11 +600,11 @@ function SettingInput({
   return (
     <div className="field">
       <label className="field__label" htmlFor={id}>
-        {field.label}
+        {t(field.label)}
         {field.required ? (
-          <span className="badge badge--warning" title="Serve prima di poter vendere">
+          <span className="badge badge--warning" title={t("Serve prima di poter vendere")}>
             {" "}
-            obbligatorio
+            {t("obbligatorio")}
           </span>
         ) : null}
       </label>
@@ -603,7 +618,7 @@ function SettingInput({
           defaultValue={value}
           disabled={disabled}
           aria-describedby={describedBy}
-          {...(field.example ? { placeholder: field.example } : {})}
+          {...(field.example ? { placeholder: t(field.example) } : {})}
         />
       ) : (
         <input
@@ -614,16 +629,16 @@ function SettingInput({
           defaultValue={value}
           disabled={disabled}
           aria-describedby={describedBy}
-          {...(field.example ? { placeholder: field.example } : {})}
+          {...(field.example ? { placeholder: t(field.example) } : {})}
         />
       )}
 
       <span className="field__hint" id={describedBy}>
-        {field.help}
+        {t(field.help)}
         {field.consequence && !filled ? (
           <>
             {" "}
-            <strong>Ora è vuoto:</strong> {field.consequence}
+            <strong>{t("Ora è vuoto:")}</strong> {t(field.consequence)}
           </>
         ) : null}
       </span>

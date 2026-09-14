@@ -46,7 +46,9 @@ export function parseLocalePath(pathname: string): { locale: Locale; pathname: s
 /** Builds a path in the given locale. Italian carries no prefix. */
 export function localePath(locale: Locale, pathname: string): string {
   const clean = pathname.startsWith("/") ? pathname : `/${pathname}`;
-  return locale === DEFAULT_LOCALE ? clean : `/${locale}${clean}`;
+  const bare = clean.replace(/^\/(?:it|en)(?=\/|[?#]|$)/, "");
+  const target = bare.startsWith("/") ? bare : `/${bare}`;
+  return locale === DEFAULT_LOCALE ? target : `/${locale}${target}`;
 }
 
 function lookup(dictionary: unknown, key: string): string | undefined {

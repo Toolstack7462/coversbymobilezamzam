@@ -77,12 +77,13 @@ export default [
   route("api/auth/*", "routes/api/auth.tsx"),
 
   /**
-   * Admin. Italian only - it is a staff tool, and the staff are Italian.
+   * Admin. Existing URLs stay stable; staff choose Italian or English privately.
    *
    * The login page sits OUTSIDE the protected layout: a route that requires a
    * session cannot host the form that creates one.
    */
   route("admin/accedi", "routes/admin/login.tsx"),
+  route("admin/lingua", "routes/admin/language.tsx"),
   route("admin/installazione", "routes/admin/setup.tsx"),
   /**
    * The second-factor challenge is OUTSIDE the protected layout: at that point

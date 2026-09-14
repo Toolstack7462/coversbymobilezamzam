@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, Link } from "react-router";
 import type { Route } from "./+types/orders";
 import { appContext } from "~/runtime/context";
@@ -40,8 +43,9 @@ import type { SqlStatement } from "~/infrastructure/db/sql";
  * end up disagreeing about what a status is called.
  */
 
-export function meta() {
-  return [{ title: "Ordini" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Ordini") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 const SPEC: TableSpec = {
@@ -240,6 +244,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 type Row = OrderRow & { allowed: readonly OrderStatus[] };
 
 export default function AdminOrders({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { rows, state, pagination, views, canWrite } = loaderData;
 
   const columns: Column<Row>[] = [
@@ -258,7 +263,7 @@ export default function AdminOrders({ loaderData, actionData }: Route.ComponentP
       key: "total",
       header: "Totale",
       numeric: true,
-      render: (row) => formatMoney(money(row.grand_total)),
+      render: (row) => formatMoney(money(row.grand_total), t.intl),
     },
     {
       key: "delivery",
@@ -271,7 +276,7 @@ export default function AdminOrders({ loaderData, actionData }: Route.ComponentP
       header: "Stato",
       render: (row) => (
         <span className={`badge ${orderStatusTone(row.status)}`}>
-          {isOrderStatus(row.status) ? ORDER_STATUS_LABELS[row.status] : row.status}
+          {t(isOrderStatus(row.status) ? ORDER_STATUS_LABELS[row.status] : row.status)}
         </span>
       ),
     },
@@ -284,8 +289,10 @@ export default function AdminOrders({ loaderData, actionData }: Route.ComponentP
           <span className="muted">—</span>
         ) : (
           <span className={`badge ${paymentStatusTone(row.payment_status)}`}>
-            {PAYMENT_STATUS_LABELS[row.payment_status as keyof typeof PAYMENT_STATUS_LABELS] ??
-              row.payment_status}
+            {t(
+              PAYMENT_STATUS_LABELS[row.payment_status as keyof typeof PAYMENT_STATUS_LABELS] ??
+                row.payment_status,
+            )}
           </span>
         ),
     },
@@ -295,8 +302,8 @@ export default function AdminOrders({ loaderData, actionData }: Route.ComponentP
       header: "Creato",
       secondary: true,
       render: (row) => (
-        <span className="small numeric" title={formatDateTime(row.created_at, "it")}>
-          {formatDateTimeShort(row.created_at, "it")}
+        <span className="small numeric" title={formatDateTime(row.created_at, t.locale)}>
+          {formatDateTimeShort(row.created_at, t.locale)}
         </span>
       ),
     },
@@ -308,7 +315,8 @@ export default function AdminOrders({ loaderData, actionData }: Route.ComponentP
           <Form method="post" className="cluster">
             <input type="hidden" name="orderId" value={row.id} />
             <label className="visually-hidden" htmlFor={`st-${row.id}`}>
-              Nuovo stato per l&apos;ordine {row.order_number}
+              {t("Nuovo stato per l'ordine ")}
+              {row.order_number}
             </label>
             <select id={`st-${row.id}`} name="status" className="input">
               {/* Exactly the legal transitions, minus `paid`, which only the
@@ -317,12 +325,12 @@ export default function AdminOrders({ loaderData, actionData }: Route.ComponentP
                 .filter((s) => s !== "paid")
                 .map((s) => (
                   <option key={s} value={s}>
-                    {ORDER_STATUS_LABELS[s]}
+                    {t(ORDER_STATUS_LABELS[s])}
                   </option>
                 ))}
             </select>
             <button type="submit" className="btn btn--secondary btn--small">
-              Applica
+              {t("Applica")}
             </button>
           </Form>
         ) : (
@@ -334,19 +342,21 @@ export default function AdminOrders({ loaderData, actionData }: Route.ComponentP
   return (
     <>
       <PageHeader
-        title="Ordini"
-        description="Ogni vista è una domanda pratica: chi devo contattare, cosa devo preparare."
+        title={t("Ordini")}
+        description={t(
+          "Ogni vista è una domanda pratica: chi devo contattare, cosa devo preparare.",
+        )}
         breadcrumbs={breadcrumbsFor("/admin/ordini")}
       />
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
       {actionData && "success" in actionData && actionData.success ? (
         <p className="notice notice--info" role="status">
-          {actionData.success}
+          {t(actionData.success)}
         </p>
       ) : null}
 
@@ -358,10 +368,12 @@ export default function AdminOrders({ loaderData, actionData }: Route.ComponentP
         rows={rows}
         rowKey={(row) => row.id}
         views={views}
-        searchLabel="Cerca per numero, cognome o email"
+        searchLabel={t("Cerca per numero, cognome o email")}
         emptyState={{
-          title: "Nessun ordine",
-          body: "Quando un cliente completa un ordine sul sito compare qui, insieme alle istruzioni di pagamento da inviargli.",
+          title: t("Nessun ordine"),
+          body: t(
+            "Quando un cliente completa un ordine sul sito compare qui, insieme alle istruzioni di pagamento da inviargli.",
+          ),
         }}
       />
     </>

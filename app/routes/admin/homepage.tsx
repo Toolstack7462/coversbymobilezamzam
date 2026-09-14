@@ -1,3 +1,4 @@
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form } from "react-router";
 import type { Route } from "./+types/homepage";
 import { appContext } from "~/runtime/context";
@@ -258,6 +259,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function AdminHomepage({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { sections, available, types, canWrite } = loaderData;
   const labelFor = (type: string) => types.find((t) => t.type === type);
 
@@ -267,48 +269,50 @@ export default function AdminHomepage({ loaderData, actionData }: Route.Componen
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
       {actionData && "success" in actionData && actionData.success ? (
         <p className="notice notice--info" role="status">
-          {actionData.success}
+          {t(actionData.success)}
         </p>
       ) : null}
 
       <section className="panel">
         <p className="small">
-          La homepage si compone di sezioni. Ognuna sa già disegnarsi da sola con i dati del
-          negozio: qui si decide quali compaiono, in che ordine, e cosa dicono i testi sopra.
+          {t(
+            "La homepage si compone di sezioni. Ognuna sa già disegnarsi da sola con i dati del negozio: qui si decide quali compaiono, in che ordine, e cosa dicono i testi sopra.",
+          )}
         </p>
         <p className="small">
-          Non è un editor libero, di proposito. Una sezione può essere spostata, nascosta o
-          riscritta, ma non può mostrare qualcosa che il negozio non ha — e se non ha niente da
-          mostrare non compare, invece di lasciare un titolo sopra il vuoto.
+          {t(
+            "Non è un editor libero, di proposito. Una sezione può essere spostata, nascosta o riscritta, ma non può mostrare qualcosa che il negozio non ha — e se non ha niente da mostrare non compare, invece di lasciare un titolo sopra il vuoto.",
+          )}
         </p>
         {sections.length === 0 ? (
           <p className="notice notice--info">
-            Nessuna sezione configurata: la homepage sta usando la sua composizione predefinita.
-            Aggiungendone una qui, l&apos;ordine passa sotto il tuo controllo.
+            {t(
+              "Nessuna sezione configurata: la homepage sta usando la sua composizione predefinita. Aggiungendone una qui, l'ordine passa sotto il tuo controllo.",
+            )}
           </p>
         ) : null}
       </section>
 
       {canWrite && available.length > 0 ? (
         <section className="panel">
-          <h2>Aggiungi una sezione</h2>
+          <h2>{t("Aggiungi una sezione")}</h2>
           <div className="stack">
             {available.map((s) => (
               <Form method="post" key={s.type} className="cluster">
                 <input type="hidden" name="intent" value="add" />
                 <input type="hidden" name="section_type" value={s.type} />
                 <span>
-                  <strong>{s.label}</strong>
+                  <strong>{t(s.label)}</strong>
                   <br />
                   <span className="small muted">{s.describe}</span>
                 </span>
                 <button className="btn" type="submit">
-                  Aggiungi
+                  {t("Aggiungi")}
                 </button>
               </Form>
             ))}
@@ -324,11 +328,14 @@ export default function AdminHomepage({ loaderData, actionData }: Route.Componen
               <summary>
                 <strong>{meta?.label ?? section.section_type}</strong>{" "}
                 {section.visible ? (
-                  <span className="badge badge--success">visibile</span>
+                  <span className="badge badge--success">{t("visibile")}</span>
                 ) : (
-                  <span className="badge badge--warning">nascosta</span>
+                  <span className="badge badge--warning">{t("nascosta")}</span>
                 )}{" "}
-                <span className="small muted">posizione {index + 1}</span>
+                <span className="small muted">
+                  {t("posizione ")}
+                  {index + 1}
+                </span>
               </summary>
 
               <p className="small muted">{meta?.describe}</p>
@@ -339,11 +346,11 @@ export default function AdminHomepage({ loaderData, actionData }: Route.Componen
                     <input type="hidden" name="intent" value="save" />
                     <input type="hidden" name="sectionId" value={section.id} />
                     <label>
-                      Titolo
+                      {t("Titolo")}
                       <input name="heading" defaultValue={section.heading ?? ""} maxLength={120} />
                     </label>
                     <label>
-                      Sottotitolo
+                      {t("Sottotitolo")}
                       <input
                         name="subheading"
                         defaultValue={section.subheading ?? ""}
@@ -351,7 +358,7 @@ export default function AdminHomepage({ loaderData, actionData }: Route.Componen
                       />
                     </label>
                     <label>
-                      Testo del pulsante
+                      {t("Testo del pulsante")}
                       <input
                         name="cta_label"
                         defaultValue={section.cta_label ?? ""}
@@ -359,7 +366,7 @@ export default function AdminHomepage({ loaderData, actionData }: Route.Componen
                       />
                     </label>
                     <label>
-                      Destinazione del pulsante
+                      {t("Destinazione del pulsante")}
                       <input
                         name="cta_url"
                         defaultValue={section.cta_url ?? ""}
@@ -367,12 +374,13 @@ export default function AdminHomepage({ loaderData, actionData }: Route.Componen
                         placeholder="/shop"
                       />
                       <span className="field-help">
-                        Un indirizzo interno, che inizia con /. Servono sia il testo sia la
-                        destinazione, o nessuno dei due.
+                        {t(
+                          "Un indirizzo interno, che inizia con /. Servono sia il testo sia la destinazione, o nessuno dei due.",
+                        )}
                       </span>
                     </label>
                     <button className="btn" type="submit">
-                      Salva testi
+                      {t("Salva testi")}
                     </button>
                   </Form>
 
@@ -382,7 +390,7 @@ export default function AdminHomepage({ loaderData, actionData }: Route.Componen
                       <input type="hidden" name="sectionId" value={section.id} />
                       <input type="hidden" name="direction" value="up" />
                       <button className="btn" type="submit" disabled={index === 0}>
-                        Sposta su
+                        {t("Sposta su")}
                       </button>
                     </Form>
                     <Form method="post">
@@ -394,21 +402,21 @@ export default function AdminHomepage({ loaderData, actionData }: Route.Componen
                         type="submit"
                         disabled={index === sections.length - 1}
                       >
-                        Sposta giù
+                        {t("Sposta giù")}
                       </button>
                     </Form>
                     <Form method="post">
                       <input type="hidden" name="intent" value="toggle" />
                       <input type="hidden" name="sectionId" value={section.id} />
                       <button className="btn" type="submit">
-                        {section.visible ? "Nascondi" : "Mostra"}
+                        {section.visible ? t("Nascondi") : t("Mostra")}
                       </button>
                     </Form>
                     <Form method="post">
                       <input type="hidden" name="intent" value="remove" />
                       <input type="hidden" name="sectionId" value={section.id} />
                       <button className="btn btn--danger" type="submit">
-                        Rimuovi
+                        {t("Rimuovi")}
                       </button>
                     </Form>
                   </div>

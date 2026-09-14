@@ -2,7 +2,7 @@ import { storefrontTitle } from "~/lib/storefront-meta";
 import { data } from "react-router";
 import type { Route } from "./+types/legal";
 import { appContext } from "~/runtime/context";
-import { parseLocalePath } from "~/lib/i18n";
+import { parseLocalePath, translator } from "~/lib/i18n";
 import { parsePageBody } from "~/domain/content/page-body";
 
 /**
@@ -28,9 +28,10 @@ import { parsePageBody } from "~/domain/content/page-body";
  * version; an order references the version id it was placed under, and that
  * row stays exactly as it was.
  */
-export function meta({ loaderData, matches }: Route.MetaArgs) {
+export function meta({ loaderData, matches, location }: Route.MetaArgs) {
+  const t = translator(parseLocalePath(location.pathname).locale);
   const doc = loaderData?.document;
-  if (!doc) return [{ title: storefrontTitle("Documento non trovato", matches) }];
+  if (!doc) return [{ title: storefrontTitle(t("meta.document_missing"), matches) }];
 
   return [
     { title: storefrontTitle(doc.name, matches) },
@@ -46,8 +47,8 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
 
   const row = await env.DB.prepare(
     `SELECT d.code,
-            CASE WHEN ?2 = 'en' THEN COALESCE(d.name_en, d.name_it) ELSE d.name_it END AS name,
-            CASE WHEN ?2 = 'en' THEN COALESCE(v.body_en, v.body_it) ELSE v.body_it END AS body,
+            CASE WHEN ?2 = 'en' THEN COALESCE(NULLIF(d.name_en, ''), d.name_it) ELSE d.name_it END AS name,
+            CASE WHEN ?2 = 'en' THEN COALESCE(NULLIF(v.body_en, ''), v.body_it) ELSE v.body_it END AS body,
             v.version, v.effective_from, v.reviewed_by_lawyer
        FROM legal_documents d
        JOIN legal_document_versions v ON v.id = d.current_version_id

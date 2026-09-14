@@ -1,5 +1,17 @@
 # Acceptance record
 
+## Current language follow-up — 14 September 2026
+
+Work is isolated on `feat/admin-english-storefront-locales`, based on `2a238d8`. This section supersedes the release status of the preceding PR #13 pass, whose refinements are retained. No merge, production deployment or merchant-media mutation is performed.
+
+Initial baseline: all 11 verification gates pass. New language implementation: 583 unit tests and 219 worker integration/security tests pass; the Hostinger production build also passes. Local format, lint, typecheck, locale generation/parity, migration, SQL portability, unit/integration tests, build, budgets and secret scan pass. Six new integration tests invoke the actual storefront loaders/cart reader and language action against migrated D1: English content, empty/missing fallback, subsequent merchant edits, stable cart identity/quantity, private cookie and origin/redirect validation. Unit coverage includes URL prefix idempotence, filters/fragments, dictionary placeholders and English number grouping.
+
+Worker build gzip totals: storefront JS **135.4 → 135.8 KB**, admin JS **85.2 → 122.9 KB**, CSS **17.9 → 18.0 KB**. The admin limit is explicitly adjusted to 130 KB for the new English interface after compaction; other limits stay unchanged.
+
+Browser evidence is pending the feature-branch CI run. `tests/browser/languages.spec.ts` exercises authenticated navigation across 36 actual admin URLs, sign-in SSR, persistent language, native no-JS switching, footer filter/fragment retention, English titles, keyboard/axe and 390/768/1366/1440px captures. Existing commerce and media workflows remain in the CI suite. Written tests are not yet claimed as browser passes.
+
+No hosted preview is available yet. CI uses isolated demonstration data; screenshots do not verify production inventory or field Core Web Vitals. Missing merchant product photos remain listed in image-mapping.md.
+
 ## Current follow-up — PR #13 (14 September 2026)
 
 This section supersedes the earlier branch/publication status below. The pass started at `c6db3cd`; current main `c0be139` was subsequently integrated into the review branch without conflicts. The original storefront is already incorporated into main. The media/footer/admin work is on `feat/media-footer-admin-polish`, draft [PR #13](https://github.com/Toolstack7462/coversbymobilezamzam/pull/13). No merge, production deployment or production media mutation was performed in this pass.

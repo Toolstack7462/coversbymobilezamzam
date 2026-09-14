@@ -92,7 +92,10 @@ const ADMIN_ROUTES_DIR = "app/routes/admin";
  * limit it replaces, because that one let admin weight eat the customer's
  * allowance.
  *
- * Admin 120 KB TOTAL, plus a per-screen average — and the second number is the
+ * Admin 130 KB TOTAL (2026-09-14: the requested English admin UI).
+ * Compact translation keys remove 11.2 KB of duplicated Italian strings.
+ * The measured admin total is 122.4 KB; the storefront limit is unchanged.
+ * Previously 120 KB TOTAL, plus a per-screen average — and the second number is the
  * one that matters.
  *
  * A flat total punishes BREADTH rather than BLOAT. The admin sits at ~55 KB
@@ -118,7 +121,7 @@ const BUDGETS = {
     label: "storefront JavaScript (shared + customer routes)",
   },
   adminJs: {
-    limit: 120 * 1024,
+    limit: 130 * 1024,
     label: "admin JavaScript (staff-only routes)",
   },
   css: { limit: 45 * 1024, label: "CSS (all routes)" },
@@ -185,7 +188,16 @@ function matchStem(file, stems) {
  * them, which over-counts rather than flatters. The two figures always sum to
  * the total, and the classification of every chunk is printed on request.
  */
-const ADMIN_ONLY_MODULES = ["admin-shell", "admin-nav", "data-table"];
+const ADMIN_ONLY_MODULES = [
+  "admin-shell",
+  "admin-nav",
+  "data-table",
+  "admin-i18n",
+  "use-admin-translator",
+  "language-switcher",
+  "patterns",
+  "status-badge",
+];
 
 const routeStems = (dir) =>
   existsSync(dir)

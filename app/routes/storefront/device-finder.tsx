@@ -14,9 +14,10 @@ import { parseLocalePath, translator, localePath } from "~/lib/i18n";
  * Brands are read from the database, never hardcoded: this list changes every
  * year and a new brand must not require a deployment.
  */
-export function meta({ matches }: Route.MetaArgs) {
+export function meta({ matches, location }: Route.MetaArgs) {
+  const t = translator(parseLocalePath(location.pathname).locale);
   return [
-    { title: storefrontTitle("Trova il tuo dispositivo", matches) },
+    { title: storefrontTitle(t("meta.device"), matches) },
     {
       name: "description",
       content:

@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, useSearchParams } from "react-router";
 import type { Route } from "./+types/devices";
 import { appContext } from "~/runtime/context";
@@ -27,8 +30,9 @@ import { PageHeader } from "~/components/admin/admin-shell";
  * readable.
  */
 
-export function meta() {
-  return [{ title: "Dispositivi" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Dispositivi") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -225,6 +229,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function Devices({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { brands, families, models, selectedBrand, selectedFamily, canWrite } = loaderData;
   const [params] = useSearchParams();
 
@@ -234,33 +239,34 @@ export default function Devices({ loaderData, actionData }: Route.ComponentProps
   return (
     <>
       <PageHeader
-        title="Dispositivi"
-        description="Le marche, le famiglie e i modelli di telefono. Senza questi non si può registrare nessuna compatibilità."
+        title={t("Dispositivi")}
+        description={t(
+          "Le marche, le famiglie e i modelli di telefono. Senza questi non si può registrare nessuna compatibilità.",
+        )}
         breadcrumbs={breadcrumbsFor("/admin/dispositivi")}
       />
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
       {actionData && "success" in actionData && actionData.success ? (
         <p className="notice notice--info" role="status">
-          {actionData.success}
+          {t(actionData.success)}
         </p>
       ) : null}
 
       <p className="notice notice--info small">
-        Un modello si aggiunge in tre passaggi, da sinistra a destra: prima la marca, poi la
-        famiglia (la serie), poi il modello. Nulla viene mai cancellato — si disattiva, così
-        sparisce dai filtri del sito ma gli ordini e le compatibilità già registrate restano
-        leggibili.
+        {t(
+          "Un modello si aggiunge in tre passaggi, da sinistra a destra: prima la marca, poi la famiglia (la serie), poi il modello. Nulla viene mai cancellato — si disattiva, così sparisce dai filtri del sito ma gli ordini e le compatibilità già registrate restano leggibili.",
+        )}
       </p>
 
       <div className="ac-columns">
         {/* ── Brands ────────────────────────────────────────────────────── */}
         <section className="panel stack">
-          <h2>1. Marca</h2>
+          <h2>{t("1. Marca")}</h2>
           <ul className="ac-picker">
             {brands.map((brand) => (
               <li key={brand.id}>
@@ -272,7 +278,7 @@ export default function Devices({ loaderData, actionData }: Route.ComponentProps
                   <span>
                     {brand.name}
                     {brand.active === 0 ? (
-                      <span className="badge badge--muted"> disattivata</span>
+                      <span className="badge badge--muted"> {t(" disattivata")}</span>
                     ) : null}
                   </span>
                   <span className="ac-pick__count numeric">{brand.model_count}</span>
@@ -282,14 +288,16 @@ export default function Devices({ loaderData, actionData }: Route.ComponentProps
           </ul>
 
           {brands.length === 0 ? (
-            <p className="small muted">Nessuna marca. Cominciate da qui: Apple, Samsung, Xiaomi…</p>
+            <p className="small muted">
+              {t("Nessuna marca. Cominciate da qui: Apple, Samsung, Xiaomi…")}
+            </p>
           ) : null}
 
           {canWrite ? (
             <Form method="post" className="cluster">
               <input type="hidden" name="intent" value="add-brand" />
               <label className="visually-hidden" htmlFor="brand-name">
-                Nome della marca
+                {t("Nome della marca")}
               </label>
               <input
                 id="brand-name"
@@ -300,7 +308,7 @@ export default function Devices({ loaderData, actionData }: Route.ComponentProps
                 maxLength={80}
               />
               <button type="submit" className="btn btn--secondary btn--small">
-                Aggiungi
+                {t("Aggiungi")}
               </button>
             </Form>
           ) : null}
@@ -308,9 +316,9 @@ export default function Devices({ loaderData, actionData }: Route.ComponentProps
 
         {/* ── Families ──────────────────────────────────────────────────── */}
         <section className="panel stack">
-          <h2>2. Famiglia</h2>
+          <h2>{t("2. Famiglia")}</h2>
           {!selectedBrand ? (
-            <p className="small muted">Scegliete una marca a sinistra.</p>
+            <p className="small muted">{t("Scegliete una marca a sinistra.")}</p>
           ) : (
             <>
               <ul className="ac-picker">
@@ -329,7 +337,7 @@ export default function Devices({ loaderData, actionData }: Route.ComponentProps
                           <span className="muted small"> {family.release_year}</span>
                         ) : null}
                         {family.active === 0 ? (
-                          <span className="badge badge--muted"> disattivata</span>
+                          <span className="badge badge--muted"> {t(" disattivata")}</span>
                         ) : null}
                       </span>
                       <span className="ac-pick__count numeric">{family.model_count}</span>
@@ -340,7 +348,9 @@ export default function Devices({ loaderData, actionData }: Route.ComponentProps
 
               {families.length === 0 ? (
                 <p className="small muted">
-                  Nessuna famiglia per {brandName}. Una famiglia è una serie: iPhone 16, Galaxy S24.
+                  {t("Nessuna famiglia per ")}
+                  {brandName}
+                  {t(". Una famiglia è una serie: iPhone 16, Galaxy S24.")}
                 </p>
               ) : null}
 
@@ -350,7 +360,7 @@ export default function Devices({ loaderData, actionData }: Route.ComponentProps
                   <input type="hidden" name="brandId" value={selectedBrand} />
                   <div className="cluster">
                     <label className="visually-hidden" htmlFor="family-name">
-                      Nome della famiglia
+                      {t("Nome della famiglia")}
                     </label>
                     <input
                       id="family-name"
@@ -361,7 +371,7 @@ export default function Devices({ loaderData, actionData }: Route.ComponentProps
                       maxLength={80}
                     />
                     <label className="visually-hidden" htmlFor="family-year">
-                      Anno
+                      {t("Anno")}
                     </label>
                     <input
                       id="family-year"
@@ -374,7 +384,7 @@ export default function Devices({ loaderData, actionData }: Route.ComponentProps
                       style={{ maxWidth: "7rem" }}
                     />
                     <button type="submit" className="btn btn--secondary btn--small">
-                      Aggiungi
+                      {t("Aggiungi")}
                     </button>
                   </div>
                 </Form>
@@ -385,9 +395,9 @@ export default function Devices({ loaderData, actionData }: Route.ComponentProps
 
         {/* ── Models ────────────────────────────────────────────────────── */}
         <section className="panel stack">
-          <h2>3. Modello</h2>
+          <h2>{t("3. Modello")}</h2>
           {!selectedFamily ? (
-            <p className="small muted">Scegliete una famiglia.</p>
+            <p className="small muted">{t("Scegliete una famiglia.")}</p>
           ) : (
             <>
               <ul className="ac-picker">
@@ -400,13 +410,13 @@ export default function Devices({ loaderData, actionData }: Route.ComponentProps
                           <span className="muted small"> · {model.connector}</span>
                         ) : null}
                         {model.active === 0 ? (
-                          <span className="badge badge--muted"> disattivato</span>
+                          <span className="badge badge--muted"> {t(" disattivato")}</span>
                         ) : null}
                       </span>
                       <span className="cluster">
                         <span
                           className="ac-pick__count numeric"
-                          title={`${model.compat_count} accessori collegati`}
+                          title={t("{{v0}} accessori collegati", { v0: model.compat_count })}
                         >
                           {model.compat_count}
                         </span>
@@ -416,7 +426,7 @@ export default function Devices({ loaderData, actionData }: Route.ComponentProps
                             <input type="hidden" name="table" value="device_models" />
                             <input type="hidden" name="id" value={model.id} />
                             <button type="submit" className="btn btn--ghost btn--small">
-                              {model.active === 1 ? "Disattiva" : "Riattiva"}
+                              {model.active === 1 ? t("Disattiva") : t("Riattiva")}
                             </button>
                           </Form>
                         ) : null}
@@ -427,7 +437,10 @@ export default function Devices({ loaderData, actionData }: Route.ComponentProps
               </ul>
 
               {models.length === 0 ? (
-                <p className="small muted">Nessun modello in {familyName}.</p>
+                <p className="small muted">
+                  {t("Nessun modello in ")}
+                  {familyName}.
+                </p>
               ) : null}
 
               {canWrite ? (
@@ -438,7 +451,7 @@ export default function Devices({ loaderData, actionData }: Route.ComponentProps
 
                   <div className="field">
                     <label className="field__label" htmlFor="model-name">
-                      Nome del modello
+                      {t("Nome del modello")}
                     </label>
                     <input
                       id="model-name"
@@ -453,7 +466,7 @@ export default function Devices({ loaderData, actionData }: Route.ComponentProps
                   <div className="cluster">
                     <div className="field">
                       <label className="field__label" htmlFor="model-connector">
-                        Connettore
+                        {t("Connettore")}
                       </label>
                       <input
                         id="model-connector"
@@ -474,7 +487,7 @@ export default function Devices({ loaderData, actionData }: Route.ComponentProps
 
                     <div className="field">
                       <label className="field__label" htmlFor="model-year">
-                        Anno
+                        {t("Anno")}
                       </label>
                       <input
                         id="model-year"
@@ -489,7 +502,7 @@ export default function Devices({ loaderData, actionData }: Route.ComponentProps
                   </div>
 
                   <button type="submit" className="btn btn--primary">
-                    Aggiungi modello
+                    {t("Aggiungi modello")}
                   </button>
                 </Form>
               ) : null}
@@ -500,7 +513,7 @@ export default function Devices({ loaderData, actionData }: Route.ComponentProps
 
       {params.get("marca") ? (
         <p className="caption muted">
-          <a href="/admin/dispositivi">Azzera la selezione</a>
+          <a href="/admin/dispositivi">{t("Azzera la selezione")}</a>
         </p>
       ) : null}
     </>

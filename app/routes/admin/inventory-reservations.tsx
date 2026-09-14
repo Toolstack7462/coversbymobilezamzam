@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Link } from "react-router";
 import type { Route } from "./+types/inventory-reservations";
 import { appContext } from "~/runtime/context";
@@ -24,8 +27,9 @@ import { PageHeader } from "~/components/admin/admin-shell";
  * job that has not run, and it is worth seeing rather than quietly filtering
  * out.
  */
-export function meta() {
-  return [{ title: "Prenotazioni di stock" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Prenotazioni di stock") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -96,6 +100,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export default function InventoryReservations({ loaderData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { reservations, filter, stale, held, now } = loaderData;
 
   const tab = (slug: string, label: string) => (
@@ -104,57 +109,63 @@ export default function InventoryReservations({ loaderData }: Route.ComponentPro
       to={`/admin/inventario/prenotazioni?stato=${slug}`}
       aria-current={filter === slug || undefined}
     >
-      {label}
+      {t(label)}
     </Link>
   );
 
   return (
     <>
       <PageHeader
-        title="Prenotazioni di stock"
+        title={t("Prenotazioni di stock")}
         breadcrumbs={breadcrumbsFor("/admin/inventario/prenotazioni")}
       />
 
       <section className="panel">
         <div className="ac-metrics">
           <div className="ac-metric">
-            <span className="ac-metric__label">Pezzi impegnati adesso</span>
+            <span className="ac-metric__label">{t("Pezzi impegnati adesso")}</span>
             <span className="ac-metric__value numeric">{held}</span>
           </div>
           <div className="ac-metric">
-            <span className="ac-metric__label">Scadute e non rilasciate</span>
+            <span className="ac-metric__label">{t("Scadute e non rilasciate")}</span>
             <span className="ac-metric__value numeric">{stale}</span>
-            <span className="ac-metric__note">Stock fermo per nessuno</span>
+            <span className="ac-metric__note">{t("Stock fermo per nessuno")}</span>
           </div>
         </div>
         <p className="small">
-          Quando arriva un ordine il suo stock viene <em>trattenuto</em>, non scalato. È per questo
-          che &ldquo;in magazzino&rdquo; e &ldquo;vendibile&rdquo; sono due numeri diversi, e di
-          solito è la risposta alla domanda &ldquo;perché non riesco a vendere una cosa che vedo
-          sullo scaffale?&rdquo;.
+          {t("Quando arriva un ordine il suo stock viene ")}
+          <em>{t("trattenuto")}</em>
+          {t(
+            ", non scalato. È per questo che “in magazzino” e “vendibile” sono due numeri diversi, e di solito è la risposta alla domanda “perché non riesco a vendere una cosa che vedo sullo scaffale?”.",
+          )}
         </p>
         {stale > 0 ? (
           <p className="notice notice--warning">
-            <strong>{stale} prenotazioni sono scadute senza essere rilasciate.</strong> Quello stock
-            è bloccato per clienti che non ci sono più. Se il numero non torna a zero da solo, il
-            lavoro programmato che le rilascia non sta girando — si controlla da{" "}
-            <Link to="/admin/sistema">Stato del sistema</Link>.
+            <strong>
+              {stale} {t(" prenotazioni sono scadute senza essere rilasciate.")}
+            </strong>{" "}
+            {t(
+              " Quello stock è bloccato per clienti che non ci sono più. Se il numero non torna a zero da solo, il lavoro programmato che le rilascia non sta girando — si controlla da",
+            )}{" "}
+            <Link to="/admin/sistema">{t("Stato del sistema")}</Link>.
           </p>
         ) : null}
       </section>
 
-      <nav className="cluster" aria-label="Filtra per stato">
-        {tab("active", "Attive")}
-        {tab("released", "Rilasciate")}
-        {tab("consumed", "Consumate")}
-        {tab("tutte", "Tutte")}
+      <nav className="cluster" aria-label={t("Filtra per stato")}>
+        {tab("active", t("Attive"))}
+        {tab("released", t("Rilasciate"))}
+        {tab("consumed", t("Consumate"))}
+        {tab("tutte", t("Tutte"))}
       </nav>
 
       {reservations.length === 0 ? (
         <div className="empty-state">
-          <p>Nessuna prenotazione in questo stato.</p>
+          <p>{t("Nessuna prenotazione in questo stato.")}</p>
           <p className="small">
-            Le prenotazioni nascono con gli ordini: senza ordini aperti questo elenco resta vuoto.
+            {t(
+              "Le prenotazioni nascono con gli ordini: senza ordini aperti questo elenco resta vuoto.",
+            )}
           </p>
         </div>
       ) : (
@@ -164,20 +175,20 @@ export default function InventoryReservations({ loaderData }: Route.ComponentPro
              take focus is unscrollable without a mouse. */
           tabIndex={0}
           role="region"
-          aria-label="Tabella scorrevole"
+          aria-label={t("Tabella scorrevole")}
         >
           <table className="admin-table">
-            <caption className="visually-hidden">Prenotazioni di stock</caption>
+            <caption className="visually-hidden">{t("Prenotazioni di stock")}</caption>
             <thead>
               <tr>
-                <th scope="col">Prodotto</th>
+                <th scope="col">{t("Prodotto")}</th>
                 <th scope="col" className="numeric">
-                  Pezzi
+                  {t("Pezzi")}
                 </th>
-                <th scope="col">Ordine</th>
-                <th scope="col">Stato</th>
-                <th scope="col">Scade</th>
-                <th scope="col">Creata</th>
+                <th scope="col">{t("Ordine")}</th>
+                <th scope="col">{t("Stato")}</th>
+                <th scope="col">{t("Scade")}</th>
+                <th scope="col">{t("Creata")}</th>
               </tr>
             </thead>
             <tbody>
@@ -207,9 +218,9 @@ export default function InventoryReservations({ loaderData }: Route.ComponentPro
                     </td>
                     <td>
                       {expired ? (
-                        <span className="badge badge--danger">scaduta</span>
+                        <span className="badge badge--danger">{t("scaduta")}</span>
                       ) : (
-                        <span className="badge">{STATUS_LABELS[r.status] ?? r.status}</span>
+                        <span className="badge">{t(STATUS_LABELS[r.status] ?? r.status)}</span>
                       )}
                       {r.released_reason ? (
                         <>
@@ -219,9 +230,9 @@ export default function InventoryReservations({ loaderData }: Route.ComponentPro
                       ) : null}
                     </td>
                     <td className="small">
-                      {r.expires_at ? formatDateTime(r.expires_at, "it") : "—"}
+                      {r.expires_at ? formatDateTime(r.expires_at, t.locale) : "—"}
                     </td>
-                    <td className="small">{formatDateTime(r.created_at, "it")}</td>
+                    <td className="small">{formatDateTime(r.created_at, t.locale)}</td>
                   </tr>
                 );
               })}

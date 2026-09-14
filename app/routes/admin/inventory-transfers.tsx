@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, Link } from "react-router";
 import type { Route } from "./+types/inventory-transfers";
 import { appContext } from "~/runtime/context";
@@ -34,8 +37,9 @@ import { PageHeader } from "~/components/admin/admin-shell";
  * Both legs write a movement (invariant 4), so the ledger explains the
  * quantities at both ends.
  */
-export function meta() {
-  return [{ title: "Trasferimenti" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Trasferimenti") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 const LOCATION_TYPES = [
@@ -323,32 +327,34 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function InventoryTransfers({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { locations, transfers } = loaderData;
   const canTransfer = locations.length >= 2;
 
   return (
     <>
       <PageHeader
-        title="Trasferimenti"
+        title={t("Trasferimenti")}
         breadcrumbs={breadcrumbsFor("/admin/inventario/trasferimenti")}
       />
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
       {actionData && "success" in actionData && actionData.success ? (
         <p className="notice notice--info" role="status">
-          {actionData.success}
+          {t(actionData.success)}
         </p>
       ) : null}
 
       <section className="panel">
-        <h2>Sedi</h2>
+        <h2>{t("Sedi")}</h2>
         <p className="small">
-          Un trasferimento sposta merce da una sede a un&apos;altra. Con una sede sola non c&apos;è
-          niente da spostare — è per questo che le sedi si gestiscono da qui.
+          {t(
+            "Un trasferimento sposta merce da una sede a un'altra. Con una sede sola non c'è niente da spostare — è per questo che le sedi si gestiscono da qui.",
+          )}
         </p>
         <div
           className="admin-table-wrap"
@@ -356,16 +362,16 @@ export default function InventoryTransfers({ loaderData, actionData }: Route.Com
              take focus is unscrollable without a mouse. */
           tabIndex={0}
           role="region"
-          aria-label="Tabella scorrevole"
+          aria-label={t("Tabella scorrevole")}
         >
           <table className="admin-table">
-            <caption className="visually-hidden">Sedi di magazzino</caption>
+            <caption className="visually-hidden">{t("Sedi di magazzino")}</caption>
             <thead>
               <tr>
-                <th scope="col">Sede</th>
-                <th scope="col">Codice</th>
-                <th scope="col">Vendibile online</th>
-                <th scope="col">Vendibile in negozio</th>
+                <th scope="col">{t("Sede")}</th>
+                <th scope="col">{t("Codice")}</th>
+                <th scope="col">{t("Vendibile online")}</th>
+                <th scope="col">{t("Vendibile in negozio")}</th>
               </tr>
             </thead>
             <tbody>
@@ -375,8 +381,8 @@ export default function InventoryTransfers({ loaderData, actionData }: Route.Com
                   <td>
                     <code>{l.code}</code>
                   </td>
-                  <td>{l.sellable_online ? "Sì" : "No"}</td>
-                  <td>{l.sellable_in_store ? "Sì" : "No"}</td>
+                  <td>{l.sellable_online ? t("Sì") : "No"}</td>
+                  <td>{l.sellable_in_store ? t("Sì") : "No"}</td>
                 </tr>
               ))}
             </tbody>
@@ -385,39 +391,39 @@ export default function InventoryTransfers({ loaderData, actionData }: Route.Com
 
         <Form method="post" className="stack">
           <input type="hidden" name="intent" value="add-location" />
-          <h3>Aggiungi una sede</h3>
+          <h3>{t("Aggiungi una sede")}</h3>
           <label>
-            Nome
-            <input name="name" required maxLength={80} placeholder="Magazzino retro" />
+            {t("Nome")}
+            <input name="name" required maxLength={80} placeholder={t("Magazzino retro")} />
           </label>
           <label>
-            Codice
+            {t("Codice")}
             <input name="code" required maxLength={12} placeholder="RETRO" />
-            <span className="field-help">Breve, in maiuscolo. Compare nei movimenti.</span>
+            <span className="field-help">{t("Breve, in maiuscolo. Compare nei movimenti.")}</span>
           </label>
           <label>
-            Tipo
+            {t("Tipo")}
             <select name="location_type" defaultValue="warehouse">
               {LOCATION_TYPES.map(([value, label]) => (
                 <option key={value} value={value}>
-                  {label}
+                  {t(label)}
                 </option>
               ))}
             </select>
           </label>
           <button className="btn" type="submit">
-            Aggiungi sede
+            {t("Aggiungi sede")}
           </button>
         </Form>
       </section>
 
       {canTransfer ? (
         <section className="panel">
-          <h2>Nuovo trasferimento</h2>
+          <h2>{t("Nuovo trasferimento")}</h2>
           <Form method="post" className="stack">
             <input type="hidden" name="intent" value="create-transfer" />
             <label>
-              Da
+              {t("Da")}
               <select name="from_location_id" required>
                 {locations.map((l) => (
                   <option key={l.id} value={l.id}>
@@ -441,36 +447,37 @@ export default function InventoryTransfers({ loaderData, actionData }: Route.Com
               <input name="sku" required maxLength={64} placeholder="COV-SIL-16P-BLK" />
             </label>
             <label>
-              Quantità
+              {t("Quantità")}
               <input name="quantity" type="number" min={1} step={1} required />
               <span className="field-help">
-                Si possono spostare solo i pezzi disponibili: quelli già impegnati da un ordine
-                restano dove sono.
+                {t(
+                  "Si possono spostare solo i pezzi disponibili: quelli già impegnati da un ordine restano dove sono.",
+                )}
               </span>
             </label>
             <label>
-              Nota
+              {t("Nota")}
               <input name="note" maxLength={200} />
             </label>
             <button className="btn btn--primary" type="submit">
-              Crea trasferimento
+              {t("Crea trasferimento")}
             </button>
           </Form>
         </section>
       ) : (
         <p className="notice notice--info">
-          Serve una seconda sede prima di poter creare un trasferimento.
+          {t("Serve una seconda sede prima di poter creare un trasferimento.")}
         </p>
       )}
 
       <section className="panel">
-        <h2>Trasferimenti</h2>
+        <h2>{t("Trasferimenti")}</h2>
         {transfers.length === 0 ? (
           <div className="empty-state">
-            <p>Nessun trasferimento.</p>
+            <p>{t("Nessun trasferimento.")}</p>
             <p className="small">
-              I movimenti che ne derivano restano visibili in{" "}
-              <Link to="/admin/inventario/movimenti">Movimenti</Link>.
+              {t("I movimenti che ne derivano restano visibili in")}{" "}
+              <Link to="/admin/inventario/movimenti">{t("Movimenti")}</Link>.
             </p>
           </div>
         ) : (
@@ -480,23 +487,23 @@ export default function InventoryTransfers({ loaderData, actionData }: Route.Com
              take focus is unscrollable without a mouse. */
             tabIndex={0}
             role="region"
-            aria-label="Tabella scorrevole"
+            aria-label={t("Tabella scorrevole")}
           >
             <table className="admin-table">
-              <caption className="visually-hidden">Trasferimenti, dal più recente</caption>
+              <caption className="visually-hidden">{t("Trasferimenti, dal più recente")}</caption>
               <thead>
                 <tr>
-                  <th scope="col">Riferimento</th>
-                  <th scope="col">Percorso</th>
+                  <th scope="col">{t("Riferimento")}</th>
+                  <th scope="col">{t("Percorso")}</th>
                   <th scope="col" className="numeric">
-                    Righe
+                    {t("Righe")}
                   </th>
                   <th scope="col" className="numeric">
-                    Pezzi
+                    {t("Pezzi")}
                   </th>
-                  <th scope="col">Stato</th>
-                  <th scope="col">Creato</th>
-                  <th scope="col">Azione</th>
+                  <th scope="col">{t("Stato")}</th>
+                  <th scope="col">{t("Creato")}</th>
+                  <th scope="col">{t("Azione")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -518,23 +525,23 @@ export default function InventoryTransfers({ loaderData, actionData }: Route.Com
                     <td className="numeric">{tr.units}</td>
                     <td>
                       {tr.status === "received" ? (
-                        <span className="badge badge--success">ricevuto</span>
+                        <span className="badge badge--success">{t("ricevuto")}</span>
                       ) : (
-                        <span className="badge badge--warning">in transito</span>
+                        <span className="badge badge--warning">{t("in transito")}</span>
                       )}
                     </td>
-                    <td className="small">{formatDateTime(tr.created_at, "it")}</td>
+                    <td className="small">{formatDateTime(tr.created_at, t.locale)}</td>
                     <td>
                       {tr.status === "received" ? (
                         <span className="small muted">
-                          {tr.received_at ? formatDateTime(tr.received_at, "it") : ""}
+                          {tr.received_at ? formatDateTime(tr.received_at, t.locale) : ""}
                         </span>
                       ) : (
                         <Form method="post">
                           <input type="hidden" name="intent" value="receive" />
                           <input type="hidden" name="transferId" value={tr.id} />
                           <button className="btn" type="submit">
-                            Conferma ricezione
+                            {t("Conferma ricezione")}
                           </button>
                         </Form>
                       )}

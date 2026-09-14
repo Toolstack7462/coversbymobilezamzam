@@ -19,21 +19,20 @@ const PER_PAGE = 24;
  * filtered view is shareable, and the no-JavaScript path is real pagination
  * rather than an inert button.
  */
-export function meta({ matches, loaderData }: Route.MetaArgs) {
+export function meta({ matches, loaderData, location }: Route.MetaArgs) {
+  const t = translator(parseLocalePath(location.pathname).locale);
   return [
     {
       title: storefrontTitle(
         loaderData?.filters.q
-          ? `Ricerca: ${loaderData.filters.q}`
-          : (loaderData?.activeCategory?.name ??
-              loaderData?.activeDevice?.name ??
-              "Tutti gli accessori"),
+          ? t("meta.search", { query: loaderData.filters.q })
+          : (loaderData?.activeCategory?.name ?? loaderData?.activeDevice?.name ?? t("meta.all")),
         matches,
       ),
     },
     {
       name: "description",
-      content: "Cover, cavi, caricabatterie e pellicole per smartphone.",
+      content: t("meta.description"),
     },
   ];
 }
@@ -57,6 +56,7 @@ function availabilityFor(row: {
 }
 
 export async function loader({ context, request }: Route.LoaderArgs) {
+  const { locale } = parseLocalePath(new URL(request.url).pathname);
   const { env } = context.get(appContext);
   const url = new URL(request.url);
 
@@ -135,7 +135,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
 
   const [rows, count] = await Promise.all([
     env.DB.prepare(
-      `SELECT p.slug, pt.name, b.name AS brand_name,
+      `SELECT p.slug, COALESCE(NULLIF(pt_local.name, ''), pt.name) AS name, b.name AS brand_name,
               (SELECT amount FROM variant_prices vp
                  JOIN product_variants v ON v.id = vp.variant_id
                 WHERE v.product_id = p.id ORDER BY vp.amount ASC LIMIT 1) AS price_amount,
@@ -152,6 +152,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
                  JOIN product_variants v ON v.id = il.variant_id
                 WHERE v.product_id = p.id ORDER BY il.on_hand DESC LIMIT 1) AS reorder_threshold
          FROM products p
+         LEFT JOIN product_translations pt_local ON pt_local.product_id = p.id AND pt_local.locale = '${locale}'
          LEFT JOIN product_translations pt ON pt.product_id = p.id AND pt.locale = 'it'
          LEFT JOIN brands b ON b.id = p.brand_id
         WHERE ${clause}
@@ -171,6 +172,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
       }>(),
     env.DB.prepare(
       `SELECT COUNT(*) AS n FROM products p
+         LEFT JOIN product_translations pt_local ON pt_local.product_id = p.id AND pt_local.locale = '${locale}'
          LEFT JOIN product_translations pt ON pt.product_id = p.id AND pt.locale = 'it'
         WHERE ${clause}`,
     )
@@ -205,9 +207,10 @@ export async function loader({ context, request }: Route.LoaderArgs) {
       // the merchant. Absent description renders nothing rather than filler.
       categoria
         ? env.DB.prepare(
-            `SELECT ct.name, ct.description, c.image_key
+            `SELECT COALESCE(NULLIF(ct_local.name, ''), ct.name) AS name, COALESCE(NULLIF(ct_local.description, ''), ct.description) AS description, c.image_key
              FROM categories c
-             JOIN category_translations ct ON ct.category_id = c.id AND ct.locale = 'it'
+             LEFT JOIN category_translations ct_local ON ct_local.category_id = c.id AND ct_local.locale = '${locale}'
+         JOIN category_translations ct ON ct.category_id = c.id AND ct.locale = 'it'
             WHERE c.slug = ?1 AND c.visible = 1 AND c.archived_at IS NULL`,
           )
             .bind(categoria)
@@ -229,8 +232,9 @@ export async function loader({ context, request }: Route.LoaderArgs) {
         : null,
 
       env.DB.prepare(
-        `SELECT c.slug, ct.name
+        `SELECT c.slug, COALESCE(NULLIF(ct_local.name, ''), ct.name) AS name
          FROM categories c
+         LEFT JOIN category_translations ct_local ON ct_local.category_id = c.id AND ct_local.locale = '${locale}'
          LEFT JOIN category_translations ct ON ct.category_id = c.id AND ct.locale = 'it'
         WHERE c.visible = 1 AND c.archived_at IS NULL AND c.depth = 0
         ORDER BY c.sort_order ASC LIMIT 12`,

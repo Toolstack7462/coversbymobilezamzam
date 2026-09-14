@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, useLocation } from "react-router";
 import type { Route } from "./+types/catalogue-taxonomy";
 import { appContext } from "~/runtime/context";
@@ -25,8 +28,9 @@ import { PageHeader } from "~/components/admin/admin-shell";
  * brands that matter — the ones in use. Hiding is the honest operation.
  */
 
-export function meta() {
-  return [{ title: "Marchi e categorie" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Marchi e categorie") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -201,38 +205,43 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function CatalogueTaxonomy({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { pathname } = useLocation();
   const { brands, categories, canWrite } = loaderData;
 
   return (
     <>
       <PageHeader
-        title="Marchi e categorie"
-        description="Come è organizzato il vostro catalogo. Diverso dai dispositivi, che sono i telefoni con cui un accessorio è compatibile."
+        title={t("Marchi e categorie")}
+        description={t(
+          "Come è organizzato il vostro catalogo. Diverso dai dispositivi, che sono i telefoni con cui un accessorio è compatibile.",
+        )}
         breadcrumbs={breadcrumbsFor(pathname)}
       />
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
       {actionData && "success" in actionData && actionData.success ? (
         <p className="notice notice--info" role="status">
-          {actionData.success}
+          {t(actionData.success)}
         </p>
       ) : null}
 
       <div className="ac-columns">
         {/* ── Brands ────────────────────────────────────────────────────── */}
         <section className="panel stack">
-          <h2>Marchi</h2>
+          <h2>{t("Marchi")}</h2>
           <p className="small muted">
-            Chi produce l&apos;accessorio: Spigen, Anker, Baseus. Non il telefono a cui è destinato.
+            {t(
+              "Chi produce l'accessorio: Spigen, Anker, Baseus. Non il telefono a cui è destinato.",
+            )}
           </p>
 
           {brands.length === 0 ? (
-            <p className="small muted">Nessun marchio. Si può anche non usarli.</p>
+            <p className="small muted">{t("Nessun marchio. Si può anche non usarli.")}</p>
           ) : (
             <ul className="ac-picker">
               {brands.map((brand) => (
@@ -243,7 +252,7 @@ export default function CatalogueTaxonomy({ loaderData, actionData }: Route.Comp
                         <input type="hidden" name="intent" value="rename-brand" />
                         <input type="hidden" name="id" value={brand.id} />
                         <label className="visually-hidden" htmlFor={`bn-${brand.id}`}>
-                          Nome del marchio
+                          {t("Nome del marchio")}
                         </label>
                         <input
                           id={`bn-${brand.id}`}
@@ -253,7 +262,7 @@ export default function CatalogueTaxonomy({ loaderData, actionData }: Route.Comp
                           maxLength={80}
                         />
                         <button type="submit" className="btn btn--ghost btn--small">
-                          Salva
+                          {t("Salva")}
                         </button>
                       </Form>
                     ) : (
@@ -261,7 +270,7 @@ export default function CatalogueTaxonomy({ loaderData, actionData }: Route.Comp
                     )}
                     <span
                       className="ac-pick__count numeric"
-                      title={`${brand.product_count} prodotti`}
+                      title={t("{{v0}} prodotti", { v0: brand.product_count })}
                     >
                       {brand.product_count}
                     </span>
@@ -276,7 +285,7 @@ export default function CatalogueTaxonomy({ loaderData, actionData }: Route.Comp
               <input type="hidden" name="intent" value="add-brand" />
               <div className="field">
                 <label className="field__label" htmlFor="brand-name">
-                  Nuovo marchio
+                  {t("Nuovo marchio")}
                 </label>
                 <input
                   id="brand-name"
@@ -289,7 +298,7 @@ export default function CatalogueTaxonomy({ loaderData, actionData }: Route.Comp
               </div>
               <div className="field">
                 <label className="field__label" htmlFor="brand-site">
-                  Sito del produttore
+                  {t("Sito del produttore")}
                 </label>
                 <input
                   id="brand-site"
@@ -300,7 +309,7 @@ export default function CatalogueTaxonomy({ loaderData, actionData }: Route.Comp
                 />
               </div>
               <button type="submit" className="btn btn--secondary">
-                Aggiungi marchio
+                {t("Aggiungi marchio")}
               </button>
             </Form>
           ) : null}
@@ -308,13 +317,13 @@ export default function CatalogueTaxonomy({ loaderData, actionData }: Route.Comp
 
         {/* ── Categories ────────────────────────────────────────────────── */}
         <section className="panel stack">
-          <h2>Categorie</h2>
+          <h2>{t("Categorie")}</h2>
           <p className="small muted">
-            Che cosa è l&apos;accessorio: cover, cavi, caricabatterie, pellicole.
+            {t("Che cosa è l'accessorio: cover, cavi, caricabatterie, pellicole.")}
           </p>
 
           {categories.length === 0 ? (
-            <p className="small muted">Nessuna categoria.</p>
+            <p className="small muted">{t("Nessuna categoria.")}</p>
           ) : (
             <ul className="ac-picker">
               {categories.map((category) => (
@@ -323,16 +332,16 @@ export default function CatalogueTaxonomy({ loaderData, actionData }: Route.Comp
                     <span>
                       {category.name ?? category.slug}
                       {category.name === null ? (
-                        <span className="badge badge--warning"> traduzione mancante</span>
+                        <span className="badge badge--warning"> {t(" traduzione mancante")}</span>
                       ) : null}
                       {category.visible === 0 ? (
-                        <span className="badge badge--muted"> nascosta</span>
+                        <span className="badge badge--muted"> {t(" nascosta")}</span>
                       ) : null}
                     </span>
                     <span className="cluster">
                       <span
                         className="ac-pick__count numeric"
-                        title={`${category.product_count} prodotti`}
+                        title={t("{{v0}} prodotti", { v0: category.product_count })}
                       >
                         {category.product_count}
                       </span>
@@ -341,7 +350,7 @@ export default function CatalogueTaxonomy({ loaderData, actionData }: Route.Comp
                           <input type="hidden" name="intent" value="toggle-category" />
                           <input type="hidden" name="id" value={category.id} />
                           <button type="submit" className="btn btn--ghost btn--small">
-                            {category.visible === 1 ? "Nascondi" : "Mostra"}
+                            {category.visible === 1 ? t("Nascondi") : t("Mostra")}
                           </button>
                         </Form>
                       ) : null}
@@ -357,7 +366,7 @@ export default function CatalogueTaxonomy({ loaderData, actionData }: Route.Comp
               <input type="hidden" name="intent" value="add-category" />
               <div className="field">
                 <label className="field__label" htmlFor="cat-name">
-                  Nuova categoria
+                  {t("Nuova categoria")}
                 </label>
                 <input
                   id="cat-name"
@@ -365,12 +374,12 @@ export default function CatalogueTaxonomy({ loaderData, actionData }: Route.Comp
                   className="input"
                   required
                   maxLength={80}
-                  placeholder="Cover e custodie"
+                  placeholder={t("Cover e custodie")}
                 />
               </div>
               <div className="field">
                 <label className="field__label" htmlFor="cat-type">
-                  Tipo di accessorio
+                  {t("Tipo di accessorio")}
                 </label>
                 <input
                   id="cat-type"
@@ -389,12 +398,13 @@ export default function CatalogueTaxonomy({ loaderData, actionData }: Route.Comp
                   <option value="audio" />
                 </datalist>
                 <span className="field__hint" id="cat-type-help">
-                  Facoltativo. Serve al sito per sapere quali dettagli tecnici mostrare — la
-                  lunghezza per un cavo, i watt per un caricabatterie.
+                  {t(
+                    "Facoltativo. Serve al sito per sapere quali dettagli tecnici mostrare — la lunghezza per un cavo, i watt per un caricabatterie.",
+                  )}
                 </span>
               </div>
               <button type="submit" className="btn btn--secondary">
-                Aggiungi categoria
+                {t("Aggiungi categoria")}
               </button>
             </Form>
           ) : null}
@@ -402,9 +412,9 @@ export default function CatalogueTaxonomy({ loaderData, actionData }: Route.Comp
       </div>
 
       <p className="caption muted">
-        Né i marchi né le categorie si eliminano. Un prodotto vi fa riferimento, e il database
-        rifiuterebbe comunque la cancellazione proprio per quelli in uso. Nascondere è
-        l&apos;operazione onesta.
+        {t(
+          "Né i marchi né le categorie si eliminano. Un prodotto vi fa riferimento, e il database rifiuterebbe comunque la cancellazione proprio per quelli in uso. Nascondere è l'operazione onesta.",
+        )}
       </p>
     </>
   );

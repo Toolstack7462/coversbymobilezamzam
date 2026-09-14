@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Link, Form } from "react-router";
 import type { Route } from "./+types/search";
 import { appContext } from "~/runtime/context";
@@ -76,8 +79,9 @@ interface DeviceHit {
   brand_name: string | null;
 }
 
-export function meta() {
-  return [{ title: "Cerca" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Cerca") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -191,20 +195,21 @@ async function findDevices(env: AppEnv, contains: string): Promise<DeviceHit[]> 
 }
 
 export default function AdminSearch({ loaderData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { query, products, orders, customers, devices, searched } = loaderData;
   const total = products.length + orders.length + customers.length + devices.length;
 
   return (
     <>
       <PageHeader
-        title="Cerca"
-        description="Prodotti, ordini, clienti e dispositivi, in un posto solo."
+        title={t("Cerca")}
+        description={t("Prodotti, ordini, clienti e dispositivi, in un posto solo.")}
         breadcrumbs={breadcrumbsFor("/admin/cerca")}
       />
 
       <Form method="get" className="ac-search" role="search">
         <label className="visually-hidden" htmlFor="ac-global-q">
-          Cerca
+          {t("Cerca")}
         </label>
         <input
           id="ac-global-q"
@@ -212,27 +217,28 @@ export default function AdminSearch({ loaderData }: Route.ComponentProps) {
           name="q"
           defaultValue={query}
           maxLength={MAX_QUERY}
-          placeholder="Numero d'ordine, SKU, nome prodotto, email, modello"
+          placeholder={t("Numero d'ordine, SKU, nome prodotto, email, modello")}
           autoFocus
         />
         <button type="submit" className="btn btn--secondary">
-          Cerca
+          {t("Cerca")}
         </button>
       </Form>
 
       {!searched ? (
         <p className="muted small">
-          Digita quello che hai davanti: il numero su un&apos;email, lo SKU su una scatola, il
-          cognome di chi ha telefonato.
+          {t(
+            "Digita quello che hai davanti: il numero su un'email, lo SKU su una scatola, il cognome di chi ha telefonato.",
+          )}
         </p>
       ) : total === 0 ? (
         <EmptyState
-          title={`Nessun risultato per "${query}"`}
+          title={t('Nessun risultato per "{{v0}}"', { v0: query })}
           body="Nessun prodotto, ordine, cliente o dispositivo corrisponde. Controlla il testo, oppure cerca dentro la sezione giusta dove i filtri sono più precisi."
         />
       ) : (
         <div className="stack">
-          <Section title="Prodotti" count={products.length}>
+          <Section title={t("Prodotti")} count={products.length}>
             {products.map((p) => (
               <ResultRow
                 key={p.id}
@@ -244,30 +250,30 @@ export default function AdminSearch({ loaderData }: Route.ComponentProps) {
             ))}
           </Section>
 
-          <Section title="Ordini" count={orders.length}>
+          <Section title={t("Ordini")} count={orders.length}>
             {orders.map((o) => (
               <ResultRow
                 key={o.id}
                 to={`/admin/ordini/${o.id}`}
                 title={o.order_number}
-                meta={`${o.customer_first_name} ${o.customer_last_name} · ${formatMoney(money(o.grand_total))}`}
+                meta={`${o.customer_first_name} ${o.customer_last_name} · ${formatMoney(money(o.grand_total), t.intl)}`}
                 badge={<StatusBadge kind="order" value={o.status} />}
               />
             ))}
           </Section>
 
-          <Section title="Clienti" count={customers.length}>
+          <Section title={t("Clienti")} count={customers.length}>
             {customers.map((c) => (
               <ResultRow
                 key={c.customer_email}
                 to={`/admin/clienti?q=${encodeURIComponent(c.customer_email)}`}
                 title={`${c.customer_first_name} ${c.customer_last_name}`}
-                meta={`${c.customer_email} · ${c.orders} ordin${c.orders === 1 ? "e" : "i"}`}
+                meta={`${c.customer_email} · ${t("{{v0}} ordini", { v0: c.orders })}`}
               />
             ))}
           </Section>
 
-          <Section title="Dispositivi" count={devices.length}>
+          <Section title={t("Dispositivi")} count={devices.length}>
             {devices.map((d) => (
               <ResultRow
                 key={d.id}

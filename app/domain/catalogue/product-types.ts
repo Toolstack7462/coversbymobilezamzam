@@ -247,6 +247,7 @@ export interface SpecParseResult {
 export function parseSpecValues(
   accessoryType: string | null,
   read: (name: string) => string | null,
+  locale: "it" | "en" = "it",
 ): SpecParseResult {
   const values: Partial<Record<SpecColumn, SpecValue>> = {};
   const errors: string[] = [];
@@ -273,10 +274,22 @@ export function parseSpecValues(
        * is told rather than surprised.
        */
       const spaceless = raw.replace(/\s/g, "");
-      const grouped = /^\d{1,3}(\.\d{3})+$/.test(spaceless);
-      const normalised = (grouped ? spaceless.replace(/\./g, "") : spaceless).replace(",", ".");
+      const grouped =
+        locale === "en"
+          ? /^\d{1,3}(,\d{3})+$/.test(spaceless)
+          : /^\d{1,3}(\.\d{3})+$/.test(spaceless);
+      const normalised =
+        locale === "en"
+          ? grouped
+            ? spaceless.replace(/,/g, "")
+            : spaceless
+          : (grouped ? spaceless.replace(/\./g, "") : spaceless).replace(",", ".");
       const parsed = Number(normalised);
-      if (!Number.isFinite(parsed) || !Number.isInteger(parsed)) {
+      if (
+        (locale === "en" && !/^-?\d+$/.test(normalised)) ||
+        !Number.isFinite(parsed) ||
+        !Number.isInteger(parsed)
+      ) {
         errors.push(`${field.label}: inserire un numero intero.`);
         continue;
       }

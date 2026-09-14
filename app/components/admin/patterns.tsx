@@ -1,3 +1,4 @@
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Link } from "react-router";
 
 /**
@@ -48,14 +49,15 @@ export function SectionPanel({
   actions?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const t = useAdminTranslator();
   return (
     <section className="ac-panel" aria-labelledby={headingId}>
       <div className="ac-panel__head">
         <div>
           <Heading id={headingId} className="ac-panel__title">
-            {title}
+            {t(title)}
           </Heading>
-          {description ? <p className="muted small">{description}</p> : null}
+          {description ? <p className="muted small">{t(description)}</p> : null}
         </div>
         {actions ? <div className="cluster">{actions}</div> : null}
       </div>
@@ -91,13 +93,14 @@ export function MetricCard({
   to?: string;
   variant?: "headline";
 }) {
+  const t = useAdminTranslator();
   const base = variant === "headline" ? "ac-metric ac-metric--headline" : "ac-metric";
 
   const body = (
     <>
-      <span className="ac-metric__label">{label}</span>
+      <span className="ac-metric__label">{t(label)}</span>
       <span className="ac-metric__value numeric">{value}</span>
-      {note ? <span className="ac-metric__note">{note}</span> : null}
+      {note ? <span className="ac-metric__note">{t(note)}</span> : null}
     </>
   );
 
@@ -138,6 +141,7 @@ export function AttentionItem({
   actionLabel?: string;
   tone?: "warning" | "danger";
 }) {
+  const t = useAdminTranslator();
   return (
     <li className={`ac-action ac-action--${tone}`}>
       <span className="ac-action__count numeric" aria-hidden="true">
@@ -145,7 +149,7 @@ export function AttentionItem({
       </span>
       <div className="ac-action__body">
         <p className="ac-action__label">
-          {title}
+          {t(title)}
           {/*
             The badge is hidden from assistive technology because a bare number
             read before its label is noise; it is spoken here as part of a
@@ -153,11 +157,11 @@ export function AttentionItem({
           */}
           <span className="visually-hidden">: {count}</span>
         </p>
-        <p className="ac-action__detail small muted">{body}</p>
+        <p className="ac-action__detail small muted">{t(body)}</p>
       </div>
       <Link to={to} className="btn btn--secondary">
-        {actionLabel}
-        <span className="visually-hidden"> — {title}</span>
+        {t(actionLabel)}
+        <span className="visually-hidden"> — {t(title)}</span>
       </Link>
     </li>
   );
@@ -182,15 +186,16 @@ export function EmptyState({
   body: string;
   action?: { label: string; to: string };
 }) {
+  const t = useAdminTranslator();
   return (
     <div className="empty-state">
       <p>
-        <strong>{title}</strong>
+        <strong>{t(title)}</strong>
       </p>
-      <p className="small muted">{body}</p>
+      <p className="small muted">{t(body)}</p>
       {action ? (
         <Link to={action.to} className="btn btn--primary">
-          {action.label}
+          {t(action.label)}
         </Link>
       ) : null}
     </div>
@@ -234,6 +239,7 @@ export function FormField({
     required: boolean | undefined;
   }) => React.ReactNode;
 }) {
+  const t = useAdminTranslator();
   const hintId = hint ? `${id}-hint` : undefined;
   const errorId = error ? `${id}-error` : undefined;
   const describedBy = [hintId, errorId].filter(Boolean).join(" ") || undefined;
@@ -241,21 +247,21 @@ export function FormField({
   return (
     <div className={error ? "ac-field ac-field--invalid" : "ac-field"}>
       <label htmlFor={id}>
-        {label}
+        {t(label)}
         {required ? (
           <>
             {" "}
             <span className="ac-field__required" aria-hidden="true">
               *
             </span>
-            <span className="visually-hidden"> (obbligatorio)</span>
+            <span className="visually-hidden"> {t(" (obbligatorio)")}</span>
           </>
         ) : null}
       </label>
 
       {hint ? (
         <p id={hintId} className="caption muted">
-          {hint}
+          {t(hint)}
         </p>
       ) : null}
 
@@ -268,7 +274,7 @@ export function FormField({
 
       {error ? (
         <p id={errorId} className="ac-field__error small">
-          {error}
+          {t(error)}
         </p>
       ) : null}
     </div>
@@ -293,17 +299,18 @@ export function ErrorSummary({
   title?: string;
   errors: { field: string; message: string }[];
 }) {
+  const t = useAdminTranslator();
   if (errors.length === 0) return null;
 
   return (
     <div className="notice notice--danger ac-error-summary" role="alert" tabIndex={-1}>
       <p>
-        <strong>{title}</strong>
+        <strong>{t(title)}</strong>
       </p>
       <ul>
         {errors.map((e) => (
           <li key={e.field}>
-            <a href={`#${e.field}`}>{e.message}</a>
+            <a href={`#${e.field}`}>{t(e.message)}</a>
           </li>
         ))}
       </ul>
@@ -345,19 +352,26 @@ export function SaveBar({
   disabled?: boolean;
   children?: React.ReactNode;
 }) {
+  const t = useAdminTranslator();
   return (
     <div className="ac-savebar">
       <div className="ac-savebar__status" role="status" aria-live="polite">
         {state.status === "saving" ? (
-          <span className="small muted">Salvataggio…</span>
+          <span className="small muted">{t("Salvataggio…")}</span>
         ) : state.status === "saved" ? (
-          <span className="small">Salvato alle {timeOf(state.savedAt)}</span>
+          <span className="small">
+            {t("Salvato alle ")}
+            {timeOf(state.savedAt)}
+          </span>
         ) : state.status === "error" ? (
-          <span className="small ac-savebar__error">{state.message}</span>
+          <span className="small ac-savebar__error">{t(state.message)}</span>
         ) : state.status === "conflict" ? (
-          <span className="small ac-savebar__error">{state.message}</span>
+          <span className="small ac-savebar__error">{t(state.message)}</span>
         ) : state.savedAt ? (
-          <span className="small muted">Ultimo salvataggio alle {timeOf(state.savedAt)}</span>
+          <span className="small muted">
+            {t("Ultimo salvataggio alle ")}
+            {timeOf(state.savedAt)}
+          </span>
         ) : null}
       </div>
 
@@ -368,7 +382,7 @@ export function SaveBar({
           className="btn btn--primary"
           disabled={disabled || state.status === "saving"}
         >
-          {state.status === "saving" ? "Salvataggio…" : submitLabel}
+          {state.status === "saving" ? t("Salvataggio…") : t(submitLabel)}
         </button>
       </div>
     </div>
@@ -412,12 +426,13 @@ export function ConfirmationDialog({
   tone?: "danger" | "warning";
   children?: React.ReactNode;
 }) {
+  const t = useAdminTranslator();
   return (
     <details className={`ac-confirm ac-confirm--${tone}`}>
       <summary className="btn btn--secondary">{trigger}</summary>
       <div className="ac-confirm__panel">
         <p>
-          <strong>{title}</strong>
+          <strong>{t(title)}</strong>
         </p>
         <p className="small">{consequence}</p>
         {children}
@@ -450,8 +465,9 @@ export interface TimelineEntry {
  * the time that is written on the statement.
  */
 export function ActivityTimeline({ entries }: { entries: readonly TimelineEntry[] }) {
+  const t = useAdminTranslator();
   if (entries.length === 0) {
-    return <p className="muted small">Nessuna attività registrata.</p>;
+    return <p className="muted small">{t("Nessuna attività registrata.")}</p>;
   }
 
   return (
@@ -498,10 +514,11 @@ function fullTimeOf(epochMs: number): string {
  * "caricamento" once, not read out a row of grey boxes.
  */
 export function Skeleton({ rows = 3, label = "Caricamento" }: { rows?: number; label?: string }) {
+  const t = useAdminTranslator();
   return (
     <div className="ac-skeleton">
       <span className="visually-hidden" role="status">
-        {label}
+        {t(label)}
       </span>
       {Array.from({ length: rows }, (_, i) => (
         <span key={i} className="ac-skeleton__row" aria-hidden="true" />

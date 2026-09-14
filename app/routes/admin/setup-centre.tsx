@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { saleableImagePredicate } from "~/domain/media/storefront-image";
 import { Link, useLocation } from "react-router";
 import type { Route } from "./+types/setup-centre";
@@ -17,8 +20,9 @@ import type { SettingsMap } from "~/domain/content/gates";
  * shop is ready long after someone deleted the only payment method.
  */
 
-export function meta() {
-  return [{ title: "Centro configurazione" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Centro configurazione") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 /** One query pass, so the domain function stays pure and the SQL stays here. */
@@ -120,14 +124,17 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export default function SetupCentre({ loaderData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { pathname } = useLocation();
   const { progress } = loaderData;
 
   return (
     <>
       <PageHeader
-        title="Centro configurazione"
-        description="Cosa manca prima di poter vendere. Ogni voce è calcolata dai dati reali, non spuntata a mano."
+        title={t("Centro configurazione")}
+        description={t(
+          "Cosa manca prima di poter vendere. Ogni voce è calcolata dai dati reali, non spuntata a mano.",
+        )}
         breadcrumbs={breadcrumbsFor(pathname)}
       />
 
@@ -143,19 +150,22 @@ export default function SetupCentre({ loaderData }: Route.ComponentProps) {
 
         {progress.readyToTrade ? (
           <p className="notice notice--info small" role="status">
-            Tutti i passaggi obbligatori sono completi. I punti consigliati rimasti non bloccano la
-            vendita, ma vale la pena chiuderli.
+            {t(
+              "Tutti i passaggi obbligatori sono completi. I punti consigliati rimasti non bloccano la vendita, ma vale la pena chiuderli.",
+            )}
           </p>
         ) : (
           <p className="notice notice--warning small" role="status">
-            <strong>{progress.blockingIncomplete.length} passaggi obbligatori</strong> mancano
-            ancora. Finché restano aperti il negozio non è pronto a vendere.
+            <strong>
+              {progress.blockingIncomplete.length} {t(" passaggi obbligatori")}
+            </strong>{" "}
+            {t(" mancano ancora. Finché restano aperti il negozio non è pronto a vendere.")}
           </p>
         )}
       </section>
 
       <section className="stack" style={{ marginBlockStart: "var(--space-5)" }}>
-        <h2>Passaggi</h2>
+        <h2>{t("Passaggi")}</h2>
         <ol className="ac-steps">
           {progress.steps.map((step) => (
             <li
@@ -180,25 +190,25 @@ export default function SetupCentre({ loaderData }: Route.ComponentProps) {
 
               <div>
                 <p className="ac-step__title">
-                  {step.title}
+                  {t(step.title)}
                   <span className="visually-hidden">
-                    {step.status === "complete" ? " — completato" : " — da completare"}
+                    {step.status === "complete" ? t(" — completato") : t(" — da completare")}
                   </span>
                   {step.severity === "blocking" && step.status !== "complete" ? (
-                    <span className="badge badge--warning"> obbligatorio</span>
+                    <span className="badge badge--warning"> {t(" obbligatorio")}</span>
                   ) : null}
                 </p>
                 <p className="ac-step__why">
-                  {step.status === "complete" ? step.description : step.reason}
+                  {t(step.status === "complete" ? step.description : step.reason)}
                 </p>
               </div>
 
               {step.status !== "complete" ? (
                 <Link className="btn btn--secondary" to={step.href}>
-                  Configura
+                  {t("Configura")}
                 </Link>
               ) : (
-                <span className="small muted">Fatto</span>
+                <span className="small muted">{t("Fatto")}</span>
               )}
             </li>
           ))}

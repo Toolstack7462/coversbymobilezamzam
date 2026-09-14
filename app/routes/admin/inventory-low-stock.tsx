@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Link } from "react-router";
 import type { Route } from "./+types/inventory-low-stock";
 import { appContext } from "~/runtime/context";
@@ -20,8 +23,9 @@ import { PageHeader } from "~/components/admin/admin-shell";
  * zero. `not_tracked` is a different state from "none left", and the shop sells
  * things it does not count.
  */
-export function meta() {
-  return [{ title: "Scorte basse" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Scorte basse") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -66,40 +70,41 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export default function InventoryLowStock({ loaderData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { rows, outOfStock } = loaderData;
 
   return (
     <>
       <PageHeader
-        title="Scorte basse"
+        title={t("Scorte basse")}
         breadcrumbs={breadcrumbsFor("/admin/inventario/scorte-basse")}
       />
 
       <section className="panel">
         <div className="ac-metrics">
           <div className="ac-metric">
-            <span className="ac-metric__label">Sotto soglia</span>
+            <span className="ac-metric__label">{t("Sotto soglia")}</span>
             <span className="ac-metric__value numeric">{rows.length}</span>
           </div>
           <div className="ac-metric">
-            <span className="ac-metric__label">Non vendibili adesso</span>
+            <span className="ac-metric__label">{t("Non vendibili adesso")}</span>
             <span className="ac-metric__value numeric">{outOfStock}</span>
-            <span className="ac-metric__note">Disponibile a zero o sotto</span>
+            <span className="ac-metric__note">{t("Disponibile a zero o sotto")}</span>
           </div>
         </div>
         <p className="small">
-          &ldquo;Disponibile&rdquo; è la giacenza meno i pezzi già impegnati da ordini. Otto in
-          magazzino e otto prenotati fanno zero da vendere: è quel numero che conta quando si decide
-          cosa riordinare.
+          {t(
+            "“Disponibile” è la giacenza meno i pezzi già impegnati da ordini. Otto in magazzino e otto prenotati fanno zero da vendere: è quel numero che conta quando si decide cosa riordinare.",
+          )}
         </p>
       </section>
 
       {rows.length === 0 ? (
         <div className="empty-state">
-          <p>Nessun articolo sotto la soglia di riordino.</p>
+          <p>{t("Nessun articolo sotto la soglia di riordino.")}</p>
           <p className="small">
-            Le soglie si impostano per variante da{" "}
-            <Link to="/admin/inventario">Panoramica scorte</Link>.
+            {t("Le soglie si impostano per variante da")}{" "}
+            <Link to="/admin/inventario">{t("Panoramica scorte")}</Link>.
           </p>
         </div>
       ) : (
@@ -109,31 +114,31 @@ export default function InventoryLowStock({ loaderData }: Route.ComponentProps) 
              take focus is unscrollable without a mouse. */
           tabIndex={0}
           role="region"
-          aria-label="Tabella scorrevole"
+          aria-label={t("Tabella scorrevole")}
         >
           <table className="admin-table">
             <caption className="visually-hidden">
-              Articoli sotto la soglia di riordino, dal più critico
+              {t("Articoli sotto la soglia di riordino, dal più critico")}
             </caption>
             <thead>
               <tr>
-                <th scope="col">Prodotto</th>
+                <th scope="col">{t("Prodotto")}</th>
                 <th scope="col" className="numeric">
-                  Disponibile
+                  {t("Disponibile")}
                 </th>
                 <th scope="col" className="numeric">
-                  Giacenza
+                  {t("Giacenza")}
                 </th>
                 <th scope="col" className="numeric">
-                  Impegnati
+                  {t("Impegnati")}
                 </th>
                 <th scope="col" className="numeric">
-                  In arrivo
+                  {t("In arrivo")}
                 </th>
                 <th scope="col" className="numeric">
-                  Soglia
+                  {t("Soglia")}
                 </th>
-                <th scope="col">Stato</th>
+                <th scope="col">{t("Stato")}</th>
               </tr>
             </thead>
             <tbody>
@@ -160,12 +165,12 @@ export default function InventoryLowStock({ loaderData }: Route.ComponentProps) 
                       row.allow_backorder ? (
                         // Backorder is a real state and not the same as sold
                         // out: the shop is still taking the order.
-                        <span className="badge badge--warning">su ordinazione</span>
+                        <span className="badge badge--warning">{t("su ordinazione")}</span>
                       ) : (
-                        <span className="badge badge--danger">esaurito</span>
+                        <span className="badge badge--danger">{t("esaurito")}</span>
                       )
                     ) : (
-                      <span className="badge badge--warning">in esaurimento</span>
+                      <span className="badge badge--warning">{t("in esaurimento")}</span>
                     )}
                   </td>
                 </tr>

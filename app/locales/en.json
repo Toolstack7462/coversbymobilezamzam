@@ -299,5 +299,24 @@
   "guides": {
     "more": "More guides",
     "read": "Read"
+  },
+  "meta": {
+    "home": "Smartphone accessories",
+    "device": "Find your device",
+    "store": "Our shop",
+    "tracking": "Order status",
+    "cart": "Shopping cart",
+    "confirmation": "Order received",
+    "checkout": "Checkout",
+    "all": "All accessories",
+    "product": "Product",
+    "page_missing": "Page not found",
+    "document_missing": "Document not found",
+    "search": "Search: {{query}}",
+    "description": "Smartphone cases, cables, chargers and screen protectors."
+  },
+  "preview": {
+    "title": "Test environment",
+    "body": "products and prices are demonstration data"
   }
 }

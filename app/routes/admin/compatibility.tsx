@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, Link } from "react-router";
 import type { Route } from "./+types/compatibility";
 import { appContext } from "~/runtime/context";
@@ -35,8 +38,9 @@ import { DataTable, type Column } from "~/components/admin/data-table";
  *     has an owner.
  */
 
-export function meta() {
-  return [{ title: "Compatibilità" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Compatibilità") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 const SPEC: TableSpec = {
@@ -231,6 +235,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function Compatibility({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { rows, state, pagination, views, canWrite } = loaderData;
 
   const columns: Column<Row>[] = [
@@ -247,7 +252,7 @@ export default function Compatibility({ loaderData, actionData }: Route.Componen
       render: (row) => (
         <>
           {row.device_brand ? <span className="muted">{row.device_brand} </span> : null}
-          {row.device_name ?? <span className="muted">— tutti i modelli —</span>}
+          {row.device_name ?? <span className="muted">{t("— tutti i modelli —")}</span>}
         </>
       ),
     },
@@ -259,13 +264,15 @@ export default function Compatibility({ loaderData, actionData }: Route.Componen
           className={`badge ${compatibilityTone(row.compatibility_level, row.verified === 1)}`}
           title={
             isCompatibilityLevel(row.compatibility_level)
-              ? COMPATIBILITY_MEANING[row.compatibility_level]
+              ? t(COMPATIBILITY_MEANING[row.compatibility_level])
               : undefined
           }
         >
-          {isCompatibilityLevel(row.compatibility_level)
-            ? COMPATIBILITY_LABELS[row.compatibility_level]
-            : row.compatibility_level}
+          {t(
+            isCompatibilityLevel(row.compatibility_level)
+              ? COMPATIBILITY_LABELS[row.compatibility_level]
+              : row.compatibility_level,
+          )}
         </span>
       ),
     },
@@ -274,11 +281,11 @@ export default function Compatibility({ loaderData, actionData }: Route.Componen
       header: "Verifica",
       render: (row) =>
         row.verified === 1 ? (
-          <span className="badge badge--success">verificata</span>
+          <span className="badge badge--success">{t("verificata")}</span>
         ) : row.compatibility_level === "exact_fit" ? (
-          <span className="badge badge--warning">da verificare</span>
+          <span className="badge badge--warning">{t("da verificare")}</span>
         ) : (
-          <span className="muted small">non richiesta</span>
+          <span className="muted small">{t("non richiesta")}</span>
         ),
     },
     {
@@ -290,17 +297,17 @@ export default function Compatibility({ loaderData, actionData }: Route.Componen
             <input type="hidden" name="intent" value="verify" />
             <input type="hidden" name="id" value={row.id} />
             <label className="visually-hidden" htmlFor={`src-${row.id}`}>
-              Come hai verificato
+              {t("Come hai verificato")}
             </label>
             <input
               id={`src-${row.id}`}
               name="source"
               className="input"
-              placeholder="provato in negozio"
+              placeholder={t("provato in negozio")}
               required
             />
             <button type="submit" className="btn btn--secondary btn--small">
-              Verifica
+              {t("Verifica")}
             </button>
           </Form>
         ) : (
@@ -312,27 +319,31 @@ export default function Compatibility({ loaderData, actionData }: Route.Componen
   return (
     <>
       <PageHeader
-        title="Compatibilità"
-        description="Quali accessori entrano in quali telefoni. È il dato che evita i resi."
+        title={t("Compatibilità")}
+        description={t("Quali accessori entrano in quali telefoni. È il dato che evita i resi.")}
         breadcrumbs={breadcrumbsFor("/admin/compatibilita")}
       />
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
       {actionData && "success" in actionData && actionData.success ? (
         <p className="notice notice--info" role="status">
-          {actionData.success}
+          {t(actionData.success)}
         </p>
       ) : null}
 
       <p className="notice notice--info small">
-        La compatibilità non viene mai dedotta dalla categoria o dal nome del prodotto. Se non è
-        registrata qui, per il sito è <strong>sconosciuta</strong> e il cliente lo vede scritto.{" "}
-        <strong>&ldquo;Compatibilità esatta&rdquo;</strong> è una promessa su un modello preciso: va
-        verificata su un telefono vero, e chi la verifica resta registrato.
+        {t(
+          "La compatibilità non viene mai dedotta dalla categoria o dal nome del prodotto. Se non è registrata qui, per il sito è ",
+        )}
+        <strong>{t("sconosciuta")}</strong> {t(" e il cliente lo vede scritto.")}{" "}
+        <strong>{t("“Compatibilità esatta”")}</strong>{" "}
+        {t(
+          " è una promessa su un modello preciso: va verificata su un telefono vero, e chi la verifica resta registrato.",
+        )}
       </p>
 
       <DataTable
@@ -343,10 +354,12 @@ export default function Compatibility({ loaderData, actionData }: Route.Componen
         rows={rows}
         rowKey={(row) => row.id}
         views={views}
-        searchLabel="Cerca per prodotto o modello"
+        searchLabel={t("Cerca per prodotto o modello")}
         emptyState={{
-          title: "Nessuna compatibilità registrata",
-          body: "Finché non indicate quali accessori funzionano con quali telefoni, i clienti non possono filtrare per dispositivo — che è il motivo principale per cui visitano un sito di accessori.",
+          title: t("Nessuna compatibilità registrata"),
+          body: t(
+            "Finché non indicate quali accessori funzionano con quali telefoni, i clienti non possono filtrare per dispositivo — che è il motivo principale per cui visitano un sito di accessori.",
+          ),
         }}
       />
     </>

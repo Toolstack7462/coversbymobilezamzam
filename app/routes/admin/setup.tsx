@@ -1,3 +1,9 @@
+import adminStyles from "~/styles/admin.css?url";
+export const links = () => [{ rel: "stylesheet", href: adminStyles }];
+import { AdminLanguageSwitcher } from "~/components/admin/language-switcher";
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, redirect } from "react-router";
 import type { Route } from "./+types/setup";
 import { appContext } from "~/runtime/context";
@@ -22,8 +28,12 @@ import {
  * and never echoed back into the rendered HTML after submission.
  */
 
-export function meta() {
-  return [{ title: "Configurazione iniziale" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [
+    { title: t("Configurazione iniziale") },
+    { name: "robots", content: "noindex, nofollow" },
+  ];
 }
 
 export async function loader({ context }: Route.LoaderArgs) {
@@ -146,43 +156,49 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function AdminSetup({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { rolesSeeded, tokenConfigured, turnstileSiteKey } = loaderData;
   const ready = rolesSeeded && tokenConfigured;
 
   return (
     <main id="main" className="admin-auth">
       <div className="panel stack admin-auth__panel">
-        <h1>Configurazione iniziale</h1>
+        <div className="admin-auth__language">
+          <AdminLanguageSwitcher />
+        </div>
+        <h1>{t("Configurazione iniziale")}</h1>
         <p className="small muted">
-          Crea il primo amministratore. Questa pagina si disattiva in modo definitivo appena
-          l&apos;installazione è completata.
+          {t(
+            "Crea il primo amministratore. Questa pagina si disattiva in modo definitivo appena l'installazione è completata.",
+          )}
         </p>
 
         {!rolesSeeded ? (
           <p className="notice notice--warning">
-            I ruoli non sono ancora presenti nel database. Esegui <code>npm run db:seed</code> prima
-            di continuare.
+            {t("I ruoli non sono ancora presenti nel database. Esegui ")}
+            <code>npm run db:seed</code> {t(" prima di continuare.")}
           </p>
         ) : null}
 
         {!tokenConfigured ? (
           <p className="notice notice--warning">
-            <code>INITIAL_ADMIN_SETUP_TOKEN</code> non è configurato, oppure è troppo corto (minimo
-            24 caratteri). Senza token questa pagina si rifiuta di funzionare: non si apre mai senza
-            autorizzazione.
+            <code>INITIAL_ADMIN_SETUP_TOKEN</code>{" "}
+            {t(
+              " non è configurato, oppure è troppo corto (minimo 24 caratteri). Senza token questa pagina si rifiuta di funzionare: non si apre mai senza autorizzazione.",
+            )}
           </p>
         ) : null}
 
         {actionData?.error ? (
           <p className="notice notice--danger" role="alert">
-            {actionData.error}
+            {t(actionData.error)}
           </p>
         ) : null}
 
         <Form method="post" className="stack" autoComplete="off">
           <div className="field">
             <label className="field__label" htmlFor="setupToken">
-              Token di installazione
+              {t("Token di installazione")}
             </label>
             {/*
               type=password so it is not shoulder-surfed, and the value is NEVER
@@ -199,13 +215,15 @@ export default function AdminSetup({ loaderData, actionData }: Route.ComponentPr
               disabled={!ready}
             />
             <span className="field__hint">
-              Fornito da chi ha configurato l&apos;ambiente. Non compare mai in un URL o in un log.
+              {t(
+                "Fornito da chi ha configurato l'ambiente. Non compare mai in un URL o in un log.",
+              )}
             </span>
           </div>
 
           <div className="field">
             <label className="field__label" htmlFor="name">
-              Nome e cognome
+              {t("Nome e cognome")}
             </label>
             <input
               id="name"
@@ -247,13 +265,13 @@ export default function AdminSetup({ loaderData, actionData }: Route.ComponentPr
               disabled={!ready}
             />
             <span className="field__hint">
-              Almeno 12 caratteri. Questo account potrà modificare i dati di pagamento.
+              {t("Almeno 12 caratteri. Questo account potrà modificare i dati di pagamento.")}
             </span>
           </div>
 
           <div className="field">
             <label className="field__label" htmlFor="confirm">
-              Ripeti la password
+              {t("Ripeti la password")}
             </label>
             <input
               id="confirm"
@@ -272,13 +290,14 @@ export default function AdminSetup({ loaderData, actionData }: Route.ComponentPr
           ) : null}
 
           <button type="submit" className="btn btn--primary" disabled={!ready}>
-            Crea amministratore
+            {t("Crea amministratore")}
           </button>
         </Form>
 
         <p className="caption muted">
-          Subito dopo ti verrà chiesto di attivare l&apos;autenticazione a due fattori: è
-          obbligatoria per gli amministratori.
+          {t(
+            "Subito dopo ti verrà chiesto di attivare l'autenticazione a due fattori: è obbligatoria per gli amministratori.",
+          )}
         </p>
       </div>
     </main>

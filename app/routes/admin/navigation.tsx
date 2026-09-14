@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, Link } from "react-router";
 import type { Route } from "./+types/navigation";
 import { appContext } from "~/runtime/context";
@@ -38,8 +41,9 @@ import type { SqlDatabase } from "~/infrastructure/db/sql";
  * shown, rather than becoming a 404 the merchant finds out about from a
  * customer.
  */
-export function meta() {
-  return [{ title: "Menu e navigazione" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Menu e navigazione") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 /** The menus the storefront renders. Nothing else is offered. */
@@ -205,39 +209,41 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function AdminNavigation({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { menus, items, derivedCategories, choices, canWrite } = loaderData;
   const broken = items.filter((i) => !i.resolves);
 
   return (
     <>
       <PageHeader
-        title="Menu e navigazione"
+        title={t("Menu e navigazione")}
         breadcrumbs={breadcrumbsFor("/admin/contenuti/menu")}
       />
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
       {actionData && "success" in actionData && actionData.success ? (
         <p className="notice notice--info" role="status">
-          {actionData.success}
+          {t(actionData.success)}
         </p>
       ) : null}
 
       <section className="panel">
-        <h2>Le categorie non si modificano da qui</h2>
+        <h2>{t("Le categorie non si modificano da qui")}</h2>
         <p className="small">
-          La barra delle categorie viene letta dal catalogo. Se rinomini una categoria si rinomina
-          anche nel menu; se la nascondi, sparisce dal menu nello stesso istante.
+          {t(
+            "La barra delle categorie viene letta dal catalogo. Se rinomini una categoria si rinomina anche nel menu; se la nascondi, sparisce dal menu nello stesso istante.",
+          )}
         </p>
         <p className="small">
-          Non è una funzione mancante: è la correzione del difetto peggiore che questo sito abbia
-          avuto. La barra era un elenco fisso di otto voci mentre il catalogo ne aveva quattro con
-          nomi diversi, e{" "}
-          <strong>ogni link di categoria portava a una pagina con zero prodotti</strong>. Un menu
-          scritto a mano è un riferimento che nessuno controlla.
+          {t(
+            "Non è una funzione mancante: è la correzione del difetto peggiore che questo sito abbia avuto. La barra era un elenco fisso di otto voci mentre il catalogo ne aveva quattro con nomi diversi, e",
+          )}{" "}
+          <strong>{t("ogni link di categoria portava a una pagina con zero prodotti")}</strong>
+          {t(". Un menu scritto a mano è un riferimento che nessuno controlla.")}
         </p>
         <ul className="cluster">
           {derivedCategories.map((c) => (
@@ -247,15 +253,19 @@ export default function AdminNavigation({ loaderData, actionData }: Route.Compon
           ))}
         </ul>
         <p className="small">
-          Si gestiscono da <Link to="/admin/marchi">Marchi e categorie</Link>.
+          {t("Si gestiscono da ")}
+          <Link to="/admin/marchi">{t("Marchi e categorie")}</Link>.
         </p>
       </section>
 
       {broken.length > 0 ? (
         <p className="notice notice--warning">
-          <strong>{broken.length} voci puntano a qualcosa che non esiste più.</strong> Non vengono
-          mostrate sul sito — una pagina è stata spostata, spubblicata o archiviata dopo che il link
-          era stato creato.
+          <strong>
+            {broken.length} {t(" voci puntano a qualcosa che non esiste più.")}
+          </strong>{" "}
+          {t(
+            " Non vengono mostrate sul sito — una pagina è stata spostata, spubblicata o archiviata dopo che il link era stato creato.",
+          )}
         </p>
       ) : null}
 
@@ -267,7 +277,7 @@ export default function AdminNavigation({ loaderData, actionData }: Route.Compon
             <p className="small muted">{menu.where}</p>
 
             {menuItems.length === 0 ? (
-              <p className="small">Nessuna voce aggiuntiva.</p>
+              <p className="small">{t("Nessuna voce aggiuntiva.")}</p>
             ) : (
               <div
                 className="admin-table-wrap"
@@ -275,16 +285,19 @@ export default function AdminNavigation({ loaderData, actionData }: Route.Compon
              take focus is unscrollable without a mouse. */
                 tabIndex={0}
                 role="region"
-                aria-label="Tabella scorrevole"
+                aria-label={t("Tabella scorrevole")}
               >
                 <table className="admin-table">
-                  <caption className="visually-hidden">Voci di {menu.name}</caption>
+                  <caption className="visually-hidden">
+                    {t("Voci di ")}
+                    {menu.name}
+                  </caption>
                   <thead>
                     <tr>
-                      <th scope="col">Etichetta</th>
-                      <th scope="col">Destinazione</th>
-                      <th scope="col">Stato</th>
-                      {canWrite ? <th scope="col">Azioni</th> : null}
+                      <th scope="col">{t("Etichetta")}</th>
+                      <th scope="col">{t("Destinazione")}</th>
+                      <th scope="col">{t("Stato")}</th>
+                      {canWrite ? <th scope="col">{t("Azioni")}</th> : null}
                     </tr>
                   </thead>
                   <tbody>
@@ -300,11 +313,11 @@ export default function AdminNavigation({ loaderData, actionData }: Route.Compon
                         </td>
                         <td>
                           {!item.resolves ? (
-                            <span className="badge badge--danger">non risolve</span>
+                            <span className="badge badge--danger">{t("non risolve")}</span>
                           ) : item.visible ? (
-                            <span className="badge badge--success">visibile</span>
+                            <span className="badge badge--success">{t("visibile")}</span>
                           ) : (
-                            <span className="badge badge--warning">nascosta</span>
+                            <span className="badge badge--warning">{t("nascosta")}</span>
                           )}
                         </td>
                         {canWrite ? (
@@ -314,14 +327,14 @@ export default function AdminNavigation({ loaderData, actionData }: Route.Compon
                                 <input type="hidden" name="intent" value="toggle" />
                                 <input type="hidden" name="itemId" value={item.id} />
                                 <button className="btn" type="submit">
-                                  {item.visible ? "Nascondi" : "Mostra"}
+                                  {item.visible ? t("Nascondi") : t("Mostra")}
                                 </button>
                               </Form>
                               <Form method="post">
                                 <input type="hidden" name="intent" value="remove" />
                                 <input type="hidden" name="itemId" value={item.id} />
                                 <button className="btn btn--danger" type="submit">
-                                  Rimuovi
+                                  {t("Rimuovi")}
                                 </button>
                               </Form>
                             </div>
@@ -339,19 +352,19 @@ export default function AdminNavigation({ loaderData, actionData }: Route.Compon
                 <input type="hidden" name="intent" value="add" />
                 <input type="hidden" name="menu" value={menu.code} />
                 <label>
-                  Etichetta (italiano)
+                  {t("Etichetta (italiano)")}
                   <input name="label_it" required maxLength={40} />
                 </label>
                 <label>
-                  Etichetta (inglese)
+                  {t("Etichetta (inglese)")}
                   <input name="label_en" maxLength={40} />
-                  <span className="field-help">Vuota: viene usata quella italiana.</span>
+                  <span className="field-help">{t("Vuota: viene usata quella italiana.")}</span>
                 </label>
                 <label>
-                  Destinazione
+                  {t("Destinazione")}
                   <select name="url" required defaultValue="">
                     <option value="" disabled>
-                      Scegli…
+                      {t("Scegli…")}
                     </option>
                     {choices.map((c) => (
                       <option key={c.url} value={c.url}>
@@ -360,12 +373,13 @@ export default function AdminNavigation({ loaderData, actionData }: Route.Compon
                     ))}
                   </select>
                   <span className="field-help">
-                    Solo pagine pubblicate e sezioni che esistono. Un menu non può puntare a una
-                    pagina che non c&apos;è.
+                    {t(
+                      "Solo pagine pubblicate e sezioni che esistono. Un menu non può puntare a una pagina che non c'è.",
+                    )}
                   </span>
                 </label>
                 <button className="btn" type="submit">
-                  Aggiungi voce
+                  {t("Aggiungi voce")}
                 </button>
               </Form>
             ) : null}

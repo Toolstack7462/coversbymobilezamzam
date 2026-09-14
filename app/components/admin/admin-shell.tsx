@@ -1,3 +1,5 @@
+import { AdminLanguageSwitcher } from "./language-switcher";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { BrandSymbol } from "~/components/storefront/brand-symbol";
 import { NavLink, Link, Form, useLocation } from "react-router";
 import type { NavGroup } from "~/lib/admin-nav";
@@ -53,22 +55,23 @@ export function AdminShell({
   mustEnrol,
   children,
 }: Props) {
+  const t = useAdminTranslator();
   return (
     <div className="ac">
       {/* The toggle is a real checkbox so collapse survives without script. */}
       <input type="checkbox" id="ac-collapse" className="ac__collapse-input" />
 
       <header className="ac__topbar">
-        <label htmlFor="ac-collapse" className="ac__icon-btn" title="Comprimi menu">
-          <span className="visually-hidden">Comprimi o espandi il menu</span>
+        <label htmlFor="ac-collapse" className="ac__icon-btn" title={t("Comprimi menu")}>
+          <span className="visually-hidden">{t("Comprimi o espandi il menu")}</span>
           <IconMenu />
         </label>
 
         <Link to="/admin" className="ac__brand">
           <BrandSymbol className="ac__brand-mark" />
           <span className="ac__brand-copy">
-            <strong>{brand ?? "Centro di controllo"}</strong>
-            <span>Gestione negozio</span>
+            <strong>{brand ?? t("Centro di controllo")}</strong>
+            <span>{t("Gestione negozio")}</span>
           </span>
         </Link>
 
@@ -78,7 +81,7 @@ export function AdminShell({
           "you are on staging and think you are on production".
         */}
         {environment !== "production" ? (
-          <span className="ac__env" title={`Ambiente: ${environment}`}>
+          <span className="ac__env" title={t("Ambiente: {{v0}}", { v0: environment })}>
             {environment}
           </span>
         ) : null}
@@ -97,24 +100,25 @@ export function AdminShell({
         {canSearch ? (
           <form className="ac__search ac__hide-sm" role="search" action="/admin/cerca" method="get">
             <label className="visually-hidden" htmlFor="ac-topbar-q">
-              Cerca in tutto il pannello
+              {t("Cerca in tutto il pannello")}
             </label>
             <input
               id="ac-topbar-q"
               type="search"
               name="q"
               maxLength={64}
-              placeholder="Cerca ordine, SKU, cliente…"
+              placeholder={t("Cerca ordine, SKU, cliente…")}
             />
           </form>
         ) : null}
 
         <div className="ac__topbar-spacer" />
+        <AdminLanguageSwitcher />
         {canSearch ? (
           <Link
             to="/admin/cerca"
             className="ac__icon-btn ac__mobile-search"
-            aria-label="Cerca nel pannello"
+            aria-label={t("Cerca nel pannello")}
           >
             <svg {...iconProps}>
               <circle cx="10" cy="10" r="6" />
@@ -132,13 +136,18 @@ export function AdminShell({
           account — and adding a product is not something you do from the
           settings screen. It lives where its context is.
         */}
-        <a className="btn btn--ghost ac__hide-sm" href="/" target="_blank" rel="noreferrer">
-          Vedi il sito
+        <a
+          className="btn btn--ghost ac__hide-sm"
+          href={t.locale === "en" ? "/en/" : "/"}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {t("Vedi il sito")}
         </a>
 
         <details className="ac__menu">
           <summary className="ac__icon-btn">
-            <span className="visually-hidden">Menu account</span>
+            <span className="visually-hidden">{t("Menu account")}</span>
             <IconUser />
           </summary>
           <div className="ac__menu-panel">
@@ -147,11 +156,11 @@ export function AdminShell({
               <br />
               <span className="muted caption">{actor.roleCodes.join(", ")}</span>
             </p>
-            <Link to="/admin/sicurezza">Sicurezza</Link>
-            <Link to="/admin/sicurezza/sessioni">Sessioni attive</Link>
+            <Link to="/admin/sicurezza">{t("Sicurezza")}</Link>
+            <Link to="/admin/sicurezza/sessioni">{t("Sessioni attive")}</Link>
             <Form method="post" action="/admin/esci">
               <button type="submit" className="btn btn--ghost">
-                Esci
+                {t("Esci")}
               </button>
             </Form>
           </div>
@@ -159,7 +168,7 @@ export function AdminShell({
       </header>
 
       <div className="ac__body">
-        <nav className="ac__sidebar" aria-label="Navigazione amministrazione">
+        <nav className="ac__sidebar" aria-label={t("Navigazione amministrazione")}>
           {/* Mobile: a native disclosure, so it is keyboard-operable for free. */}
           <details className="ac__drawer">
             <summary className="ac__drawer-toggle">Menu</summary>
@@ -188,6 +197,7 @@ function NavTree({
   badges: ShellBadges;
   mustEnrol?: boolean | undefined;
 }) {
+  const t = useAdminTranslator();
   const { pathname } = useLocation();
   if (mustEnrol) {
     // A privileged account without TOTP can reach almost nothing, so offering
@@ -196,12 +206,12 @@ function NavTree({
       <ul className="ac__nav-list">
         <li>
           <NavLink to="/admin/sicurezza/2fa" className="ac__nav-link">
-            Attiva 2FA
+            {t("Attiva 2FA")}
           </NavLink>
         </li>
         <li>
           <NavLink to="/admin/sicurezza" className="ac__nav-link">
-            Sicurezza
+            {t("Sicurezza")}
           </NavLink>
         </li>
       </ul>
@@ -223,7 +233,7 @@ function NavTree({
           }
         >
           <summary className="ac__nav-heading">
-            <span>{group.label}</span>
+            <span>{t(group.label)}</span>
             <span className="ac__nav-chevron" aria-hidden="true" />
           </summary>
           <ul className="ac__nav-list">
@@ -238,9 +248,12 @@ function NavTree({
                       isActive ? "ac__nav-link ac__nav-link--active" : "ac__nav-link"
                     }
                   >
-                    <span className="ac__nav-label">{item.label}</span>
+                    <span className="ac__nav-label">{t(item.label)}</span>
                     {badge && badge > 0 ? (
-                      <span className="ac__nav-badge" aria-label={`${badge} da gestire`}>
+                      <span
+                        className="ac__nav-badge"
+                        aria-label={t("{{v0}} da gestire", { v0: badge })}
+                      >
                         {badge}
                       </span>
                     ) : null}
@@ -274,14 +287,19 @@ export function PageHeader({
   primaryAction?: { label: string; to: string };
   secondaryActions?: { label: string; to: string }[];
 }) {
+  const t = useAdminTranslator();
   return (
     <div className="ac__page-header">
       {breadcrumbs && breadcrumbs.length > 1 ? (
-        <nav aria-label="Percorso" className="ac__crumbs small">
+        <nav aria-label={t("Percorso")} className="ac__crumbs small">
           {breadcrumbs.map((crumb, i) => (
             <span key={i}>
               {i > 0 ? <span aria-hidden="true"> / </span> : null}
-              {crumb.to ? <Link to={crumb.to}>{crumb.label}</Link> : <span>{crumb.label}</span>}
+              {crumb.to ? (
+                <Link to={crumb.to}>{t(crumb.label)}</Link>
+              ) : (
+                <span>{t(crumb.label)}</span>
+              )}
             </span>
           ))}
         </nav>
@@ -296,12 +314,12 @@ export function PageHeader({
         <div className="cluster">
           {secondaryActions?.map((a) => (
             <Link key={a.to} to={a.to} className="btn btn--secondary">
-              {a.label}
+              {t(a.label)}
             </Link>
           ))}
           {primaryAction ? (
             <Link to={primaryAction.to} className="btn btn--primary">
-              {primaryAction.label}
+              {t(primaryAction.label)}
             </Link>
           ) : null}
         </div>

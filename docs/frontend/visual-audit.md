@@ -1,5 +1,15 @@
 # Storefront audit — 14 September 2026
 
+## English / Italian audit — 14 September 2026
+
+The language pass starts at `2a238d8` on `feat/admin-english-storefront-locales`, retaining the earlier footer/admin work. Remote main was rechecked at `c0be139`; no production ref or hosting setting is changed.
+
+Confirmed defects: the footer sent visitors to the language homepage instead of their current page; already-prefixed URLs could become `/en/en/...`; admin UI was Italian-only; several English catalogue/PDP/cart queries still read Italian rows; empty English payment and legal fields did not consistently fall back; page titles remained Italian. English integer grouping also needed an explicit parser rule to prevent `10,000` becoming `10` in a specification.
+
+The admin now has a native, persistent language menu, including sign-in/setup/2FA screens. Controlled menus, table headings, statuses, help copy, feedback and metadata are translated on the server. Dates retain Europe/Rome and prices retain EUR. Merchant names, entered values, SKUs, stored status codes and audit records are preserved. Product text still uses the existing merchant translation records; switching the interface does not write translated merchandise.
+
+The footer preserves route, query and (with JavaScript) fragment. Storefront locale remains URL-based; the admin preference is private. English queries use existing translation tables with per-field Italian fallback. Cart reads also use the same usable-photo selection as the catalogue.
+
 ## 14 September 2026 — media, footer and admin follow-up
 
 This pass starts from current main `c6db3cd7604b470933504099b03a7db1a3b2b527`, not the old storefront review branch. The earlier storefront has since been incorporated into main. Work is isolated on `feat/media-footer-admin-polish`, draft PR #13. The independent `fix/admin-audit-and-refinement` branch was inspected but not merged or overwritten.

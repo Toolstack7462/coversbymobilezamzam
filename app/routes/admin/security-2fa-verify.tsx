@@ -1,3 +1,9 @@
+import adminStyles from "~/styles/admin.css?url";
+export const links = () => [{ rel: "stylesheet", href: adminStyles }];
+import { AdminLanguageSwitcher } from "~/components/admin/language-switcher";
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, redirect } from "react-router";
 import type { Route } from "./+types/security-2fa-verify";
 import { appContext, type AppEnv } from "~/runtime/context";
@@ -22,8 +28,12 @@ import { systemClock, cryptoIds } from "~/infrastructure/primitives";
  * user is not yet signed in.
  */
 
-export function meta() {
-  return [{ title: "Verifica in due passaggi" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [
+    { title: t("Verifica in due passaggi") },
+    { name: "robots", content: "noindex, nofollow" },
+  ];
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -183,17 +193,21 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function TwoFactorChallenge({ actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   return (
     <main id="main" className="admin-auth">
       <div className="panel stack admin-auth__panel">
-        <h1>Verifica in due passaggi</h1>
+        <div className="admin-auth__language">
+          <AdminLanguageSwitcher />
+        </div>
+        <h1>{t("Verifica in due passaggi")}</h1>
         <p className="small muted">
-          Inserisci il codice a sei cifre dalla tua app di autenticazione.
+          {t("Inserisci il codice a sei cifre dalla tua app di autenticazione.")}
         </p>
 
         {actionData?.error ? (
           <p className="notice notice--danger" role="alert">
-            {actionData.error}
+            {t(actionData.error)}
           </p>
         ) : null}
 
@@ -201,7 +215,7 @@ export default function TwoFactorChallenge({ actionData }: Route.ComponentProps)
           <input type="hidden" name="mode" value="totp" />
           <div className="field">
             <label className="field__label" htmlFor="code">
-              Codice
+              {t("Codice")}
             </label>
             <input
               id="code"
@@ -216,21 +230,22 @@ export default function TwoFactorChallenge({ actionData }: Route.ComponentProps)
             />
           </div>
           <button type="submit" className="btn btn--primary">
-            Verifica
+            {t("Verifica")}
           </button>
         </Form>
 
         <details>
-          <summary>Non hai il telefono?</summary>
+          <summary>{t("Non hai il telefono?")}</summary>
           <p className="small muted">
-            Usa uno dei codici di recupero salvati durante l&apos;attivazione. Ogni codice funziona
-            una volta sola.
+            {t(
+              "Usa uno dei codici di recupero salvati durante l'attivazione. Ogni codice funziona una volta sola.",
+            )}
           </p>
           <Form method="post" className="stack">
             <input type="hidden" name="mode" value="backup" />
             <div className="field">
               <label className="field__label" htmlFor="backup">
-                Codice di recupero
+                {t("Codice di recupero")}
               </label>
               <input
                 id="backup"
@@ -241,7 +256,7 @@ export default function TwoFactorChallenge({ actionData }: Route.ComponentProps)
               />
             </div>
             <button type="submit" className="btn btn--secondary">
-              Usa codice di recupero
+              {t("Usa codice di recupero")}
             </button>
           </Form>
         </details>

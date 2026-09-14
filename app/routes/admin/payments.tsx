@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form } from "react-router";
 import type { Route } from "./+types/payments";
 import { appContext } from "~/runtime/context";
@@ -46,8 +49,9 @@ const SPEC: TableSpec = {
   sortable: [],
 };
 
-export function meta() {
-  return [{ title: "Verifica pagamenti" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Verifica pagamenti") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -209,17 +213,18 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function AdminPayments({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { rows, state, views, canVerify, stepUpActive, now } = loaderData;
 
   return (
     <>
       <PageHeader
-        title="Verifica pagamenti"
-        description="Ogni riga è un cliente che sta aspettando. Le più urgenti sono in cima."
+        title={t("Verifica pagamenti")}
+        description={t("Ogni riga è un cliente che sta aspettando. Le più urgenti sono in cima.")}
         breadcrumbs={breadcrumbsFor("/admin/pagamenti")}
       />
 
-      <nav className="ac-views" aria-label="Viste salvate">
+      <nav className="ac-views" aria-label={t("Viste salvate")}>
         <ul>
           {views.map((v) => (
             <li key={v.slug}>
@@ -228,7 +233,7 @@ export default function AdminPayments({ loaderData, actionData }: Route.Componen
                 className={v.slug === state.view ? "ac-view ac-view--active" : "ac-view"}
                 aria-current={v.slug === state.view ? "page" : undefined}
               >
-                {v.label}
+                {t(v.label)}
                 {v.count > 0 ? <span className="ac-view__count numeric">{v.count}</span> : null}
               </Link>
             </li>
@@ -241,36 +246,39 @@ export default function AdminPayments({ loaderData, actionData }: Route.Componen
         so they should know they are the control.
       */}
       <p className="notice notice--info small">
-        Verifica sempre sul conto bancario o nell&apos;app del servizio. Una schermata inviata dal
-        cliente <strong>non</strong> è una prova di pagamento.
+        {t(
+          "Verifica sempre sul conto bancario o nell'app del servizio. Una schermata inviata dal cliente ",
+        )}
+        <strong>{t("non")}</strong> {t(" è una prova di pagamento.")}
       </p>
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
       {actionData && "success" in actionData && actionData.success ? (
         <p className="notice notice--info" role="status">
-          {actionData.success}
+          {t(actionData.success)}
           {"duplicateReference" in actionData && actionData.duplicateReference
-            ? " Attenzione: questo riferimento è già presente su un altro ordine."
+            ? t(" Attenzione: questo riferimento è già presente su un altro ordine.")
             : ""}
         </p>
       ) : null}
 
       {!canVerify ? (
         <p className="notice notice--warning small">
-          Puoi consultare la coda ma non verificare i pagamenti. Serve il permesso
+          {t("Puoi consultare la coda ma non verificare i pagamenti. Serve il permesso")}
           <code> payment.verify</code>.
         </p>
       ) : !stepUpActive ? (
         /* Step-up first. A live session is not enough for this action. */
         <section className="panel stack">
-          <h2>Conferma la tua identità</h2>
+          <h2>{t("Conferma la tua identità")}</h2>
           <p className="small muted">
-            Per verificare un pagamento devi reinserire la password. La conferma vale 10 minuti e
-            solo per questa operazione.
+            {t(
+              "Per verificare un pagamento devi reinserire la password. La conferma vale 10 minuti e solo per questa operazione.",
+            )}
           </p>
           <Form method="post" className="cluster">
             <input type="hidden" name="intent" value="step-up" />
@@ -288,19 +296,19 @@ export default function AdminPayments({ loaderData, actionData }: Route.Componen
               />
             </div>
             <button type="submit" className="btn btn--primary">
-              Conferma
+              {t("Conferma")}
             </button>
           </Form>
         </section>
       ) : (
         <p className="notice notice--info small" role="status">
-          Autenticazione confermata. Puoi verificare i pagamenti per i prossimi 10 minuti.
+          {t("Autenticazione confermata. Puoi verificare i pagamenti per i prossimi 10 minuti.")}
         </p>
       )}
 
       {rows.length === 0 ? (
         <div className="empty-state">
-          <p>Nessun pagamento in attesa di verifica.</p>
+          <p>{t("Nessun pagamento in attesa di verifica.")}</p>
         </div>
       ) : (
         <div
@@ -309,20 +317,20 @@ export default function AdminPayments({ loaderData, actionData }: Route.Componen
              cannot take focus is unscrollable without a mouse. */
           tabIndex={0}
           role="region"
-          aria-label="Tabella scorrevole"
+          aria-label={t("Tabella scorrevole")}
         >
           <table className="admin-table">
-            <caption className="visually-hidden">Pagamenti in attesa di verifica</caption>
+            <caption className="visually-hidden">{t("Pagamenti in attesa di verifica")}</caption>
             <thead>
               <tr>
-                <th scope="col">Ordine</th>
-                <th scope="col">Cliente</th>
-                <th scope="col">Metodo</th>
-                <th scope="col">Atteso</th>
-                <th scope="col">Riferimento</th>
-                <th scope="col">Stato</th>
-                <th scope="col">Scadenza</th>
-                <th scope="col">Azione</th>
+                <th scope="col">{t("Ordine")}</th>
+                <th scope="col">{t("Cliente")}</th>
+                <th scope="col">{t("Metodo")}</th>
+                <th scope="col">{t("Atteso")}</th>
+                <th scope="col">{t("Riferimento")}</th>
+                <th scope="col">{t("Stato")}</th>
+                <th scope="col">{t("Scadenza")}</th>
+                <th scope="col">{t("Azione")}</th>
               </tr>
             </thead>
             <tbody>
@@ -336,17 +344,20 @@ export default function AdminPayments({ loaderData, actionData }: Route.Componen
                       {row.customer_first_name} {row.customer_last_name}
                     </td>
                     <td>{row.method_name ?? "—"}</td>
-                    <td className="numeric">{formatMoney(money(row.amount_expected))}</td>
+                    <td className="numeric">{formatMoney(money(row.amount_expected), t.intl)}</td>
                     <td className="small">
                       {row.transaction_reference ?? <span className="muted">—</span>}
                       {row.duplicate_count > 0 ? (
                         /* FLAGGED, never auto-rejected: duplicates are often
                            legitimate, and blocking them would block real
                            payments. */
-                        <span className="badge badge--warning"> riferimento duplicato</span>
+                        <span className="badge badge--warning"> {t(" riferimento duplicato")}</span>
                       ) : null}
                       {row.proof_count > 0 ? (
-                        <span className="badge"> {row.proof_count} ricevuta</span>
+                        <span className="badge">
+                          {" "}
+                          {row.proof_count} {t(" ricevuta")}
+                        </span>
                       ) : null}
                     </td>
                     <td>
@@ -355,7 +366,7 @@ export default function AdminPayments({ loaderData, actionData }: Route.Componen
                     <td className="small">
                       {row.reservation_expires_at ? (
                         <span className={expiring ? "stock--low_stock" : undefined}>
-                          {formatDateTime(row.reservation_expires_at, "it")}
+                          {formatDateTime(row.reservation_expires_at, t.locale)}
                         </span>
                       ) : (
                         "—"
@@ -364,14 +375,14 @@ export default function AdminPayments({ loaderData, actionData }: Route.Componen
                     <td>
                       {canVerify && stepUpActive ? (
                         <details>
-                          <summary className="btn btn--secondary">Verifica</summary>
+                          <summary className="btn btn--secondary">{t("Verifica")}</summary>
                           <Form method="post" className="stack admin-verify-form">
                             <input type="hidden" name="intent" value="verify" />
                             <input type="hidden" name="orderPaymentId" value={row.id} />
 
                             <div className="field">
                               <label className="field__label" htmlFor={`outcome-${row.id}`}>
-                                Esito
+                                {t("Esito")}
                               </label>
                               <select
                                 id={`outcome-${row.id}`}
@@ -379,16 +390,16 @@ export default function AdminPayments({ loaderData, actionData }: Route.Componen
                                 className="input"
                                 defaultValue="verified"
                               >
-                                <option value="verified">Pagamento verificato</option>
-                                <option value="partially_paid">Pagamento parziale</option>
-                                <option value="overpaid">Pagamento in eccesso</option>
-                                <option value="rejected">Non riscontrato</option>
+                                <option value="verified">{t("Pagamento verificato")}</option>
+                                <option value="partially_paid">{t("Pagamento parziale")}</option>
+                                <option value="overpaid">{t("Pagamento in eccesso")}</option>
+                                <option value="rejected">{t("Non riscontrato")}</option>
                               </select>
                             </div>
 
                             <div className="field">
                               <label className="field__label" htmlFor={`amount-${row.id}`}>
-                                Importo ricevuto (centesimi)
+                                {t("Importo ricevuto (centesimi)")}
                               </label>
                               <input
                                 id={`amount-${row.id}`}
@@ -400,13 +411,13 @@ export default function AdminPayments({ loaderData, actionData }: Route.Componen
                                 defaultValue={row.amount_expected}
                               />
                               <span className="field__hint">
-                                {formatMoney(money(row.amount_expected))} attesi
+                                {formatMoney(money(row.amount_expected), t.intl)} {t(" attesi")}
                               </span>
                             </div>
 
                             <div className="field">
                               <label className="field__label" htmlFor={`ref-${row.id}`}>
-                                Riferimento operazione
+                                {t("Riferimento operazione")}
                               </label>
                               <input
                                 id={`ref-${row.id}`}
@@ -418,16 +429,16 @@ export default function AdminPayments({ loaderData, actionData }: Route.Componen
 
                             <div className="field">
                               <label className="field__label" htmlFor={`note-${row.id}`}>
-                                Nota
+                                {t("Nota")}
                               </label>
                               <input id={`note-${row.id}`} name="note" className="input" />
                               <span className="field__hint">
-                                Obbligatoria se non inserisci un riferimento.
+                                {t("Obbligatoria se non inserisci un riferimento.")}
                               </span>
                             </div>
 
                             <button type="submit" className="btn btn--primary">
-                              Registra esito
+                              {t("Registra esito")}
                             </button>
                           </Form>
                         </details>

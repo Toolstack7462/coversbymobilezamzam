@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, Link, useLocation } from "react-router";
 import type { Route } from "./+types/security-backup-codes";
 import { appContext } from "~/runtime/context";
@@ -18,8 +21,9 @@ import { systemClock, cryptoIds } from "~/infrastructure/primitives";
  * than the one it would be bypassing.
  */
 
-export function meta() {
-  return [{ title: "Codici di recupero" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Codici di recupero") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -85,6 +89,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function BackupCodes({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { search } = useLocation();
   const justEnrolled = new URLSearchParams(search).get("nuovo") === "1";
   const { enrolled, hasCodes } = loaderData;
@@ -92,35 +97,38 @@ export default function BackupCodes({ loaderData, actionData }: Route.ComponentP
 
   return (
     <div className="stack" style={{ maxWidth: "40rem" }}>
-      <h1>Codici di recupero</h1>
+      <h1>{t("Codici di recupero")}</h1>
 
       {justEnrolled && !codes ? (
         <p className="notice notice--info" role="status">
-          Autenticazione a due fattori attivata. Genera ora i codici di recupero: ti servono se
-          perdi il telefono.
+          {t(
+            "Autenticazione a due fattori attivata. Genera ora i codici di recupero: ti servono se perdi il telefono.",
+          )}
         </p>
       ) : null}
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
 
       {!enrolled ? (
         <p className="notice notice--warning">
-          Attiva prima l&apos;autenticazione a due fattori.{" "}
-          <Link to="/admin/sicurezza/2fa">Vai alla configurazione</Link>.
+          {t("Attiva prima l'autenticazione a due fattori.")}{" "}
+          <Link to="/admin/sicurezza/2fa">{t("Vai alla configurazione")}</Link>.
         </p>
       ) : null}
 
       {codes ? (
         <section className="panel stack">
-          <h2>I tuoi codici</h2>
+          <h2>{t("I tuoi codici")}</h2>
           <p className="notice notice--warning">
-            <strong>Questi codici non verranno mostrati di nuovo.</strong> Salvali adesso in un
-            posto sicuro — un gestore di password, o su carta lontano dal computer. Ogni codice
-            funziona <strong>una volta sola</strong>.
+            <strong>{t("Questi codici non verranno mostrati di nuovo.")}</strong>{" "}
+            {t(
+              " Salvali adesso in un posto sicuro — un gestore di password, o su carta lontano dal computer. Ogni codice funziona ",
+            )}
+            <strong>{t("una volta sola")}</strong>.
           </p>
 
           <ol className="backup-codes numeric">
@@ -138,20 +146,22 @@ export default function BackupCodes({ loaderData, actionData }: Route.ComponentP
           <Form method="get" action="/admin/sicurezza/2fa" className="stack">
             <label className="cluster">
               <input type="checkbox" name="saved" required />
-              <span>Confermo di aver salvato i codici in un posto sicuro.</span>
+              <span>{t("Confermo di aver salvato i codici in un posto sicuro.")}</span>
             </label>
             <button type="submit" className="btn btn--primary">
-              Ho salvato i codici
+              {t("Ho salvato i codici")}
             </button>
           </Form>
         </section>
       ) : enrolled ? (
         <section className="panel stack">
-          <h2>{hasCodes ? "Rigenera i codici" : "Genera i codici"}</h2>
+          <h2>{hasCodes ? t("Rigenera i codici") : t("Genera i codici")}</h2>
           <p className="small muted">
             {hasCodes
-              ? "Rigenerare ANNULLA immediatamente i codici precedenti. Fallo se pensi che siano stati visti da qualcun altro, o se li hai finiti."
-              : "Servono per accedere se perdi il telefono. Vengono mostrati una volta sola."}
+              ? t(
+                  "Rigenerare ANNULLA immediatamente i codici precedenti. Fallo se pensi che siano stati visti da qualcun altro, o se li hai finiti.",
+                )
+              : t("Servono per accedere se perdi il telefono. Vengono mostrati una volta sola.")}
           </p>
           <Form method="post" className="stack">
             <div className="field">
@@ -168,15 +178,16 @@ export default function BackupCodes({ loaderData, actionData }: Route.ComponentP
               />
             </div>
             <button type="submit" className="btn btn--primary">
-              {hasCodes ? "Rigenera codici" : "Genera codici"}
+              {hasCodes ? t("Rigenera codici") : t("Genera codici")}
             </button>
           </Form>
         </section>
       ) : null}
 
       <p className="caption muted">
-        Non esiste un recupero via email. Se perdi sia il telefono sia i codici, un altro
-        amministratore deve reimpostare il tuo secondo fattore.
+        {t(
+          "Non esiste un recupero via email. Se perdi sia il telefono sia i codici, un altro amministratore deve reimpostare il tuo secondo fattore.",
+        )}
       </p>
     </div>
   );

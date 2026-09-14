@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, Link } from "react-router";
 import type { Route } from "./+types/featured";
 import { appContext } from "~/runtime/context";
@@ -27,8 +30,9 @@ import { PageHeader } from "~/components/admin/admin-shell";
  * decides how to render an unavailable product; this screen's job is to show
  * that you are leading with something nobody can buy.
  */
-export function meta() {
-  return [{ title: "Prodotti in evidenza" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Prodotti in evidenza") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 const FLAGS = [
@@ -111,15 +115,19 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function AdminFeatured({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { products, canWrite, counts } = loaderData;
 
   return (
     <>
-      <PageHeader title="Prodotti in evidenza" breadcrumbs={breadcrumbsFor("/admin/in-evidenza")} />
+      <PageHeader
+        title={t("Prodotti in evidenza")}
+        breadcrumbs={breadcrumbsFor("/admin/in-evidenza")}
+      />
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
 
@@ -127,23 +135,23 @@ export default function AdminFeatured({ loaderData, actionData }: Route.Componen
         <div className="ac-metrics">
           {FLAGS.map(([column, label]) => (
             <div className="ac-metric" key={column}>
-              <span className="ac-metric__label">{label}</span>
+              <span className="ac-metric__label">{t(label)}</span>
               <span className="ac-metric__value numeric">{counts[column]}</span>
             </div>
           ))}
         </div>
         <p className="small">
-          Sono i tre contrassegni che decidono cosa vede per primo chi arriva sul sito senza sapere
-          niente del negozio. La colonna &ldquo;venduti&rdquo; è lì apposta: &ldquo;più
-          venduto&rdquo; lo decidi tu, ma se il numero accanto è zero conviene saperlo.
+          {t(
+            "Sono i tre contrassegni che decidono cosa vede per primo chi arriva sul sito senza sapere niente del negozio. La colonna “venduti” è lì apposta: “più venduto” lo decidi tu, ma se il numero accanto è zero conviene saperlo.",
+          )}
         </p>
       </section>
 
       {products.length === 0 ? (
         <div className="empty-state">
-          <p>Nessun prodotto attivo.</p>
+          <p>{t("Nessun prodotto attivo.")}</p>
           <p className="small">
-            <Link to="/admin/prodotti">Prodotti</Link> è il posto da cui aggiungerne.
+            <Link to="/admin/prodotti">{t("Prodotti")}</Link> {t(" è il posto da cui aggiungerne.")}
           </p>
         </div>
       ) : (
@@ -153,24 +161,24 @@ export default function AdminFeatured({ loaderData, actionData }: Route.Componen
              take focus is unscrollable without a mouse. */
           tabIndex={0}
           role="region"
-          aria-label="Tabella scorrevole"
+          aria-label={t("Tabella scorrevole")}
         >
           <table className="admin-table">
             <caption className="visually-hidden">
-              Prodotti attivi e i loro contrassegni di evidenza
+              {t("Prodotti attivi e i loro contrassegni di evidenza")}
             </caption>
             <thead>
               <tr>
-                <th scope="col">Prodotto</th>
+                <th scope="col">{t("Prodotto")}</th>
                 <th scope="col" className="numeric">
-                  Disponibili
+                  {t("Disponibili")}
                 </th>
                 <th scope="col" className="numeric">
-                  Venduti
+                  {t("Venduti")}
                 </th>
                 {FLAGS.map(([column, label]) => (
                   <th scope="col" key={column}>
-                    {label}
+                    {t(label)}
                   </th>
                 ))}
               </tr>
@@ -181,7 +189,7 @@ export default function AdminFeatured({ loaderData, actionData }: Route.Componen
                   <td>
                     <Link to={`/admin/prodotti/${p.slug}`}>{p.name ?? p.slug}</Link>
                     <br />
-                    <span className="small muted">{p.category_name ?? "senza categoria"}</span>
+                    <span className="small muted">{p.category_name ?? t("senza categoria")}</span>
                   </td>
                   <td className="numeric">
                     {p.available <= 0 ? (
@@ -211,11 +219,11 @@ export default function AdminFeatured({ loaderData, actionData }: Route.Componen
                               type="submit"
                               aria-pressed={on}
                             >
-                              {on ? "Sì" : "No"}
+                              {on ? t("Sì") : "No"}
                             </button>
                           </Form>
                         ) : on ? (
-                          "Sì"
+                          t("Sì")
                         ) : (
                           "No"
                         )}

@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Link } from "react-router";
 import type { Route } from "./+types/inventory-adjustments";
 import { appContext } from "~/runtime/context";
@@ -19,8 +22,12 @@ import { PageHeader } from "~/components/admin/admin-shell";
  * adjusting happens where the stock is shown, so nobody changes a number
  * without seeing what it currently is.
  */
-export function meta() {
-  return [{ title: "Rettifiche di magazzino" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [
+    { title: t("Rettifiche di magazzino") },
+    { name: "robots", content: "noindex, nofollow" },
+  ];
 }
 
 /** The reason codes the inventory screen offers, in the same words. */
@@ -86,37 +93,38 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export default function InventoryAdjustments({ loaderData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { adjustments, summary, filter } = loaderData;
 
   return (
     <>
       <PageHeader
-        title="Rettifiche di magazzino"
+        title={t("Rettifiche di magazzino")}
         breadcrumbs={breadcrumbsFor("/admin/inventario/rettifiche")}
       />
 
       <section className="panel">
         <p className="small">
-          Le correzioni fatte a mano, con la causale di chi le ha fatte. Una vendita si spiega da
-          sola; qualcuno che decide che la giacenza era sbagliata no, ed è questo l&apos;elenco che
-          vale la pena rileggere. Per rettificare una quantità si passa da{" "}
-          <Link to="/admin/inventario">Panoramica scorte</Link>, dove il numero attuale è sotto gli
-          occhi.
+          {t(
+            "Le correzioni fatte a mano, con la causale di chi le ha fatte. Una vendita si spiega da sola; qualcuno che decide che la giacenza era sbagliata no, ed è questo l'elenco che vale la pena rileggere. Per rettificare una quantità si passa da",
+          )}{" "}
+          <Link to="/admin/inventario">{t("Panoramica scorte")}</Link>
+          {t(", dove il numero attuale è sotto gli occhi.")}
         </p>
       </section>
 
       {summary.length > 0 ? (
         <section className="panel">
-          <h2>Per causale</h2>
+          <h2>{t("Per causale")}</h2>
           <div className="ac-metrics">
             {summary.map((row) => (
               <div className="ac-metric" key={row.reason_code}>
                 <span className="ac-metric__label">
-                  {REASON_LABELS[row.reason_code] ?? row.reason_code}
+                  {t(REASON_LABELS[row.reason_code] ?? row.reason_code)}
                 </span>
                 <span className="ac-metric__value numeric">{row.n}</span>
                 <span className="ac-metric__note numeric">
-                  {row.net > 0 ? `+${row.net}` : row.net} pezzi
+                  {row.net > 0 ? `+${row.net}` : row.net} {t(" pezzi")}
                 </span>
               </div>
             ))}
@@ -125,13 +133,13 @@ export default function InventoryAdjustments({ loaderData }: Route.ComponentProp
       ) : null}
 
       {summary.length > 1 ? (
-        <nav className="cluster" aria-label="Filtra per causale">
+        <nav className="cluster" aria-label={t("Filtra per causale")}>
           <Link
             className="chip"
             to="/admin/inventario/rettifiche"
             aria-current={filter === "" || undefined}
           >
-            Tutte
+            {t("Tutte")}
           </Link>
           {summary.map((row) => (
             <Link
@@ -140,7 +148,7 @@ export default function InventoryAdjustments({ loaderData }: Route.ComponentProp
               to={`/admin/inventario/rettifiche?motivo=${row.reason_code}`}
               aria-current={filter === row.reason_code || undefined}
             >
-              {REASON_LABELS[row.reason_code] ?? row.reason_code}
+              {t(REASON_LABELS[row.reason_code] ?? row.reason_code)}
             </Link>
           ))}
         </nav>
@@ -148,9 +156,11 @@ export default function InventoryAdjustments({ loaderData }: Route.ComponentProp
 
       {adjustments.length === 0 ? (
         <div className="empty-state">
-          <p>Nessuna rettifica registrata.</p>
+          <p>{t("Nessuna rettifica registrata.")}</p>
           <p className="small">
-            È un buon segno: vuol dire che finora le giacenze non hanno avuto bisogno di correzioni.
+            {t(
+              "È un buon segno: vuol dire che finora le giacenze non hanno avuto bisogno di correzioni.",
+            )}
           </p>
         </div>
       ) : (
@@ -160,22 +170,22 @@ export default function InventoryAdjustments({ loaderData }: Route.ComponentProp
              take focus is unscrollable without a mouse. */
           tabIndex={0}
           role="region"
-          aria-label="Tabella scorrevole"
+          aria-label={t("Tabella scorrevole")}
         >
           <table className="admin-table">
-            <caption className="visually-hidden">Rettifiche, dalla più recente</caption>
+            <caption className="visually-hidden">{t("Rettifiche, dalla più recente")}</caption>
             <thead>
               <tr>
-                <th scope="col">Quando</th>
-                <th scope="col">Prodotto</th>
+                <th scope="col">{t("Quando")}</th>
+                <th scope="col">{t("Prodotto")}</th>
                 <th scope="col" className="numeric">
-                  Da → a
+                  {t("Da → a")}
                 </th>
                 <th scope="col" className="numeric">
-                  Differenza
+                  {t("Differenza")}
                 </th>
-                <th scope="col">Causale</th>
-                <th scope="col">Chi</th>
+                <th scope="col">{t("Causale")}</th>
+                <th scope="col">{t("Chi")}</th>
               </tr>
             </thead>
             <tbody>
@@ -183,7 +193,7 @@ export default function InventoryAdjustments({ loaderData }: Route.ComponentProp
                 const delta = a.quantity_after - a.quantity_before;
                 return (
                   <tr key={a.id}>
-                    <td>{formatDateTime(a.created_at, "it")}</td>
+                    <td>{formatDateTime(a.created_at, t.locale)}</td>
                     <td>
                       <Link to={`/admin/prodotti/${a.product_slug}`}>
                         {a.product_name ?? a.product_slug}
@@ -199,7 +209,7 @@ export default function InventoryAdjustments({ loaderData }: Route.ComponentProp
                     </td>
                     <td className="numeric">{delta > 0 ? `+${delta}` : delta}</td>
                     <td>
-                      {REASON_LABELS[a.reason_code] ?? a.reason_code}
+                      {t(REASON_LABELS[a.reason_code] ?? a.reason_code)}
                       {a.reason_note ? (
                         <>
                           <br />

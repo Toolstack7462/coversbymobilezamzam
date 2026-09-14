@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches, adminLocaleFromCookie } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { saleableImageKey } from "~/domain/media/storefront-image";
 import { Form, Link, redirect, useLocation, useSearchParams } from "react-router";
 import type { Route } from "./+types/product-detail";
@@ -52,9 +55,13 @@ import type { SqlStatement } from "~/infrastructure/db/sql";
  *     a delete anyway; archiving is the honest name for what actually happens.
  */
 
-export function meta({ loaderData }: Route.MetaArgs) {
-  const name = loaderData?.product?.name ?? loaderData?.product?.slug ?? "Prodotto";
-  return [{ title: `${name} — prodotto` }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ loaderData, matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  const name = loaderData?.product?.name ?? loaderData?.product?.slug ?? t("Prodotto");
+  return [
+    { title: t("{{v0}} — prodotto", { v0: name }) },
+    { name: "robots", content: "noindex, nofollow" },
+  ];
 }
 
 /**
@@ -412,10 +419,14 @@ export async function action({ request, params, context }: Route.ActionArgs) {
       };
     }
 
-    const parsed = parseSpecValues(accessoryType, (name) => {
-      const value = form.get(name);
-      return typeof value === "string" ? value : null;
-    });
+    const parsed = parseSpecValues(
+      accessoryType,
+      (name) => {
+        const value = form.get(name);
+        return typeof value === "string" ? value : null;
+      },
+      adminLocaleFromCookie(request.headers.get("Cookie")),
+    );
 
     if (parsed.errors.length > 0) return { error: parsed.errors.join(" ") };
 
@@ -1524,6 +1535,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
 }
 
 export default function ProductDetail({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { pathname } = useLocation();
   const [searchParams] = useSearchParams();
   const {
@@ -1553,13 +1565,14 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
         title={product.name ?? product.slug}
         description={`SKU ${variants[0]?.sku ?? "—"} · /prodotti/${product.slug}`}
         breadcrumbs={breadcrumbsFor(pathname)}
-        secondaryActions={[{ label: "Torna all'elenco", to: "/admin/prodotti" }]}
+        secondaryActions={[{ label: t("Torna all'elenco"), to: "/admin/prodotti" }]}
       />
 
       {justCreated ? (
         <p className="notice notice--success" role="status">
-          Prodotto creato. È in bozza: non è ancora visibile sul sito. Da qui potete aggiungere
-          foto, compatibilità e descrizione, poi pubblicarlo.
+          {t(
+            "Prodotto creato. È in bozza: non è ancora visibile sul sito. Da qui potete aggiungere foto, compatibilità e descrizione, poi pubblicarlo.",
+          )}
         </p>
       ) : null}
 
@@ -1573,9 +1586,10 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
       */}
       {justDuplicated ? (
         <p className="notice notice--success" role="status">
-          Copia creata, in bozza. Foto, compatibilità e prezzi sono stati copiati.{" "}
-          <strong>Le giacenze sono a zero</strong> e i codici finiscono con <code>-C</code>:
-          cambiate il nome, poi registrate le giacenze reali dall&apos;inventario.
+          {t("Copia creata, in bozza. Foto, compatibilità e prezzi sono stati copiati.")}{" "}
+          <strong>{t("Le giacenze sono a zero")}</strong> {t(" e i codici finiscono con ")}
+          <code>-C</code>
+          {t(": cambiate il nome, poi registrate le giacenze reali dall'inventario.")}
         </p>
       ) : null}
 
@@ -1597,26 +1611,27 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
             className="btn btn--secondary btn--small"
             onClick={() => window.location.reload()}
           >
-            Ricarica la pagina
+            {t("Ricarica la pagina")}
           </button>
         </p>
       ) : null}
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
       {actionData && "success" in actionData && actionData.success ? (
         <p className="notice notice--info" role="status">
-          {actionData.success}
+          {t(actionData.success)}
         </p>
       ) : null}
 
       {product.archived_at !== null ? (
         <p className="notice notice--warning" role="status">
-          Questo prodotto è archiviato: non compare sul sito. Gli ordini che lo contengono restano
-          intatti e leggibili.
+          {t(
+            "Questo prodotto è archiviato: non compare sul sito. Gli ordini che lo contengono restano intatti e leggibili.",
+          )}
         </p>
       ) : null}
 
@@ -1639,44 +1654,44 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
         links are conditional too: a link to an anchor that is not on the page
         is a link that silently does nothing.
       */}
-      <nav className="ac-sectionnav" aria-label="Sezioni del prodotto">
-        <a href="#sez-stato">Stato</a>
+      <nav className="ac-sectionnav" aria-label={t("Sezioni del prodotto")}>
+        <a href="#sez-stato">{t("Stato")}</a>
         {canWrite && product.archived_at === null ? (
-          <a href="#sez-pubblicazione">Pubblicazione</a>
+          <a href="#sez-pubblicazione">{t("Pubblicazione")}</a>
         ) : null}
-        <a href="#sez-dettagli">Dettagli</a>
-        <a href="#sez-varianti">Varianti e prezzo</a>
-        <a href="#sez-foto">Foto</a>
-        <a href="#sez-compatibilita">Compatibilità</a>
+        <a href="#sez-dettagli">{t("Dettagli")}</a>
+        <a href="#sez-varianti">{t("Varianti e prezzo")}</a>
+        <a href="#sez-foto">{t("Foto")}</a>
+        <a href="#sez-compatibilita">{t("Compatibilità")}</a>
       </nav>
 
       {/* ── What is missing ───────────────────────────────────────────────── */}
       <section id="sez-stato" className="panel stack" aria-labelledby="h-stato">
-        <h2 id="h-stato">Stato del prodotto</h2>
+        <h2 id="h-stato">{t("Stato del prodotto")}</h2>
         <ul className="ac-actions">
           <Check
             done={variants.some((v) => v.amount !== null)}
-            label="Prezzo impostato"
+            label={t("Prezzo impostato")}
             missing="Senza prezzo il prodotto non è acquistabile e non può essere pubblicato."
           />
           <Check
             done={images.length > 0}
-            label="Almeno una foto"
+            label={t("Almeno una foto")}
             missing="Sul sito comparirebbe un riquadro vuoto al posto dell'immagine."
           />
           <Check
             done={compatibility.length > 0}
-            label="Compatibilità registrata"
+            label={t("Compatibilità registrata")}
             missing="I clienti non possono filtrare questo prodotto per il proprio telefono."
           />
           <Check
             done={unverifiedExact === 0}
-            label="Compatibilità verificate"
+            label={t("Compatibilità verificate")}
             missing={`${unverifiedExact} dichiarazioni di compatibilità esatta non sono state verificate. È il tipo di errore che genera resi.`}
           />
           <Check
             done={variants.every((v) => v.on_hand !== null)}
-            label="Giacenza registrata"
+            label={t("Giacenza registrata")}
             missing="Una variante senza riga di giacenza non risulta disponibile."
           />
         </ul>
@@ -1685,11 +1700,11 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
       {/* ── Publication ───────────────────────────────────────────────────── */}
       {canWrite && product.archived_at === null ? (
         <section id="sez-pubblicazione" className="panel stack" aria-labelledby="h-pubblicazione">
-          <h2 id="h-pubblicazione">Pubblicazione</h2>
+          <h2 id="h-pubblicazione">{t("Pubblicazione")}</h2>
           <p className="small muted">
             {product.status === "active"
-              ? "Il prodotto è visibile sul sito."
-              : "Il prodotto è in bozza: lo vedete solo voi."}
+              ? t("Il prodotto è visibile sul sito.")
+              : t("Il prodotto è in bozza: lo vedete solo voi.")}
           </p>
           <Form method="post" className="cluster">
             <input
@@ -1698,7 +1713,7 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
               value={product.status === "active" ? "draft" : "active"}
             />
             <button type="submit" name="intent" value="set-status" className="btn btn--primary">
-              {product.status === "active" ? "Riporta in bozza" : "Pubblica sul sito"}
+              {product.status === "active" ? t("Riporta in bozza") : t("Pubblica sul sito")}
             </button>
           </Form>
         </section>
@@ -1706,7 +1721,7 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
 
       {/* ── Details ───────────────────────────────────────────────────────── */}
       <section id="sez-dettagli" className="panel stack" aria-labelledby="h-dettagli">
-        <h2 id="h-dettagli">Dettagli</h2>
+        <h2 id="h-dettagli">{t("Dettagli")}</h2>
         <Form method="post" className="stack">
           <input type="hidden" name="intent" value="save-details" />
           {/*
@@ -1721,7 +1736,7 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
 
           <div className="field">
             <label className="field__label" htmlFor="name">
-              Nome
+              {t("Nome")}
             </label>
             <input
               id="name"
@@ -1733,14 +1748,16 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
               aria-describedby="name-help"
             />
             <span className="field__hint" id="name-help">
-              Cambiare il nome <strong>non</strong> cambia l&apos;indirizzo della pagina (
-              <code>/prodotti/{product.slug}</code>): i link già condivisi continuano a funzionare.
+              {t("Cambiare il nome ")}
+              <strong>{t("non")}</strong> {t(" cambia l'indirizzo della pagina (")}
+              <code>/prodotti/{product.slug}</code>
+              {t("): i link già condivisi continuano a funzionare.")}
             </span>
           </div>
 
           <div className="field">
             <label className="field__label" htmlFor="shortDescription">
-              Descrizione breve
+              {t("Descrizione breve")}
             </label>
             <textarea
               id="shortDescription"
@@ -1755,7 +1772,7 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
 
           <div className="field">
             <label className="field__label" htmlFor="fullDescription">
-              Descrizione completa
+              {t("Descrizione completa")}
             </label>
             <textarea
               id="fullDescription"
@@ -1769,7 +1786,7 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
 
           <div className="field">
             <label className="field__label" htmlFor="brandId">
-              Marchio
+              {t("Marchio")}
             </label>
             <select
               id="brandId"
@@ -1778,7 +1795,7 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
               defaultValue={product.brand_id ?? ""}
               disabled={!canWrite}
             >
-              <option value="">— nessuno —</option>
+              <option value="">{t("— nessuno —")}</option>
               {brands.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name}
@@ -1798,7 +1815,7 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
           */}
           <div className="field">
             <label className="field__label" htmlFor="accessoryType">
-              Tipo di prodotto
+              {t("Tipo di prodotto")}
             </label>
             <select
               id="accessoryType"
@@ -1808,23 +1825,23 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
               disabled={!canWrite}
               aria-describedby="accessoryType-help"
             >
-              <option value="">— non impostato —</option>
+              <option value="">{t("— non impostato —")}</option>
               {ACCESSORY_TYPES.map((type) => (
                 <option key={type} value={type}>
-                  {ACCESSORY_TYPE_LABELS[type]}
+                  {t(ACCESSORY_TYPE_LABELS[type])}
                 </option>
               ))}
             </select>
             <span className="field__hint" id="accessoryType-help">
-              Decide quali specifiche vi vengono chieste nelle varianti: un caricabatterie e una
-              cover non si descrivono con gli stessi campi. Cambiandolo e salvando, i campi qui
-              sotto cambiano.
+              {t(
+                "Decide quali specifiche vi vengono chieste nelle varianti: un caricabatterie e una cover non si descrivono con gli stessi campi. Cambiandolo e salvando, i campi qui sotto cambiano.",
+              )}
             </span>
           </div>
 
           <div className="field">
             <label className="field__label" htmlFor="categoryId">
-              Categoria
+              {t("Categoria")}
             </label>
             <select
               id="categoryId"
@@ -1833,7 +1850,7 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
               defaultValue={product.primary_category_id ?? ""}
               disabled={!canWrite}
             >
-              <option value="">— nessuna —</option>
+              <option value="">{t("— nessuna —")}</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -1845,7 +1862,7 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
           {canWrite ? (
             <div className="cluster">
               <button type="submit" className="btn btn--primary">
-                Salva dettagli
+                {t("Salva dettagli")}
               </button>
               {/*
                 Set from the SERVER's response, never from the click. An
@@ -1855,7 +1872,7 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
               */}
               {actionData && "savedAt" in actionData && actionData.savedAt ? (
                 <span className="small muted" role="status">
-                  Salvato alle{" "}
+                  {t("Salvato alle")}{" "}
                   {new Intl.DateTimeFormat("it-IT", {
                     hour: "2-digit",
                     minute: "2-digit",
@@ -1866,7 +1883,8 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
             </div>
           ) : (
             <p className="small muted">
-              Serve il permesso <code>product.write</code> per modificare.
+              {t("Serve il permesso ")}
+              <code>product.write</code> {t(" per modificare.")}
             </p>
           )}
         </Form>
@@ -1874,18 +1892,18 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
 
       {/* ── Variants, price and stock ─────────────────────────────────────── */}
       <section id="sez-varianti" className="panel stack" aria-labelledby="h-varianti">
-        <h2 id="h-varianti">Varianti</h2>
+        <h2 id="h-varianti">{t("Varianti")}</h2>
         <div className="ac-table-scroll">
           <table className="ac-table">
-            <caption className="visually-hidden">Varianti del prodotto</caption>
+            <caption className="visually-hidden">{t("Varianti del prodotto")}</caption>
             <thead>
               <tr>
                 <th scope="col">SKU</th>
-                <th scope="col">Variante</th>
+                <th scope="col">{t("Variante")}</th>
                 <th scope="col" className="ac-table__numeric">
-                  Disponibile
+                  {t("Disponibile")}
                 </th>
-                <th scope="col">Prezzo</th>
+                <th scope="col">{t("Prezzo")}</th>
               </tr>
             </thead>
             <tbody>
@@ -1895,9 +1913,9 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
                     {variant.sku}
                   </td>
                   <td data-label="Variante">
-                    {variant.variant_label ?? variant.colour ?? "Unica"}
+                    {variant.variant_label ?? variant.colour ?? t("Unica")}
                     {variant.is_default === 1 ? (
-                      <span className="badge badge--muted"> predefinita</span>
+                      <span className="badge badge--muted"> {t(" predefinita")}</span>
                     ) : null}
                     {canWrite && variants.length > 1 ? (
                       <span className="cluster">
@@ -1907,14 +1925,14 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
                               <input type="hidden" name="intent" value="set-default-variant" />
                               <input type="hidden" name="variantId" value={variant.id} />
                               <button type="submit" className="btn btn--ghost btn--small">
-                                Rendi predefinita
+                                {t("Rendi predefinita")}
                               </button>
                             </Form>
                             <Form method="post">
                               <input type="hidden" name="intent" value="archive-variant" />
                               <input type="hidden" name="variantId" value={variant.id} />
                               <button type="submit" className="btn btn--ghost btn--small">
-                                Archivia
+                                {t("Archivia")}
                               </button>
                             </Form>
                           </>
@@ -1924,7 +1942,7 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
                   </td>
                   <td data-label="Disponibile" className="ac-table__numeric numeric">
                     {variant.on_hand === null ? (
-                      <span className="badge badge--warning">non registrata</span>
+                      <span className="badge badge--warning">{t("non registrata")}</span>
                     ) : (
                       Math.max(0, variant.on_hand - (variant.reserved ?? 0))
                     )}
@@ -1935,7 +1953,8 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
                         <input type="hidden" name="intent" value="set-price" />
                         <input type="hidden" name="variantId" value={variant.id} />
                         <label className="visually-hidden" htmlFor={`price-${variant.id}`}>
-                          Prezzo per {variant.sku}
+                          {t("Prezzo per ")}
+                          {variant.sku}
                         </label>
                         <input
                           id={`price-${variant.id}`}
@@ -1950,13 +1969,13 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
                           }
                         />
                         <button type="submit" className="btn btn--secondary btn--small">
-                          Salva
+                          {t("Salva")}
                         </button>
                       </Form>
                     ) : variant.amount === null ? (
-                      <span className="badge badge--warning">nessun prezzo</span>
+                      <span className="badge badge--warning">{t("nessun prezzo")}</span>
                     ) : (
-                      formatMoney(money(variant.amount))
+                      formatMoney(money(variant.amount), t.intl)
                     )}
                   </td>
                 </tr>
@@ -1965,8 +1984,9 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
           </table>
         </div>
         <p className="caption muted">
-          Le giacenze si modificano dall&apos;<Link to="/admin/inventario">inventario</Link>, dove
-          ogni rettifica registra un motivo e resta nel registro.
+          {t("Le giacenze si modificano dall'")}
+          <Link to="/admin/inventario">{t("inventario")}</Link>
+          {t(", dove ogni rettifica registra un motivo e resta nel registro.")}
         </p>
 
         {/*
@@ -1989,50 +2009,51 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
 
         {canWrite ? (
           <details className="panel">
-            <summary>Aggiungi una variante</summary>
+            <summary>{t("Aggiungi una variante")}</summary>
             <Form method="post" className="stack">
               <input type="hidden" name="intent" value="add-variant" />
               <p className="small muted">
-                Una variante è lo stesso prodotto in una versione diversa: un altro colore,
-                un&apos;altra lunghezza, un&apos;altra capacità. Ognuna ha il proprio codice e la
-                propria giacenza.
+                {t(
+                  "Una variante è lo stesso prodotto in una versione diversa: un altro colore, un'altra lunghezza, un'altra capacità. Ognuna ha il proprio codice e la propria giacenza.",
+                )}
               </p>
 
               <div className="field">
                 <label className="field__label" htmlFor="v-sku">
-                  Codice SKU
+                  {t("Codice SKU")}
                 </label>
                 <input id="v-sku" name="sku" className="input" required maxLength={64} />
               </div>
 
               <div className="field">
                 <label className="field__label" htmlFor="v-label">
-                  Nome della variante
+                  {t("Nome della variante")}
                 </label>
                 <input
                   id="v-label"
                   name="variantLabel"
                   className="input"
                   maxLength={80}
-                  placeholder="Trasparente"
+                  placeholder={t("Trasparente")}
                   aria-describedby="v-label-help"
                 />
                 <span className="field__hint" id="v-label-help">
-                  Come la chiedereste in negozio. Serve per distinguerla: senza, in cassa due
-                  varianti sono indistinguibili.
+                  {t(
+                    "Come la chiedereste in negozio. Serve per distinguerla: senza, in cassa due varianti sono indistinguibili.",
+                  )}
                 </span>
               </div>
 
               <div className="field">
                 <label className="field__label" htmlFor="v-colour">
-                  Colore
+                  {t("Colore")}
                 </label>
                 <input id="v-colour" name="colour" className="input" maxLength={40} />
               </div>
 
               <div className="field">
                 <label className="field__label" htmlFor="v-price">
-                  Prezzo
+                  {t("Prezzo")}
                 </label>
                 <input
                   id="v-price"
@@ -2045,7 +2066,7 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
 
               <div className="field">
                 <label className="field__label" htmlFor="v-stock">
-                  Quantità disponibile
+                  {t("Quantità disponibile")}
                 </label>
                 <input
                   id="v-stock"
@@ -2059,7 +2080,7 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
               </div>
 
               <button type="submit" className="btn btn--secondary">
-                Aggiungi variante
+                {t("Aggiungi variante")}
               </button>
             </Form>
           </details>
@@ -2069,20 +2090,26 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
       {/* ── Price history ─────────────────────────────────────────────────── */}
       {priceHistory.length > 0 ? (
         <section id="sez-prezzi" className="panel stack" aria-labelledby="h-prezzi">
-          <h2 id="h-prezzi">Storico prezzi</h2>
+          <h2 id="h-prezzi">{t("Storico prezzi")}</h2>
           <p className="small muted">
-            Serve a dimostrare il prezzo più basso praticato negli ultimi 30 giorni. Senza questo
-            storico uno sconto non può essere annunciato per legge (D.Lgs. 84/2022).
+            {t(
+              "Serve a dimostrare il prezzo più basso praticato negli ultimi 30 giorni. Senza questo storico uno sconto non può essere annunciato per legge (D.Lgs. 84/2022).",
+            )}
           </p>
           <ul className="stack small">
             {priceHistory.map((row, i) => (
               <li key={i}>
-                <span className="numeric">{formatDateTime(row.effective_from, "it")}</span> —{" "}
+                <span className="numeric">{formatDateTime(row.effective_from, t.locale)}</span> —{" "}
                 {row.old_amount === null ? (
-                  <>prezzo iniziale {formatMoney(money(row.new_amount))}</>
+                  <>
+                    {t("prezzo iniziale ")}
+                    {formatMoney(money(row.new_amount), t.intl)}
+                  </>
                 ) : (
                   <>
-                    da {formatMoney(money(row.old_amount))} a {formatMoney(money(row.new_amount))}
+                    {t("da ")}
+                    {formatMoney(money(row.old_amount), t.intl)} {t(" a ")}
+                    {formatMoney(money(row.new_amount), t.intl)}
                   </>
                 )}
                 {row.reason ? <span className="muted"> · {row.reason}</span> : null}
@@ -2094,25 +2121,27 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
 
       {/* ── Images ────────────────────────────────────────────────────────── */}
       <section id="sez-foto" className="panel stack" aria-labelledby="h-foto">
-        <h2 id="h-foto">Foto</h2>
+        <h2 id="h-foto">{t("Foto")}</h2>
         <p className="small muted">
-          Carica fotografie del prodotto esatto, controllando modello, colore e connettori. La foto
-          principale utilizzabile compare negli elenchi; le altre nella scheda prodotto.
+          {t(
+            "Carica fotografie del prodotto esatto, controllando modello, colore e connettori. La foto principale utilizzabile compare negli elenchi; le altre nella scheda prodotto.",
+          )}
         </p>
 
         {images.some((image) => !saleableImageKey(image.object_key)) ? (
           <p className="notice notice--warning">
-            Alcune vecchie immagini sono escluse dal negozio perché non rappresentano il prodotto.
-            Carica le fotografie corrette: la prima immagine utilizzabile apparirà subito sul sito.
+            {t(
+              "Alcune vecchie immagini sono escluse dal negozio perché non rappresentano il prodotto. Carica le fotografie corrette: la prima immagine utilizzabile apparirà subito sul sito.",
+            )}
           </p>
         ) : null}
         {images.length === 0 ? (
           <div className="empty-state">
             <p>
-              <strong>Nessuna foto</strong>
+              <strong>{t("Nessuna foto")}</strong>
             </p>
             <p className="small muted">
-              Sul sito compare un riquadro vuoto al posto dell&apos;immagine.
+              {t("Sul sito compare un riquadro vuoto al posto dell'immagine.")}
             </p>
           </div>
         ) : (
@@ -2135,20 +2164,22 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
                 />
                 <div className="ac-thumb__meta">
                   {!saleableImageKey(image.object_key) ? (
-                    <span className="badge badge--warning">Da sostituire · esclusa dal sito</span>
+                    <span className="badge badge--warning">
+                      {t("Da sostituire · esclusa dal sito")}
+                    </span>
                   ) : null}
                   <span className="caption numeric">
                     {image.width}×{image.height}
                   </span>
                   {image.is_primary === 1 ? (
-                    <span className="badge badge--success">principale</span>
+                    <span className="badge badge--success">{t("principale")}</span>
                   ) : null}
                   {image.alt_it === null ? (
                     <span
                       className="badge badge--warning"
-                      title="Chi usa un lettore di schermo non sa cosa mostra questa foto"
+                      title={t("Chi usa un lettore di schermo non sa cosa mostra questa foto")}
                     >
-                      senza descrizione
+                      {t("senza descrizione")}
                     </span>
                   ) : null}
                 </div>
@@ -2168,7 +2199,8 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
                       <input type="hidden" name="intent" value="save-image-alt" />
                       <input type="hidden" name="imageId" value={image.id} />
                       <label className="visually-hidden" htmlFor={`alt-${image.id}`}>
-                        Descrizione della foto {index + 1}
+                        {t("Descrizione della foto ")}
+                        {index + 1}
                       </label>
                       <input
                         id={`alt-${image.id}`}
@@ -2176,10 +2208,10 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
                         className="input"
                         maxLength={200}
                         defaultValue={image.alt_it ?? ""}
-                        placeholder="Cosa si vede nella foto"
+                        placeholder={t("Cosa si vede nella foto")}
                       />
                       <button type="submit" className="btn btn--ghost btn--small">
-                        Salva descrizione
+                        {t("Salva descrizione")}
                       </button>
                     </Form>
 
@@ -2200,7 +2232,7 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
                         looks exactly like a button that worked.
                       */}
                       {image.is_primary === 1 ? (
-                        <span className="small muted">Sempre per prima</span>
+                        <span className="small muted">{t("Sempre per prima")}</span>
                       ) : (
                         <>
                           <Form method="post">
@@ -2211,7 +2243,7 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
                               type="submit"
                               className="btn btn--ghost btn--small"
                               disabled={index === all.findIndex((row) => row.is_primary === 0)}
-                              aria-label={`Sposta la foto ${index + 1} più in alto`}
+                              aria-label={t("Sposta la foto {{v0}} più in alto", { v0: index + 1 })}
                             >
                               ↑
                             </button>
@@ -2224,7 +2256,9 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
                               type="submit"
                               className="btn btn--ghost btn--small"
                               disabled={index === images.length - 1}
-                              aria-label={`Sposta la foto ${index + 1} più in basso`}
+                              aria-label={t("Sposta la foto {{v0}} più in basso", {
+                                v0: index + 1,
+                              })}
                             >
                               ↓
                             </button>
@@ -2237,7 +2271,7 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
                           <input type="hidden" name="intent" value="set-primary-image" />
                           <input type="hidden" name="imageId" value={image.id} />
                           <button type="submit" className="btn btn--ghost btn--small">
-                            Rendi principale
+                            {t("Rendi principale")}
                           </button>
                         </Form>
                       ) : null}
@@ -2254,14 +2288,15 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
                         <input type="hidden" name="intent" value="delete-image" />
                         <input type="hidden" name="imageId" value={image.id} />
                         <details className="ac-confirm ac-confirm--danger">
-                          <summary className="btn btn--ghost btn--small">Elimina</summary>
+                          <summary className="btn btn--ghost btn--small">{t("Elimina")}</summary>
                           <div className="ac-confirm__panel">
                             <p className="small">
-                              La foto sparisce dal sito. Se è l&apos;unica, il prodotto resta senza
-                              immagine.
+                              {t(
+                                "La foto sparisce dal sito. Se è l'unica, il prodotto resta senza immagine.",
+                              )}
                             </p>
                             <button type="submit" className="btn btn--danger btn--small">
-                              Sì, elimina la foto
+                              {t("Sì, elimina la foto")}
                             </button>
                           </div>
                         </details>
@@ -2280,7 +2315,7 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
 
             <div className="field">
               <label className="field__label" htmlFor="image">
-                Aggiungi una foto
+                {t("Aggiungi una foto")}
               </label>
               <input
                 id="image"
@@ -2292,31 +2327,35 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
                 aria-describedby="image-help"
               />
               <span className="field__hint" id="image-help">
-                JPG, PNG o WebP, fino a {MAX_IMAGE_BYTES / (1024 * 1024)} MB e almeno 200 pixel per
-                lato. Una foto scattata col telefono va benissimo. I file SVG non sono accettati.
+                {t("JPG, PNG o WebP, fino a ")}
+                {MAX_IMAGE_BYTES / (1024 * 1024)}{" "}
+                {t(
+                  " MB e almeno 200 pixel per lato. Una foto scattata col telefono va benissimo. I file SVG non sono accettati.",
+                )}
               </span>
             </div>
 
             <div className="field">
               <label className="field__label" htmlFor="alt">
-                Descrizione della foto
+                {t("Descrizione della foto")}
               </label>
               <input
                 id="alt"
                 name="alt"
                 className="input"
                 maxLength={200}
-                placeholder="Cover trasparente vista di fronte"
+                placeholder={t("Cover trasparente vista di fronte")}
                 aria-describedby="alt-help"
               />
               <span className="field__hint" id="alt-help">
-                Cosa si vede nella foto, per chi non può vederla — chi usa un lettore di schermo, e
-                chiunque quando l&apos;immagine non carica. Una riga basta.
+                {t(
+                  "Cosa si vede nella foto, per chi non può vederla — chi usa un lettore di schermo, e chiunque quando l'immagine non carica. Una riga basta.",
+                )}
               </span>
             </div>
 
             <button type="submit" className="btn btn--secondary">
-              Carica foto
+              {t("Carica foto")}
             </button>
           </Form>
         ) : null}
@@ -2324,20 +2363,24 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
 
       {/* ── Compatibility ─────────────────────────────────────────────────── */}
       <section id="sez-compatibilita" className="panel stack" aria-labelledby="h-compatibilita">
-        <h2 id="h-compatibilita">Compatibilità</h2>
+        <h2 id="h-compatibilita">{t("Compatibilità")}</h2>
         <p className="small muted">
-          Con quali telefoni funziona. Non viene mai dedotta dalla categoria o dal nome: se non è
-          scritta qui, per il sito è <strong>sconosciuta</strong>, e il cliente lo legge.
+          {t(
+            "Con quali telefoni funziona. Non viene mai dedotta dalla categoria o dal nome: se non è scritta qui, per il sito è ",
+          )}
+          <strong>{t("sconosciuta")}</strong>
+          {t(", e il cliente lo legge.")}
         </p>
 
         {compatibility.length === 0 ? (
           <div className="empty-state">
             <p>
-              <strong>Nessuna compatibilità registrata</strong>
+              <strong>{t("Nessuna compatibilità registrata")}</strong>
             </p>
             <p className="small muted">
-              Finché non lo indicate, i clienti non possono trovare questo prodotto filtrando per il
-              proprio telefono — che è il motivo principale per cui visitano un sito di accessori.
+              {t(
+                "Finché non lo indicate, i clienti non possono trovare questo prodotto filtrando per il proprio telefono — che è il motivo principale per cui visitano un sito di accessori.",
+              )}
             </p>
           </div>
         ) : (
@@ -2352,16 +2395,18 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
                       className={`badge ${compatibilityTone(row.compatibility_level, row.verified === 1)}`}
                       title={
                         isCompatibilityLevel(row.compatibility_level)
-                          ? COMPATIBILITY_MEANING[row.compatibility_level]
+                          ? t(COMPATIBILITY_MEANING[row.compatibility_level])
                           : undefined
                       }
                     >
-                      {isCompatibilityLevel(row.compatibility_level)
-                        ? COMPATIBILITY_LABELS[row.compatibility_level]
-                        : row.compatibility_level}
+                      {t(
+                        isCompatibilityLevel(row.compatibility_level)
+                          ? COMPATIBILITY_LABELS[row.compatibility_level]
+                          : row.compatibility_level,
+                      )}
                     </span>
                     {row.compatibility_level === "exact_fit" && row.verified === 0 ? (
-                      <span className="badge badge--warning"> da verificare</span>
+                      <span className="badge badge--warning"> {t(" da verificare")}</span>
                     ) : null}
                   </p>
                 </div>
@@ -2370,7 +2415,7 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
                     <input type="hidden" name="intent" value="remove-compatibility" />
                     <input type="hidden" name="compatibilityId" value={row.id} />
                     <button type="submit" className="btn btn--ghost btn--small">
-                      Rimuovi
+                      {t("Rimuovi")}
                     </button>
                   </Form>
                 ) : null}
@@ -2382,9 +2427,9 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
         {canWrite ? (
           deviceModels.length === 0 ? (
             <p className="notice notice--warning small">
-              Non ci sono ancora modelli di telefono in archivio. Aggiungeteli in{" "}
-              <Link to="/admin/dispositivi">Dispositivi</Link>: senza quelli non si può registrare
-              nessuna compatibilità.
+              {t("Non ci sono ancora modelli di telefono in archivio. Aggiungeteli in")}{" "}
+              <Link to="/admin/dispositivi">{t("Dispositivi")}</Link>
+              {t(": senza quelli non si può registrare nessuna compatibilità.")}
             </p>
           ) : (
             <Form method="post" className="stack">
@@ -2392,10 +2437,10 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
 
               <div className="field">
                 <label className="field__label" htmlFor="deviceModelId">
-                  Telefono
+                  {t("Telefono")}
                 </label>
                 <select id="deviceModelId" name="deviceModelId" className="input" required>
-                  <option value="">— scegli un modello —</option>
+                  <option value="">{t("— scegli un modello —")}</option>
                   {deviceModels.map((model) => (
                     <option key={model.id} value={model.id}>
                       {[model.brand_name, model.name].filter(Boolean).join(" ")}
@@ -2406,12 +2451,12 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
 
               <div className="field">
                 <label className="field__label" htmlFor="level">
-                  Che tipo di compatibilità
+                  {t("Che tipo di compatibilità")}
                 </label>
                 <select id="level" name="level" className="input" defaultValue="compatible">
                   {COMPATIBILITY_LEVELS.filter((l) => l !== "unverified").map((level) => (
                     <option key={level} value={level}>
-                      {COMPATIBILITY_LABELS[level]}
+                      {t(COMPATIBILITY_LABELS[level])}
                     </option>
                   ))}
                 </select>
@@ -2424,8 +2469,8 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
                 <ul className="field__hint stack">
                   {COMPATIBILITY_LEVELS.filter((l) => l !== "unverified").map((level) => (
                     <li key={level}>
-                      <strong>{COMPATIBILITY_LABELS[level]}</strong> —{" "}
-                      {COMPATIBILITY_MEANING[level]}
+                      <strong>{t(COMPATIBILITY_LABELS[level])}</strong> —{" "}
+                      {t(COMPATIBILITY_MEANING[level])}
                     </li>
                   ))}
                 </ul>
@@ -2433,19 +2478,19 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
 
               <div className="field">
                 <label className="field__label" htmlFor="compat-note">
-                  Nota
+                  {t("Nota")}
                 </label>
                 <input
                   id="compat-note"
                   name="note"
                   className="input"
                   maxLength={200}
-                  placeholder="es. i tasti sono un po' rigidi"
+                  placeholder={t("es. i tasti sono un po' rigidi")}
                 />
               </div>
 
               <button type="submit" className="btn btn--secondary">
-                Aggiungi compatibilità
+                {t("Aggiungi compatibilità")}
               </button>
             </Form>
           )
@@ -2455,20 +2500,25 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
       {/* ── Duplicate ─────────────────────────────────────────────────────── */}
       {canWrite ? (
         <section className="panel stack">
-          <h2>Duplica</h2>
+          <h2>{t("Duplica")}</h2>
           <p className="small muted">
-            Crea una copia di questo prodotto in <strong>bozza</strong>: stesso nome con
-            &laquo;(copia)&raquo;, stesse descrizioni, stesse foto, stesse compatibilità e stessi
-            prezzi. Serve quando vendete lo stesso articolo in un altro colore.
+            {t("Crea una copia di questo prodotto in ")}
+            <strong>{t("bozza")}</strong>
+            {t(
+              ": stesso nome con «(copia)», stesse descrizioni, stesse foto, stesse compatibilità e stessi prezzi. Serve quando vendete lo stesso articolo in un altro colore.",
+            )}
           </p>
           <p className="small muted">
-            <strong>Le giacenze partono da zero.</strong> La copia non è merce che avete: quanti
-            pezzi ci sono davvero si dice dall&apos;inventario. I codici delle varianti finiscono
-            con <code>-C</code>, così sono riconoscibili sulle scatole.
+            <strong>{t("Le giacenze partono da zero.")}</strong>{" "}
+            {t(
+              " La copia non è merce che avete: quanti pezzi ci sono davvero si dice dall'inventario. I codici delle varianti finiscono con ",
+            )}
+            <code>-C</code>
+            {t(", così sono riconoscibili sulle scatole.")}
           </p>
           <Form method="post">
             <button type="submit" name="intent" value="duplicate" className="btn btn--secondary">
-              Duplica prodotto
+              {t("Duplica prodotto")}
             </button>
           </Form>
         </section>
@@ -2477,11 +2527,15 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
       {/* ── Archive ───────────────────────────────────────────────────────── */}
       {canArchive ? (
         <section className="panel stack">
-          <h2>{product.archived_at === null ? "Archivia" : "Ripristina"}</h2>
+          <h2>{product.archived_at === null ? t("Archivia") : t("Ripristina")}</h2>
           <p className="small muted">
             {product.archived_at === null
-              ? "L'archiviazione toglie il prodotto dal sito senza cancellarlo. Gli ordini che lo contengono restano leggibili: per questo non esiste un pulsante per eliminarlo."
-              : "Il prodotto tornerà in bozza, non direttamente online: quello che era vero quando è stato archiviato potrebbe non esserlo più."}
+              ? t(
+                  "L'archiviazione toglie il prodotto dal sito senza cancellarlo. Gli ordini che lo contengono restano leggibili: per questo non esiste un pulsante per eliminarlo.",
+                )
+              : t(
+                  "Il prodotto tornerà in bozza, non direttamente online: quello che era vero quando è stato archiviato potrebbe non esserlo più.",
+                )}
           </p>
           <Form method="post">
             <button
@@ -2490,15 +2544,16 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
               value={product.archived_at === null ? "archive" : "restore"}
               className="btn btn--secondary"
             >
-              {product.archived_at === null ? "Archivia prodotto" : "Ripristina prodotto"}
+              {product.archived_at === null ? t("Archivia prodotto") : t("Ripristina prodotto")}
             </button>
           </Form>
         </section>
       ) : null}
 
       <p className="caption muted">
-        Creato il {formatDateTime(product.created_at, "it")} · ultima modifica{" "}
-        {formatDateTime(product.updated_at, "it")}
+        {t("Creato il ")}
+        {formatDateTime(product.created_at, t.locale)} {t(" · ultima modifica")}{" "}
+        {formatDateTime(product.updated_at, t.locale)}
       </p>
     </>
   );
@@ -2506,6 +2561,7 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
 
 /** One readiness line. A mark AND a word AND a border — never colour alone. */
 function Check({ done, label, missing }: { done: boolean; label: string; missing: string }) {
+  const t = useAdminTranslator();
   return (
     <li className={`ac-action ${done ? "" : "ac-action--warning"}`}>
       <span className="ac-action__count" aria-hidden="true">
@@ -2513,10 +2569,10 @@ function Check({ done, label, missing }: { done: boolean; label: string; missing
       </span>
       <div className="ac-action__body">
         <p className="ac-action__label">
-          {label}
-          <span className="visually-hidden">{done ? " — fatto" : " — da completare"}</span>
+          {t(label)}
+          <span className="visually-hidden">{done ? t(" — fatto") : t(" — da completare")}</span>
         </p>
-        {!done ? <p className="ac-action__detail small muted">{missing}</p> : null}
+        {!done ? <p className="ac-action__detail small muted">{t(missing)}</p> : null}
       </div>
     </li>
   );
@@ -2551,6 +2607,7 @@ function SpecificationEditor({
   }[];
   canWrite: boolean;
 }) {
+  const t = useAdminTranslator();
   const fields = specFieldsFor(accessoryType);
 
   /*
@@ -2563,19 +2620,22 @@ function SpecificationEditor({
   if (fields.length === 0) {
     return (
       <p className="small muted">
-        <strong>Specifiche tecniche.</strong> Scegliete il{" "}
-        <a href="#sez-dettagli">tipo di prodotto</a> in Dettagli e salvate: qui compariranno solo i
-        campi che servono davvero a questo tipo di prodotto.
+        <strong>{t("Specifiche tecniche.")}</strong> {t(" Scegliete il")}{" "}
+        <a href="#sez-dettagli">{t("tipo di prodotto")}</a>{" "}
+        {t(
+          " in Dettagli e salvate: qui compariranno solo i campi che servono davvero a questo tipo di prodotto.",
+        )}
       </p>
     );
   }
 
   return (
     <div className="stack">
-      <h3>Specifiche tecniche</h3>
+      <h3>{t("Specifiche tecniche")}</h3>
       <p className="small muted">
-        I campi qui sotto sono quelli di <strong>{accessoryTypeLabel(accessoryType)}</strong>. Un
-        altro tipo di prodotto ne chiede altri.
+        {t("I campi qui sotto sono quelli di ")}
+        <strong>{t(accessoryTypeLabel(accessoryType))}</strong>
+        {t(". Un altro tipo di prodotto ne chiede altri.")}
       </p>
 
       {variants.map((variant) => {
@@ -2595,7 +2655,7 @@ function SpecificationEditor({
                 return (
                   <div className="field" key={field.column}>
                     <label className="field__label" htmlFor={id}>
-                      {name} — {field.label}
+                      {name} — {t(field.label)}
                       {field.unit ? ` (${field.unit})` : ""}
                     </label>
                     <input
@@ -2616,7 +2676,7 @@ function SpecificationEditor({
                     />
                     {field.help ? (
                       <span className="field__hint" id={`${id}-help`}>
-                        {field.help}
+                        {t(field.help)}
                       </span>
                     ) : null}
                   </div>
@@ -2625,7 +2685,7 @@ function SpecificationEditor({
 
               {canWrite ? (
                 <button type="submit" className="btn btn--secondary btn--small">
-                  Salva specifiche
+                  {t("Salva specifiche")}
                 </button>
               ) : null}
             </Form>

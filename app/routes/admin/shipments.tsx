@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, Link } from "react-router";
 import type { Route } from "./+types/shipments";
 import { appContext } from "~/runtime/context";
@@ -30,8 +33,9 @@ import { PageHeader } from "~/components/admin/admin-shell";
  * what somebody did at the post office. Presenting it as an integration would
  * mean a shop watching for a collection that nobody ever requested.
  */
-export function meta() {
-  return [{ title: "Spedizioni" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Spedizioni") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 /**
@@ -188,59 +192,63 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function AdminShipments({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { shipments, awaiting, carriers, shippingOffered, canWrite } = loaderData;
   const inTransit = shipments.filter((s) => s.delivered_at === null);
 
   return (
     <>
-      <PageHeader title="Spedizioni" breadcrumbs={breadcrumbsFor("/admin/spedizioni")} />
+      <PageHeader title={t("Spedizioni")} breadcrumbs={breadcrumbsFor("/admin/spedizioni")} />
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
       {actionData && "success" in actionData && actionData.success ? (
         <p className="notice notice--info" role="status">
-          {actionData.success}
+          {t(actionData.success)}
         </p>
       ) : null}
 
       {!shippingOffered ? (
         <p className="notice notice--warning">
-          <strong>La spedizione non è attiva sul sito.</strong> Finché resta spenta nessun cliente
-          può sceglierla, e questo elenco resta vuoto. Si accende da{" "}
-          <Link to="/admin/impostazioni">Impostazioni</Link>.
+          <strong>{t("La spedizione non è attiva sul sito.")}</strong>{" "}
+          {t(
+            " Finché resta spenta nessun cliente può sceglierla, e questo elenco resta vuoto. Si accende da",
+          )}{" "}
+          <Link to="/admin/impostazioni">{t("Impostazioni")}</Link>.
         </p>
       ) : null}
 
       <section className="panel">
         <div className="ac-metrics">
           <div className="ac-metric">
-            <span className="ac-metric__label">Da spedire</span>
+            <span className="ac-metric__label">{t("Da spedire")}</span>
             <span className="ac-metric__value numeric">{awaiting.length}</span>
           </div>
           <div className="ac-metric">
-            <span className="ac-metric__label">In viaggio</span>
+            <span className="ac-metric__label">{t("In viaggio")}</span>
             <span className="ac-metric__value numeric">{inTransit.length}</span>
           </div>
         </div>
         <p className="small">
-          Questa schermata registra quello che è stato fatto allo sportello: non compra
-          affrancature, non stampa etichette e non comunica niente al corriere.
+          {t(
+            "Questa schermata registra quello che è stato fatto allo sportello: non compra affrancature, non stampa etichette e non comunica niente al corriere.",
+          )}
         </p>
       </section>
 
       {canWrite && awaiting.length > 0 ? (
         <section className="panel">
-          <h2>Registra una spedizione</h2>
+          <h2>{t("Registra una spedizione")}</h2>
           <Form method="post" className="stack">
             <input type="hidden" name="intent" value="record" />
             <label>
-              Ordine
+              {t("Ordine")}
               <select name="orderId" required defaultValue="">
                 <option value="" disabled>
-                  Scegli…
+                  {t("Scegli…")}
                 </option>
                 {awaiting.map((o) => (
                   <option key={o.id} value={o.id}>
@@ -250,7 +258,7 @@ export default function AdminShipments({ loaderData, actionData }: Route.Compone
               </select>
             </label>
             <label>
-              Corriere
+              {t("Corriere")}
               <select name="carrier" defaultValue={carriers[0].name}>
                 {carriers.map((c) => (
                   <option key={c.name} value={c.name}>
@@ -260,15 +268,16 @@ export default function AdminShipments({ loaderData, actionData }: Route.Compone
               </select>
             </label>
             <label>
-              Numero di tracciatura
+              {t("Numero di tracciatura")}
               <input name="tracking_number" required maxLength={64} />
               <span className="field-help">
-                Il link di tracciatura viene composto dal corriere scelto. &ldquo;Altro&rdquo; salva
-                il numero senza link, invece di indovinarne uno sbagliato.
+                {t(
+                  "Il link di tracciatura viene composto dal corriere scelto. “Altro” salva il numero senza link, invece di indovinarne uno sbagliato.",
+                )}
               </span>
             </label>
             <button className="btn btn--primary" type="submit">
-              Registra spedizione
+              {t("Registra spedizione")}
             </button>
           </Form>
         </section>
@@ -276,7 +285,7 @@ export default function AdminShipments({ loaderData, actionData }: Route.Compone
 
       {shipments.length === 0 ? (
         <div className="empty-state">
-          <p>Nessuna spedizione.</p>
+          <p>{t("Nessuna spedizione.")}</p>
         </div>
       ) : (
         <div
@@ -285,19 +294,19 @@ export default function AdminShipments({ loaderData, actionData }: Route.Compone
              take focus is unscrollable without a mouse. */
           tabIndex={0}
           role="region"
-          aria-label="Tabella scorrevole"
+          aria-label={t("Tabella scorrevole")}
         >
           <table className="admin-table">
-            <caption className="visually-hidden">Spedizioni</caption>
+            <caption className="visually-hidden">{t("Spedizioni")}</caption>
             <thead>
               <tr>
-                <th scope="col">Ordine</th>
-                <th scope="col">Cliente</th>
-                <th scope="col">Corriere</th>
-                <th scope="col">Tracciatura</th>
-                <th scope="col">Spedita</th>
-                <th scope="col">Consegnata</th>
-                {canWrite ? <th scope="col">Azione</th> : null}
+                <th scope="col">{t("Ordine")}</th>
+                <th scope="col">{t("Cliente")}</th>
+                <th scope="col">{t("Corriere")}</th>
+                <th scope="col">{t("Tracciatura")}</th>
+                <th scope="col">{t("Spedita")}</th>
+                <th scope="col">{t("Consegnata")}</th>
+                {canWrite ? <th scope="col">{t("Azione")}</th> : null}
               </tr>
             </thead>
             <tbody>
@@ -320,21 +329,21 @@ export default function AdminShipments({ loaderData, actionData }: Route.Compone
                     )}
                   </td>
                   <td className="small">
-                    {s.shipped_at ? formatDateTime(s.shipped_at, "it") : "—"}
+                    {s.shipped_at ? formatDateTime(s.shipped_at, t.locale) : "—"}
                   </td>
                   <td className="small">
-                    {s.delivered_at ? formatDateTime(s.delivered_at, "it") : "—"}
+                    {s.delivered_at ? formatDateTime(s.delivered_at, t.locale) : "—"}
                   </td>
                   {canWrite ? (
                     <td>
                       {s.delivered_at ? (
-                        <span className="small muted">conclusa</span>
+                        <span className="small muted">{t("conclusa")}</span>
                       ) : (
                         <Form method="post">
                           <input type="hidden" name="intent" value="delivered" />
                           <input type="hidden" name="shipmentId" value={s.id} />
                           <button className="btn" type="submit">
-                            Segna consegnata
+                            {t("Segna consegnata")}
                           </button>
                         </Form>
                       )}

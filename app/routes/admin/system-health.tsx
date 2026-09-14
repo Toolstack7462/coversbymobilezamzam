@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { useLocation } from "react-router";
 import type { Route } from "./+types/system-health";
 import { appContext } from "~/runtime/context";
@@ -18,8 +21,9 @@ import { formatDateTime } from "~/lib/i18n";
  * says "healthy" is only ever as fresh as the last thing that remembered to
  * update it.
  */
-export function meta() {
-  return [{ title: "Stato del sistema" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Stato del sistema") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -77,27 +81,35 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export default function SystemHealth({ loaderData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { pathname } = useLocation();
   const d = loaderData;
 
   return (
     <>
       <PageHeader
-        title="Stato del sistema"
-        description="Controlli tecnici in tempo reale. Nessun valore è memorizzato: sono letti adesso."
+        title={t("Stato del sistema")}
+        description={t(
+          "Controlli tecnici in tempo reale. Nessun valore è memorizzato: sono letti adesso.",
+        )}
         breadcrumbs={breadcrumbsFor(pathname)}
       />
 
       <div className="ac-actions">
         <div className={`ac-action ${d.sweeperStale ? "ac-action--blocking" : ""}`}>
           <div>
-            <strong>Job automatico di rilascio prenotazioni</strong>
+            <strong>{t("Job automatico di rilascio prenotazioni")}</strong>
             <p className="small muted">
               {d.lastJob
-                ? `Ultima esecuzione: ${formatDateTime(d.lastJob.started_at, "it")} · ${d.lastJob.status}`
-                : "Mai eseguito."}
+                ? t("Ultima esecuzione: {{v0}} · {{v1}}", {
+                    v0: formatDateTime(d.lastJob.started_at, t.locale),
+                    v1: d.lastJob.status,
+                  })
+                : t("Mai eseguito.")}
               {d.sweeperStale
-                ? " Se non gira, le scorte restano bloccate e i prodotti spariscono dalla vendita."
+                ? t(
+                    " Se non gira, le scorte restano bloccate e i prodotti spariscono dalla vendita.",
+                  )
                 : ""}
             </p>
           </div>
@@ -106,10 +118,11 @@ export default function SystemHealth({ loaderData }: Route.ComponentProps) {
 
         <div className={`ac-action ${d.invariantBreaches > 0 ? "ac-action--blocking" : ""}`}>
           <div>
-            <strong>Coerenza delle giacenze</strong>
+            <strong>{t("Coerenza delle giacenze")}</strong>
             <p className="small muted">
-              Righe in cui il prenotato supera la giacenza. Dovrebbe essere sempre zero: il vincolo
-              del database lo impedisce, quindi un valore diverso è un bug.
+              {t(
+                "Righe in cui il prenotato supera la giacenza. Dovrebbe essere sempre zero: il vincolo del database lo impedisce, quindi un valore diverso è un bug.",
+              )}
             </p>
           </div>
           <span className="ac-action__count">{d.invariantBreaches}</span>
@@ -117,18 +130,21 @@ export default function SystemHealth({ loaderData }: Route.ComponentProps) {
 
         <div className={`ac-action ${d.overdueReservations > 0 ? "ac-action--warning" : ""}`}>
           <div>
-            <strong>Prenotazioni scadute non rilasciate</strong>
-            <p className="small muted">Se restano sopra zero a lungo, il job non sta girando.</p>
+            <strong>{t("Prenotazioni scadute non rilasciate")}</strong>
+            <p className="small muted">
+              {t("Se restano sopra zero a lungo, il job non sta girando.")}
+            </p>
           </div>
           <span className="ac-action__count">{d.overdueReservations}</span>
         </div>
 
         <div className="ac-action">
           <div>
-            <strong>Email in coda</strong>
+            <strong>{t("Email in coda")}</strong>
             <p className="small muted">
-              L&apos;invio email non è configurato: gli eventi restano in coda e non vanno persi.
-              Nessun ordine fallisce per questo.
+              {t(
+                "L'invio email non è configurato: gli eventi restano in coda e non vanno persi. Nessun ordine fallisce per questo.",
+              )}
             </p>
           </div>
           <span className="ac-action__count">{d.pendingOutbox}</span>
@@ -136,30 +152,32 @@ export default function SystemHealth({ loaderData }: Route.ComponentProps) {
 
         <div className={`ac-action ${d.lastRestore === null ? "ac-action--warning" : ""}`}>
           <div>
-            <strong>Ultimo ripristino verificato</strong>
+            <strong>{t("Ultimo ripristino verificato")}</strong>
             <p className="small muted">
               {d.lastRestore
-                ? formatDateTime(d.lastRestore, "it")
-                : "Mai. Un backup che nessuno ha mai ripristinato non è un backup."}
+                ? formatDateTime(d.lastRestore, t.locale)
+                : t("Mai. Un backup che nessuno ha mai ripristinato non è un backup.")}
             </p>
           </div>
         </div>
 
         <div className="ac-action">
           <div>
-            <strong>Ambiente</strong>
+            <strong>{t("Ambiente")}</strong>
             <p className="small muted">
               {d.environment} ·{" "}
               {d.previewAt
-                ? `anteprima pubblicata il ${formatDateTime(d.previewAt, "it")}`
-                : "nessuna anteprima pubblicata"}
+                ? t("anteprima pubblicata il {{v0}}", { v0: formatDateTime(d.previewAt, t.locale) })
+                : t("nessuna anteprima pubblicata")}
             </p>
           </div>
         </div>
       </div>
 
       <p className="caption muted" style={{ marginBlockStart: "var(--space-4)" }}>
-        Ordini registrati: {d.orders} · voci nel registro attività: {d.auditRows}
+        {t("Ordini registrati: ")}
+        {d.orders} {t(" · voci nel registro attività: ")}
+        {d.auditRows}
       </p>
     </>
   );

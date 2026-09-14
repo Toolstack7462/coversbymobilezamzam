@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, Link } from "react-router";
 import type { Route } from "./+types/legal-documents";
 import { appContext } from "~/runtime/context";
@@ -35,8 +38,9 @@ import type { SqlStatement } from "~/infrastructure/db/sql";
  * what a past customer agreed to.
  */
 
-export function meta() {
-  return [{ title: "Documenti legali" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Documenti legali") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 /**
@@ -234,6 +238,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function LegalDocuments({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { rows, extra, canWrite, canPublish } = loaderData;
 
   const published = rows.filter((r) => r.document?.published_at != null).length;
@@ -242,43 +247,45 @@ export default function LegalDocuments({ loaderData, actionData }: Route.Compone
   return (
     <>
       <PageHeader
-        title="Documenti legali"
-        description="I testi che il negozio è tenuto ad avere online. Il sistema non li scrive."
+        title={t("Documenti legali")}
+        description={t(
+          "I testi che il negozio è tenuto ad avere online. Il sistema non li scrive.",
+        )}
         breadcrumbs={breadcrumbsFor("/admin/contenuti/legale")}
       />
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
       {actionData && "success" in actionData && actionData.success ? (
         <p className="notice notice--info" role="status">
-          {actionData.success}
+          {t(actionData.success)}
         </p>
       ) : null}
 
       <p className="notice notice--warning">
-        <strong>Questi testi non vengono generati dal sistema, e non lo saranno.</strong> Sono
-        dichiarazioni vincolanti su questa azienda: un modello dall&apos;aria plausibile è più
-        pericoloso di una pagina vuota, perché sembra finito e viene pubblicato. Fateli scrivere o
-        rivedere da un professionista. Se sono sbagliati, la conseguenza è del negozio.
+        <strong>{t("Questi testi non vengono generati dal sistema, e non lo saranno.")}</strong>{" "}
+        {t(
+          " Sono dichiarazioni vincolanti su questa azienda: un modello dall'aria plausibile è più pericoloso di una pagina vuota, perché sembra finito e viene pubblicato. Fateli scrivere o rivedere da un professionista. Se sono sbagliati, la conseguenza è del negozio.",
+        )}
       </p>
 
       <section className="panel">
         <div className="ac-metrics">
           <div className="ac-metric">
-            <span className="ac-metric__label">Pubblicati</span>
+            <span className="ac-metric__label">{t("Pubblicati")}</span>
             <span className="ac-metric__value numeric">
               {published} / {rows.length}
             </span>
           </div>
           <div className="ac-metric">
-            <span className="ac-metric__label">Rivisti da un professionista</span>
+            <span className="ac-metric__label">{t("Rivisti da un professionista")}</span>
             <span className="ac-metric__value numeric">
               {reviewed} / {rows.length}
             </span>
-            <span className="ac-metric__note">Diverso da &ldquo;pubblicato&rdquo;</span>
+            <span className="ac-metric__note">{t("Diverso da “pubblicato”")}</span>
           </div>
         </div>
       </section>
@@ -293,33 +300,39 @@ export default function LegalDocuments({ loaderData, actionData }: Route.Compone
               <summary>
                 <strong>{row.name}</strong>{" "}
                 {isPublished ? (
-                  <span className="badge badge--success">pubblicato</span>
+                  <span className="badge badge--success">{t("pubblicato")}</span>
                 ) : doc && doc.version_count > 0 ? (
-                  <span className="badge badge--warning">bozza non pubblicata</span>
+                  <span className="badge badge--warning">{t("bozza non pubblicata")}</span>
                 ) : (
-                  <span className="badge badge--warning">mancante</span>
+                  <span className="badge badge--warning">{t("mancante")}</span>
                 )}{" "}
                 {doc?.reviewed_by_lawyer === 1 ? (
-                  <span className="badge badge--info">rivisto</span>
+                  <span className="badge badge--info">{t("rivisto")}</span>
                 ) : null}
               </summary>
 
               <div className="stack">
                 <p className="caption muted">
-                  Riferimento normativo: {row.basis} · codice <code>{row.code}</code>
+                  {t("Riferimento normativo: ")}
+                  {row.basis} {t(" · codice ")}
+                  <code>{row.code}</code>
                 </p>
 
                 {isPublished && doc ? (
                   <p className="small">
-                    Versione <strong>{doc.version}</strong>, pubblicata il{" "}
-                    {formatDateTime(doc.published_at!, "it")}.
+                    {t("Versione ")}
+                    <strong>{doc.version}</strong>
+                    {t(", pubblicata il")} {formatDateTime(doc.published_at!, t.locale)}.
                     {doc.reviewed_by_lawyer === 1
-                      ? " Dichiarata rivista da un professionista."
-                      : " Pubblicata senza revisione professionale."}
+                      ? t(" Dichiarata rivista da un professionista.")
+                      : t(" Pubblicata senza revisione professionale.")}
                     {doc.review_note ? (
                       <>
                         <br />
-                        <span className="muted">Nota: {doc.review_note}</span>
+                        <span className="muted">
+                          {t("Nota: ")}
+                          {doc.review_note}
+                        </span>
                       </>
                     ) : null}
                   </p>
@@ -332,7 +345,7 @@ export default function LegalDocuments({ loaderData, actionData }: Route.Compone
 
                     <div className="field">
                       <label className="field__label" htmlFor={`body-${row.code}`}>
-                        Testo del documento
+                        {t("Testo del documento")}
                       </label>
                       <textarea
                         id={`body-${row.code}`}
@@ -342,16 +355,19 @@ export default function LegalDocuments({ loaderData, actionData }: Route.Compone
                         aria-describedby={`body-help-${row.code}`}
                       />
                       <span className="field__hint" id={`body-help-${row.code}`}>
-                        Incollate qui il testo fornito dal vostro consulente. Salvando create una{" "}
-                        <strong>nuova versione</strong>: quelle precedenti restano, perché un
-                        cliente ha diritto alle condizioni in vigore quando ha comprato, non a
-                        quelle di oggi.
+                        {t(
+                          "Incollate qui il testo fornito dal vostro consulente. Salvando create una",
+                        )}{" "}
+                        <strong>{t("nuova versione")}</strong>
+                        {t(
+                          ": quelle precedenti restano, perché un cliente ha diritto alle condizioni in vigore quando ha comprato, non a quelle di oggi.",
+                        )}
                       </span>
                     </div>
 
                     <div className="field">
                       <label className="field__label" htmlFor={`version-${row.code}`}>
-                        Etichetta della versione
+                        {t("Etichetta della versione")}
                       </label>
                       <input
                         id={`version-${row.code}`}
@@ -359,16 +375,19 @@ export default function LegalDocuments({ loaderData, actionData }: Route.Compone
                         className="input"
                         placeholder="2026-08-31"
                       />
-                      <span className="field__hint">Lasciate vuoto per usare la data di oggi.</span>
+                      <span className="field__hint">
+                        {t("Lasciate vuoto per usare la data di oggi.")}
+                      </span>
                     </div>
 
                     <button type="submit" className="btn btn--secondary">
-                      Salva come bozza
+                      {t("Salva come bozza")}
                     </button>
                   </Form>
                 ) : (
                   <p className="small muted">
-                    Serve il permesso <code>content.write</code> per modificare.
+                    {t("Serve il permesso ")}
+                    <code>content.write</code> {t(" per modificare.")}
                   </p>
                 )}
 
@@ -386,23 +405,24 @@ export default function LegalDocuments({ loaderData, actionData }: Route.Compone
                           type="checkbox"
                           value="true"
                         />
-                        <span>Questo testo è stato rivisto da un professionista</span>
+                        <span>{t("Questo testo è stato rivisto da un professionista")}</span>
                       </label>
                     </div>
 
                     <div className="field">
                       <label className="field__label" htmlFor={`note-${row.code}`}>
-                        Nota
+                        {t("Nota")}
                       </label>
                       <input id={`note-${row.code}`} name="reviewNote" className="input" />
                       <span className="field__hint">
-                        Se pubblicate senza revisione, scrivete perché. Resta registrato e serve a
-                        voi, se un domani qualcuno contesta questo testo.
+                        {t(
+                          "Se pubblicate senza revisione, scrivete perché. Resta registrato e serve a voi, se un domani qualcuno contesta questo testo.",
+                        )}
                       </span>
                     </div>
 
                     <button type="submit" className="btn btn--primary">
-                      Pubblica sul sito
+                      {t("Pubblica sul sito")}
                     </button>
                   </Form>
                 ) : null}
@@ -414,9 +434,9 @@ export default function LegalDocuments({ loaderData, actionData }: Route.Compone
 
       {extra.length > 0 ? (
         <section className="panel stack">
-          <h2>Altri documenti</h2>
+          <h2>{t("Altri documenti")}</h2>
           <p className="small muted">
-            Documenti presenti nel database ma non nell&apos;elenco obbligatorio.
+            {t("Documenti presenti nel database ma non nell'elenco obbligatorio.")}
           </p>
           <ul className="stack small">
             {extra.map((d) => (
@@ -429,9 +449,9 @@ export default function LegalDocuments({ loaderData, actionData }: Route.Compone
       ) : null}
 
       <p className="caption muted">
-        L&apos;elenco completo dei controlli, con i riferimenti normativi, è in{" "}
-        <code>docs/legal-review-checklist.md</code>. Vedi anche la{" "}
-        <Link to="/admin/configurazione">configurazione</Link>.
+        {t("L'elenco completo dei controlli, con i riferimenti normativi, è in")}{" "}
+        <code>docs/legal-review-checklist.md</code>
+        {t(". Vedi anche la")} <Link to="/admin/configurazione">{t("configurazione")}</Link>.
       </p>
     </>
   );

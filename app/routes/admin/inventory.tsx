@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form } from "react-router";
 import type { Route } from "./+types/inventory";
 import { appContext } from "~/runtime/context";
@@ -53,8 +56,9 @@ const SORT_COLUMNS: Record<string, string> = {
   sku: "v.sku",
 };
 
-export function meta() {
-  return [{ title: "Inventario" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Inventario") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -243,17 +247,20 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function AdminInventory({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { levels, state, pagination, views, canAdjust } = loaderData;
 
   return (
     <>
       <PageHeader
-        title="Inventario"
-        description="Disponibile = giacenza meno prenotato. Ogni rettifica richiede un motivo e resta registrata."
+        title={t("Inventario")}
+        description={t(
+          "Disponibile = giacenza meno prenotato. Ogni rettifica richiede un motivo e resta registrata.",
+        )}
         breadcrumbs={breadcrumbsFor("/admin/inventario")}
       />
 
-      <nav className="ac-views" aria-label="Viste salvate">
+      <nav className="ac-views" aria-label={t("Viste salvate")}>
         <ul>
           {views.map((v) => (
             <li key={v.slug}>
@@ -262,7 +269,7 @@ export default function AdminInventory({ loaderData, actionData }: Route.Compone
                 className={v.slug === state.view ? "ac-view ac-view--active" : "ac-view"}
                 aria-current={v.slug === state.view ? "page" : undefined}
               >
-                {v.label}
+                {t(v.label)}
                 {v.count > 0 ? <span className="ac-view__count numeric">{v.count}</span> : null}
               </Link>
             </li>
@@ -272,18 +279,18 @@ export default function AdminInventory({ loaderData, actionData }: Route.Compone
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
       {actionData && "success" in actionData && actionData.success ? (
         <p className="notice notice--info" role="status">
-          {actionData.success}
+          {t(actionData.success)}
         </p>
       ) : null}
 
       {levels.length === 0 ? (
         <div className="empty-state">
-          <p>Nessuna giacenza registrata.</p>
+          <p>{t("Nessuna giacenza registrata.")}</p>
         </div>
       ) : (
         <div
@@ -292,20 +299,20 @@ export default function AdminInventory({ loaderData, actionData }: Route.Compone
              cannot take focus is unscrollable without a mouse. */
           tabIndex={0}
           role="region"
-          aria-label="Tabella scorrevole"
+          aria-label={t("Tabella scorrevole")}
         >
           <table className="admin-table">
-            <caption className="visually-hidden">Giacenze</caption>
+            <caption className="visually-hidden">{t("Giacenze")}</caption>
             <thead>
               <tr>
-                <th scope="col">Prodotto</th>
+                <th scope="col">{t("Prodotto")}</th>
                 <th scope="col">SKU</th>
-                <th scope="col">Sede</th>
-                <th scope="col">Giacenza</th>
-                <th scope="col">Prenotato</th>
-                <th scope="col">Disponibile</th>
-                <th scope="col">Stato</th>
-                <th scope="col">Rettifica</th>
+                <th scope="col">{t("Sede")}</th>
+                <th scope="col">{t("Giacenza")}</th>
+                <th scope="col">{t("Prenotato")}</th>
+                <th scope="col">{t("Disponibile")}</th>
+                <th scope="col">{t("Stato")}</th>
+                <th scope="col">{t("Rettifica")}</th>
               </tr>
             </thead>
             <tbody>
@@ -330,14 +337,14 @@ export default function AdminInventory({ loaderData, actionData }: Route.Compone
                   <td>
                     {canAdjust ? (
                       <details>
-                        <summary className="btn btn--secondary">Rettifica</summary>
+                        <summary className="btn btn--secondary">{t("Rettifica")}</summary>
                         <Form method="post" className="stack admin-verify-form">
                           <input type="hidden" name="variantId" value={level.variant_id} />
                           <input type="hidden" name="locationId" value={level.location_id} />
 
                           <div className="field">
                             <label className="field__label" htmlFor={`oh-${level.id}`}>
-                              Nuova giacenza
+                              {t("Nuova giacenza")}
                             </label>
                             <input
                               id={`oh-${level.id}`}
@@ -348,18 +355,19 @@ export default function AdminInventory({ loaderData, actionData }: Route.Compone
                               defaultValue={level.on_hand}
                             />
                             <span className="field__hint">
-                              Non può scendere sotto {level.reserved} (già prenotate).
+                              {t("Non può scendere sotto ")}
+                              {level.reserved} {t(" (già prenotate).")}
                             </span>
                           </div>
 
                           <div className="field">
                             <label className="field__label" htmlFor={`rc-${level.id}`}>
-                              Motivo
+                              {t("Motivo")}
                             </label>
                             <select id={`rc-${level.id}`} name="reasonCode" className="input">
                               {REASONS.map(([value, label]) => (
                                 <option key={value} value={value}>
-                                  {label}
+                                  {t(label)}
                                 </option>
                               ))}
                             </select>
@@ -367,19 +375,19 @@ export default function AdminInventory({ loaderData, actionData }: Route.Compone
 
                           <div className="field">
                             <label className="field__label" htmlFor={`rn-${level.id}`}>
-                              Nota
+                              {t("Nota")}
                             </label>
                             <input
                               id={`rn-${level.id}`}
                               name="reasonNote"
                               className="input"
                               required
-                              placeholder="Contate 3, sistema 5: 2 mancanti"
+                              placeholder={t("Contate 3, sistema 5: 2 mancanti")}
                             />
                           </div>
 
                           <button type="submit" className="btn btn--primary">
-                            Registra rettifica
+                            {t("Registra rettifica")}
                           </button>
                         </Form>
                       </details>
@@ -395,12 +403,13 @@ export default function AdminInventory({ loaderData, actionData }: Route.Compone
       )}
 
       {levels.length > 0 ? (
-        <nav className="ac-pagination" aria-label="Paginazione">
+        <nav className="ac-pagination" aria-label={t("Paginazione")}>
           <p className="small muted">
             <span className="numeric">
               {pagination.firstRow}–{pagination.lastRow}
             </span>{" "}
-            di <span className="numeric">{pagination.total}</span>
+            {t("di ")}
+            <span className="numeric">{pagination.total}</span>
           </p>
           <div className="cluster">
             {pagination.hasPrevious ? (
@@ -408,11 +417,12 @@ export default function AdminInventory({ loaderData, actionData }: Route.Compone
                 className="btn btn--secondary"
                 to={`?vista=${state.view}&pagina=${pagination.page - 1}`}
               >
-                Precedente
+                {t("Precedente")}
               </Link>
             ) : null}
             <span className="small">
-              Pagina <span className="numeric">{pagination.page}</span> di{" "}
+              {t("Pagina ")}
+              <span className="numeric">{pagination.page}</span> {t(" di")}{" "}
               <span className="numeric">{pagination.totalPages}</span>
             </span>
             {pagination.hasNext ? (
@@ -420,7 +430,7 @@ export default function AdminInventory({ loaderData, actionData }: Route.Compone
                 className="btn btn--secondary"
                 to={`?vista=${state.view}&pagina=${pagination.page + 1}`}
               >
-                Successiva
+                {t("Successiva")}
               </Link>
             ) : null}
           </div>

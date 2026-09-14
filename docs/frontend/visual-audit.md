@@ -39,3 +39,9 @@ Customer account and standalone services routes do not exist in app/routes.ts. D
 `npm run verify`: all 11 gates passed; 553 unit tests and 210 integration/security tests. Hostinger build also passed. Existing budget measurement: 132.5 KB storefront JavaScript, 84.5 KB admin JavaScript, 13.3 KB all-route CSS (gzip). These are build/lab figures, not field Core Web Vitals.
 
 Before screenshots: evidence/before-home.jpg, cloud Chrome viewport 1363 × 936. These do not constitute a four-width baseline.
+
+## Follow-up refinement
+
+Rechecked main and feature branch before the follow-up: main remains `0e98a14`; the review branch contains `9ed1989`. GitHub CI run `34855705240` completed successfully, including the existing browser job. Live inspection still shows the pre-refinement homepage, so the feature has not been presented as a production release.
+
+The next pass gives the hero a coherent navy accessory stage and useful per-mode guidance, strengthens category hierarchy, groups PDP purchase controls and introduces a responsive cart summary column. The existing GitHub browser suite now includes a separate storefront project to capture 390/768/1366/1440px screenshots, hero video, keyboard/reduced-motion checks, client-navigation titles and cart actions against an isolated demo catalogue. This is application test evidence; it is not a Hostinger staging deployment or a claim that demo products are genuine merchandise.

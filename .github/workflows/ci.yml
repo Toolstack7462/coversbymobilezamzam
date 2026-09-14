@@ -98,3 +98,13 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+      - name: Upload storefront review evidence
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: storefront-design-evidence
+          path: |
+            test-results/**/storefront-*.png
+            test-results/**/video.webm
+          retention-days: 14

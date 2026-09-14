@@ -293,6 +293,7 @@
   --duration-base: 180ms;
   --duration-slow: 220ms;
   --duration-showcase: 380ms;
+  --color-showcase-glow: rgb(36 87 255 / 0.32);
   --shadow-showcase: 0 26px 38px -20px rgb(11 18 32 / 0.38);
 
   /* ── Controls ─────────────────────────────────────────────────────────── */

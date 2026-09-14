@@ -17,7 +17,7 @@
 | Check                                                        | Evidence / result                                                                                                                                                                                              |
 | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Baseline verification                                        | All 11 gates passed; 553 unit tests, 210 integration tests                                                                                                                                                     |
-| Updated verification                                         | Final `npm run verify`: all 11 gates passed, 557 unit tests and 210 integration tests (71.2s; rechecked after incorporating current main)                                                                      |
+| Updated verification                                         | Final `npm run verify`: all 11 gates passed, 557 unit tests and 210 integration tests (61.1s; accessory-stage follow-up)                                                                                       |
 | Hostinger build                                              | Passed locally; building does not deploy                                                                                                                                                                       |
 | Direct SSR smoke                                             | PDP, homepage, catalogue/search, finder, cart, checkout, store, English home and staff login all returned 200 from the actual built application against isolated local demo data; `evidence/ssr-routes.json`   |
 | Titles and icons                                             | One title per successful HTML response, exact homepage title and full brand verified after configuring the isolated fixture with the user-confirmed identity; SVG/ICO/PNG return 200 and correct content types |
@@ -37,9 +37,9 @@
 
 | Gzip metric           |   Before | Final updated pass |  Change |
 | --------------------- | -------: | -----------------: | ------: |
-| Storefront JavaScript | 132.5 KB |           134.7 KB | +2.2 KB |
+| Storefront JavaScript | 132.5 KB |           135.1 KB | +2.6 KB |
 | Admin JavaScript      |  84.5 KB |            84.5 KB |  0.0 KB |
-| All-route CSS         |  13.3 KB |            16.3 KB | +3.0 KB |
+| All-route CSS         |  13.3 KB |            16.8 KB | +3.5 KB |
 
 Budget totals include shared and route chunks; they are not one navigation's transfer size. No animation dependency was added. Suppression of known image requests is an implementation change, not a measured browser improvement. No Lighthouse, frame-time, server-CPU or field Core Web Vitals result is claimed.
 
@@ -51,3 +51,7 @@ Budget totals include shared and route chunks; they are not one navigation's tra
 4. Complete browser acceptance, interaction recording, accessibility, customer order flow and media-persistence checks on the preview before visual approval.
 
 A green build does not establish visual acceptance.
+
+## Accessory-stage browser evidence
+
+The initial published commit `9ed1989` passed GitHub CI run `34855705240`, including its browser job. The follow-up adds `tests/browser/storefront-design.spec.ts` and an isolated identity fixture for the existing browser test database. Its new four-width screenshots and hero recording are uploaded by CI as `storefront-design-evidence`; execution status is recorded on the PR. Until that run completes, these new checks are pending rather than passed. Screenshots use explicitly labelled demo products, not the live merchant catalogue. No Hostinger staging deployment is implied.

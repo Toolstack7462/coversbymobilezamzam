@@ -160,87 +160,89 @@ export default function CartPage({ loaderData }: Route.ComponentProps) {
   }
 
   return (
-    <div className="page section stack">
+    <div className="page section stack cart-page">
       <h1>{t("cart.title")}</h1>
 
-      <ul className="cart-lines stack">
-        {lines.map((line) => {
-          const short = !line.allowBackorder && line.quantity > line.available;
-          return (
-            <li key={line.variantId} className="card cart-line">
-              <div className="cart-line__body">
-                <h2 className="cart-line__title">
-                  <Link to={path(`/prodotti/${line.slug}`)}>{line.productName}</Link>
-                </h2>
-                {line.variantLabel ? <p className="small muted">{line.variantLabel}</p> : null}
-                <p className="caption muted numeric">{line.sku}</p>
+      <div className="cart-layout">
+        <ul className="cart-lines stack">
+          {lines.map((line) => {
+            const short = !line.allowBackorder && line.quantity > line.available;
+            return (
+              <li key={line.variantId} className="card cart-line">
+                <div className="cart-line__body">
+                  <h2 className="cart-line__title">
+                    <Link to={path(`/prodotti/${line.slug}`)}>{line.productName}</Link>
+                  </h2>
+                  {line.variantLabel ? <p className="small muted">{line.variantLabel}</p> : null}
+                  <p className="caption muted numeric">{line.sku}</p>
 
-                {/* Availability changes are surfaced on the cart, not at the
+                  {/* Availability changes are surfaced on the cart, not at the
                     last step of checkout. */}
-                {short ? (
-                  <p className="notice notice--warning small">{t("cart.stock_changed")}</p>
-                ) : null}
-              </div>
+                  {short ? (
+                    <p className="notice notice--warning small">{t("cart.stock_changed")}</p>
+                  ) : null}
+                </div>
 
-              <div className="cart-line__controls">
-                <Form method="post" className="cluster">
-                  <input type="hidden" name="intent" value="update" />
-                  <input type="hidden" name="variantId" value={line.variantId} />
-                  <label className="visually-hidden" htmlFor={`qty-${line.variantId}`}>
-                    {t("common.quantity")}
-                  </label>
-                  <input
-                    id={`qty-${line.variantId}`}
-                    name="quantity"
-                    type="number"
-                    inputMode="numeric"
-                    min={0}
-                    max={99}
-                    defaultValue={line.quantity}
-                    className="input numeric"
-                    style={{ width: "5rem" }}
-                  />
-                  <button type="submit" className="btn btn--secondary">
-                    {t("common.save")}
-                  </button>
-                </Form>
+                <div className="cart-line__controls">
+                  <Form method="post" className="cluster">
+                    <input type="hidden" name="intent" value="update" />
+                    <input type="hidden" name="variantId" value={line.variantId} />
+                    <label className="visually-hidden" htmlFor={`qty-${line.variantId}`}>
+                      {t("common.quantity")}
+                    </label>
+                    <input
+                      id={`qty-${line.variantId}`}
+                      name="quantity"
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      max={99}
+                      defaultValue={line.quantity}
+                      className="input numeric"
+                      style={{ width: "5rem" }}
+                    />
+                    <button type="submit" className="btn btn--secondary">
+                      {t("common.save")}
+                    </button>
+                  </Form>
 
-                <Form method="post">
-                  <input type="hidden" name="intent" value="remove" />
-                  <input type="hidden" name="variantId" value={line.variantId} />
-                  <button type="submit" className="btn btn--ghost">
-                    {t("common.remove")}
-                  </button>
-                </Form>
-              </div>
+                  <Form method="post">
+                    <input type="hidden" name="intent" value="remove" />
+                    <input type="hidden" name="variantId" value={line.variantId} />
+                    <button type="submit" className="btn btn--ghost">
+                      {t("common.remove")}
+                    </button>
+                  </Form>
+                </div>
 
-              <p className="price cart-line__price">
-                {formatMoney(money(line.unitPrice * line.quantity), intl)}
-              </p>
-            </li>
-          );
-        })}
-      </ul>
+                <p className="price cart-line__price">
+                  {formatMoney(money(line.unitPrice * line.quantity), intl)}
+                </p>
+              </li>
+            );
+          })}
+        </ul>
 
-      {totals ? (
-        <div className="panel stack cart-summary">
-          <p className="cluster">
-            <span>{t("common.subtotal")}</span>
-            <span className="price">{formatMoney(money(totals.subtotal), intl)}</span>
-          </p>
-          <p className="cluster">
-            <strong>{t("common.total")}</strong>
-            <strong className="price">{formatMoney(money(totals.grandTotal), intl)}</strong>
-          </p>
-          <p className="caption muted">{t("common.vat_included")}</p>
-          <Link className="btn btn--primary" to={path("/cassa")}>
-            {t("cart.checkout")}
-          </Link>
-          <Link className="btn btn--ghost" to={path("/shop")}>
-            {t("cart.continue_shopping")}
-          </Link>
-        </div>
-      ) : null}
+        {totals ? (
+          <div className="panel stack cart-summary">
+            <p className="cluster">
+              <span>{t("common.subtotal")}</span>
+              <span className="price">{formatMoney(money(totals.subtotal), intl)}</span>
+            </p>
+            <p className="cluster">
+              <strong>{t("common.total")}</strong>
+              <strong className="price">{formatMoney(money(totals.grandTotal), intl)}</strong>
+            </p>
+            <p className="caption muted">{t("common.vat_included")}</p>
+            <Link className="btn btn--primary" to={path("/cassa")}>
+              {t("cart.checkout")}
+            </Link>
+            <Link className="btn btn--ghost" to={path("/shop")}>
+              {t("cart.continue_shopping")}
+            </Link>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

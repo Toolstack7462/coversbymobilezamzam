@@ -41,6 +41,8 @@ Open the existing product editor, upload the real product photograph and choose 
 
 Missing deliverables: approved front/detail photographs for the 26 entries, evidence for their seed-derived specifications and actual inventory, and a verified store photograph. No supplier identity or catalogue was supplied, so an exact replacement cannot responsibly be selected from the web.
 
+The follow-up accessory-stage illustration changes no SKU mapping. Its covers, charging disc and cable remain explicitly labelled editorial illustration. The navy lighting and original logo watermark are CSS/trusted SVG, with no generated or stock photograph presented as merchandise.
+
 ## Editorial assets
 
 - Old hero `lifestyle/4lrS2PuN_2g-91057cb6bb.webp`: replaced by original brand illustration unless the merchant supplies a different image through `media.hero_image`.

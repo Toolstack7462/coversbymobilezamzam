@@ -25,6 +25,11 @@ export function HeroShowcase({
     t("home.hero_statement_2"),
     t("home.hero_statement_3"),
   ];
+  const advice = [
+    t("home.showcase_advice_protect"),
+    t("home.showcase_advice_charge"),
+    t("home.showcase_advice_connect"),
+  ];
   return (
     <section className="showcase">
       <div className="page showcase__layout">
@@ -50,6 +55,14 @@ export function HeroShowcase({
               {t("home.find_device")}
             </Link>
           </div>
+          {!imageKey ? (
+            <div className="showcase__advice" id="showcase-advice" aria-live="polite">
+              <span className="showcase__index" aria-hidden="true">
+                0{mode + 1}
+              </span>
+              <p>{advice[mode]}</p>
+            </div>
+          ) : null}
         </div>
         <div className="showcase__visual" data-mode={mode}>
           {imageKey ? (
@@ -64,32 +77,35 @@ export function HeroShowcase({
               decoding="async"
             />
           ) : (
-            <div className="showcase__objects" aria-hidden="true">
-              <div className="showcase__orbit" />
-              <div className="showcase__case showcase__case--back">
-                <span className="showcase__camera">
-                  <i />
-                  <i />
-                  <i />
-                </span>
-              </div>
-              <div className="showcase__case showcase__case--front">
-                <span className="showcase__camera">
-                  <i />
-                  <i />
-                  <i />
-                </span>
-                <span className="showcase__signature">
+            <div className="showcase__stage" aria-hidden="true">
+              <BrandSymbol className="showcase__watermark" />
+              <div className="showcase__objects">
+                <div className="showcase__orbit" />
+                <div className="showcase__case showcase__case--back">
+                  <span className="showcase__camera">
+                    <i />
+                    <i />
+                    <i />
+                  </span>
+                </div>
+                <div className="showcase__case showcase__case--front">
+                  <span className="showcase__camera">
+                    <i />
+                    <i />
+                    <i />
+                  </span>
+                  <span className="showcase__signature">
+                    <BrandSymbol />
+                  </span>
+                  <span className="showcase__ring" />
+                </div>
+                <div className="showcase__disc">
                   <BrandSymbol />
-                </span>
-                <span className="showcase__ring" />
-              </div>
-              <div className="showcase__disc">
-                <BrandSymbol />
-              </div>
-              <div className="showcase__cable">
-                <span />
-                <span />
+                </div>
+                <div className="showcase__cable">
+                  <span />
+                  <span />
+                </div>
               </div>
             </div>
           )}
@@ -107,6 +123,7 @@ export function HeroShowcase({
                   key={label}
                   type="button"
                   aria-pressed={mode === index}
+                  aria-describedby="showcase-advice"
                   onClick={() => setMode(index)}
                 >
                   {label}

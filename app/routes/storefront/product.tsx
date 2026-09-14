@@ -501,7 +501,7 @@ export default function ProductPage({ loaderData }: Route.ComponentProps) {
             id="acquista"
             method="post"
             action={localePath(locale, "/carrello")}
-            className="stack"
+            className="purchase-form"
           >
             <input type="hidden" name="intent" value="add" />
             <input type="hidden" name="variantId" value={variant?.id ?? ""} />

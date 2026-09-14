@@ -122,7 +122,7 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
       dependencies: ["setup"],
       // The visual survey has its own project and sets its own viewports.
-      testIgnore: /admin-visual\.spec\.ts/,
+      testIgnore: [/admin-visual\.spec\.ts/, /storefront-design\.spec\.ts/],
     },
     {
       // The real target device for this shop's customers, and the viewport
@@ -144,7 +144,11 @@ export default defineConfig({
        * list becomes cards on a phone, and that is a different thing to
        * operate.
        */
-      testIgnore: [/admin-visual\.spec\.ts/, /no-javascript\.spec\.ts/],
+      testIgnore: [
+        /admin-visual\.spec\.ts/,
+        /no-javascript\.spec\.ts/,
+        /storefront-design\.spec\.ts/,
+      ],
     },
 
     /*
@@ -210,6 +214,14 @@ export default defineConfig({
     },
 
     {
+      name: "storefront",
+      testMatch: /storefront-design\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"] },
+      dependencies: ["setup"],
+      workers: 1,
+    },
+
+    {
       name: "visual",
       testMatch: /admin-visual\.spec\.ts/,
       use: { ...devices["Desktop Chrome"] },
@@ -246,6 +258,7 @@ export default defineConfig({
       "npm run build",
       `npx wrangler d1 migrations apply ${DB} --local --persist-to ${PERSIST_TO}`,
       `node scripts/import/seed.mjs --persist-to ${PERSIST_TO}`,
+      `npx wrangler d1 execute ${DB} --local --persist-to ${PERSIST_TO} --file tests/fixtures/storefront-brand.sql`,
       /*
        * A synthetic catalogue, so the admin tests exercise real screens.
        *

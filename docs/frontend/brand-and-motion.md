@@ -24,6 +24,12 @@ Product cards rise 3px and hero actions 2px on devices with hover and no reduced
 
 No carousel, timer, scroll handler, WebGL or animation dependency. Reduced motion removes entrance, state-dependent object movement and sliding transitions; the selected mode updates immediately. Essential text stays readable in every state and all links are available in the server render.
 
+## Accessory stage refinement
+
+The illustration now sits on an ink/navy stage with one cobalt light source, a quiet original-symbol watermark and clear object layering. The cover, charging disc and cable use the same palette and geometry. No product photography or new network-loaded imagery was added. A numbered, live-announced guidance block explains what to check for each mode: model fit, charging requirements or both cable connectors. It never invents product capabilities. Merchant hero media still replaces the entire illustrated presentation through the existing CMS field.
+
+Category tiles use coordinated proportions and direction cues. The PDP groups quantity and purchase action, and the cart places its summary alongside line items on desktop, below them on smaller screens. No new sticky element or checkout mutation was introduced.
+
 This intentionally follows the user's newer entrance/depth direction over the older project's flat/no-first-paint-motion guidance. Browser animation cost and server CPU are separate measurements: CSS runs in the browser; a dependency's size cannot establish server load. No server-CPU or frame-rate improvement is claimed without a measurement.
 
 ## CMS controls

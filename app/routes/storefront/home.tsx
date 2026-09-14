@@ -349,6 +349,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                       />
                     ) : null}
                     <span className="category-tile__name">{category.name}</span>
+                    <span className="category-tile__arrow" aria-hidden="true">
+                      ↗
+                    </span>
                   </Link>
                 </li>
               ))}

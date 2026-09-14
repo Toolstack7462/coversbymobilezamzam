@@ -27,7 +27,7 @@
     "test:integration": "vitest run --project workers",
     "test:security": "vitest run --project workers tests/security",
     "test:watch": "vitest",
-    "test:e2e": "playwright test --project=desktop --project=mobile --project=visual",
+    "test:e2e": "playwright test --project=desktop --project=mobile --project=visual --project=storefront",
     "test:a11y": "playwright test tests/accessibility",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply ita-commerce --local",

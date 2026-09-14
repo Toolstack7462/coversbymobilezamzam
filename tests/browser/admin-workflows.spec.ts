@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { STORAGE_STATE } from "./helpers/admin-session";
+import { ADMIN, STORAGE_STATE } from "./helpers/admin-session";
 import { pngFixture } from "./helpers/image-fixture";
 
 /**
@@ -860,5 +860,82 @@ test.describe("the media manager", () => {
     await page.waitForLoadState("networkidle");
 
     await expect(page.getByRole("alert")).toContainText(/200/);
+  });
+});
+
+/**
+ * Verifying a manual payment.
+ *
+ * The one admin action that decides whether money arrived. Every order in this
+ * fixture is synthetic — DEMO-0003 is a seeded row in a throwaway database —
+ * and no real payment is ever touched by this suite.
+ */
+test.describe("verifying a manual payment", () => {
+  /** Releases the payment queue's step-up, which is required before verifying. */
+  async function passStepUp(page: Page) {
+    await page.goto("/admin/pagamenti");
+    const stepUp = page.locator("#stepup-password");
+    if ((await stepUp.count()) > 0) {
+      // Masked by default, and revealable - asserted HERE because this is the
+      // only place the payment step-up form reliably exists: satisfying it
+      // hides it for the next ten minutes.
+      await expect(stepUp).toHaveAttribute("type", "password");
+      await stepUp.fill(ADMIN.password);
+      await page.getByRole("button", { name: "Mostra password" }).first().click();
+      await expect(stepUp).toHaveAttribute("type", "text");
+      await page.getByRole("button", { name: "Nascondi password" }).first().click();
+      await Promise.all([
+        page.waitForURL(/\/admin\/pagamenti/),
+        page.getByRole("button", { name: "Conferma" }).click(),
+      ]);
+    }
+    await expect(page.getByText(/Autenticazione confermata/)).toBeVisible();
+  }
+
+  /**
+   * The amount is asked for in EUROS.
+   *
+   * It used to be asked for in cents — the label said "(centesimi)" and the
+   * field was prefilled with `3490`. The common path was safe because the
+   * prefill was right, but the moment a merchant had to CHANGE it, which is
+   * precisely the partial-payment case, the trap sprang: somebody who received
+   * ten euros types "10" and records a payment of ten CENTS. And typing the
+   * amount the Italian way, "34,90", failed `Number()` and came back as the
+   * generic "Dati non validi."
+   */
+  test("asks for the amount in euro and accepts the Italian form", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === "mobile", "writes shared rows");
+    await passStepUp(page);
+
+    const row = page.locator("tr", { hasText: "DEMO-0003" });
+    await row.locator("summary").click();
+
+    const amount = row.locator('input[name="amountReceived"]');
+    // 34,90 — not 3490.
+    await expect(amount).toHaveValue("34,90");
+    await expect(row.getByText(/centesimi/i)).toHaveCount(0);
+  });
+
+  /**
+   * An unreadable amount is refused with a sentence, never coerced.
+   *
+   * `Number("trentaquattro")` is NaN, and a NaN that reaches the database as a
+   * verified amount is a payment record that says nothing arrived.
+   */
+  test("refuses an amount it cannot read, and says so", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === "mobile", "writes shared rows");
+    await passStepUp(page);
+
+    const row = page.locator("tr", { hasText: "DEMO-0003" });
+    await row.locator("summary").click();
+    await row.locator('input[name="amountReceived"]').fill("trentaquattro");
+    await row.locator('input[name="transactionReference"]').fill("TRN-DEMO-0003");
+
+    await Promise.all([
+      page.waitForResponse((r) => r.request().method() === "POST"),
+      row.getByRole("button", { name: "Registra esito" }).click(),
+    ]);
+
+    await expect(page.getByRole("alert")).toContainText(/importo/i);
   });
 });

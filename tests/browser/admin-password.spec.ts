@@ -232,15 +232,32 @@ test.describe("signed in", () => {
     "WebKit drops the __Host- cookie over plain http; the admin is never served that way",
   );
 
-  test("the payment step-up password can be revealed", async ({ page }) => {
-    await page.goto("/admin/pagamenti");
+  /**
+   * A step-up confirmation, on the screen that disables two-factor.
+   *
+   * The payments queue would be the more obvious choice and was the first one
+   * used — but its step-up form disappears for ten minutes once any test
+   * satisfies it, and the payment-verification test in admin-workflows does
+   * exactly that. Two tests with opposite requirements on one row is a race,
+   * and it duly failed on whichever project ran second.
+   *
+   * The recovery-codes screen was chosen after the 2FA disable screen turned
+   * out to render its form only when the second factor is OPTIONAL — and it is
+   * mandatory for this account, so that form never existed here at all.
+   *
+   * This form is never submitted by anything: filling it proves the control,
+   * and pressing its button would regenerate the recovery codes. So it is
+   * filled, revealed, and left alone.
+   */
+  test("a step-up password can be revealed", async ({ page }) => {
+    await page.goto("/admin/sicurezza/codici-recupero");
 
     // The precondition is ASSERTED, not guarded. A redirect to the login page
     // means the session never loaded, and that is a broken test rather than an
     // absent feature.
-    await expect(page).toHaveURL(/\/admin\/pagamenti/);
+    await expect(page).toHaveURL(/\/admin\/sicurezza\/codici-recupero/);
 
-    const password = page.locator("#stepup-password");
+    const password = page.locator("#password");
     await expect(password).toBeVisible();
     await expect(password).toHaveAttribute("type", "password");
     await expect(password).toHaveAttribute("autocomplete", "current-password");

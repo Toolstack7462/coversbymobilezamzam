@@ -2,7 +2,7 @@
 
 ## Current follow-up — PR #13 (14 September 2026)
 
-This section supersedes the earlier branch/publication status below. Current base is `c6db3cd`; the original storefront has been incorporated into main. The media/footer/admin work is on `feat/media-footer-admin-polish`, draft [PR #13](https://github.com/Toolstack7462/coversbymobilezamzam/pull/13). No merge, production deployment or production media mutation was performed in this pass.
+This section supersedes the earlier branch/publication status below. The pass started at `c6db3cd`; current main `c0be139` was subsequently integrated into the review branch without conflicts. The original storefront is already incorporated into main. The media/footer/admin work is on `feat/media-footer-admin-polish`, draft [PR #13](https://github.com/Toolstack7462/coversbymobilezamzam/pull/13). No merge, production deployment or production media mutation was performed in this pass.
 
 - Local `npm run verify`: all 11 gates pass; 577 unit and 213 integration tests. Hostinger production build also passes.
 - Worker build gzip totals: storefront JS 135.0 → 135.4 KB; admin JS 84.5 → 85.2 KB; all-route CSS 16.9 → 17.9 KB. Existing budgets pass without increases; these are aggregate build measurements, not page transfer size or field Core Web Vitals.
@@ -32,6 +32,14 @@ Six unretouched before/after PNGs are retained in [the review folder](evidence/m
 Full run artifacts (expire 28 September 2026): [storefront screenshots and recordings](https://github.com/Toolstack7462/coversbymobilezamzam/actions/runs/34879826419/artifacts/10363190437), [updated admin screenshots](https://github.com/Toolstack7462/coversbymobilezamzam/actions/runs/34879826419/artifacts/10363120468), [admin baseline](https://github.com/Toolstack7462/coversbymobilezamzam/actions/runs/34879826419/artifacts/10361444916). The existing hero animation is retained, with new interaction recordings in the storefront artifact. No hosted preview was deployed; production/merchant-media acceptance remains outstanding.
 
 Final Hostinger build also passes. Aggregate gzip impact relative to this pass's baseline is +0.4 KB storefront JS, +0.7 KB admin JS and +1.0 KB all-route CSS. No new image download or animation dependency is introduced by the source changes. Screenshots are review assets, not storefront assets. Browser frame times, server CPU and field Core Web Vitals were not measured in this pass.
+
+## Current-main integration verification
+
+Main advanced during finalization to `c0be139c9f3625173700ff97ba1c30b2c837ef1c` (Playwright 1.63.0 and a compatible Vitest-major hold). It was merged into the feature branch as `f5dfd8119e102691dc1080513c9493183b2227fc`; no force-push or production-branch write was performed.
+
+[Run 34881123192](https://github.com/Toolstack7462/coversbymobilezamzam/actions/runs/34881123192) passes all six jobs against the updated dependencies: verification, desktop 70 passed/2 intentional skips, mobile 59 passed/7 intentional skips, admin visual 58 passed, storefront 9 passed, and the separate admin baseline. No failures or retries are reported. The application and public assets are byte-for-byte unchanged from the manually reviewed `7345308` source; the retained PNGs accurately identify that capture revision.
+
+Current-run artifacts: [storefront and hero recordings](https://github.com/Toolstack7462/coversbymobilezamzam/actions/runs/34881123192/artifacts/10363127365), [updated admin](https://github.com/Toolstack7462/coversbymobilezamzam/actions/runs/34881123192/artifacts/10362313736), [baseline admin](https://github.com/Toolstack7462/coversbymobilezamzam/actions/runs/34881123192/artifacts/10363525130). These are isolated CI fixtures, not a hosted merchant preview. Later report-only commits do not change the verified application.
 
 ## Changes
 

@@ -1,5 +1,11 @@
 # Brand and motion
 
+## 14 September 2026 — lighter footer and merchant workspace
+
+The original ZZ symbol and full **Covers by Mobile Zam Zam** identity are retained. The admin now reuses that trusted symbol and resolves the full existing CMS brand fields. Its chrome is light, with cobalt active/focus states and white task surfaces. Footer text inherits ink-on-ivory tokens within the storefront scope; the reversed SVG remains available for dark contexts.
+
+The existing animated storefront hero, reduced-motion fallback, SVG/ICO favicon and Apple touch icon are unchanged by this pass. No animation or chart dependency was added for the admin. Navigation disclosures, sidebar collapse and photo-upload navigation work without JavaScript; native keyboard behavior is preserved. Product-editor anchors account for the sticky topbar height.
+
 Confirmed public identity: **Covers by Mobile Zam Zam**. Header/footer continue reading the existing identity settings; the complete name remains the accessible home link. Original symbol: rounded protective-cover silhouette with two interlocking Z strokes. No manufacturer logo and no merchant-uploaded inline SVG.
 
 ## Assets

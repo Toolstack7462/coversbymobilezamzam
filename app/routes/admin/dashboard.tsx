@@ -160,6 +160,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       lowStock: n("low_stock"),
     },
     canSeePayments: actor.permissions.includes("payment.read"),
+    canManageProducts: actor.permissions.includes("product.write"),
+    canReadProducts: actor.permissions.includes("product.read"),
+    photoTasks: setupSnapshot.productsWithoutImage,
     gates: gateStatuses(settings).filter((g) => !g.enabled),
   };
 }
@@ -229,151 +232,183 @@ function ActionRow({ item }: { item: ActionItem }) {
 
 export default function AdminDashboard({ loaderData }: Route.ComponentProps) {
   const { pathname } = useLocation();
-  const { displayName, actions, setup, metrics, canSeePayments, gates } = loaderData;
+  const {
+    displayName,
+    actions,
+    setup,
+    metrics,
+    canSeePayments,
+    gates,
+    canManageProducts,
+    canReadProducts,
+    photoTasks,
+  } = loaderData;
+  const visibleCount = Math.max(4, actions.filter((item) => item.severity === "blocking").length);
+  const priorityActions = actions.slice(0, visibleCount);
+  const otherActions = actions.slice(visibleCount);
 
   return (
     <>
       <PageHeader
         title={`Ciao, ${displayName}`}
-        description="Cosa è successo, e cosa aspetta voi."
+        description="Ordini, pagamenti e catalogo: il lavoro di oggi."
         breadcrumbs={breadcrumbsFor(pathname)}
-        primaryAction={{ label: "Aggiungi prodotto", to: "/admin/prodotti/nuovo" }}
-        {...(setup.readyToTrade
-          ? {}
-          : {
-              secondaryActions: [
-                { label: "Completa la configurazione", to: "/admin/configurazione" },
-              ],
-            })}
+        {...(canManageProducts
+          ? { primaryAction: { label: "Aggiungi prodotto", to: "/admin/prodotti/nuovo" } }
+          : {})}
       />
-
-      {!setup.readyToTrade ? (
-        <p className="notice notice--warning" role="status">
-          Configurazione al <strong className="numeric">{setup.percentage}%</strong>. Alcuni
-          passaggi obbligatori mancano ancora: finché restano aperti il negozio non è pronto a
-          vendere. <Link to="/admin/configurazione">Vedi cosa manca</Link>.
-        </p>
-      ) : null}
-
-      {/* ── What needs me ─────────────────────────────────────────────────── */}
-      <section className="stack" aria-labelledby="azioni">
-        <h2 id="azioni">Da fare adesso</h2>
-
-        {isClear(actions) ? (
-          <p className="notice notice--success" role="status">
-            Non c&apos;è nulla in attesa. Nessun pagamento da verificare, nessun ordine da
-            preparare, nessuna scorta esaurita.
-          </p>
-        ) : (
-          <ul className="ac-actions">
-            {actions.map((item) => (
-              <ActionRow key={item.id} item={item} />
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {/* ── What happened ─────────────────────────────────────────────────── */}
-      <section className="stack" style={{ marginBlockStart: "var(--space-6)" }}>
-        <h2>Ultime 24 ore</h2>
-
-        {/*
-          Two figures, then the counters.
-          
-          Six equal cards asked the reader to rank them, every time. Money and
-          order count are what a shop owner opens this page for; the rest are
-          work queues, and a queue is a number you check rather than read. The
-          split is the hierarchy — same data, one decision made in advance.
-        */}
-        <div className="ac-headline">
-          <Metric
-            variant="headline"
-            label="Ordini ricevuti"
-            value={metrics.ordersToday}
-            to="/admin/ordini"
-          />
-          <Metric
-            variant="headline"
-            label="Valore degli ordini"
-            value={formatMoney(money(metrics.valueToday))}
-            // Calling this "incasso" would be a lie: most of it is not paid yet.
-            note="Ordini creati, non incassati"
-          />
-        </div>
-
-        <div className="ac-metrics">
-          {canSeePayments ? (
-            <>
-              <Metric
-                label="Pagamenti verificati"
-                value={formatMoney(money(metrics.verifiedToday))}
-                note="Confermati da una persona"
-              />
-              <Metric
-                label="Pagamenti da verificare"
-                value={metrics.toVerify}
-                to="/admin/pagamenti?vista=da-verificare"
-              />
-            </>
-          ) : null}
-          <Metric
-            label="Ritiri da preparare"
-            value={metrics.pickupsToPrepare}
-            to="/admin/ordini?vista=da-preparare&consegna=ritiro"
-          />
-          <Metric
-            label="Scorte in esaurimento"
-            value={metrics.lowStock}
-            to="/admin/inventario?vista=scorte-basse"
-          />
-        </div>
-        <p className="caption muted">
-          Ordini negli ultimi 7 giorni: <span className="numeric">{metrics.ordersWeek}</span>.
-          Nessun grafico: con questi volumi una curva direbbe più di quanto i dati sappiano.
-        </p>
-      </section>
-
-      {/*
-        Not an error list. The honest answer to "why is my phone number not on
-        the site?" — the feature is off because the value is empty.
-      */}
-      {gates.length > 0 ? (
-        <section className="stack" style={{ marginBlockStart: "var(--space-6)" }}>
-          <h2>Funzioni nascoste sul sito</h2>
-          <p className="small muted">
-            Queste parti del sito non vengono mostrate perché mancano i dati. Non viene inventato
-            nulla: un campo vuoto non produce un segnaposto.
-          </p>
-          {/*
-            Named, not coded.
-
-            This printed the gate identifier and the raw setting keys —
-            "legal_identity — mancano: business.legal_name, business.vat_number".
-            Three database keys and an internal name, on the screen of somebody
-            who runs a phone shop. The labels come from the gates module, beside
-            the checks they describe.
-          */}
-          <ul className="ac-gates">
-            {gates.map((gate) => {
-              const label = GATE_LABELS[gate.feature];
-              return (
-                <li className="ac-gate" key={gate.feature}>
-                  <span className="ac-gate__what">{label?.what ?? gate.feature}</span>
-                  {label ? <span className="ac-gate__where">{label.where}</span> : null}
-                  <span className="ac-gate__missing">
-                    Manca: {gate.missingKeys.map((k) => SETTING_LABELS[k] ?? k).join(", ")}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-          <p>
-            <Link className="btn btn--secondary" to="/admin/impostazioni">
-              Completa le impostazioni
-            </Link>
-          </p>
+      <div className="ac-dashboard">
+        <section className="ac-dashboard__overview" aria-labelledby="riepilogo">
+          <div className="ac-dashboard__section-head">
+            <h2 id="riepilogo">Ultime 24 ore</h2>
+            <p className="small muted">
+              Ultimi 7 giorni: <strong className="numeric">{metrics.ordersWeek}</strong> ordini
+            </p>
+          </div>
+          <div className="ac-headline">
+            <Metric
+              variant="headline"
+              label="Ordini ricevuti"
+              value={metrics.ordersToday}
+              to="/admin/ordini"
+            />
+            <Metric
+              variant="headline"
+              label="Valore degli ordini"
+              value={formatMoney(money(metrics.valueToday))}
+              note="Ordini creati, non incassati"
+            />
+          </div>
+          <div className="ac-metrics">
+            {canSeePayments ? (
+              <>
+                <Metric
+                  label="Pagamenti verificati"
+                  value={formatMoney(money(metrics.verifiedToday))}
+                  note="Confermati da una persona"
+                />
+                <Metric
+                  label="Pagamenti da verificare"
+                  value={metrics.toVerify}
+                  to="/admin/pagamenti?vista=da-verificare"
+                />
+              </>
+            ) : null}
+            <Metric
+              label="Ritiri da preparare"
+              value={metrics.pickupsToPrepare}
+              to="/admin/ordini?vista=da-preparare&consegna=ritiro"
+            />
+            <Metric
+              label="Scorte in esaurimento"
+              value={metrics.lowStock}
+              to="/admin/inventario?vista=scorte-basse"
+            />
+          </div>
         </section>
-      ) : null}
+        <div className="ac-dashboard__workspace">
+          <section className="ac-panel ac-dashboard__priorities" aria-labelledby="azioni">
+            <div className="ac-dashboard__section-head">
+              <div>
+                <h2 id="azioni">Da fare adesso</h2>
+                <p className="small muted">Le attività in ordine di priorità.</p>
+              </div>
+              <span
+                className="ac-dashboard__count numeric"
+                aria-label={`${actions.length} tipi di attività`}
+              >
+                {actions.length}
+              </span>
+            </div>
+            {isClear(actions) ? (
+              <p className="notice notice--success" role="status">
+                Non c&apos;è nulla in attesa. Nessun pagamento da verificare, nessun ordine da
+                preparare, nessuna scorta esaurita.
+              </p>
+            ) : (
+              <>
+                <ul className="ac-actions">
+                  {priorityActions.map((item) => (
+                    <ActionRow key={item.id} item={item} />
+                  ))}
+                </ul>
+                {otherActions.length > 0 ? (
+                  <details className="ac-dashboard__more">
+                    <summary>Altre attività ({otherActions.length})</summary>
+                    <ul className="ac-actions">
+                      {otherActions.map((item) => (
+                        <ActionRow key={item.id} item={item} />
+                      ))}
+                    </ul>
+                  </details>
+                ) : null}
+              </>
+            )}
+          </section>
+          <aside className="ac-dashboard__side" aria-label="Preparazione del negozio">
+            {canReadProducts ? (
+              <section className="ac-panel ac-dashboard__photos" aria-labelledby="foto-catalogo">
+                <p className="ac-dashboard__eyebrow">Catalogo</p>
+                <h2 id="foto-catalogo">Le foto fanno la differenza</h2>
+                <p className="small muted">
+                  {photoTasks > 0
+                    ? `${photoTasks} prodotti senza una foto utilizzabile sul sito.`
+                    : "Ogni prodotto ha almeno una foto utilizzabile sul sito."}
+                </p>
+                <Link className="btn btn--secondary" to="/admin/prodotti?vista=senza-immagine">
+                  Rivedi le foto <span aria-hidden="true">↗</span>
+                </Link>
+              </section>
+            ) : null}
+            <section className="ac-panel" aria-labelledby="stato-negozio">
+              <h2 id="stato-negozio">Il tuo negozio</h2>
+              <div className="ac-dashboard__progress-label">
+                <span>Configurazione</span>
+                <strong className="numeric">{setup.percentage}%</strong>
+              </div>
+              <progress
+                className="ac-dashboard__progress"
+                max="100"
+                value={setup.percentage}
+                aria-label="Configurazione del negozio"
+              />
+              <p className="small muted">
+                {setup.readyToTrade
+                  ? "I passaggi obbligatori sono completati."
+                  : "Completa i passaggi obbligatori prima di vendere."}
+              </p>
+              <Link className="ac-dashboard__text-link" to="/admin/configurazione">
+                Apri configurazione <span aria-hidden="true">↗</span>
+              </Link>
+            </section>
+            {gates.length > 0 ? (
+              <details className="ac-panel ac-dashboard__settings">
+                <summary>Dati da completare ({gates.length})</summary>
+                <p className="small muted">
+                  Queste sezioni del sito sono nascoste finché non completi i dati.
+                </p>
+                <ul className="ac-gates">
+                  {gates.map((gate) => {
+                    const label = GATE_LABELS[gate.feature];
+                    return (
+                      <li className="ac-gate" key={gate.feature}>
+                        <span className="ac-gate__what">{label?.what ?? gate.feature}</span>
+                        {label ? <span className="ac-gate__where">{label.where}</span> : null}
+                        <span className="ac-gate__missing">
+                          Manca: {gate.missingKeys.map((k) => SETTING_LABELS[k] ?? k).join(", ")}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <Link className="ac-dashboard__text-link" to="/admin/impostazioni">
+                  Completa le impostazioni
+                </Link>
+              </details>
+            ) : null}
+          </aside>
+        </div>
+      </div>
     </>
   );
 }

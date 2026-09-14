@@ -1,3 +1,4 @@
+import { saleableImagePredicate } from "~/domain/media/storefront-image";
 import { env } from "cloudflare:test";
 import { describe, it, expect, beforeEach } from "vitest";
 import { PRODUCT_VIEWS } from "~/lib/product-views";
@@ -169,5 +170,52 @@ describe("paging is stable", () => {
 
     expect(rows).toHaveLength(last.lastRow - last.firstRow + 1);
     expect(last.hasNext).toBe(false);
+  });
+});
+
+describe("product photo selection and the repair queue", () => {
+  beforeEach(async () => {
+    await seed(env.DB);
+  });
+  async function addPhoto(id: string, key: string, primary: number) {
+    await env.DB.prepare(
+      `INSERT INTO product_images
+      (id, product_id, object_key, width, height, mime_type, file_size, file_hash, is_primary, sort_order, created_at)
+      VALUES (?1, ?2, ?3, 640, 640, 'image/webp', 100, ?1, ?4, 0, 1756000000000)`,
+    )
+      .bind(id, IDS.product, key, primary)
+      .run();
+  }
+  async function needsPhoto() {
+    const view = PRODUCT_VIEWS.find((v) => v.slug === "senza-immagine")!;
+    const row = await env.DB.prepare(
+      `SELECT COUNT(*) AS n FROM products p WHERE p.id = ?1 AND ${view.where}`,
+    )
+      .bind(IDS.product)
+      .first<{ n: number }>();
+    return row?.n;
+  }
+  it("lists a quarantined primary photo as work to complete", async () => {
+    await addPhoto("old-photo", "products/mR3UqBUU9Ts-ed22cf12a1.webp", 1);
+    expect(await needsPhoto()).toBe(1);
+  });
+  it("selects an existing merchant photo even when the old primary is quarantined", async () => {
+    await addPhoto("old-photo", "products/mR3UqBUU9Ts-ed22cf12a1.webp", 1);
+    await addPhoto("new-photo", "products/merchant-specific-photo.webp", 0);
+    const image = await env.DB.prepare(
+      `SELECT pi.object_key FROM product_images pi
+      WHERE pi.product_id = ?1 AND ${saleableImagePredicate()}
+      ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1`,
+    )
+      .bind(IDS.product)
+      .first<{ object_key: string }>();
+    expect(image?.object_key).toBe("products/merchant-specific-photo.webp");
+    expect(await needsPhoto()).toBe(0);
+  });
+  it("puts a product back in the queue when its last usable photo is removed", async () => {
+    await addPhoto("demo-photo", "demo/cover.png", 1);
+    await addPhoto("new-photo", "products/merchant-specific-photo.webp", 0);
+    await env.DB.prepare("DELETE FROM product_images WHERE id = 'new-photo'").run();
+    expect(await needsPhoto()).toBe(1);
   });
 });

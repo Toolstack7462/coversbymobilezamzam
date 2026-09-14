@@ -12,32 +12,16 @@
  */
 
 .ac {
-  --ac-sidebar: 244px;
+  --ac-sidebar: 256px;
   --ac-sidebar-collapsed: 68px;
-  --ac-topbar: 56px;
+  --ac-topbar: 72px;
 
-  /*
-   * The chrome is dark; the work is light.
-   *
-   * The admin used to be white chrome on a light page, which made the tool and
-   * its contents the same material — the eye had to re-find the boundary on
-   * every screen, and a full-bleed pale-blue block was doing the work of saying
-   * where you are.
-   *
-   * Dark chrome gives the tool a spine: the navigation is obviously furniture,
-   * the content is obviously the document, and the active item can be marked
-   * with something quiet because it now has contrast to sit against. It also
-   * ties the admin to the storefront's own dark surfaces, so the two read as
-   * one company rather than two products.
-   *
-   * These are the same on-deep tokens the storefront footer uses, so the
-   * contrast floor has already been checked there.
-   */
-  --ac-chrome: var(--color-chrome);
-  --ac-chrome-raised: var(--color-chrome-raised);
-  --ac-chrome-border: var(--color-chrome-border);
-  --ac-chrome-ink: var(--color-on-deep);
-  --ac-chrome-ink-muted: var(--color-on-deep-secondary);
+  /* A light tool surface, with the audited storefront ink and cobalt accent. */
+  --ac-chrome: var(--color-surface);
+  --ac-chrome-raised: var(--color-primary-surface);
+  --ac-chrome-border: var(--color-border);
+  --ac-chrome-ink: var(--color-ink);
+  --ac-chrome-ink-muted: var(--color-text-secondary-on-sunken);
 
   min-height: 100dvh;
   background: var(--color-background);
@@ -66,16 +50,21 @@
 /* The focus ring is drawn against the page; on near-black the default vanishes. */
 .ac__topbar :focus-visible,
 .ac__sidebar :focus-visible {
-  outline-color: var(--ac-chrome-ink);
+  outline-color: var(--color-focus);
 }
 
 .ac__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  max-width: 20rem;
   font-family: var(--font-heading);
   font-size: var(--text-ui);
   font-weight: var(--weight-semibold);
   letter-spacing: -0.01em;
   text-decoration: none;
-  white-space: nowrap;
+  white-space: normal;
   color: var(--ac-chrome-ink);
 }
 
@@ -158,13 +147,17 @@
   pointer-events: none;
 }
 
-.ac__collapse-input:checked ~ .ac__body {
-  grid-template-columns: var(--ac-sidebar-collapsed) minmax(0, 1fr);
-}
-
-.ac__collapse-input:checked ~ .ac__body .ac__nav-label,
-.ac__collapse-input:checked ~ .ac__body .ac__nav-heading {
-  display: none;
+@media (min-width: 1024px) {
+  .ac__collapse-input:checked ~ .ac__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ac__collapse-input:checked ~ .ac__body .ac__sidebar {
+    display: none;
+  }
+  .ac__collapse-input:focus-visible ~ .ac__topbar label[for="ac-collapse"] {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
 }
 
 .ac__sidebar {
@@ -177,8 +170,8 @@
   overscroll-behavior: contain;
   background: var(--ac-chrome);
   color: var(--ac-chrome-ink);
-  border-inline-end: 0;
-  padding-block: var(--space-3) var(--space-6);
+  border-inline-end: var(--border-width) solid var(--color-border);
+  padding-block: var(--space-4) var(--space-6);
   scrollbar-width: thin;
 }
 
@@ -193,19 +186,33 @@
 /* ── Navigation ────────────────────────────────────────────────────────── */
 
 .ac__nav-group + .ac__nav-group {
-  margin-block-start: var(--space-4);
-  padding-block-start: var(--space-4);
-  border-block-start: var(--border-width) solid var(--ac-chrome-border);
+  margin-block-start: var(--space-1);
 }
-
 .ac__nav-heading {
-  font-size: 0.6875rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--target-min);
+  padding: var(--space-2) var(--space-4);
+  font-size: 0.75rem;
   font-weight: var(--weight-semibold);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
   color: var(--ac-chrome-ink-muted);
-  padding-inline: var(--space-4);
-  margin-block-end: var(--space-1);
+  cursor: pointer;
+  list-style: none;
+}
+.ac__nav-heading::-webkit-details-marker {
+  display: none;
+}
+.ac__nav-chevron {
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+}
+.ac__nav-group[open] > summary .ac__nav-chevron {
+  transform: rotate(45deg);
 }
 
 .ac__nav-list {
@@ -226,8 +233,8 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
-  min-height: 40px;
-  margin-inline: var(--space-2);
+  min-height: var(--target-min);
+  margin-inline: var(--space-3);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-control);
   font-size: var(--text-ui);
@@ -263,6 +270,7 @@
   color: var(--ac-chrome-ink);
   font-weight: var(--weight-semibold);
   box-shadow: inset 2px 0 0 var(--color-primary);
+  color: var(--color-primary-hover);
 }
 
 /*
@@ -1433,8 +1441,8 @@ a.ac-pick:hover {
   display: block;
   inline-size: 40px;
   block-size: 40px;
-  border-radius: var(--radius-chip);
-  object-fit: cover;
+  border-radius: var(--radius-control);
+  object-fit: contain;
   background: var(--color-surface-sunken);
   /* The border keeps a white-background product photo from bleeding into the
      table. Most accessory photography is cut out on white. */
@@ -1866,7 +1874,7 @@ a.ac-pick:hover {
 /* The jump must not land the heading under a sticky bar, and the browser must
    not tear the reader from one end of the page to the other without warning. */
 .ac [id^="sez-"] {
-  scroll-margin-block-start: var(--space-6);
+  scroll-margin-block-start: calc(var(--ac-topbar) + var(--space-5));
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -1880,4 +1888,230 @@ a.ac-pick:hover {
 .ac .ac-conflict:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
+}
+
+/* Compact identity and workspace navigation. Native disclosures need no hydration. */
+.ac__brand-mark {
+  width: 28px;
+  height: 34px;
+  flex: 0 0 auto;
+  color: var(--color-primary);
+}
+.ac__brand-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  line-height: 1.2;
+}
+.ac__brand-copy > span {
+  font-size: 0.6875rem;
+  color: var(--color-text-secondary-on-sunken);
+  font-weight: 400;
+}
+.ac__mobile-search {
+  display: none;
+}
+.ac .ac__search input {
+  min-height: 44px;
+  background: var(--color-background);
+}
+.ac .ac-photo-task {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  min-height: 44px;
+  font-size: 0.75rem;
+  color: var(--color-primary-hover);
+}
+.ac .ac-dashboard {
+  display: grid;
+  gap: var(--space-6);
+}
+.ac .ac-dashboard h2 {
+  margin: 0;
+}
+.ac .ac-dashboard__section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.ac .ac-dashboard__section-head p {
+  margin-top: var(--space-1);
+}
+.ac .ac-dashboard__workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(17rem, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+.ac .ac-dashboard__side {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+.ac .ac-dashboard__side .ac-panel {
+  margin: 0;
+}
+.ac .ac-dashboard__side p {
+  margin-block: var(--space-3);
+}
+.ac .ac-dashboard__side .btn {
+  width: 100%;
+}
+.ac .ac-dashboard__photos {
+  background: var(--color-primary-surface);
+}
+.ac .ac-dashboard__eyebrow {
+  margin-top: 0;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--color-primary-hover);
+}
+.ac .ac-dashboard__count {
+  display: grid;
+  place-items: center;
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: var(--radius-control);
+  background: var(--color-surface-sunken);
+  font-weight: 600;
+}
+.ac .ac-dashboard__priorities {
+  min-width: 0;
+}
+.ac .ac-dashboard .ac-action {
+  padding: var(--space-3);
+  gap: var(--space-3);
+  background: var(--color-surface);
+}
+.ac .ac-dashboard .ac-action__count {
+  flex: 0 0 36px;
+}
+.ac .ac-dashboard .ac-action__detail {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+.ac .ac-dashboard .ac-action .btn {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding-inline: var(--space-3);
+}
+.ac .ac-dashboard .ac-headline {
+  gap: var(--space-4);
+}
+.ac .ac-dashboard .ac-metric--headline {
+  background-image: none;
+  border-top: 3px solid var(--color-primary);
+  padding: var(--space-5);
+}
+.ac .ac-dashboard .ac-metrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+.ac .ac-dashboard .ac-metric {
+  min-width: 0;
+}
+.ac .ac-dashboard .ac-metric__label {
+  color: var(--color-text-secondary-on-sunken);
+}
+.ac .ac-dashboard .ac-metric__value {
+  margin-block: var(--space-2);
+}
+.ac .ac-dashboard__more {
+  margin-top: var(--space-4);
+}
+.ac .ac-dashboard__more summary,
+.ac .ac-dashboard__settings summary {
+  min-height: 44px;
+  padding-block: var(--space-3);
+  font-weight: 600;
+  cursor: pointer;
+}
+.ac .ac-dashboard__more .ac-actions {
+  margin-top: var(--space-3);
+}
+.ac .ac-dashboard__text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  font-size: 0.875rem;
+}
+.ac .ac-dashboard__progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8125rem;
+  margin-top: var(--space-4);
+}
+.ac .ac-dashboard__progress {
+  width: 100%;
+  height: 8px;
+  margin-top: var(--space-3);
+  accent-color: var(--color-primary);
+}
+.ac .ac-dashboard .ac-gates {
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (max-width: 75rem) {
+  .ac .ac-dashboard__workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ac .ac-dashboard__side {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1023px) {
+  .ac__collapse-input,
+  .ac__topbar > label[for="ac-collapse"],
+  .ac__topbar > .ac__hide-sm {
+    display: none;
+  }
+  .ac__mobile-search {
+    display: inline-flex;
+  }
+  .ac__drawer[open] {
+    padding-bottom: var(--space-3);
+  }
+}
+@media (max-width: 40rem) {
+  .ac__brand {
+    font-size: 0.75rem;
+    gap: var(--space-2);
+  }
+  .ac__brand-mark {
+    width: 24px;
+    height: 30px;
+  }
+  .ac__topbar {
+    gap: var(--space-2);
+  }
+  .ac__topbar-spacer {
+    display: none;
+  }
+  .ac__brand {
+    flex: 1;
+  }
+  .ac .ac-dashboard__side {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ac .ac-dashboard .ac-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ac .ac-dashboard .ac-panel {
+    padding: var(--space-4);
+  }
+  .ac .ac-dashboard .ac-action {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr);
+    align-items: start;
+  }
+  .ac .ac-dashboard .ac-action .btn {
+    grid-column: 2;
+    justify-self: start;
+  }
 }

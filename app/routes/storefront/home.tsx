@@ -1,3 +1,4 @@
+import { saleableImagePredicate } from "~/domain/media/storefront-image";
 import { DeviceDiscovery } from "~/components/storefront/device-discovery";
 import { HeroShowcase } from "~/components/storefront/hero-showcase";
 import { saleableImageKey, editorialHeroKey, storePhotoKey } from "~/domain/media/storefront-image";
@@ -38,7 +39,7 @@ export async function loader({ context }: Route.LoaderArgs) {
                  JOIN product_variants v ON v.id = vp.variant_id
                 WHERE v.product_id = p.id ORDER BY vp.amount ASC LIMIT 1) AS price_amount,
               (SELECT object_key FROM product_images pi
-                WHERE pi.product_id = p.id
+                WHERE pi.product_id = p.id AND ${saleableImagePredicate()}
                 ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS image_key
          FROM products p
          LEFT JOIN product_translations pt ON pt.product_id = p.id AND pt.locale = 'it'
@@ -67,7 +68,7 @@ export async function loader({ context }: Route.LoaderArgs) {
                    JOIN product_variants v ON v.id = vp.variant_id
                   WHERE v.product_id = p.id ORDER BY vp.amount ASC LIMIT 1) AS price_amount,
                 (SELECT object_key FROM product_images pi
-                  WHERE pi.product_id = p.id
+                  WHERE pi.product_id = p.id AND ${saleableImagePredicate()}
                   ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS image_key,
                 COALESCE(ct.name, c.slug) AS category_name
            FROM products p
@@ -514,9 +515,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
     store: () => (
       <>
-        {/* The one dark band on the page. It carries the physical shop, because
-            that is the fact a marketplace cannot copy. Rendered only once the
-            merchant has actually configured a shop to talk about. */}
+        {/* Store content and imagery remain controlled by the merchant settings. */}
         {loaderData.showStore ? (
           <section className={`store-band${loaderData.storeImage ? " store-band--media" : ""}`}>
             {loaderData.storeImage ? (

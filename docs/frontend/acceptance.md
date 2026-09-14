@@ -1,5 +1,16 @@
 # Acceptance record
 
+## Current follow-up — PR #13 (14 September 2026)
+
+This section supersedes the earlier branch/publication status below. Current base is `c6db3cd`; the original storefront has been incorporated into main. The media/footer/admin work is on `feat/media-footer-admin-polish`, draft [PR #13](https://github.com/Toolstack7462/coversbymobilezamzam/pull/13). No merge, production deployment or production media mutation was performed in this pass.
+
+- Local `npm run verify`: all 11 gates pass; 577 unit and 213 integration tests. Hostinger production build also passes.
+- Worker build gzip totals: storefront JS 135.0 → 135.4 KB; admin JS 84.5 → 85.2 KB; all-route CSS 16.9 → 17.8 KB. Existing budgets pass without increases; these are aggregate build measurements, not page transfer size or field Core Web Vitals.
+- Browser implementation results and screenshots: pending isolated CI review. Baseline run 34876707550 passed verification/storefront screenshots but its shared Wrangler browser server exited after 12 passing tests. The ensuing connection-refused failures are recorded, not treated as passing.
+- Source changes: storefront/admin styles, footer, neutral photo placeholder, product image-selection queries, missing-photo view/setup count, dashboard, shared admin shell and product editor photo guidance. Existing authentication, payments, inventory mutations and Hostinger architecture are retained.
+- Still required: real merchant/supplier photographs for the 26 known unsuitable assignments, merchant verification of seeded specifications/stock, and a verified shop photo. No new photography was fabricated.
+- Hosting: current release documents were inspected, but hPanel settings and an isolated hosted preview are not independently available in this session. Browser evidence is built from isolated fixtures, not production customer data.
+
 **Status: feature-branch review, not approved for production.** No production merge, deployment or database/media write was performed. The GitHub pull request records publication and remote CI status.
 
 ## Changes

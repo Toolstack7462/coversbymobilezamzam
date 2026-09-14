@@ -291,3 +291,46 @@ test.describe("tables on a phone", () => {
     expect(overflows).toBe(false);
   });
 });
+
+test.describe("organized merchant workspace without JavaScript", () => {
+  test.use({ javaScriptEnabled: false });
+  test("opens a menu group and reaches the photo repair queue", async ({ page }, testInfo) => {
+    await page.goto("/admin");
+    if (testInfo.project.name === "mobile") await page.locator(".ac__drawer-toggle").click();
+    const nav = page.locator(
+      testInfo.project.name === "mobile" ? ".ac__drawer" : ".ac__nav-desktop",
+    );
+    const catalog = nav
+      .locator("details")
+      .filter({ has: page.locator("summary", { hasText: "Catalogo" }) });
+    await catalog.locator("summary").click();
+    await catalog.getByRole("link", { name: "Prodotti", exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/prodotti$/);
+    const currentNav = page.locator(
+      testInfo.project.name === "mobile" ? ".ac__drawer" : ".ac__nav-desktop",
+    );
+    await expect(
+      currentNav
+        .locator("details")
+        .filter({ has: page.locator("summary", { hasText: "Catalogo" }) }),
+    ).toHaveAttribute("open", "");
+    await page.goto("/admin");
+    await page.getByRole("link", { name: /Rivedi le foto/ }).click();
+    await expect(page).toHaveURL(/vista=senza-immagine/);
+    await expect(page.locator(".ac-photo-task").first()).toBeVisible();
+    await page.locator(".ac-photo-task").first().click();
+    await expect(page).toHaveURL(/#sez-foto$/);
+    await expect(page.locator("#image")).toBeVisible();
+  });
+  test("sidebar collapse returns its space to the page", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "desktop rail only");
+    await page.goto("/admin");
+    const before = await page.locator(".ac__main").boundingBox();
+    await page.locator('label[for="ac-collapse"]').click();
+    await expect(page.locator(".ac__sidebar")).toBeHidden();
+    const after = await page.locator(".ac__main").boundingBox();
+    expect(after!.width).toBeGreaterThan(before!.width);
+    await page.locator('label[for="ac-collapse"]').click();
+    await expect(page.locator(".ac__sidebar")).toBeVisible();
+  });
+});

@@ -1,4 +1,5 @@
-import { NavLink, Link, Form } from "react-router";
+import { BrandSymbol } from "~/components/storefront/brand-symbol";
+import { NavLink, Link, Form, useLocation } from "react-router";
 import type { NavGroup } from "~/lib/admin-nav";
 
 /**
@@ -64,7 +65,11 @@ export function AdminShell({
         </label>
 
         <Link to="/admin" className="ac__brand">
-          {brand ?? "Centro di controllo"}
+          <BrandSymbol className="ac__brand-mark" />
+          <span className="ac__brand-copy">
+            <strong>{brand ?? "Centro di controllo"}</strong>
+            <span>Gestione negozio</span>
+          </span>
         </Link>
 
         {/*
@@ -105,6 +110,18 @@ export function AdminShell({
         ) : null}
 
         <div className="ac__topbar-spacer" />
+        {canSearch ? (
+          <Link
+            to="/admin/cerca"
+            className="ac__icon-btn ac__mobile-search"
+            aria-label="Cerca nel pannello"
+          >
+            <svg {...iconProps}>
+              <circle cx="10" cy="10" r="6" />
+              <path d="m15 15 5 5" />
+            </svg>
+          </Link>
+        ) : null}
 
         {/*
           "Vedi il sito" stays; "Aggiungi prodotto" does not.
@@ -171,6 +188,7 @@ function NavTree({
   badges: ShellBadges;
   mustEnrol?: boolean | undefined;
 }) {
+  const { pathname } = useLocation();
   if (mustEnrol) {
     // A privileged account without TOTP can reach almost nothing, so offering
     // the full menu would just produce a wall of redirects.
@@ -192,9 +210,22 @@ function NavTree({
 
   return (
     <>
-      {nav.map((group) => (
-        <div key={group.label} className="ac__nav-group">
-          <h2 className="ac__nav-heading">{group.label}</h2>
+      {nav.map((group, index) => (
+        <details
+          key={`${pathname}:${group.label}`}
+          className="ac__nav-group"
+          open={
+            index === 0 ||
+            group.items.some((item) => {
+              const path = item.to.split("?")[0]!;
+              return pathname === path || (!item.end && pathname.startsWith(`${path}/`));
+            })
+          }
+        >
+          <summary className="ac__nav-heading">
+            <span>{group.label}</span>
+            <span className="ac__nav-chevron" aria-hidden="true" />
+          </summary>
           <ul className="ac__nav-list">
             {group.items.map((item) => {
               const badge = item.badgeKey ? badges[item.badgeKey] : undefined;
@@ -218,7 +249,7 @@ function NavTree({
               );
             })}
           </ul>
-        </div>
+        </details>
       ))}
     </>
   );

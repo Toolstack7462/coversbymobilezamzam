@@ -1,3 +1,4 @@
+import { saleableImagePredicate } from "~/domain/media/storefront-image";
 import { storefrontTitle } from "~/lib/storefront-meta";
 import { Link, Form, useLocation, useRouteLoaderData } from "react-router";
 import type { Route } from "./+types/collection";
@@ -139,7 +140,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
                  JOIN product_variants v ON v.id = vp.variant_id
                 WHERE v.product_id = p.id ORDER BY vp.amount ASC LIMIT 1) AS price_amount,
               (SELECT object_key FROM product_images pi
-                WHERE pi.product_id = p.id
+                WHERE pi.product_id = p.id AND ${saleableImagePredicate()}
                 ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS image_key,
               (SELECT il.on_hand FROM inventory_levels il
                  JOIN product_variants v ON v.id = il.variant_id

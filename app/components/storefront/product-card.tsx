@@ -1,3 +1,4 @@
+import { PhotoPlaceholder } from "~/components/storefront/photo-placeholder";
 import { saleableImageKey } from "~/domain/media/storefront-image";
 import { Link } from "react-router";
 import { money, format as formatMoney } from "~/domain/pricing/money";
@@ -91,9 +92,7 @@ export function ProductCard({ product, locale, t, mediaBaseUrl, priority = false
           ) : (
             /* No stock photography and no competitor imagery. An honest empty
                frame beats a picture of something the shop may not stock. */
-            <div className="product-card__media-empty">
-              <span>{t("product.photo_pending")}</span>
-            </div>
+            <PhotoPlaceholder label={t("product.photo_pending")} />
           )}
         </div>
 

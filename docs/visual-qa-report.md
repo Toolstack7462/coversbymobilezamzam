@@ -1,0 +1,3 @@
+## Media/footer/admin follow-up — 14 September 2026
+
+Current base c6db3cd; feature branch feat/media-footer-admin-polish, PR #13. Light compact footer, coordinated light admin chrome, reorganized dashboard, native menu disclosures and actionable photo repair queue implemented. Local verify and Hostinger build pass. Baseline storefront screenshots captured in run 34876707550; its combined browser server failed before admin visual capture. Isolated baseline and updated visual jobs capture the unchanged PR base and proposed source separately. Final browser evidence and remaining merchant-asset limitations are recorded in docs/frontend/acceptance.md.

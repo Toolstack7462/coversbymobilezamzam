@@ -1,3 +1,4 @@
+import { saleableImagePredicate } from "~/domain/media/storefront-image";
 import { Link, useLocation } from "react-router";
 import type { Route } from "./+types/setup-centre";
 import { appContext, type AppEnv } from "~/runtime/context";
@@ -47,7 +48,7 @@ export async function loadSetupSnapshot(env: AppEnv, now: number) {
 
         (SELECT COUNT(*) FROM products p
           WHERE p.archived_at IS NULL
-            AND NOT EXISTS (SELECT 1 FROM product_images pi WHERE pi.product_id = p.id)
+            AND NOT EXISTS (SELECT 1 FROM product_images pi WHERE pi.product_id = p.id AND ${saleableImagePredicate()})
         ) AS products_without_image,
 
         (SELECT COUNT(*) FROM products p

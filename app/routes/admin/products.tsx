@@ -1,3 +1,4 @@
+import { saleableImagePredicate } from "~/domain/media/storefront-image";
 import type { Route } from "./+types/products";
 import { Link } from "react-router";
 import { appContext } from "~/runtime/context";
@@ -114,7 +115,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
                * would be an N+1 on the busiest screen in the admin.
                */
               (SELECT pi.object_key FROM product_images pi
-                WHERE pi.product_id = p.id
+                WHERE pi.product_id = p.id AND ${saleableImagePredicate()}
                 ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS image_key,
               (SELECT v.sku FROM product_variants v
                 WHERE v.product_id = p.id AND v.archived_at IS NULL
@@ -342,6 +343,11 @@ export default function AdminProducts({ loaderData, actionData }: Route.Componen
           )}
           <span>
             <Link to={`/admin/prodotti/${row.id}`}>{row.name ?? row.slug}</Link>
+            {!row.image_key && canWrite ? (
+              <Link className="ac-photo-task" to={`/admin/prodotti/${row.id}#sez-foto`}>
+                Completa le foto <span aria-hidden="true">↗</span>
+              </Link>
+            ) : null}
             {/* A product with no Italian name is not a blank row; it is a row
               whose translation is missing, and saying so is more useful. */}
             {row.name === null ? (

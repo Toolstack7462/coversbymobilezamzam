@@ -80,7 +80,7 @@ export function SiteFooter({
             <li>
               <Link to={path("/trova-dispositivo")}>{t("nav.find_by_device")}</Link>
             </li>
-            {navigation.map((item) => (
+            {navigation.slice(0, 4).map((item) => (
               <li key={item.slug}>
                 <Link to={path(`/shop?categoria=${item.slug}`)}>{item.name}</Link>
               </li>

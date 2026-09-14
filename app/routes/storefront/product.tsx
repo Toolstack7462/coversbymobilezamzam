@@ -1,3 +1,5 @@
+import { PhotoPlaceholder } from "~/components/storefront/photo-placeholder";
+import { saleableImagePredicate } from "~/domain/media/storefront-image";
 import { storefrontTitle } from "~/lib/storefront-meta";
 import { saleableImageKey } from "~/domain/media/storefront-image";
 import { Link, Form, useLocation } from "react-router";
@@ -191,7 +193,7 @@ export async function loader({ context, params }: Route.LoaderArgs) {
                  JOIN product_variants v ON v.id = vp.variant_id
                 WHERE v.product_id = p.id ORDER BY vp.amount ASC LIMIT 1) AS price_amount,
               (SELECT object_key FROM product_images pi
-                WHERE pi.product_id = p.id
+                WHERE pi.product_id = p.id AND ${saleableImagePredicate()}
                 ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS image_key
          FROM product_compatibility mine
          JOIN product_compatibility theirs
@@ -253,7 +255,7 @@ export async function loader({ context, params }: Route.LoaderArgs) {
                  JOIN product_variants v ON v.id = vp.variant_id
                 WHERE v.product_id = p.id ORDER BY vp.amount ASC LIMIT 1) AS price_amount,
               (SELECT object_key FROM product_images pi
-                WHERE pi.product_id = p.id
+                WHERE pi.product_id = p.id AND ${saleableImagePredicate()}
                 ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS image_key
          FROM product_family_members mine
          JOIN product_family_members theirs
@@ -429,9 +431,7 @@ export default function ProductPage({ loaderData }: Route.ComponentProps) {
                 </figure>
               ))
             ) : (
-              <div className="product-card__media-empty">
-                <span>{t("product.photo_pending")}</span>
-              </div>
+              <PhotoPlaceholder label={t("product.photo_pending")} />
             )}
           </div>
 

@@ -40,3 +40,9 @@ export function editorialHeroKey(key: string | null): string | null {
 export function storePhotoKey(key: string | null): string | null {
   return key === "lifestyle/WEer-k_jhE4-1b79f37377.webp" ? null : key;
 }
+
+/** Fixed SQL over the internal pi alias. No request or merchant text becomes SQL. */
+export function saleableImagePredicate(): string {
+  const keys = [...unsuitableProductKeys].map((key) => `'${key.replaceAll("'", "''")}'`).join(",");
+  return `pi.object_key <> '' AND substr(pi.object_key, 1, 5) <> 'demo/' AND pi.object_key NOT IN (${keys})`;
+}

@@ -1,3 +1,5 @@
+import { saleableImagePredicate } from "~/domain/media/storefront-image";
+
 /**
  * The saved views for the product list.
  *
@@ -34,9 +36,9 @@ export const PRODUCT_VIEWS: readonly ProductView[] = [
   },
   {
     slug: "senza-immagine",
-    label: "Senza immagine",
+    label: "Foto da completare",
     where: `p.archived_at IS NULL AND NOT EXISTS (
-              SELECT 1 FROM product_images pi WHERE pi.product_id = p.id)`,
+              SELECT 1 FROM product_images pi WHERE pi.product_id = p.id AND ${saleableImagePredicate()})`,
   },
   {
     slug: "senza-compatibilita",

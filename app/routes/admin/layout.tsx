@@ -1,3 +1,4 @@
+import { storefrontBrand } from "~/domain/content/brand";
 import { Outlet, isRouteErrorResponse, useRouteError, Link } from "react-router";
 import type { LinksFunction } from "react-router";
 import type { Route } from "./+types/layout";
@@ -6,7 +7,7 @@ import { requireEnrolledStaff } from "~/infrastructure/auth/session.server";
 import { visibleNav } from "~/lib/admin-nav";
 import { AdminShell } from "~/components/admin/admin-shell";
 import adminStyles from "~/styles/admin.css?url";
-import { SETTING_KEYS, settingValue, type SettingsMap } from "~/domain/content/gates";
+import { SETTING_KEYS, type SettingsMap } from "~/domain/content/gates";
 
 /**
  * The admin shell route.
@@ -63,10 +64,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       .filter((r): r is { key: string; value: string } => r.value !== null)
       .map((r) => [r.key, r.value]),
   );
-  const configuredBrand =
-    settingValue(settings, SETTING_KEYS.brandName) ??
-    settingValue(settings, SETTING_KEYS.shopName) ??
-    null;
+  const configuredBrand = storefrontBrand(settings, "Centro di controllo").full;
 
   const counts = await env.DB.prepare(
     `SELECT

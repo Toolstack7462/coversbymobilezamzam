@@ -1,3 +1,4 @@
+import { saleableImageKey } from "~/domain/media/storefront-image";
 import { Form, Link, redirect, useLocation, useSearchParams } from "react-router";
 import type { Route } from "./+types/product-detail";
 import { appContext, type AppEnv } from "~/runtime/context";
@@ -2095,11 +2096,16 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
       <section id="sez-foto" className="panel stack" aria-labelledby="h-foto">
         <h2 id="h-foto">Foto</h2>
         <p className="small muted">
-          La prima foto è quella che compare negli elenchi. Le dimensioni vengono lette dal file:
-          servono al sito per riservare lo spazio prima che l&apos;immagine arrivi, così la pagina
-          non &ldquo;salta&rdquo; mentre carica.
+          Carica fotografie del prodotto esatto, controllando modello, colore e connettori. La foto
+          principale utilizzabile compare negli elenchi; le altre nella scheda prodotto.
         </p>
 
+        {images.some((image) => !saleableImageKey(image.object_key)) ? (
+          <p className="notice notice--warning">
+            Alcune vecchie immagini sono escluse dal negozio perché non rappresentano il prodotto.
+            Carica le fotografie corrette: la prima immagine utilizzabile apparirà subito sul sito.
+          </p>
+        ) : null}
         {images.length === 0 ? (
           <div className="empty-state">
             <p>
@@ -2128,6 +2134,9 @@ export default function ProductDetail({ loaderData, actionData }: Route.Componen
                   decoding="async"
                 />
                 <div className="ac-thumb__meta">
+                  {!saleableImageKey(image.object_key) ? (
+                    <span className="badge badge--warning">Da sostituire · esclusa dal sito</span>
+                  ) : null}
                   <span className="caption numeric">
                     {image.width}×{image.height}
                   </span>

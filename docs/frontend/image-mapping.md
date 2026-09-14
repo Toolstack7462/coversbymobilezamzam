@@ -1,5 +1,15 @@
 # Product image mapping
 
+## 14 September 2026 — existing media selection and repair queue
+
+No new supplier/merchant photographs were available in this pass. The 26 quarantined stock assignments above still require real SKU photographs; this work does not represent them as completed.
+
+Home, collection, recommendation and bundle image selection now skips the known unsuitable keys before selecting the first image. A real secondary merchant upload therefore remains visible even when an old primary is quarantined. PDP galleries retain their existing filtering. A neutral camera symbol accompanies the existing missing-photo label; it is not a product illustration or photograph.
+
+Merchant control: Dashboard → **Rivedi le foto** → existing `/admin/prodotti?vista=senza-immagine` view, now labelled **Foto da completare** → **Completa le foto** opens the existing product editor at `#sez-foto`. Upload, primary-image selection and deletion use the existing authoritative media fields and actions, without a schema change or Git deployment. The editor identifies old suppressed files as **Da sostituire · esclusa dal sito** rather than deleting them without review.
+
+Three integration cases cover an unsuitable primary, a usable secondary, and returning to the repair queue after the last usable photo is removed. These use isolated fixture metadata, not merchant media writes. A usable key does not certify that a future merchant upload matches its SKU.
+
 Audit of the existing source provenance and visible public homepage, 14 September 2026. No private merchant media store or supplier catalogue was available. The public site and checked-in credits were inspected before considering replacements. No replacement stock or generated SKU photographs were introduced.
 
 | Product slug                           | Existing object key                    | Audit decision                                                      |

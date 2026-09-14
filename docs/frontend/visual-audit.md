@@ -1,5 +1,17 @@
 # Storefront audit — 14 September 2026
 
+## 14 September 2026 — media, footer and admin follow-up
+
+This pass starts from current main `c6db3cd7604b470933504099b03a7db1a3b2b527`, not the old storefront review branch. The earlier storefront has since been incorporated into main. Work is isolated on `feat/media-footer-admin-polish`, draft PR #13. The independent `fix/admin-audit-and-refinement` branch was inspected but not merged or overwritten.
+
+The footer was visually heavy and had a reserved fourth column even when CMS data produced three groups. It now uses an ivory surface, compact spacing and adaptive columns, retaining published help/legal links, contact wrapping and attribution. The neutral store invitation is pale blue with its CTA aligned beside the copy on desktop. An actual merchant store photo retains its separate media treatment.
+
+The admin's long dark sidebar, repeated warnings and low-positioned metrics made daily tasks harder to scan. The light chrome uses the existing original ZZ identity, native collapsible navigation groups, a true desktop sidebar collapse, a mobile search link and a dashboard with metrics, priorities and setup/photo tasks. Current-route navigation opens automatically; permissions and financial queries stay authoritative.
+
+A blocked primary product image could mask a usable secondary merchant photo. Database selection now applies the same known-defect predicate as presentation. Missing-photo counts, the saved product view and setup centre now agree. No genuine product photography was supplied or uploaded to production.
+
+Baseline local verification passed all 11 gates (577 unit, 210 integration). Baseline CI run 34876707550 passed verification and the four-width storefront survey, but its shared browser server exited after 12 tests; the remaining connection failures are not accepted UI results. Browser projects and admin visual baselines now run on isolated CI jobs. Browser evidence for the implementation is recorded in acceptance.md when available.
+
 ## Source and release
 
 - Repository: https://github.com/Toolstack7462/coversbymobilezamzam

@@ -13,6 +13,36 @@ Reproduce with `npm run performance:baseline` and `npm run performance:smoke`.
 
 ---
 
+## 0. CORRECTION, 2026-09-14 — the numbers below are about 6× too slow
+
+Re-measured the next day on the **same build, same database, same
+configuration**, with the response cache switched off so the comparison is
+like-for-like, this machine produced:
+
+|                          | Published below | Re-measured 2026-09-14 |
+| ------------------------ | --------------- | ---------------------- |
+| Homepage p50             | 86 ms           | **14.6 ms**            |
+| Throughput, 8 concurrent | 11.5 req/s      | **66.6 req/s**         |
+| p50 under load           | 732 ms          | **80 ms**              |
+
+Nothing in the application explains it. The likely cause is the machine: this
+baseline was taken while the migration's own test runs were competing for it.
+The project has already made that mistake once in a different form — 68
+Playwright failures attributed to a "saturated server" that turned out to be its
+own concurrent test runs.
+
+**So the tables below overstate what a request costs.** They are left in place
+rather than rewritten, because deleting a measurement that turned out to be
+wrong is how the same mistake gets made again. What is still true of them: the
+per-route QUERY COUNTS, the absence of N+1, the connection-pool behaviour and
+the shape of the degradation under concurrency. What is not: the milliseconds.
+
+For numbers to compare against, use
+[performance-before-after.md](performance-before-after.md), where both halves
+were measured in the same minute on a quiet machine.
+
+---
+
 ## 1. What was measured
 
 |          |                                                                                                               |
@@ -146,17 +176,17 @@ was not the bottleneck and the numbers describe the server.
 
 Recorded so the gaps are visible rather than implied.
 
-|                                | Why not                                                                                                                                                            |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Soak test (hours)              | Needed to distinguish a grown heap from a leak. Not run.                                                                                                           |
-| Import-while-browsing          | The import path has not been exercised under concurrent load.                                                                                                      |
-| Connection-exhaustion recovery | Not tested.                                                                                                                                                        |
-| Cold-cache measurement         | Every figure above is warm.                                                                                                                                        |
-| Media serving                  | The media migration has not run, so `/media/*` served 0 objects.                                                                                                   |
-| Response caching               | Not implemented. Every route above is uncached; the numbers are the uncached cost.                                                                                 |
-| Field (real-user) metrics      | Impossible without a deployment.                                                                                                                                   |
-| CPU percent                    | Not observable per-process from inside; the hosting panel's graph is an account-wide aggregate and reading a per-application figure off it would be inventing one. |
-| Anything on Hostinger          | No access.                                                                                                                                                         |
+|                                | Why not                                                                                                                                                             |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Soak test (hours)              | **Now run** — 30 minutes, see [load-test-results.md](load-test-results.md).                                                                                         |
+| Import-while-browsing          | The import path has not been exercised under concurrent load.                                                                                                       |
+| Connection-exhaustion recovery | Not tested.                                                                                                                                                         |
+| Cold-cache measurement         | Every figure above is warm.                                                                                                                                         |
+| Media serving                  | The media migration has not run, so `/media/*` served 0 objects.                                                                                                    |
+| Response caching               | **Now implemented.** Every route above is still the UNCACHED cost, which is what a cold cache pays. See [performance-before-after.md](performance-before-after.md). |
+| Field (real-user) metrics      | Impossible without a deployment.                                                                                                                                    |
+| CPU percent                    | Not observable per-process from inside; the hosting panel's graph is an account-wide aggregate and reading a per-application figure off it would be inventing one.  |
+| Anything on Hostinger          | No access.                                                                                                                                                          |
 
 ---
 

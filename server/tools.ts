@@ -29,3 +29,14 @@ export type { ObjectStore, StoredObject } from "~/infrastructure/storage/object-
 
 export { withQueryMetrics, summarise, shapeOf } from "~/infrastructure/db/query-metrics";
 export type { QueryMetrics, QuerySummary } from "~/infrastructure/db/query-metrics";
+
+/*
+ * Scheduled work, so the CLI runner can reach it WITHOUT importing
+ * server/index.ts.
+ *
+ * That file calls `main()` at module scope: importing it to borrow one export
+ * would start a second HTTP server on the application's port every time cron
+ * fires.
+ */
+export { JOBS, JOB_NAMES, runJob, secretMatches } from "../server/jobs";
+export type { JobResult, JobContext } from "../server/jobs";

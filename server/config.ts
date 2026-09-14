@@ -51,6 +51,31 @@ export interface ServerConfig {
     privateRoot: string;
   };
 
+  /**
+   * The anonymous response cache.
+   *
+   * ON by default in every environment, because a cache that is only enabled
+   * in production is a cache nobody has watched work. `RESPONSE_CACHE=off`
+   * turns it off, which is the first thing to try when a page looks stale and
+   * the last measurement a before/after comparison needs.
+   *
+   * The TTL is a backstop behind the version bump, not the primary
+   * invalidation, so it is measured in a minute rather than in seconds: a
+   * merchant's save is reflected immediately by the bump, and the TTL only has
+   * to catch what no request passed through this process — a scheduled job, a
+   * row edited by hand, a write made by a different worker.
+   */
+  cache: {
+    enabled: boolean;
+    ttlMs: number;
+    maxEntries: number;
+    maxTotalBytes: number;
+    /** Emits `x-cache`. Off in production, where it tells a visitor nothing. */
+    reveal: boolean;
+    /** Cross-worker invalidation signal. Lives beside the private uploads. */
+    versionFile: string;
+  };
+
   secrets: {
     betterAuthSecret: string;
     settingsEncryptionKey: string;
@@ -175,6 +200,29 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
     );
   }
 
+  const cacheEnabled = (optional("RESPONSE_CACHE") ?? "on").toLowerCase() !== "off";
+  const cacheTtlMs = Number(optional("RESPONSE_CACHE_TTL_MS") ?? 60_000);
+  if (!Number.isInteger(cacheTtlMs) || cacheTtlMs < 0 || cacheTtlMs > 3_600_000) {
+    problems.push(
+      `RESPONSE_CACHE_TTL_MS must be between 0 and 3600000: ${env.RESPONSE_CACHE_TTL_MS}`,
+    );
+  }
+
+  const cacheMaxEntries = Number(optional("RESPONSE_CACHE_MAX_ENTRIES") ?? 500);
+  if (!Number.isInteger(cacheMaxEntries) || cacheMaxEntries < 1) {
+    problems.push(
+      `RESPONSE_CACHE_MAX_ENTRIES must be a positive integer: ${env.RESPONSE_CACHE_MAX_ENTRIES}`,
+    );
+  }
+
+  const cacheMaxMb = Number(optional("RESPONSE_CACHE_MAX_MB") ?? 24);
+  if (!Number.isFinite(cacheMaxMb) || cacheMaxMb <= 0 || cacheMaxMb > 512) {
+    problems.push(
+      `RESPONSE_CACHE_MAX_MB must be between 1 and 512; it is held in the heap of a process ` +
+        `with a memory allowance, beside a measured 105 MB idle RSS`,
+    );
+  }
+
   const caPath = optional("DB_SSL_CA_PATH");
   let ca: string | undefined;
   if (caPath !== undefined) {
@@ -239,6 +287,25 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
       connectionLimit,
     },
     storage: { publicRoot, privateRoot },
+    cache: {
+      enabled: cacheEnabled,
+      ttlMs: cacheTtlMs,
+      maxEntries: cacheMaxEntries,
+      maxTotalBytes: Math.round(cacheMaxMb * 1024 * 1024),
+      // Never in production: the header is for the load harness and the
+      // isolation test, and a visitor learning which pages are cached learns
+      // which requests are cheap to repeat.
+      reveal: appEnv !== "production",
+      /*
+       * Beside the private uploads rather than in a temp directory.
+       *
+       * It has to be on storage every worker of this application shares and
+       * that survives a restart — a per-worker temp path is not a shared
+       * signal, and a signal that resets on restart silently downgrades the
+       * cache to TTL-only invalidation.
+       */
+      versionFile: `${privateRoot.replace(/[/\\]+$/, "")}/.cache-version`,
+    },
     secrets: {
       betterAuthSecret,
       settingsEncryptionKey,

@@ -63,7 +63,14 @@
     "hostinger:reserved-words": "node scripts/hostinger/reserved-words.mjs",
     "performance:baseline": "node scripts/hostinger/performance-baseline.mjs",
     "performance:smoke": "node scripts/hostinger/performance-smoke.mjs",
-    "verify:hostinger": "npm run verify && npm run test:db:mariadb"
+    "verify:hostinger": "npm run verify && npm run test:db:mariadb",
+    "test:cache-isolation": "node scripts/hostinger/cache-isolation.mjs",
+    "test:inventory-concurrency": "vitest run --config vitest.mariadb.config.ts -t concurren",
+    "hostinger:server": "node scripts/hostinger/local-server.mjs",
+    "performance:compare": "node scripts/hostinger/performance-compare.mjs",
+    "performance:soak": "node scripts/hostinger/performance-soak.mjs",
+    "scale:fixture": "node scripts/hostinger/scale-fixture.mjs",
+    "job:run": "node scripts/hostinger/run-job.mjs"
   },
   "dependencies": {
     "@react-router/express": "8.3.1",

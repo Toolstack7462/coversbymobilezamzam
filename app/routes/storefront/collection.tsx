@@ -515,13 +515,25 @@ export default function Collection({ loaderData }: Route.ComponentProps) {
         </div>
       ) : (
         <div className="grid-products">
-          {products.map((product) => (
+          {products.map((product, index) => (
             <ProductCard
               key={product.slug}
               product={product}
               locale={locale}
               t={t}
               mediaBaseUrl={loaderData.mediaBaseUrl}
+              /*
+               * The first row only.
+               *
+               * This page has no hero, so a product photograph is the largest
+               * element in the viewport and lazy-loading it defers the request
+               * the page is waiting on. Four rather than "the first": the grid
+               * is one column at 390px and four at 1440px, and marking four
+               * costs a phone one extra eager image while saving a desktop
+               * three lazy ones. Marking the whole page eager would remove the
+               * point of lazy loading entirely.
+               */
+              priority={index < 4}
             />
           ))}
         </div>

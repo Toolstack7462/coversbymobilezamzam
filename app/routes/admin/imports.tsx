@@ -7,6 +7,7 @@ import { money, format as formatMoney } from "~/domain/pricing/money";
 import { parseCsv, toCsv } from "~/domain/import/csv";
 import {
   planProductImport,
+  MAX_IMPORT_ROWS,
   type CatalogueSnapshot,
   type ImportPlan,
 } from "~/domain/import/product-import";
@@ -175,6 +176,14 @@ export async function action({ request, context }: Route.ActionArgs) {
       return { error: "Il file sembra vuoto." };
     }
 
+    if (parsed.rows.length > MAX_IMPORT_ROWS) {
+      return {
+        error:
+          `Il file contiene ${parsed.rows.length.toLocaleString("it-IT")} righe; il massimo è ` +
+          `${MAX_IMPORT_ROWS.toLocaleString("it-IT")}. Dividilo in più file e caricali uno alla volta.`,
+      };
+    }
+
     const plan = planProductImport(parsed.headers, parsed.rows, await loadSnapshot(env));
 
     return {
@@ -197,6 +206,23 @@ export async function action({ request, context }: Route.ActionArgs) {
     if (payload === "") return { error: "Nessun dato da applicare. Ricarica il file." };
 
     const parsed = parseCsv(payload);
+
+    /*
+     * Checked again here, not only on analysis.
+     *
+     * The payload is carried in the form between the two steps, so a caller who
+     * skips the analyse step — or edits the hidden field — would otherwise
+     * reach the write loop with an unbounded file. A limit enforced only on the
+     * screen that shows it is not a limit.
+     */
+    if (parsed.rows.length > MAX_IMPORT_ROWS) {
+      return {
+        error:
+          `Il file contiene ${parsed.rows.length.toLocaleString("it-IT")} righe; il massimo è ` +
+          `${MAX_IMPORT_ROWS.toLocaleString("it-IT")}. Dividilo in più file e caricali uno alla volta.`,
+      };
+    }
+
     // Re-planned against the CURRENT catalogue, not the one from a minute ago.
     // Another member of staff may have changed a price in between, and applying
     // a stale plan would quietly undo their work.

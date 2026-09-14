@@ -41,9 +41,25 @@ interface Props {
   locale: Locale;
   t: Translator;
   mediaBaseUrl?: string | null;
+  /**
+   * True for the cards in the first visible row of a grid that has no hero
+   * above it.
+   *
+   * `loading="lazy"` on every card is the right default and the wrong thing for
+   * the image that IS the largest element in the viewport. On `/shop` there is
+   * no hero: the first row of product photographs is the LCP, and lazy-loading
+   * it tells the browser to defer the one request the page is waiting for. The
+   * homepage does not pass this, because its hero is preloaded and already
+   * holds that role — two images both claiming high priority is two images
+   * competing for the same bandwidth.
+   *
+   * Deliberately a caller's decision rather than an index test inside the card:
+   * only the page knows what is above it.
+   */
+  priority?: boolean;
 }
 
-export function ProductCard({ product, locale, t, mediaBaseUrl }: Props) {
+export function ProductCard({ product, locale, t, mediaBaseUrl, priority = false }: Props) {
   const price = money(product.priceAmount);
 
   // The discount rules live in the domain layer, so no template can invent a
@@ -66,7 +82,8 @@ export function ProductCard({ product, locale, t, mediaBaseUrl }: Props) {
                  the image arrives (CLS). */
               width={640}
               height={640}
-              loading="lazy"
+              loading={priority ? "eager" : "lazy"}
+              {...(priority ? { fetchPriority: "high" as const } : {})}
               decoding="async"
             />
           ) : (

@@ -159,3 +159,82 @@ Listed rather than left implied.
 | `SELECT o.*` in the order detail | Reads every column including snapshots.                                                    | One route, one row. Recorded, not fixed.                                                                                           |
 | Count queries                    | The collection runs a second `COUNT(*)` for pagination.                                    | Measured as part of the 10; not separately profiled.                                                                               |
 | No `EXPLAIN` in CI               | A plan regression would not be caught.                                                     | Not built.                                                                                                                         |
+
+---
+
+## The listing index, measured at scale (added 2026-09-14)
+
+Every figure in the sections above was taken against 26 products, and a query
+plan chosen over 26 rows is not the plan the optimiser will choose later — a
+full scan of 26 rows really is faster than an index lookup, so the small
+catalogue hides the question rather than answering it.
+
+`npm run scale:fixture -- --copies 40` builds `zamzam_scale`: the real
+catalogue multiplied to **1,066 products / 30,996 catalogue rows / 4.8 MB**. It
+refuses any target database whose name does not contain "scale", because it
+drops the target first.
+
+### What changed at size
+
+The collection query — the one behind `/shop` and every category page:
+
+| Catalogue | Plan                                                   | p50    |
+| --------- | ------------------------------------------------------ | ------ |
+| 26        | `range` on `products_status_idx (status, archived_at)` | 2.8 ms |
+| 1,066     | `ALL`, `Using where; Using filesort`                   | 9.1 ms |
+
+The optimiser abandoned the index and scanned the table, then sorted the
+result. Nothing about the page changed: it still renders twenty-four cards. The
+cost is the sort, and the sort is `ORDER BY p.is_featured DESC,
+p.published_at DESC` — every storefront listing.
+
+### The change
+
+`products_status_idx` extended from `(status, archived_at)` to
+`(status, archived_at, is_featured, published_at)`.
+
+| Query                            | Before | After      |
+| -------------------------------- | ------ | ---------- |
+| Collection, first page           | 9.1 ms | **3.4 ms** |
+| Collection, page 11 (OFFSET 240) | 9.4 ms | **4.1 ms** |
+| At 26 products                   | 2.8 ms | 2.8 ms     |
+
+`Using filesort` is gone from the plan. Extended rather than joined by a second
+index: two indexes sharing a leading column are two writes on every product
+change, and the wider one answers both shapes.
+
+Shipped as `0007_product_listing_index` (D1) and
+`0003_product_listing_index` (MariaDB).
+
+### What was measured and deliberately NOT fixed
+
+**`?ordina=recenti` still filesorts** — 8.7 ms at 1,066 products. It sorts by
+`published_at` alone, which the extended index cannot serve because
+`is_featured` sits between the equality columns and it. A third index would fix
+it, at the cost of another write on every product change, to speed up the
+less-used sort. There is no evidence yet that anybody suffers from it.
+
+**Search is the slow route at scale** — 55.8 ms for `/shop?q=cover` at 1,066
+products, against 11.2 ms at 26. Measured piece by piece:
+
+| Piece                                       | 26 products | 1,066 products                 |
+| ------------------------------------------- | ----------- | ------------------------------ |
+| The search predicate alone (UNION subquery) | —           | 6 ms, both halves index-served |
+| Listing query WITH the predicate            | 2.3 ms      | 16.9 ms                        |
+| `COUNT(*)` with the same predicate          | 1.3 ms      | 15.0 ms                        |
+
+The predicate itself is fine: `EXPLAIN` shows `fulltext` on
+`product_search_document_ft` and a `range` on `product_search_tokens_lookup`.
+The cost is that the listing and its count each evaluate that UNION
+independently, so a search pays for it twice. Deriving the count from the same
+subquery — or dropping the exact count in favour of "more than N" — is the
+obvious next step, and it is a behaviour change rather than an index, so it is
+recorded here rather than done quietly.
+
+### The caveat on all of it
+
+The fixture multiplies 26 real products, so every copy shares a brand, a
+category and a compatibility set. **Index selectivity is worse here than in a
+genuine catalogue of the same size**, and repeated search tokens make full-text
+queries match proportionally more rows. Both errors are in the pessimistic
+direction, which is the right way round.

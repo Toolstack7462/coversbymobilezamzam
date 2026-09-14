@@ -113,8 +113,24 @@ export const products = sqliteTable(
   },
   (t) => [
     uniqueIndex("products_slug_unique").on(t.slug),
-    // Every storefront listing filters on exactly this pair.
-    index("products_status_idx").on(t.status, t.archivedAt),
+    /*
+     * Every storefront listing filters on status and archived_at — and then
+     * ORDERS BY the two columns that follow.
+     *
+     * It was `(status, archived_at)` and that was measured to be the wrong
+     * shape once the catalogue is not tiny. At 26 products the optimiser used
+     * it; at 1,066 (scripts/hostinger/scale-fixture.mjs) it stopped, took a
+     * full scan of the table and sorted the result, and the collection query
+     * went from 2.8 ms to 9.1 ms while the page rendered exactly the same
+     * twenty-four cards. Extending it so the sort is satisfied by the index
+     * brought that back to 3.4 ms — measured, not reasoned about, and measured
+     * at a size where the answer is not "everything is fast".
+     *
+     * Extended rather than joined by a second index: two indexes over the same
+     * leading column cost two writes per product change and the wider one
+     * serves both queries.
+     */
+    index("products_status_idx").on(t.status, t.archivedAt, t.isFeatured, t.publishedAt),
     index("products_brand_idx").on(t.brandId),
     index("products_family_idx").on(t.productFamilyId),
   ],

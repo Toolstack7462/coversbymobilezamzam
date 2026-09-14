@@ -38,6 +38,15 @@ const CONCURRENCY = Number(flag("concurrency", "8"));
 const SECONDS = Number(flag("seconds", "20"));
 
 /**
+ * `--json` prints one machine-readable object and nothing else, so
+ * performance-compare.mjs can run this twice and diff the two.
+ */
+const JSON_OUT = args.includes("--json");
+const say = (...parts) => {
+  if (!JSON_OUT) console.log(...parts);
+};
+
+/**
  * A representative mix, not a single hot URL.
  *
  * Hammering one cached route measures the cache. The weights below are a
@@ -68,17 +77,15 @@ async function readHealth() {
   }
 }
 
-console.log(`Load smoke — ${BASE}`);
-console.log(`  concurrency  ${CONCURRENCY}`);
-console.log(`  duration     ${SECONDS}s`);
-console.log(`  mix          ${MIX.map((m) => `${m.path} x${m.weight}`).join(", ")}\n`);
+say(`Load smoke — ${BASE}`);
+say(`  concurrency  ${CONCURRENCY}`);
+say(`  duration     ${SECONDS}s`);
+say(`  mix          ${MIX.map((m) => `${m.path} x${m.weight}`).join(", ")}\n`);
 
 const health = await readHealth();
 if (health) {
-  console.log(
-    `  target       ${health.environment}, build ${String(health.build?.commit).slice(0, 7)}`,
-  );
-  console.log(`  database     ${health.checks?.database?.ok ? "ok" : "DEGRADED"}\n`);
+  say(`  target       ${health.environment}, build ${String(health.build?.commit).slice(0, 7)}`);
+  say(`  database     ${health.checks?.database?.ok ? "ok" : "DEGRADED"}\n`);
 }
 
 /*
@@ -126,37 +133,63 @@ const at = (p) =>
   Math.round(sorted[Math.min(sorted.length - 1, Math.ceil((p / 100) * sorted.length) - 1)] * 100) /
   100;
 
-console.log("  ── Throughput ────────────────────────────────────────────");
-console.log(`  requests            ${requests} in ${elapsed.toFixed(1)}s`);
-console.log(`  requests / second   ${(requests / elapsed).toFixed(1)}`);
-console.log(`  failures (5xx)      ${failures}`);
-console.log(`  transferred         ${mib(bytes)} MiB`);
-console.log("");
-console.log("  ── Latency under load ────────────────────────────────────");
-console.log(`  p50                 ${at(50)}ms`);
-console.log(`  p95                 ${at(95)}ms`);
-console.log(`  p99                 ${at(99)}ms`);
-console.log(`  max                 ${at(100)}ms`);
-console.log("");
-console.log("  ── Client event-loop delay (sanity check on this harness) ─");
-console.log(`  mean                ${Math.round((loop.mean / 1e6) * 100) / 100}ms`);
-console.log(`  p99                 ${Math.round((loop.percentile(99) / 1e6) * 100) / 100}ms`);
+say("  ── Throughput ────────────────────────────────────────────");
+say(`  requests            ${requests} in ${elapsed.toFixed(1)}s`);
+say(`  requests / second   ${(requests / elapsed).toFixed(1)}`);
+say(`  failures (5xx)      ${failures}`);
+say(`  transferred         ${mib(bytes)} MiB`);
+say("");
+say("  ── Latency under load ────────────────────────────────────");
+say(`  p50                 ${at(50)}ms`);
+say(`  p95                 ${at(95)}ms`);
+say(`  p99                 ${at(99)}ms`);
+say(`  max                 ${at(100)}ms`);
+say("");
+say("  ── Client event-loop delay (sanity check on this harness) ─");
+say(`  mean                ${Math.round((loop.mean / 1e6) * 100) / 100}ms`);
+say(`  p99                 ${Math.round((loop.percentile(99) / 1e6) * 100) / 100}ms`);
 
 // Give the server a moment to settle before reading its steady state again.
 await sleep(2000);
 const after = await readHealth();
 if (after) {
-  console.log("");
-  console.log(`  ── Server after load ─────────────────────────────────────`);
-  console.log(
+  say("");
+  say(`  ── Server after load ─────────────────────────────────────`);
+  say(
     `  database            ${after.checks?.database?.ok ? "ok" : "DEGRADED"} (${after.checks?.database?.ms}ms)`,
   );
-  console.log(`  media store         ${after.checks?.mediaBucket?.ok ? "ok" : "DEGRADED"}`);
-  console.log(`  private store       ${after.checks?.privateBucket?.ok ? "ok" : "DEGRADED"}`);
+  say(`  media store         ${after.checks?.mediaBucket?.ok ? "ok" : "DEGRADED"}`);
+  say(`  private store       ${after.checks?.privateBucket?.ok ? "ok" : "DEGRADED"}`);
 }
 
-console.log(
+say(
   "\n  A twenty-second burst is a smoke test, not a soak test. It catches an\n" +
     "  immediate collapse under concurrency; it says nothing about memory growth\n" +
     "  over hours, which needs a sustained run.",
 );
+
+if (JSON_OUT) {
+  console.log(
+    JSON.stringify(
+      {
+        base: BASE,
+        concurrency: CONCURRENCY,
+        seconds: SECONDS,
+        mix: MIX,
+        requests,
+        elapsed: Math.round(elapsed * 100) / 100,
+        throughput: Math.round((requests / elapsed) * 100) / 100,
+        failures,
+        bytes,
+        p50: at(50),
+        p95: at(95),
+        p99: at(99),
+        max: at(100),
+        clientLoopMeanMs: Math.round((loop.mean / 1e6) * 100) / 100,
+        clientLoopP99Ms: Math.round((loop.percentile(99) / 1e6) * 100) / 100,
+      },
+      null,
+      2,
+    ),
+  );
+}

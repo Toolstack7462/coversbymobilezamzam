@@ -44,6 +44,9 @@ import type { Server } from "node:http";
 import mysql from "mysql2/promise";
 
 import { loadConfig, ConfigError, type ServerConfig } from "./config";
+import { CacheVersion, ResponseCacheStore } from "./response-cache";
+import { responseCache, invalidateOnMutation } from "./cache-middleware";
+import { JOB_NAMES, runJob, secretMatches } from "./jobs";
 import { appContext, type AppEnv } from "~/runtime/context";
 import { createMariaDb } from "~/infrastructure/db/mariadb";
 import { FilesystemObjectStore } from "~/infrastructure/storage/filesystem";
@@ -289,8 +292,95 @@ async function main(): Promise<void> {
     });
   }
 
+  /*
+   * The response cache, and the thing that empties it.
+   *
+   * Both are mounted here rather than earlier for reasons written out in
+   * cache-middleware.ts: after `compression()` so it captures identity bytes,
+   * after `responsePolicy` so a replayed page still carries the security
+   * headers, and before the request handler so a hit never reaches it.
+   */
+  const cacheStore = new ResponseCacheStore({
+    ttlMs: config.cache.ttlMs,
+    maxEntries: config.cache.maxEntries,
+    maxTotalBytes: config.cache.maxTotalBytes,
+  });
+  const cacheVersion = new CacheVersion({ file: config.cache.versionFile });
+
+  /*
+   * Scheduled work.
+   *
+   * Cloudflare called `scheduled` in workers/app.ts every five minutes. Nothing
+   * calls it here, so without this endpoint the reservation sweeper never runs
+   * on Hostinger and stock stays reserved against abandoned orders until the
+   * shop cannot sell what is on its own shelf. See server/jobs.ts.
+   *
+   * POST, not GET: it changes data, and a GET that changes data is one
+   * prefetcher away from running itself.
+   */
+  app.post("/api/jobs/run", (req, res) => {
+    if (!secretMatches(req.headers["x-job-secret"], config.secrets.jobAuthSecret)) {
+      // 404, not 401. An unauthenticated caller learns nothing about whether
+      // this deployment has scheduled work at all.
+      res.status(404).type("text/plain").send("Not found");
+      return;
+    }
+
+    const name = typeof req.query.job === "string" ? req.query.job : "expire-reservations";
+    if (!JOB_NAMES.includes(name)) {
+      res.status(400).json({ ok: false, error: `unknown job`, known: JOB_NAMES });
+      return;
+    }
+
+    res.setHeader("cache-control", "private, no-store");
+    void runJob(name, { db }).then((result) => {
+      // The job's own outcome is in the body. The STATUS is 200 whenever the
+      // runner completed, including when the job failed, so a cron launcher
+      // that only checks exit codes still records the run — and the failure is
+      // in `scheduled_job_runs` and in the log either way.
+      console.log(
+        `[job] ${result.job} ${result.ok ? "ok" : "FAILED"} in ${result.ms}ms` +
+          (result.error === null ? "" : ` — ${result.error}`),
+      );
+      res.status(200).json(result);
+    });
+  });
+
+  /*
+   * Cache statistics, for the load harness and for a human at 2am.
+   *
+   * Behind the same secret the scheduled jobs use. It reports hit rate and
+   * bytes held and nothing about any particular page, so it cannot be used to
+   * find out what somebody looked at — but it does describe the internals of
+   * the process, and describing those to the internet is how a reconnaissance
+   * pass starts.
+   */
+  app.get("/api/cache-stats", (req, res) => {
+    const secret = config.secrets.jobAuthSecret;
+    if (secret === undefined || req.headers["x-job-secret"] !== secret) {
+      res.status(404).type("text/plain").send("Not found");
+      return;
+    }
+    const { hits, misses } = cacheStore.stats;
+    res.setHeader("cache-control", "private, no-store");
+    res.json({
+      enabled: config.cache.enabled,
+      ttlMs: config.cache.ttlMs,
+      version: cacheVersion.current(),
+      hitRate: hits + misses === 0 ? null : Math.round((hits / (hits + misses)) * 1000) / 1000,
+      ...cacheStore.stats,
+    });
+  });
+
   app.use(
     responsePolicy(config),
+    invalidateOnMutation(cacheVersion),
+    responseCache({
+      enabled: config.cache.enabled,
+      store: cacheStore,
+      version: cacheVersion,
+      reveal: config.cache.reveal,
+    }),
     createRequestHandler({
       build,
       mode: config.nodeEnv,
@@ -305,7 +395,8 @@ async function main(): Promise<void> {
   // ── Listen ────────────────────────────────────────────────────────────────
   const server = app.listen(config.port, config.host, () => {
     console.log(
-      `[server] ${config.appEnv} listening on ${config.host}:${config.port}, serving ${config.appBaseUrl}`,
+      `[server] ${config.appEnv} listening on ${config.host}:${config.port}, serving ${config.appBaseUrl}` +
+        `, response cache ${config.cache.enabled ? `on (ttl ${config.cache.ttlMs}ms)` : "OFF"}`,
     );
   });
 

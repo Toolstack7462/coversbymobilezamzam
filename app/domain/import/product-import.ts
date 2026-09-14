@@ -29,6 +29,37 @@ const COLUMN_ALIASES: Record<string, readonly string[]> = {
   category: ["categoria", "category"],
 };
 
+/**
+ * The most rows one import may carry.
+ *
+ * NOT a guess. An import applies its rows one at a time inside a single HTTP
+ * request, and a changed row costs about six database round trips: two reads
+ * to find the variant and its current price, then a four-statement transaction
+ * for the price, the price history and the audit entry.
+ *
+ * Measured on the target stack over a loopback connection: **~2.5 ms per
+ * changed row** (1.0 ms of reads plus a 1.5 ms transaction). On Hostinger the
+ * database is on another host, so every one of those round trips pays a real
+ * network hop. At a pessimistic 15 ms per row — six hops of ~2 ms plus the work
+ * — 2,000 rows is about thirty seconds, which fits inside any reverse proxy's
+ * patience with room to spare.
+ *
+ * The number is therefore an assumption about Hostinger's database latency,
+ * stated so it can be corrected once capability check C-2 measures it rather
+ * than left as an unexplained constant.
+ *
+ * ── WHY A CAP AND NOT A QUEUE ───────────────────────────────────────────────
+ *
+ * A queue is the right answer for a shop importing fifty thousand rows. This
+ * shop has twenty-six products, and the optimisation brief rules out a
+ * permanent queue daemon. A cap is honest about the limit: a file over it is
+ * refused BEFORE anything is written, with a message saying how to split it.
+ * The alternative — accepting it and timing out halfway — leaves the catalogue
+ * half-updated with no record of where it stopped, which is the worst of the
+ * three outcomes.
+ */
+export const MAX_IMPORT_ROWS = 2000;
+
 export type RowOutcome = "create" | "update" | "unchanged" | "error";
 
 export interface PlannedRow {

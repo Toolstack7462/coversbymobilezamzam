@@ -1,4 +1,9 @@
 /* Login-only presentation, requested separately from the protected admin UI. */
+/* This route has no fixed storefront navigation requiring bottom clearance. */
+body:has(.admin-login) {
+  padding-block-end: 0;
+}
+
 .admin-login {
   --login-canvas: #edf3fa;
   --login-ink: #0b1220;

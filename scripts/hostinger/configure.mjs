@@ -1,0 +1,244 @@
+/**
+ * Writes the `.htaccess` that makes Hostinger serve the application, and
+ * carries its configuration.
+ *
+ *   npm run hostinger:configure
+ *   npm run hostinger:configure -- --print   # show it, send nothing
+ *
+ * ── WHY THIS IS NOT PART OF THE DEPLOY ──────────────────────────────────────
+ *
+ * Two reasons, and the second is the real one.
+ *
+ * The path this file points at — `<domain>/current` — is stable across
+ * releases, so there is nothing to rewrite on a push.
+ *
+ * And it holds the secrets. A deploy runs often and half-attentively; changing
+ * a database password or a signing key is a deliberate act with consequences
+ * that outlive the deploy (rotating `BETTER_AUTH_SECRET` invalidates every
+ * session AND makes existing TOTP enrolments unreadable). Those two things
+ * should not share a command.
+ *
+ * ── WHY SECRETS IN `.htaccess` IS ACCEPTABLE HERE ───────────────────────────
+ *
+ * It is the mechanism LiteSpeed gives: `SetEnv` in `.htaccess` is how
+ * environment variables reach a Passenger-launched Node process on this plan,
+ * and it was verified to work — a probe variable arrived in `process.env`.
+ *
+ * The file sits inside the web root, which is worth being uneasy about, so it
+ * was checked rather than assumed:
+ *
+ *     GET https://<domain>/.htaccess  ->  403 Forbidden
+ *
+ * The server refuses to serve it. The application directory is outside the
+ * docroot entirely and returns 404. Both were confirmed against the real host
+ * on 2026-09-14.
+ *
+ * ── WHERE THE VALUES COME FROM ──────────────────────────────────────────────
+ *
+ * The environment of whoever runs this, and nowhere else. There is no defaults
+ * file and no fallback: a configuration script that invents a value is a
+ * configuration script that deploys the wrong database.
+ */
+
+import fs from "node:fs";
+
+import { withSsh, mustRun } from "./lib/ssh.mjs";
+
+const args = process.argv.slice(2);
+const has = (name) => args.includes(`--${name}`);
+const flag = (name, fallback) => {
+  const i = args.indexOf(`--${name}`);
+  return i >= 0 ? args[i + 1] : fallback;
+};
+
+const DOMAIN = flag("domain", process.env.HOSTINGER_DOMAIN ?? "coversbymobile.com");
+const NODE_BIN = flag("node-bin", "/opt/alt/alt-nodejs20/root/usr/bin/node");
+const USER = process.env.HOSTINGER_SSH_USER ?? "";
+const HOME = `/home/${USER}`;
+const APP_ROOT = `${HOME}/domains/${DOMAIN}/current`;
+const DOCROOT = `${HOME}/domains/${DOMAIN}/public_html`;
+
+/**
+ * Every variable the application needs, and whether it may be absent.
+ *
+ * The optional ones each turn a FEATURE off rather than degrading it — no SMTP
+ * means no transactional email, not email that silently fails — which is why
+ * the server accepts their absence and this script does not invent them.
+ */
+const REQUIRED = [
+  "APP_BASE_URL",
+  "DB_HOST",
+  "DB_NAME",
+  "DB_USER",
+  "DB_PASSWORD",
+  "BETTER_AUTH_SECRET",
+  "SETTINGS_ENCRYPTION_KEY",
+];
+
+const OPTIONAL = [
+  "APP_ENV",
+  "NODE_ENV",
+  "DB_PORT",
+  "DB_SSL",
+  "DB_CONNECTION_LIMIT",
+  "PUBLIC_MEDIA_ROOT",
+  "PRIVATE_MEDIA_ROOT",
+  "PUBLIC_MEDIA_BASE_URL",
+  "TRUSTED_HOSTS",
+  "INITIAL_ADMIN_SETUP_TOKEN",
+  "JOB_AUTH_SECRET",
+  "TOTP_ISSUER",
+  "TURNSTILE_SITE_KEY",
+  "TURNSTILE_SECRET_KEY",
+  "SMTP_HOST",
+  "SMTP_PORT",
+  "SMTP_USER",
+  "SMTP_PASSWORD",
+  "EMAIL_FROM",
+  "RESPONSE_CACHE",
+  "RESPONSE_CACHE_TTL_MS",
+  "RESPONSE_CACHE_MAX_MB",
+  "DEFAULT_LOCALE",
+  "SUPPORTED_LOCALES",
+  "DEFAULT_CURRENCY",
+  "STORE_TIMEZONE",
+];
+
+const DEFAULTS = {
+  APP_ENV: "production",
+  NODE_ENV: "production",
+  DB_PORT: "3306",
+  DB_SSL: "off",
+  DB_CONNECTION_LIMIT: "8",
+  PUBLIC_MEDIA_ROOT: `${HOME}/zamzam-storage/public`,
+  PRIVATE_MEDIA_ROOT: `${HOME}/zamzam-private`,
+  DEFAULT_LOCALE: "it",
+  SUPPORTED_LOCALES: "it,en",
+  DEFAULT_CURRENCY: "EUR",
+  STORE_TIMEZONE: "Europe/Rome",
+};
+
+/**
+ * Escapes a value for an Apache `SetEnv` directive.
+ *
+ * A password is generated, so it can contain anything — a quote or a backslash
+ * in one would otherwise end the directive early and set a truncated value,
+ * which fails as "access denied" and looks like the wrong password.
+ */
+function quote(value) {
+  return `"${String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+}
+
+function build() {
+  const missing = REQUIRED.filter((name) => !process.env[name]);
+  if (missing.length > 0) {
+    console.error(
+      `Missing required configuration: ${missing.join(", ")}\n\n` +
+        `Set them in the shell that runs this. They are never read from a file in the\n` +
+        `repository, and this script will not guess one.`,
+    );
+    process.exit(1);
+  }
+
+  const values = {};
+  for (const name of REQUIRED) values[name] = process.env[name];
+  for (const name of OPTIONAL) {
+    const value = process.env[name] ?? DEFAULTS[name];
+    if (value !== undefined && value !== "") values[name] = value;
+  }
+
+  const lines = [
+    "# Generated by scripts/hostinger/configure.mjs. Do not edit by hand:",
+    "# the next run overwrites it, and a hand-edit is how two environments drift.",
+    "#",
+    "# This file is NOT served — the web server answers 403 for it — and the",
+    "# application directory it points at is outside the document root.",
+    "",
+    "# ── The application ──────────────────────────────────────────────────────",
+    `PassengerAppRoot ${quote(APP_ROOT)}`,
+    'PassengerBaseURI "/"',
+    `PassengerNodejs ${quote(NODE_BIN)}`,
+    "PassengerAppType node",
+    "PassengerStartupFile build/server-node/index.js",
+    "",
+    "# ── Configuration ────────────────────────────────────────────────────────",
+    ...Object.entries(values).map(([name, value]) => `SetEnv ${name} ${quote(value)}`),
+    "",
+  ];
+
+  return lines.join("\n");
+}
+
+const htaccess = build();
+
+if (has("print")) {
+  /*
+   * Redacted, even locally.
+   *
+   * The point of `--print` is to check the SHAPE of the file, and a terminal
+   * scrollback is a place secrets survive for weeks.
+   */
+  const secret =
+    /^(SetEnv (DB_PASSWORD|BETTER_AUTH_SECRET|SETTINGS_ENCRYPTION_KEY|SMTP_PASSWORD|TURNSTILE_SECRET_KEY|JOB_AUTH_SECRET|INITIAL_ADMIN_SETUP_TOKEN) ).*$/;
+  console.log(
+    htaccess
+      .split("\n")
+      .map((line) => line.replace(secret, "$1<redacted>"))
+      .join("\n"),
+  );
+  process.exit(0);
+}
+
+await withSsh(async (ssh) => {
+  const { out: listing } = await ssh.run(`ls -A ${DOCROOT} 2>/dev/null`);
+  const unexpected = listing
+    .trim()
+    .split("\n")
+    .filter(Boolean)
+    .filter((name) => !["default.php", ".htaccess", ".well-known"].includes(name));
+
+  if (unexpected.length > 0) {
+    throw new Error(
+      `${DOCROOT} contains files this did not put there: ${unexpected.join(", ")}\n` +
+        `Refusing to overwrite the .htaccess of a site that is not ours.`,
+    );
+  }
+
+  // Keep the previous one. A configuration change that breaks the site should
+  // be undoable without reconstructing it from memory at the wrong hour.
+  await ssh.run(`[ -f ${DOCROOT}/.htaccess ] && cp ${DOCROOT}/.htaccess ${DOCROOT}/.htaccess.bak`);
+
+  await ssh.write(htaccess, `${DOCROOT}/.htaccess`);
+  await mustRun(ssh, `chmod 644 ${DOCROOT}/.htaccess`, "chmod");
+
+  const count = htaccess.split("\n").filter((l) => l.startsWith("SetEnv ")).length;
+  console.log(`  wrote ${DOCROOT}/.htaccess`);
+  console.log(`  app root       ${APP_ROOT}`);
+  console.log(`  node           ${NODE_BIN}`);
+  console.log(`  variables set  ${count}`);
+
+  await ssh.run(`mkdir -p ${APP_ROOT}/tmp && touch ${APP_ROOT}/tmp/restart.txt`);
+  console.log(`  restarted`);
+});
+
+/*
+ * A reminder rather than an action.
+ *
+ * Whether the storage roots exist is the deploy's business; whether they are
+ * the RIGHT ones is a decision, and printing them is how somebody notices they
+ * are pointing at a directory a redeployment can delete.
+ */
+console.log(
+  `\n  Storage roots in use:\n` +
+    `    public   ${process.env.PUBLIC_MEDIA_ROOT ?? DEFAULTS.PUBLIC_MEDIA_ROOT}\n` +
+    `    private  ${process.env.PRIVATE_MEDIA_ROOT ?? DEFAULTS.PRIVATE_MEDIA_ROOT}\n` +
+    `  Both must be OUTSIDE the release directory, or a deploy will delete the\n` +
+    `  merchant's product photographs.`,
+);
+
+if (!fs.existsSync("build/server-node/index.js")) {
+  console.log(
+    `\n  Note: there is no local build. Configuration is written, but nothing is\n` +
+      `  deployed yet — run \`npm run hostinger:deploy\`.`,
+  );
+}

@@ -1,0 +1,258 @@
+/**
+ * Deploys the Node application to Hostinger.
+ *
+ *   npm run hostinger:deploy              # build, upload, switch, restart, verify
+ *   npm run hostinger:deploy -- --dry-run # say what it would do
+ *   npm run hostinger:deploy -- --rollback
+ *
+ * ── WHY NOT HOSTINGER'S GIT DEPLOYMENT ──────────────────────────────────────
+ *
+ * It was tried, by the merchant, before this script existed. The build log
+ * ends:
+ *
+ *     ERROR: No output directory found after build
+ *
+ * That flow is for STATIC sites: it runs a build and then looks for a directory
+ * of files to publish into `public_html`. `npm run build` is the Cloudflare
+ * build, which produces a Worker bundle, and an SSR application has no
+ * directory of files to publish at all — the thing that serves the site is a
+ * process. So the domain kept serving Hostinger's parked page and nothing said
+ * why.
+ *
+ * ── HOW A RELEASE IS SWITCHED ───────────────────────────────────────────────
+ *
+ * Atomically, by moving a symlink:
+ *
+ *     domains/<domain>/releases/2026-09-14T08-40-00Z/   the new one, complete
+ *     domains/<domain>/current -> releases/2026-09-14T08-40-00Z
+ *
+ * Nothing is ever edited in place under a running application. A release is
+ * uploaded, its dependencies are installed, it is checked, and only then does
+ * `current` move — so a half-uploaded release cannot be served, and rolling
+ * back is moving the symlink to the previous directory rather than a rebuild.
+ *
+ * ── WHAT IT WILL NOT DO ─────────────────────────────────────────────────────
+ *
+ * It never runs migrations. `npm run hostinger:migrate` is a separate,
+ * deliberate step: an automatic migration on every push is a schema change
+ * nobody reviewed, and two workers starting at once would run it twice.
+ *
+ * It never touches `public_html` at all. The `.htaccess` there points at
+ * `<domain>/current`, which is a stable path, so it does not change between
+ * releases — and it holds the configuration, which is `npm run
+ * hostinger:configure`'s business and is written deliberately rather than on
+ * every push. This script does read the docroot, and refuses to run if it holds
+ * a site it did not put there.
+ */
+
+import { execFileSync } from "node:child_process";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+
+import { withSsh, mustRun } from "./lib/ssh.mjs";
+
+const args = process.argv.slice(2);
+const flag = (name, fallback) => {
+  const i = args.indexOf(`--${name}`);
+  return i >= 0 ? args[i + 1] : fallback;
+};
+const has = (name) => args.includes(`--${name}`);
+
+const DOMAIN = flag("domain", process.env.HOSTINGER_DOMAIN ?? "coversbymobile.com");
+const NODE_BIN = flag("node-bin", "/opt/alt/alt-nodejs20/root/usr/bin/node");
+const NPM_BIN = flag("npm-bin", "/opt/alt/alt-nodejs20/root/bin/npm");
+const KEEP = Number(flag("keep", "3"));
+const DRY = has("dry-run");
+
+const REMOTE_HOME = `/home/${process.env.HOSTINGER_SSH_USER ?? ""}`;
+const DOMAIN_ROOT = `${REMOTE_HOME}/domains/${DOMAIN}`;
+const RELEASES = `${DOMAIN_ROOT}/releases`;
+const CURRENT = `${DOMAIN_ROOT}/current`;
+const DOCROOT = `${DOMAIN_ROOT}/public_html`;
+
+/**
+ * What is uploaded.
+ *
+ * The BUILD, not the source. `node_modules` is not in the list: it is installed
+ * on the server from the lockfile, because a tree built on Windows contains
+ * platform-specific binaries that do not run on Linux — and mysql2 and
+ * better-auth both resolve files at runtime.
+ *
+ * `db/mariadb/migrations` travels with the release so the migration step has
+ * the exact SQL that matches this build, rather than whatever is on the server.
+ */
+const PAYLOAD = [
+  "build",
+  "package.json",
+  "package-lock.json",
+  "db/mariadb/migrations",
+  "scripts/hostinger/run-job.mjs",
+];
+
+function say(step, detail = "") {
+  console.log(`  ${step.padEnd(34)} ${detail}`);
+}
+
+/** The release name is the deploy time, so `ls` sorts into deploy order. */
+const RELEASE = new Date()
+  .toISOString()
+  .replace(/[:.]/g, "-")
+  .replace(/-\d{3}Z$/, "Z");
+
+async function rollback(ssh) {
+  const { out } = await ssh.run(`ls -1 ${RELEASES} 2>/dev/null | sort`);
+  const releases = out.trim().split("\n").filter(Boolean);
+  if (releases.length < 2) {
+    throw new Error(`Nothing to roll back to: ${releases.length} release(s) on the server.`);
+  }
+
+  const { out: currentOut } = await ssh.run(`readlink ${CURRENT} || true`);
+  const currentName = path.posix.basename(currentOut.trim());
+  const index = releases.indexOf(currentName);
+  const previous = index > 0 ? releases[index - 1] : releases[releases.length - 2];
+
+  say("rolling back to", previous);
+  if (DRY) return previous;
+
+  await mustRun(
+    ssh,
+    `ln -sfn ${RELEASES}/${previous} ${CURRENT}.tmp && mv -Tf ${CURRENT}.tmp ${CURRENT}`,
+    "symlink switch",
+  );
+  await mustRun(ssh, `mkdir -p ${CURRENT}/tmp && touch ${CURRENT}/tmp/restart.txt`, "restart");
+  return previous;
+}
+
+async function main() {
+  console.log(`Deploying to ${DOMAIN}${DRY ? "  (dry run)" : ""}\n`);
+
+  if (has("rollback")) {
+    await withSsh(async (ssh) => {
+      const to = await rollback(ssh);
+      console.log(`\n  Rolled back to ${to}.`);
+    });
+    return;
+  }
+
+  // ── 1. Build, here ────────────────────────────────────────────────────────
+  //
+  // On this machine, not on the server: the server is a shared host under a
+  // load average that is not ours to add to, and a build that only happens
+  // where it is deployed is a build nobody can reproduce.
+  if (!has("skip-build")) {
+    say("building", "npm run build:hostinger");
+    if (!DRY) execFileSync("npm", ["run", "build:hostinger"], { stdio: "pipe", shell: true });
+  }
+
+  for (const entry of PAYLOAD) {
+    if (!fs.existsSync(entry)) {
+      throw new Error(`Missing ${entry}. Run \`npm run build:hostinger\` first.`);
+    }
+  }
+
+  /*
+   * One archive, not several hundred files.
+   *
+   * `build/client/assets` alone is dozens of files, and SFTP pays a round trip
+   * per file. A single compressed upload is the difference between a deploy
+   * that takes seconds and one that takes minutes over a domestic connection.
+   */
+  const tarball = path.join(os.tmpdir(), `zamzam-${RELEASE}.tar.gz`);
+  say("packing", path.basename(tarball));
+  if (!DRY) execFileSync("tar", ["-czf", tarball, ...PAYLOAD], { stdio: "pipe" });
+  const size = DRY ? 0 : fs.statSync(tarball).size;
+  say("", `${(size / 1024 / 1024).toFixed(1)} MB`);
+
+  await withSsh(async (ssh) => {
+    // ── 2. Refuse to trample somebody else's site ──────────────────────────
+    const { out: docrootListing } = await ssh.run(`ls -A ${DOCROOT} 2>/dev/null`);
+    const unexpected = docrootListing
+      .trim()
+      .split("\n")
+      .filter(Boolean)
+      .filter((name) => !["default.php", ".htaccess", ".well-known"].includes(name));
+
+    if (unexpected.length > 0) {
+      throw new Error(
+        `${DOCROOT} contains files this deploy did not put there:\n` +
+          `  ${unexpected.join(", ")}\n\n` +
+          `Refusing to continue. The brief says the merchant's other website must not be\n` +
+          `modified, and a docroot with a site in it is how that happens by accident.`,
+      );
+    }
+
+    if (DRY) {
+      say("would upload to", `${RELEASES}/${RELEASE}`);
+      say("would point", `${CURRENT} -> releases/${RELEASE}`);
+      return;
+    }
+
+    // ── 3. Upload and unpack into a NEW release directory ──────────────────
+    await mustRun(ssh, `mkdir -p ${RELEASES}/${RELEASE}`, "mkdir release");
+    say("uploading", `${RELEASES}/${RELEASE}`);
+    await ssh.put(tarball, `${RELEASES}/${RELEASE}/release.tar.gz`);
+    await mustRun(
+      ssh,
+      `cd ${RELEASES}/${RELEASE} && tar -xzf release.tar.gz && rm -f release.tar.gz`,
+      "unpack",
+    );
+
+    // ── 4. Dependencies, from the lockfile, on the server ──────────────────
+    say("installing", "npm ci --omit=dev");
+    const install = await ssh.run(
+      `cd ${RELEASES}/${RELEASE} && ${NPM_BIN} ci --omit=dev --no-audit --no-fund 2>&1 | tail -5`,
+    );
+    if (install.code !== 0) {
+      throw new Error(`npm ci failed:\n${install.out}`);
+    }
+    say("", install.out.trim().split("\n").pop() ?? "");
+
+    // ── 5. Prove the release can start BEFORE it serves anything ───────────
+    //
+    // A syntax error or a missing module would otherwise be discovered by the
+    // first customer. This only checks that the entry point parses and its
+    // imports resolve — it cannot check configuration, which needs the real
+    // environment.
+    const smoke = await ssh.run(
+      `cd ${RELEASES}/${RELEASE} && ${NODE_BIN} --input-type=module -e ` +
+        `"import('./build/server-node/tools.js').then(()=>console.log('imports ok'))` +
+        `.catch(e=>{console.error(e.message);process.exit(1)})"`,
+    );
+    if (smoke.code !== 0) {
+      throw new Error(`The uploaded release cannot be loaded:\n${smoke.out}`);
+    }
+    say("module check", smoke.out.trim());
+
+    // ── 6. Switch, atomically ──────────────────────────────────────────────
+    await mustRun(ssh, `mkdir -p ${RELEASES}/${RELEASE}/tmp`, "mkdir tmp");
+    await mustRun(
+      ssh,
+      `ln -sfn ${RELEASES}/${RELEASE} ${CURRENT}.tmp && mv -Tf ${CURRENT}.tmp ${CURRENT}`,
+      "symlink switch",
+    );
+    say("switched", `current -> ${RELEASE}`);
+
+    // ── 7. Restart and prune ───────────────────────────────────────────────
+    await mustRun(ssh, `touch ${CURRENT}/tmp/restart.txt`, "restart");
+    say("restarted", "tmp/restart.txt touched");
+
+    const { out: all } = await ssh.run(`ls -1 ${RELEASES} | sort`);
+    const releases = all.trim().split("\n").filter(Boolean);
+    const stale = releases.slice(0, Math.max(0, releases.length - KEEP));
+    for (const old of stale) {
+      await ssh.run(`rm -rf ${RELEASES}/${old}`);
+    }
+    if (stale.length > 0) say("pruned", `${stale.length} old release(s), keeping ${KEEP}`);
+  });
+
+  if (!DRY) fs.rmSync(tarball, { force: true });
+
+  console.log(
+    `\n  Deployed ${RELEASE}.\n` +
+      `  Migrations are NOT run by this script — that is \`npm run hostinger:migrate\`.\n` +
+      `  Roll back with \`npm run hostinger:deploy -- --rollback\`.`,
+  );
+}
+
+await main();

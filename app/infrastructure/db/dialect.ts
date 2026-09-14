@@ -67,31 +67,28 @@ export interface TranslatedStatement {
  * corrupted the catalogue.
  */
 function mapOutsideStrings(sql: string, transform: (code: string) => string): string {
+  /*
+   * Built on `stringLiteralRanges`, which knows about comments as well as
+   * string literals.
+   *
+   * It used to have its own apostrophe scanner, and that duplicate was the
+   * actual home of the bug: masking learned about comments and this did not,
+   * so `LIMIT ?1` after `-- the merchant's catalogue` was still treated as
+   * being inside a string and never renumbered. One scanner, used by both.
+   */
+  const ranges = stringLiteralRanges(sql);
   const out: string[] = [];
-  let index = 0;
-  while (index < sql.length) {
-    const quote = sql.indexOf("'", index);
-    if (quote === -1) {
-      out.push(transform(sql.slice(index)));
-      break;
-    }
-    out.push(transform(sql.slice(index, quote)));
+  let cursor = 0;
 
-    // Find the closing quote, honouring SQL's doubled-quote escape.
-    let end = quote + 1;
-    while (end < sql.length) {
-      if (sql[end] === "'") {
-        if (sql[end + 1] === "'") {
-          end += 2;
-          continue;
-        }
-        break;
-      }
-      end += 1;
-    }
-    out.push(sql.slice(quote, end + 1));
-    index = end + 1;
+  for (const [start, end] of ranges) {
+    if (start > cursor) out.push(transform(sql.slice(cursor, start)));
+    // Verbatim: a literal is data and a comment is documentation. Neither is
+    // ours to rewrite.
+    out.push(sql.slice(start, end));
+    cursor = end;
   }
+
+  if (cursor < sql.length) out.push(transform(sql.slice(cursor)));
   return out.join("");
 }
 
@@ -314,24 +311,140 @@ function lastTopLevelComma(text: string): number {
 function stringLiteralRanges(sql: string): [number, number][] {
   const ranges: [number, number][] = [];
   let index = 0;
+
   while (index < sql.length) {
-    const quote = sql.indexOf("'", index);
-    if (quote === -1) break;
-    let end = quote + 1;
-    while (end < sql.length) {
-      if (sql[end] === "'") {
-        if (sql[end + 1] === "'") {
-          end += 2;
-          continue;
-        }
-        break;
-      }
-      end += 1;
+    const char = sql[index];
+
+    /*
+     * ── COMMENTS ARE NOT CODE, AND THIS ONCE BROKE THE PRODUCT LIST ─────────
+     *
+     * This function used to look for apostrophes and nothing else. Every
+     * statement in this codebase carries explanatory comments, and the moment
+     * one of them contained an ordinary English apostrophe —
+     *
+     *     -- the merchant's catalogue
+     *
+     * — that apostrophe opened a string literal that ran to the end of the
+     * statement. Everything after it was masked as "inside a string", so the
+     * placeholder rewrite skipped it and `LIMIT ?1 OFFSET ?2` reached MariaDB
+     * with SQLite's numbering still in it:
+     *
+     *     You have an error in your SQL syntax ... near '?1 OFFSET ?2'
+     *
+     * `/admin/prodotti` returned 500. It passed every test for months because
+     * SQLite accepts `?1` natively, so nothing that ran against D1 could ever
+     * see it. It was found the first time the admin suite was pointed at the
+     * MariaDB runtime.
+     *
+     * So a comment is masked exactly like a string: it is not code, nothing
+     * inside it may be rewritten, and nothing inside it may change the parse
+     * of what follows.
+     */
+    if (char === "-" && sql[index + 1] === "-") {
+      // To the end of the line, and NOT including the newline — masking that
+      // would join two lines and let the next line's content be swallowed.
+      const newline = sql.indexOf("\n", index);
+      const end = newline === -1 ? sql.length : newline;
+      ranges.push([index, end]);
+      index = end;
+      continue;
     }
-    ranges.push([quote, end + 1]);
-    index = end + 1;
+
+    if (char === "/" && sql[index + 1] === "*") {
+      const close = sql.indexOf("*/", index + 2);
+      const end = close === -1 ? sql.length : close + 2;
+      ranges.push([index, end]);
+      index = end;
+      continue;
+    }
+
+    if (char === "'") {
+      let end = index + 1;
+      while (end < sql.length) {
+        if (sql[end] === "'") {
+          // `''` is an escaped quote, not the end of the literal.
+          if (sql[end + 1] === "'") {
+            end += 2;
+            continue;
+          }
+          break;
+        }
+        end += 1;
+      }
+      ranges.push([index, Math.min(end + 1, sql.length)]);
+      index = end + 1;
+      continue;
+    }
+
+    index += 1;
   }
+
   return ranges;
+}
+
+/**
+ * Refuses a derived table with no alias.
+ *
+ * `SELECT COUNT(*) FROM (SELECT ...)` is ordinary SQLite and a syntax error in
+ * MariaDB:
+ *
+ *     Every derived table must have its own alias
+ *
+ * The customer list is built entirely out of derived tables — a "customer" is
+ * not a row anywhere, it is orders grouped by email address — so all five of
+ * its statements were broken on MariaDB and not one of them could fail on D1.
+ * `/admin/clienti` returned 500 the first time the admin suite ran against the
+ * target runtime.
+ *
+ * Raised here rather than fixed silently. An alias is a NAME, and inventing one
+ * on the caller's behalf means the generated SQL contains an identifier that
+ * appears nowhere in the source — which is exactly the sort of thing that makes
+ * a query plan impossible to read back. `npm run hostinger:sql-audit` runs this
+ * over every statement in the codebase during `npm run verify`, so the next one
+ * fails a build rather than a page.
+ *
+ * Only `FROM (SELECT` and `JOIN (SELECT` are flagged. `WHERE x IN (SELECT ...)`
+ * is a subquery, not a derived table, and needs no alias; a parenthesised join
+ * needs none either.
+ */
+function assertDerivedTablesAreAliased(sql: string): void {
+  const mask = maskStrings(sql);
+  const opener = /\b(FROM|JOIN)\s*\(\s*SELECT\b/gi;
+  let match: RegExpExecArray | null;
+
+  while ((match = opener.exec(mask)) !== null) {
+    // Walk to the parenthesis that closes this one.
+    const open = mask.indexOf("(", match.index);
+    let depth = 0;
+    let close = -1;
+    for (let i = open; i < mask.length; i += 1) {
+      if (mask[i] === "(") depth += 1;
+      else if (mask[i] === ")") {
+        depth -= 1;
+        if (depth === 0) {
+          close = i;
+          break;
+        }
+      }
+    }
+    if (close === -1) return; // Unbalanced: not this function's problem.
+
+    const after = mask.slice(close + 1);
+    // An alias is an identifier, optionally introduced by AS. Anything else —
+    // a closing paren, a comma, a clause keyword, the end of the statement —
+    // means there is none.
+    if (
+      !/^\s*(AS\s+)?[A-Za-z_][A-Za-z0-9_]*/i.test(after) ||
+      /^\s*(AS\s+)?(ON|USING|WHERE|GROUP|ORDER|HAVING|LIMIT|OFFSET|UNION|JOIN|INNER|LEFT|RIGHT|CROSS|SET|VALUES)\b/i.test(
+        after,
+      )
+    ) {
+      throw new UntranslatableSqlError(
+        'Derived table has no alias; MariaDB requires one ("Every derived table must have its own alias")',
+        sql,
+      );
+    }
+  }
 }
 
 /**
@@ -349,9 +462,17 @@ function stringLiteralRanges(sql: string): [number, number][] {
  * re-derived against the merchant's server once capability check C-2 says
  * which version that is.
  *
- * Two of 524 identifiers on MariaDB 10.11.19: `key` and `row_number`.
+ * `key` and `row_number` are two of the 524 COLUMN names on MariaDB 10.11.19.
+ *
+ * `lines` is the third, and it is here because the first probe asked the wrong
+ * question. It enumerated the schema's columns, and an ALIAS is not a column:
+ * `(SELECT COUNT(*) ...) AS lines` on the stock-transfers screen is an
+ * identifier the schema never mentions. MariaDB reserves it, the page returned
+ * 500, and nothing could have caught it before the admin suite ran against
+ * MariaDB. Re-probing every `AS <name>` in the codebase — 125 of them — found
+ * exactly one more, and this is it.
  */
-const RESERVED_IDENTIFIERS = new Set(["key", "row_number"]);
+const RESERVED_IDENTIFIERS = new Set(["key", "row_number", "lines"]);
 
 /**
  * Backticks a reserved word used as a column name.
@@ -534,6 +655,8 @@ export function translate(sql: string): TranslatedStatement {
   working = quoteReservedIdentifiers(working);
 
   working = rewriteUpsert(working);
+
+  assertDerivedTablesAreAliased(working);
 
   const { sql: finalSql, parameterOrder } = rewritePlaceholders(working);
   return { sql: finalSql, parameterOrder };

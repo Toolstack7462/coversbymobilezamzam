@@ -275,6 +275,21 @@ METHODS.forEach(([code, type, nameIt, nameEn, minutes], index) => {
 
 // ── Apply ────────────────────────────────────────────────────────────────────
 
+/*
+ * `--print` writes the statements to stdout and applies nothing.
+ *
+ * The MariaDB browser suite needs the same roles, permissions, price list and
+ * inventory location in a MariaDB database, and the only thing standing
+ * between here and there is that this script speaks to `wrangler d1 execute`.
+ * Printing lets scripts/hostinger/seed-mariadb.mjs put the SAME statements
+ * through the dialect translator — one definition of the base data, two
+ * engines, rather than a second copy that drifts.
+ */
+if (args.includes("--print")) {
+  process.stdout.write(statements.join(";\n"));
+  process.exit(0);
+}
+
 console.log(
   `Seeding ${DB} (${REMOTE ? "remote" : "local"}${ENVIRONMENT ? `, env ${ENVIRONMENT}` : ""}` +
     `${PERSIST_TO ? ` in ${PERSIST_TO}` : ""}) — ` +

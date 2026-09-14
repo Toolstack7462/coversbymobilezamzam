@@ -268,3 +268,85 @@ describe("reserved identifiers", () => {
     expect(sql).toBe("SELECT * FROM store_settings WHERE value = 'the key is here'");
   });
 });
+
+describe("comments are not code", () => {
+  /**
+   * The bug that took `/admin/prodotti` down on MariaDB, and could not have
+   * been found on SQLite.
+   *
+   * Every statement in this codebase carries explanatory comments. The moment
+   * one contained an ordinary English apostrophe, the masker treated it as the
+   * start of a string literal running to the end of the statement — so the
+   * placeholder rewrite skipped everything after it, and `LIMIT ?1 OFFSET ?2`
+   * reached MariaDB with SQLite's numbering intact.
+   *
+   * SQLite accepts `?1` natively, so no test running against D1 could ever see
+   * it.
+   */
+  it("rewrites placeholders after an apostrophe in a line comment", () => {
+    const result = translate(
+      [
+        "SELECT p.id",
+        "-- the merchant's catalogue",
+        "FROM products p",
+        "WHERE p.status = ?1",
+        "LIMIT ?2 OFFSET ?3",
+      ].join("\n"),
+    );
+
+    expect(result.sql).not.toContain("?1");
+    expect(result.sql).not.toContain("?2");
+    expect(result.sql).toContain("LIMIT ? OFFSET ?");
+    // Zero-based: `?1` is bind index 0.
+    expect(result.parameterOrder).toEqual([0, 1, 2]);
+  });
+
+  it("rewrites placeholders after an apostrophe in a block comment", () => {
+    const result = translate(
+      ["SELECT p.id", "/* what the merchant's staff see */", "FROM products p", "LIMIT ?1"].join(
+        "\n",
+      ),
+    );
+
+    expect(result.sql).toContain("LIMIT ?");
+    expect(result.sql).not.toContain("?1");
+    expect(result.parameterOrder).toEqual([0]);
+  });
+
+  it("does not rewrite anything INSIDE a comment", () => {
+    // A comment mentioning a construct must not be rewritten as though it were
+    // that construct — the text is documentation, and changing it would make
+    // the comment describe something the statement no longer does.
+    const result = translate(
+      ["-- uses MAX(0, x) rather than GREATEST", "SELECT GREATEST(0, 1) AS n"].join("\n"),
+    );
+    expect(result.sql).toContain("-- uses MAX(0, x) rather than GREATEST");
+  });
+
+  it("still masks real string literals", () => {
+    // The original behaviour, unchanged: a `?1` inside a quoted string is data.
+    const result = translate("SELECT 'literal ?1 text' AS a WHERE b = ?1");
+    expect(result.sql).toContain("'literal ?1 text'");
+    expect(result.parameterOrder).toEqual([0]);
+  });
+
+  it("does not let a line comment swallow the line after it", () => {
+    const result = translate(["SELECT a -- a comment", "FROM t WHERE b = ?1"].join("\n"));
+    expect(result.parameterOrder).toEqual([0]);
+    expect(result.sql).toContain("WHERE b = ?");
+  });
+});
+
+describe("reserved aliases", () => {
+  it("quotes `lines`, which MariaDB reserves and an alias used", () => {
+    /*
+     * The first reserved-word probe enumerated the schema's COLUMNS, and an
+     * alias is not a column: `(SELECT COUNT(*) ...) AS lines` on the
+     * stock-transfers screen is an identifier the schema never mentions.
+     * MariaDB reserves it, the page returned 500, and re-probing all 125
+     * aliases in the codebase found exactly this one.
+     */
+    const result = translate("SELECT (SELECT COUNT(*) FROM items) AS lines FROM transfers");
+    expect(result.sql).toContain("`lines`");
+  });
+});

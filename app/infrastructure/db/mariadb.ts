@@ -236,6 +236,31 @@ export class MariaDbDatabase implements InteractiveSqlDatabase {
       // application, so this is left at the default AND asserted by a test.
       supportBigNumbers: false,
 
+      /*
+       * DECIMAL comes back as a NUMBER, not a string.
+       *
+       * mysql2's default is a string, because a DECIMAL can exceed what a
+       * double represents exactly. This schema has no DECIMAL columns — money
+       * is integer minor units — but MariaDB PRODUCES one from an aggregate:
+       * `SUM(oi.total)` over an INT column is DECIMAL, and SQLite's SUM of
+       * integers is an integer.
+       *
+       * The difference is not academic. `/admin/clienti` sums each customer's
+       * order value, and the string "1990" reached the money guard:
+       *
+       *     MoneyError: Money must be integer minor units, received 1990
+       *
+       * The page returned 500 on MariaDB and could not fail on D1. Every
+       * aggregate in this schema is over integer minor units or a row count,
+       * so the values are whole numbers far inside the safe integer range —
+       * `SUM` of every order this shop will ever take does not approach 9.0e15.
+       *
+       * Asserted by tests/mariadb/schema-invariants.test.ts, alongside the
+       * BIGINT assertion above, because both are one option away from silently
+       * changing the TYPE of every number the application reads.
+       */
+      decimalNumbers: true,
+
       // The schema stores every date as an integer. If a DATETIME column is
       // ever added, this keeps it a string rather than a Date in the server's
       // local timezone, which is the classic way a UTC-only system acquires a

@@ -120,13 +120,35 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
   const orderBy = orderByClause(state.sort, SORT_COLUMNS, "last_order_at DESC");
 
+  /*
+   * ── EVERY DERIVED TABLE IS ALIASED ──────────────────────────────────────
+   *
+   * A subquery in a FROM clause is legal SQLite without a name, and a SYNTAX
+   * ERROR in MariaDB: "Every derived table must have its own alias." (The
+   * example is not written out here: the portability audit extracts SQL from
+   * this file by pattern, and a comment that looks like a statement is
+   * reported as one.) There is no
+   * cleverness in the aliases below — they are never referenced — and that is
+   * the point: MariaDB requires the name to exist, not to be used.
+   *
+   * This screen is built entirely out of derived tables, because a "customer"
+   * is not a row anywhere. It is orders grouped by email address, and it stays
+   * that way deliberately (docs/invariants.md): a customer record would be a
+   * second place for a name and a phone number to disagree with the order they
+   * came from.
+   *
+   * So all five of these were broken on MariaDB and none of them could fail on
+   * D1. `/admin/clienti` returned 500 the first time the admin suite ran
+   * against the target runtime, and `npm run hostinger:sql-audit` now refuses
+   * an unaliased derived table so the next one is caught before it ships.
+   */
   const [totalRow, page, viewCounts] = await Promise.all([
-    env.DB.prepare(`SELECT COUNT(*) AS n FROM (${grouped})`)
+    env.DB.prepare(`SELECT COUNT(*) AS n FROM (${grouped}) AS grouped_customers`)
       .bind(...binds)
       .first<{ n: number }>(),
 
     env.DB.prepare(
-      `SELECT * FROM (${grouped}) ORDER BY ${orderBy}, email
+      `SELECT * FROM (${grouped}) AS grouped_customers ORDER BY ${orderBy}, email
         LIMIT ?${binds.length + 1} OFFSET ?${binds.length + 2}`,
     )
       .bind(...binds, state.perPage, (state.page - 1) * state.perPage)
@@ -135,11 +157,11 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     env.DB.prepare(
       `SELECT
          (SELECT COUNT(*) FROM (SELECT 1 FROM orders o WHERE o.status NOT IN ('draft')
-            GROUP BY LOWER(o.customer_email))) AS v0,
+            GROUP BY LOWER(o.customer_email)) AS all_customers) AS v0,
          (SELECT COUNT(*) FROM (SELECT 1 FROM orders o WHERE o.status NOT IN ('draft')
-            GROUP BY LOWER(o.customer_email) HAVING COUNT(*) > 1)) AS v1,
+            GROUP BY LOWER(o.customer_email) HAVING COUNT(*) > 1) AS repeat_customers) AS v1,
          (SELECT COUNT(*) FROM (SELECT 1 FROM orders o WHERE o.status NOT IN ('draft')
-            GROUP BY LOWER(o.customer_email) HAVING MAX(o.created_at) > ?1)) AS v2`,
+            GROUP BY LOWER(o.customer_email) HAVING MAX(o.created_at) > ?1) AS recent_customers) AS v2`,
     )
       .bind(ninetyDaysAgo)
       .first<Record<string, number>>(),

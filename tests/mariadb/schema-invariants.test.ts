@@ -378,6 +378,74 @@ describe("driver value semantics", () => {
     expect(Number.isSafeInteger(row?.expires_at)).toBe(true);
   });
 
+  /*
+   * An AGGREGATE over an integer column is a DECIMAL in MariaDB, and mysql2
+   * returns DECIMAL as a STRING by default. SQLite returns an integer.
+   *
+   * That difference took `/admin/clienti` down: the screen sums each
+   * customer's order value, "1990" reached the money guard, and the guard
+   * correctly refused it —
+   *
+   *     MoneyError: Money must be integer minor units, received 1990
+   *
+   * — on a page that could not fail against D1. `decimalNumbers: true` in the
+   * adapter is what makes SUM a number, and this pins it: the option is one
+   * line away from being removed as "a default nobody needs".
+   */
+  it("returns SUM over integer money as a number, not a string", async () => {
+    const now = Date.now();
+
+    /*
+     * Two price lists, one variant. `variant_prices` is unique on
+     * (variant_id, price_list_id), so two rows for one variant need two lists
+     * — which is the constraint doing its job and is worth tripping over here
+     * rather than in a screen.
+     */
+    for (const code of ["sum-a", "sum-b"]) {
+      await db
+        .prepare(
+          `INSERT INTO price_lists (id, code, name, channel, is_default, active, created_at, updated_at)
+           VALUES (?1, ?2, ?2, 'online', 0, 1, ?3, ?3)`,
+        )
+        .bind(`pl-${code}`, code, now)
+        .run();
+    }
+
+    for (const [id, list, amount] of [
+      ["vp-sum-1", "pl-sum-a", 1990],
+      ["vp-sum-2", "pl-sum-b", 1290],
+    ] as const) {
+      await db
+        .prepare(
+          `INSERT INTO variant_prices (id, variant_id, price_list_id, amount, currency, created_at, updated_at)
+           VALUES (?1,'v1',?2,?3,'EUR',?4,?4)`,
+        )
+        .bind(id, list, amount, now)
+        .run();
+    }
+
+    const row = await db
+      .prepare(
+        `SELECT SUM(amount) AS total, COUNT(*) AS n, AVG(amount) AS mean
+           FROM variant_prices WHERE price_list_id IN ('pl-sum-a','pl-sum-b')`,
+      )
+      .first<{ total: number; n: number; mean: number }>();
+
+    expect(typeof row?.total).toBe("number");
+    expect(row?.total).toBe(3280);
+    expect(Number.isInteger(row?.total)).toBe(true);
+
+    // COUNT is BIGINT rather than DECIMAL, and was already a number. Asserted
+    // beside SUM so a future change cannot fix one and break the other.
+    expect(typeof row?.n).toBe("number");
+    expect(row?.n).toBe(2);
+
+    // AVG is DECIMAL too, and is allowed to be fractional — what matters is
+    // that it arrives as a number rather than as text.
+    expect(typeof row?.mean).toBe("number");
+    expect(row?.mean).toBeCloseTo(1640, 6);
+  });
+
   it("keeps money as exact integer minor units", async () => {
     const now = Date.now();
     await db

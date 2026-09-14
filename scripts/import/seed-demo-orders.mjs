@@ -333,6 +333,21 @@ sql(`INSERT INTO product_variants
  * catalogue where every product is finished.
  */
 
+/*
+ * `--print` writes the statements to stdout and applies nothing.
+ *
+ * The MariaDB browser suite needs the same catalogue in a MariaDB database,
+ * and the only thing standing between here and there is that this script
+ * speaks to `wrangler d1 execute`. Printing lets one caller
+ * (scripts/hostinger/seed-mariadb.mjs) put the SAME statements through the
+ * dialect translator instead — one definition of the demo catalogue, two
+ * engines, rather than a second copy that drifts.
+ */
+if (args.includes("--print")) {
+  process.stdout.write(statements.join(";\n"));
+  process.exit(0);
+}
+
 console.log(
   `Seeding DEMO orders into ${DB}` +
     `${ENVIRONMENT ? ` (env ${ENVIRONMENT})` : ""} ${REMOTE ? "remote" : "local"} — ` +

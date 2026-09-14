@@ -29,10 +29,10 @@
  */
 
 import {
+  customType,
   mysqlTable,
   varchar,
   text,
-  bigint,
   tinyint,
   int,
   index,
@@ -43,15 +43,55 @@ import {
 const id = () => varchar("id", { length: 64 }).primaryKey().notNull();
 
 /**
- * Epoch milliseconds in BIGINT.
+ * Epoch milliseconds in BIGINT — accepting a `Date`, because Better Auth sends
+ * one.
  *
- * `{ mode: "number" }` because the whole application compares these as numbers
- * and every value is far inside `Number.MAX_SAFE_INTEGER` — an epoch
- * millisecond is ~1.8e12, the limit is 9.0e15. Drizzle's default for BIGINT
- * would hand back a string, and `"1789…" > 1789…` is false, so a session would
- * simply never expire.
+ * ── THE BUG THIS FIXES, WHICH SHIPPED UNNOTICED ─────────────────────────────
+ *
+ * This was `bigint(name, { mode: "number" })`, which is the right STORAGE and
+ * the wrong INTERFACE. Better Auth hands the adapter JavaScript `Date` objects;
+ * Drizzle passed the Date straight to mysql2, which serialised it as
+ * "Mon Sep 14 2026 07:40:21 GMT+0500", and MariaDB answered:
+ *
+ *     Data truncated for column 'created_at' at row 1
+ *
+ * The consequence was not subtle: **no administrator could be created on
+ * MariaDB at all.** Sign-up failed, the first-run install silently produced no
+ * account, and the login page simply re-rendered.
+ *
+ * It was invisible because the SQLite schema uses
+ * `integer(name, { mode: "timestamp_ms" })`, which converts Date ↔ number for
+ * free, and every browser test ran against SQLite. It was found the first time
+ * the admin suite was pointed at the target runtime
+ * (`npm run test:e2e:mariadb`), which is exactly the gap that run exists to
+ * close.
+ *
+ * ── WHY A CUSTOM TYPE AND NOT `timestamp()` ─────────────────────────────────
+ *
+ * The column IS a BIGINT — `db/mariadb/migrations/0001_baseline.sql` creates
+ * it, Drizzle does not, and `tests/mariadb/auth-schema.test.ts` compares the
+ * two column by column. Changing the declaration to a MySQL `TIMESTAMP` would
+ * make this file describe a table that does not exist. So the storage stays
+ * BIGINT and the conversion happens here, mirroring `timestamp_ms` exactly:
+ * a `Date` in, epoch milliseconds on the wire, a `Date` back.
+ *
+ * Numbers are accepted on the way in as well, because the application's own
+ * code passes epoch milliseconds and has no reason to build a Date to have it
+ * converted straight back.
  */
-const epochMillis = (name: string) => bigint(name, { mode: "number" });
+const epochMillis = customType<{
+  data: Date;
+  driverData: number | string;
+}>({
+  dataType: () => "bigint",
+  toDriver: (value) => (value instanceof Date ? value.getTime() : Number(value)),
+  /*
+   * `Number(...)` because mysql2 returns BIGINT as a STRING by default, and
+   * `new Date("1789344287317")` is Invalid Date. Every value here is an epoch
+   * millisecond — ~1.8e12 against a 9.0e15 limit — so the conversion is exact.
+   */
+  fromDriver: (value) => new Date(Number(value)),
+});
 
 /** MySQL has no boolean. TINYINT(1) is what the baseline creates. */
 const bool = (name: string) => tinyint(name).notNull().default(0);

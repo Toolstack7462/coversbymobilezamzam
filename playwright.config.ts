@@ -163,6 +163,52 @@ export default defineConfig({
      * One worker, because it is the heaviest thing here and it is the one whose
      * results are read by a person rather than by CI.
      */
+    /*
+     * ── FIREFOX AND WEBKIT ──────────────────────────────────────────────────
+     *
+     * A SUBSET, on purpose, and NOT part of the default run.
+     *
+     * Running the whole suite three more times is exactly the mistake this
+     * file warns about twice above: one `wrangler dev` and one SQLite file
+     * behind every project, and the way that fails is a run reporting "passed"
+     * for tests that never executed. So these run one spec, at one worker, and
+     * only when asked for — `npm run test:e2e:cross`.
+     *
+     * ── WHY THE ACCESSIBILITY SPEC AND NOT THE ADMIN ────────────────────────
+     *
+     * The admin was tried first and WebKit failed twenty-one of its tests, all
+     * of them on the login page. The cause is not a bug in the admin: the
+     * session cookie is `__Host-ita` with `Secure`, and WebKit — unlike
+     * Chromium and Firefox — does not treat `http://127.0.0.1` as a
+     * trustworthy origin, so it discards the cookie the setup project just
+     * received. Over HTTPS, which is the only way the admin is ever served,
+     * the cookie is accepted normally.
+     *
+     * Weakening the cookie to make a local test pass would be trading a real
+     * protection for a green tick. Serving the suite over HTTPS with a
+     * self-signed certificate would fix it and is a bigger change than this
+     * pass should make. So the cross-browser projects run the PUBLIC pages,
+     * which need no session — and which are also where an engine difference
+     * matters most, since the storefront is what customers open on Safari.
+     *
+     * Firefox ran the admin spec cleanly before this was narrowed, and that is
+     * recorded in docs/admin-visual-qa.md rather than left as folklore.
+     */
+    {
+      name: "firefox",
+      testMatch: /accessibility\.spec\.ts/,
+      use: { ...devices["Desktop Firefox"] },
+      dependencies: ["setup"],
+      workers: 1,
+    },
+    {
+      name: "webkit",
+      testMatch: /accessibility\.spec\.ts/,
+      use: { ...devices["Desktop Safari"] },
+      dependencies: ["setup"],
+      workers: 1,
+    },
+
     {
       name: "visual",
       testMatch: /admin-visual\.spec\.ts/,

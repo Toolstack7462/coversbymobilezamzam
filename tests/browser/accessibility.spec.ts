@@ -51,7 +51,24 @@ for (const page of PUBLIC_PAGES) {
 }
 
 test.describe("keyboard", () => {
-  test("the first tab stop is a working skip link", async ({ page }) => {
+  test("the first tab stop is a working skip link", async ({ page }, testInfo) => {
+    /*
+     * Not on WebKit, and the reason is Safari rather than this page.
+     *
+     * Safari's default is that Tab visits FORM CONTROLS only; links are
+     * reached with Option-Tab, or with every control once "Full Keyboard
+     * Access" is switched on in System Settings. Playwright cannot set that,
+     * so the first Tab here lands on the search box and the assertion fails on
+     * a browser doing exactly what it is configured to do.
+     *
+     * This is worth knowing rather than hiding: a Safari user on default
+     * settings does NOT get the skip link on their first Tab. That is a
+     * platform behaviour common to every site, the markup is correct, and the
+     * link is reachable — but "the first tab stop is the skip link" is a
+     * statement about Chromium and Firefox, and the test now says so.
+     */
+    test.skip(testInfo.project.name === "webkit", "Safari tabs to form controls only by default");
+
     // Without it, a keyboard user traverses the whole header on every single
     // page before reaching the content they came for.
     await page.goto("/");

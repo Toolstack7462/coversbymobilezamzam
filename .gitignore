@@ -65,3 +65,7 @@ logs/
 # record the shop has. Neither belongs in Git.
 /hostinger-migration-work/
 /build/server-node/
+
+# Local scratch: throwaway server storage, scale fixtures, one-off logs.
+# Nothing here is an input to a build or a test that CI runs.
+.local/

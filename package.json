@@ -27,7 +27,7 @@
     "test:integration": "vitest run --project workers",
     "test:security": "vitest run --project workers tests/security",
     "test:watch": "vitest",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --project=desktop --project=mobile --project=visual",
     "test:a11y": "playwright test tests/accessibility",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply ita-commerce --local",
@@ -70,7 +70,10 @@
     "performance:compare": "node scripts/hostinger/performance-compare.mjs",
     "performance:soak": "node scripts/hostinger/performance-soak.mjs",
     "scale:fixture": "node scripts/hostinger/scale-fixture.mjs",
-    "job:run": "node scripts/hostinger/run-job.mjs"
+    "job:run": "node scripts/hostinger/run-job.mjs",
+    "test:e2e:cross": "playwright test --project=firefox --project=webkit",
+    "test:e2e:mariadb": "playwright test --config playwright.mariadb.config.ts",
+    "seed:mariadb": "node scripts/hostinger/seed-mariadb.mjs"
   },
   "dependencies": {
     "@react-router/express": "8.3.1",

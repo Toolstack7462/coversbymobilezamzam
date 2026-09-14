@@ -315,6 +315,24 @@ Rules that exist because each was broken once. Every one names the defect.
   `desktop`/`mobile`: one shared `wrangler dev` and one SQLite file stop
   answering, and the run reports "passed" for tests that never executed.
 
+### The MariaDB runtime is a different runtime
+
+- **`npm run test:e2e:mariadb` before believing any admin change is portable.**
+  The default browser suite runs against `wrangler dev` and D1. The first time
+  the screens were rendered from MariaDB it found four bugs, one of which was
+  that **no administrator could be created at all** — and none of them could
+  fail on SQLite. docs/admin-visual-qa.md lists them.
+- It is a SEPARATE Playwright config, not another project. Both builds write to
+  `build/client` and `build/server`; two web servers in one config race to
+  overwrite each other. Run them one after the other.
+- Things SQLite forgives and MariaDB does not, all of them found the hard way:
+  a derived table with no alias; an aggregate returning DECIMAL (a string,
+  without `decimalNumbers`); a reserved word used as an ALIAS rather than a
+  column; a `Date` handed to a BIGINT column.
+- When adding a reserved word, re-probe the real server —
+  `npm run hostinger:reserved-words` — and remember it enumerates COLUMNS.
+  Aliases are a separate surface and are how `lines` got through.
+
 ### Product types and duplication
 
 - **Which specification fields a product asks for comes from

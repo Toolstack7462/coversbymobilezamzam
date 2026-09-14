@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { twoFactor } from "better-auth/plugins";
 import { authDatabase } from "~/infrastructure/auth/database";
 import type { AppEnv } from "~/runtime/context";
+import { MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH } from "~/domain/users/password-policy";
 
 /**
  * Better Auth, over whichever database the runtime configured.
@@ -56,9 +57,10 @@ export function createAuth(env: AppEnv) {
 
     emailAndPassword: {
       enabled: true,
-      // 12 rather than 8. These accounts can change where money goes.
-      minPasswordLength: 12,
-      maxPasswordLength: 200,
+      // The same constants the admin forms state to the person typing, so the
+      // promised rule and the enforced rule cannot drift apart.
+      minPasswordLength: MIN_PASSWORD_LENGTH,
+      maxPasswordLength: MAX_PASSWORD_LENGTH,
       requireEmailVerification: false,
       // A reset link that silently goes nowhere is worse than a disabled
       // feature, so this exists only when a provider is configured.

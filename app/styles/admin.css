@@ -1572,36 +1572,6 @@ a.ac-pick:hover {
   margin-block-start: var(--space-4);
 }
 
-/* FormField — label, hint, control, error. */
-.ac .ac-field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.ac .ac-field > label {
-  font-size: var(--text-ui);
-  font-weight: var(--weight-medium);
-}
-
-/* The asterisk is a hint, not the message: the accessible name carries
-   "(obbligatorio)" so nothing depends on noticing a small mark. */
-.ac .ac-field__required {
-  color: var(--color-danger-text);
-}
-
-.ac .ac-field__error {
-  color: var(--color-danger-text);
-}
-
-/* The invalid state is a border AND the message beneath. Colour alone would
-   leave nothing for a reader who cannot distinguish it. */
-.ac .ac-field--invalid input,
-.ac .ac-field--invalid select,
-.ac .ac-field--invalid textarea {
-  border-color: var(--color-danger-text);
-}
-
 /* ErrorSummary — every problem, at the top, each one a link to its field. */
 .ac .ac-error-summary ul {
   margin: var(--space-2) 0 0;

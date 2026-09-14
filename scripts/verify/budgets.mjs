@@ -41,6 +41,7 @@ import { gzipSync } from "node:zlib";
 
 const CLIENT_DIR = "build/client";
 const ADMIN_ROUTES_DIR = "app/routes/admin";
+const ADMIN_COMPONENTS_DIR = "app/components/admin";
 
 /**
  * The limits, and why they are these numbers.
@@ -175,17 +176,31 @@ function matchStem(file, stems) {
  * check by eye is not a gate.
  *
  * So the rule is now dumb and verifiable. A chunk is the shopkeeper's if it is
- * named after a file under `app/routes/admin/` or after one of the admin-only
- * components listed below. Everything else — the framework, the router, the
- * shared helpers, every storefront route — is charged to the CUSTOMER.
+ * named after a file under `app/routes/admin/` or `app/components/admin/`.
+ * Everything else — the framework, the router, the shared helpers, every
+ * storefront route — is charged to the CUSTOMER.
  *
  * That is deliberately biased against the customer's budget. A shared chunk is
- * genuinely downloaded by customers, so charging it to them is correct; and an
- * admin-only helper that nobody remembered to list here is also charged to
- * them, which over-counts rather than flatters. The two figures always sum to
- * the total, and the classification of every chunk is printed on request.
+ * genuinely downloaded by customers, so charging it to them is correct. The two
+ * figures always sum to the total, and the classification of every chunk is
+ * printed on request.
+ *
+ * ── WHY THE COMPONENT DIRECTORY IS READ RATHER THAN LISTED ──────────────────
+ *
+ * It used to be a hand-written list of three names, with a comment conceding
+ * that "an admin-only helper that nobody remembered to list here is also
+ * charged to them". That is exactly what happened: extracting the shared
+ * PasswordField produced two new admin-only chunks, `password-field` and
+ * `patterns`, and both were billed to the customer — pushing the storefront
+ * from 97% to 99% of a budget that no customer-facing byte had joined.
+ *
+ * Reading the directory removes the failure mode instead of re-listing around
+ * it. The claim it rests on is checkable and was checked: nothing outside
+ * `app/routes/admin/` imports from `app/components/admin/`, so no storefront
+ * page can pull one of these chunks in. If that ever stops being true, the
+ * component belongs somewhere else.
  */
-const ADMIN_ONLY_MODULES = ["admin-shell", "admin-nav", "data-table"];
+const ADMIN_ONLY_MODULES = ["admin-nav"];
 
 const routeStems = (dir) =>
   existsSync(dir)
@@ -194,7 +209,11 @@ const routeStems = (dir) =>
         .map((f) => basename(f, ".tsx"))
     : [];
 
-const adminStems = new Set([...routeStems(ADMIN_ROUTES_DIR), ...ADMIN_ONLY_MODULES]);
+const adminStems = new Set([
+  ...routeStems(ADMIN_ROUTES_DIR),
+  ...routeStems(ADMIN_COMPONENTS_DIR),
+  ...ADMIN_ONLY_MODULES,
+]);
 
 /**
  * `layout.tsx` exists in both trees and Vite emits two chunks sharing that

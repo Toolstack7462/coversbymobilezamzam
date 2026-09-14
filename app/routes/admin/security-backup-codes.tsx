@@ -1,5 +1,6 @@
 import { Form, Link, useLocation } from "react-router";
 import type { Route } from "./+types/security-backup-codes";
+import { PasswordField } from "~/components/admin/password-field";
 import { appContext } from "~/runtime/context";
 import { createAuth } from "~/infrastructure/auth/auth.server";
 import { requireStaff, hasVerifiedTwoFactor } from "~/infrastructure/auth/session.server";
@@ -154,19 +155,13 @@ export default function BackupCodes({ loaderData, actionData }: Route.ComponentP
               : "Servono per accedere se perdi il telefono. Vengono mostrati una volta sola."}
           </p>
           <Form method="post" className="stack">
-            <div className="field">
-              <label className="field__label" htmlFor="password">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                className="input"
-                required
-                autoComplete="current-password"
-              />
-            </div>
+            <PasswordField
+              id="password"
+              name="password"
+              label="Password"
+              autoComplete="current-password"
+              required
+            />
             <button type="submit" className="btn btn--primary">
               {hasCodes ? "Rigenera codici" : "Genera codici"}
             </button>

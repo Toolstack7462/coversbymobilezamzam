@@ -1,0 +1,95 @@
+/* Admin form controls.
+ *
+ * Separate from admin.css because three of the screens that need them —
+ * staff login, first-run setup and invitation acceptance — are registered
+ * OUTSIDE routes/admin/layout.tsx and so never load admin.css at all. Leaving
+ * these rules there meant a PasswordField on the login page rendered with an
+ * unstyled label and a toggle button that did not sit beside its input.
+ *
+ * The selectors are therefore NOT scoped under .ac. Every class here is
+ * prefixed ac- and used only by app/components/admin, so the de-scoping cannot
+ * reach a storefront element. These rules are loaded by admin/layout.tsx and by
+ * the three pre-auth routes; they are not in the storefront bundle.
+ */
+
+/* FormField — label, hint, control, error. */
+.ac-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.ac-field > label {
+  font-size: var(--text-ui);
+  font-weight: var(--weight-medium);
+}
+
+/* The asterisk is a hint, not the message: the accessible name carries
+   "(obbligatorio)" so nothing depends on noticing a small mark. */
+.ac-field__required {
+  color: var(--color-danger-text);
+}
+
+.ac-field__error {
+  color: var(--color-danger-text);
+}
+
+/* The invalid state is a border AND the message beneath. Colour alone would
+   leave nothing for a reader who cannot distinguish it. */
+.ac-field--invalid input,
+.ac-field--invalid select,
+.ac-field--invalid textarea {
+  border-color: var(--color-danger-text);
+}
+
+/* PasswordField — the input and its Show/Hide button, side by side.
+
+   The button is a SIBLING of the input, never an overlay on its right edge:
+   that edge belongs to the browser reveal control and to password managers,
+   and anything placed there overlaps one of them in some browser. */
+.ac-password {
+  display: flex;
+  gap: var(--space-2);
+  align-items: stretch;
+}
+
+.ac-password__input {
+  flex: 1 1 auto;
+  /* min-width: 0 so a long value shrinks the input instead of pushing the
+     button off the edge of a 390px screen. */
+  min-width: 0;
+}
+
+.ac-password__toggle {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  /* The label changes between "Mostra password" and "Nascondi password", which
+     are different widths; without a floor the control moves under the pointer
+     as it is clicked. 44px is the tap-target minimum. */
+  min-height: 44px;
+}
+
+@media (max-width: 28rem) {
+  /* On a narrow screen the two do not fit side by side without squeezing the
+     input to uselessness, so the button drops beneath it and spans the width —
+     a bigger target, not a smaller one. */
+  .ac-password {
+    flex-direction: column;
+  }
+}
+
+.ac-password__requirements {
+  margin: 0;
+  padding-inline-start: var(--space-5);
+}
+
+/* The Caps Lock region is present from first render so the announcement is an
+   update to an existing live region rather than a newly inserted one. Empty, it
+   must take no space and add no flex gap. */
+.ac-password__caps {
+  margin: 0;
+}
+
+.ac-password__caps:empty {
+  display: none;
+}

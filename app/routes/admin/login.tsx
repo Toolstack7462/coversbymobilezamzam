@@ -1,5 +1,8 @@
 import { Form, redirect } from "react-router";
+import type { LinksFunction } from "react-router";
 import type { Route } from "./+types/login";
+import { PasswordField } from "~/components/admin/password-field";
+import adminFormStyles from "~/styles/admin-forms.css?url";
 import { appContext } from "~/runtime/context";
 import { createAuth } from "~/infrastructure/auth/auth.server";
 import { relayCookies, cookieHeaderFrom } from "~/infrastructure/auth/cookies.server";
@@ -105,6 +108,17 @@ export async function action({ request, context }: Route.ActionArgs) {
   return redirect(safeNext, setCookies);
 }
 
+/**
+ * The form control styles.
+ *
+ * This route is NOT a child of routes/admin/layout.tsx — a person signing in
+ * does not yet have a session, so the shell that requires one cannot wrap the
+ * page that creates it. That means admin.css never loads here, and this is the
+ * only stylesheet the screen needs: everything else it uses is in the root
+ * stylesheet already.
+ */
+export const links: LinksFunction = () => [{ rel: "stylesheet", href: adminFormStyles }];
+
 export default function AdminLogin({ actionData }: Route.ComponentProps) {
   return (
     <main id="main" className="admin-auth">
@@ -134,19 +148,13 @@ export default function AdminLogin({ actionData }: Route.ComponentProps) {
             />
           </div>
 
-          <div className="field">
-            <label className="field__label" htmlFor="password">
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              className="input"
-              required
-              autoComplete="current-password"
-            />
-          </div>
+          <PasswordField
+            id="password"
+            name="password"
+            label="Password"
+            autoComplete="current-password"
+            required
+          />
 
           <button type="submit" className="btn btn--primary">
             Accedi

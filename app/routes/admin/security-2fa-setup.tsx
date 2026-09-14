@@ -1,6 +1,7 @@
 import { Form, redirect } from "react-router";
 import { renderSVG } from "uqr";
 import type { Route } from "./+types/security-2fa-setup";
+import { PasswordField } from "~/components/admin/password-field";
 import { appContext } from "~/runtime/context";
 import { createAuth } from "~/infrastructure/auth/auth.server";
 import { requireStaff, hasVerifiedTwoFactor } from "~/infrastructure/auth/session.server";
@@ -173,20 +174,14 @@ export default function TwoFactorSetup({ loaderData, actionData }: Route.Compone
           </p>
           <Form method="post" className="stack">
             <input type="hidden" name="step" value="start" />
-            <div className="field">
-              <label className="field__label" htmlFor="password">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                className="input"
-                required
-                autoComplete="current-password"
-                autoFocus
-              />
-            </div>
+            <PasswordField
+              id="password"
+              name="password"
+              label="Password"
+              autoComplete="current-password"
+              required
+              autoFocus
+            />
             <button type="submit" className="btn btn--primary">
               Continua
             </button>

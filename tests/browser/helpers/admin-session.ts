@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 import { stableTotp, freshTotp } from "../../helpers/totp";
 
 /**
@@ -62,6 +62,30 @@ export async function installShop(page: Page): Promise<void> {
   await page.fill('input[name="password"]', ADMIN.password);
 
   await page.fill('input[name="confirm"]', ADMIN.password);
+
+  /*
+   * Each PasswordField toggles ON ITS OWN.
+   *
+   * Asserted here, of all places, because this is the only screen in the
+   * application that ever shows two password fields at once — and it exists
+   * exactly once per database, since /admin/installazione closes itself
+   * permanently the moment installation completes. A test that navigated here
+   * afterwards would find a 404 and skip, and a skip reads as "verified" in a
+   * summary when it is nothing of the kind.
+   *
+   * What it guards against is one shared piece of visibility state: press Show
+   * on the password and the confirmation is revealed along with it, putting
+   * both on screen for a single press.
+   */
+  await page
+    .locator(".ac-password:has(#password)")
+    .getByRole("button", { name: "Mostra password" })
+    .click();
+  await expect(page.locator("#password")).toHaveAttribute("type", "text");
+  await expect(page.locator("#confirm")).toHaveAttribute("type", "password");
+  await page.getByRole("button", { name: "Nascondi password" }).click();
+  await expect(page.locator("#password")).toHaveAttribute("type", "password");
+
   await page.fill('input[name="name"]', ADMIN.name);
   await page.fill('input[name="setupToken"]', ADMIN.setupToken);
 

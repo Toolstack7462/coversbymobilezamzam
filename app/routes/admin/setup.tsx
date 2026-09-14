@@ -1,5 +1,9 @@
 import { Form, redirect } from "react-router";
+import type { LinksFunction } from "react-router";
 import type { Route } from "./+types/setup";
+import { PasswordField } from "~/components/admin/password-field";
+import { PASSWORD_REQUIREMENTS } from "~/domain/users/password-policy";
+import adminFormStyles from "~/styles/admin-forms.css?url";
 import { appContext } from "~/runtime/context";
 import { createAuth } from "~/infrastructure/auth/auth.server";
 import { allSetCookies, cookieHeaderFrom } from "~/infrastructure/auth/cookies.server";
@@ -145,6 +149,15 @@ export async function action({ request, context }: Route.ActionArgs) {
   return redirect("/admin/sicurezza/2fa", cookieHeaders(result.setCookie));
 }
 
+/**
+ * The form control styles.
+ *
+ * Registered outside routes/admin/layout.tsx — the shell that requires a staff
+ * session cannot wrap a page reached without one — so admin.css never loads
+ * here and this stylesheet has to be requested explicitly.
+ */
+export const links: LinksFunction = () => [{ rel: "stylesheet", href: adminFormStyles }];
+
 export default function AdminSetup({ loaderData, actionData }: Route.ComponentProps) {
   const { rolesSeeded, tokenConfigured, turnstileSiteKey } = loaderData;
   const ready = rolesSeeded && tokenConfigured;
@@ -180,28 +193,31 @@ export default function AdminSetup({ loaderData, actionData }: Route.ComponentPr
         ) : null}
 
         <Form method="post" className="stack" autoComplete="off">
-          <div className="field">
-            <label className="field__label" htmlFor="setupToken">
-              Token di installazione
-            </label>
-            {/*
-              type=password so it is not shoulder-surfed, and the value is NEVER
-              written back into the response - a rejected attempt returns an
-              empty field rather than echoing the guess.
-            */}
-            <input
-              id="setupToken"
-              name="setupToken"
-              type="password"
-              className="input"
-              required
-              autoComplete="off"
-              disabled={!ready}
-            />
-            <span className="field__hint">
-              Fornito da chi ha configurato l&apos;ambiente. Non compare mai in un URL o in un log.
-            </span>
-          </div>
+          {/*
+            Masked so it is not shoulder-surfed, and the value is NEVER written
+            back into the response - a rejected attempt returns an empty field
+            rather than echoing the guess.
+
+            It is the one PasswordField that is not a password. The reveal
+            control is here for a specific first-run failure: the token is long,
+            it is pasted from a terminal or a password manager, and a paste that
+            silently truncated produces exactly the same "Token non valido" as a
+            wrong token. Being able to look at what was actually pasted is the
+            difference between fixing that in seconds and reinstalling.
+
+            autoComplete="off" because it is a one-time environment secret, not
+            an account credential: a password manager must not offer it or store
+            it as one.
+          */}
+          <PasswordField
+            id="setupToken"
+            name="setupToken"
+            label="Token di installazione"
+            autoComplete="off"
+            required
+            disabled={!ready}
+            hint="Fornito da chi ha configurato l’ambiente. Non compare mai in un URL o in un log."
+          />
 
           <div className="field">
             <label className="field__label" htmlFor="name">
@@ -232,40 +248,26 @@ export default function AdminSetup({ loaderData, actionData }: Route.ComponentPr
             />
           </div>
 
-          <div className="field">
-            <label className="field__label" htmlFor="password">
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              className="input"
-              required
-              minLength={12}
-              autoComplete="new-password"
-              disabled={!ready}
-            />
-            <span className="field__hint">
-              Almeno 12 caratteri. Questo account potrà modificare i dati di pagamento.
-            </span>
-          </div>
+          <PasswordField
+            id="password"
+            name="password"
+            label="Password"
+            autoComplete="new-password"
+            required
+            minLength={12}
+            disabled={!ready}
+            requirements={PASSWORD_REQUIREMENTS}
+          />
 
-          <div className="field">
-            <label className="field__label" htmlFor="confirm">
-              Ripeti la password
-            </label>
-            <input
-              id="confirm"
-              name="confirm"
-              type="password"
-              className="input"
-              required
-              minLength={12}
-              autoComplete="new-password"
-              disabled={!ready}
-            />
-          </div>
+          <PasswordField
+            id="confirm"
+            name="confirm"
+            label="Ripeti la password"
+            autoComplete="new-password"
+            required
+            minLength={12}
+            disabled={!ready}
+          />
 
           {turnstileSiteKey ? (
             <div className="cf-turnstile" data-sitekey={turnstileSiteKey} />

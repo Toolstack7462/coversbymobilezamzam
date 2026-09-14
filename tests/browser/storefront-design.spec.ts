@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { STORAGE_STATE } from "./helpers/admin-session";
+import { pngFixture } from "./helpers/image-fixture";
 
 // The existing CI browser job runs the real built application and an isolated
 // [DEMO] catalogue. These are lab screenshots, never evidence of merchant stock.
@@ -83,6 +85,7 @@ for (const viewport of widths) {
       ["finder", "/trova-dispositivo"],
       ["cart", "/carrello"],
       ["product", "/prodotti/demo-cover-trasparente-iphone-16-pro"],
+      ["store", "/negozio"],
     ]) {
       const response = await page.goto(route!);
       expect(response?.status()).toBe(200);
@@ -151,6 +154,55 @@ test.describe("hero interaction evidence", () => {
   });
 });
 
+test("slow navigation acknowledges the click while keeping the page usable", async ({ page }) => {
+  await page.goto("/");
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(/\/shop\.data(?:\?|$)/, async (route) => {
+    await held;
+    await route.continue();
+  });
+  const click = page.locator('.showcase__copy a[href="/shop"]').click();
+  try {
+    await expect(page.locator(".route-pending")).toContainText("Caricamento");
+    await expect(page.locator("#main")).toHaveAttribute("aria-busy", "true");
+    await expect(page.locator(".showcase__copy h1")).toBeVisible();
+  } finally {
+    release();
+    await click;
+  }
+  await expect(page).toHaveURL(/\/shop$/);
+  await expect(page.locator(".route-pending")).toBeEmpty();
+  await expect(page.locator("#main")).toHaveAttribute("aria-busy", "false");
+  await expect(page.locator("head title")).toHaveCount(1);
+});
+
+// Separately requested login presentation: no authentication bypass or logic changes.
+test("branded staff login fits all four widths and keeps its accessible form", async ({
+  page,
+}, testInfo) => {
+  await page.goto("/admin/accedi");
+  await expect(page.locator(".admin-login__brand img")).toHaveAttribute(
+    "alt",
+    "Covers by Mobile Zam Zam",
+  );
+  for (const viewport of widths) {
+    await page.setViewportSize(viewport);
+    await expect(page.locator('input[autocomplete="current-password"]')).toBeVisible();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth - innerWidth),
+    ).toBeLessThanOrEqual(1);
+    await page.screenshot({
+      path: testInfo.outputPath(`storefront-admin-login-${viewport.width}.png`),
+      fullPage: true,
+      animations: "disabled",
+    });
+  }
+  expect((await new AxeBuilder({ page }).include(".admin-login").analyze()).violations).toEqual([]);
+});
+
 test("reduced motion keeps the illustration stationary", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
@@ -173,8 +225,17 @@ test("the selected variant survives adding, updating and removing a cart line", 
   page,
 }) => {
   await page.goto("/prodotti/demo-cover-trasparente-iphone-16-pro");
+  await expect(page.locator(".variant-picker a")).toHaveCount(3);
+  await page.getByRole("link", { name: "Blu", exact: true }).click();
+  await expect(page.locator(".product-page__price")).toContainText("21,90");
+  await expect(page.locator('#acquista button[type="submit"]')).toBeDisabled();
+  await page.goBack();
+  await expect(page.locator('.variant-picker a[aria-current="true"]')).toHaveText("Trasparente");
+  await page.getByRole("link", { name: "Nero opaco", exact: true }).click();
+  await page.reload();
+  await expect(page.locator('.variant-picker a[aria-current="true"]')).toHaveText("Nero opaco");
   const variant = await page.locator('#acquista input[name="variantId"]').inputValue();
-  expect(variant).not.toBe("");
+  expect(variant).toBe("var_demo_cover16pro_black");
   await page.locator("#quantity").fill("2");
   await page.locator('#acquista button[type="submit"]').click();
   await expect(page).toHaveURL(/\/carrello$/);
@@ -191,6 +252,79 @@ test("the selected variant survives adding, updating and removing a cart line", 
   await expect(page.locator(".empty-state")).toBeVisible();
 });
 
+test("device selection, filters and browser history keep their real URL state", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await page.locator("#discovery-brand").selectOption({ index: 1 });
+  await page.locator("#discovery-model").selectOption({ index: 1 });
+  const model = await page.locator("#discovery-model").inputValue();
+  await page.locator('.discovery__form button[type="submit"]').click();
+  await expect(page).toHaveURL(new RegExp(`dispositivo=${model}`));
+  await expect(page.locator(".collection-head__device")).toBeVisible();
+  const category = page.locator('.filter-row a[href*="categoria="]').first();
+  await category.click();
+  await expect(page).toHaveURL(/categoria=/);
+  expect(new URL(page.url()).searchParams.get("dispositivo")).toBe(model);
+  await page.goBack();
+  expect(new URL(page.url()).searchParams.has("categoria")).toBe(false);
+  expect(new URL(page.url()).searchParams.get("dispositivo")).toBe(model);
+  await page.locator('.mobile-nav a[href="/trova-dispositivo"]').click();
+  await page.locator('.finder-step a[href*="marca="]').first().click();
+  await expect(page.locator(".finder-step")).toHaveCount(2);
+  await page.locator('.finder-step a[href*="famiglia="]').first().click();
+  await expect(page.locator(".finder-step")).toHaveCount(3);
+  await page.goBack();
+  await expect(page.locator(".finder-step")).toHaveCount(2);
+  await page.locator('.mobile-nav a[href="#q"]').click();
+  await expect(page.locator("#q")).toBeFocused();
+});
+
+test("hero entrance, intermediate states and pointer depth stay usable", async ({
+  page,
+}, testInfo) => {
+  await page.goto("/");
+  const stage = page.locator(".showcase__stage");
+  // Inspect the timeline at a known midpoint rather than racing a screenshot.
+  await stage.evaluate((node) => {
+    for (const animation of node.getAnimations({ subtree: true })) {
+      animation.pause();
+      animation.currentTime = 250;
+    }
+  });
+  await expect(page.locator(".showcase__copy h1")).toHaveCSS("opacity", "1");
+  await expect(page.locator('.showcase__copy a[href="/shop"]')).toBeEnabled();
+  await page.screenshot({ path: testInfo.outputPath("storefront-hero-midpoint.png") });
+  const violations = await new AxeBuilder({ page }).include(".showcase").analyze();
+  expect(violations.violations).toEqual([]);
+  await stage.evaluate(async (node) => {
+    const animations = node.getAnimations({ subtree: true });
+    for (const animation of animations) {
+      expectDuration(animation.effect?.getTiming().duration);
+      animation.play();
+    }
+    function expectDuration(duration: number | CSSNumericValue | string | undefined) {
+      if (typeof duration === "number" && duration > 3000)
+        throw new Error("Entrance exceeds 3 seconds");
+    }
+    await Promise.all(animations.map((animation) => animation.finished));
+  });
+  const bounds = await stage.boundingBox();
+  expect(bounds).not.toBeNull();
+  await page.mouse.move(bounds!.x + bounds!.width * 0.8, bounds!.y + bounds!.height * 0.35);
+  await expect(stage).toHaveAttribute("style", /--scene-x/);
+  await page.mouse.move(0, 0);
+  expect(
+    await stage.evaluate((node) => (node as HTMLElement).style.getPropertyValue("--scene-x")),
+  ).toBe("");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.mouse.move(bounds!.x + bounds!.width * 0.8, bounds!.y + bounds!.height * 0.35);
+  expect(
+    await stage.evaluate((node) => (node as HTMLElement).style.getPropertyValue("--scene-x")),
+  ).toBe("");
+});
+
 test.describe("static first render", () => {
   test.use({ javaScriptEnabled: false });
   test("hero and shopping links work without hydration", async ({ page }) => {
@@ -201,4 +335,78 @@ test.describe("static first render", () => {
     await expect(page).toHaveURL(/\/shop$/);
     await expect(page.locator(".product-card").first()).toBeVisible();
   });
+  test("variant links select the exact SKU without JavaScript", async ({ page }) => {
+    await page.goto("/prodotti/demo-cover-trasparente-iphone-16-pro?variante=not-a-variant");
+    await expect(page.locator('#acquista input[name="variantId"]')).toHaveValue(
+      "var_demo_cover16pro_clear",
+    );
+    await page.getByRole("link", { name: "Nero opaco", exact: true }).click();
+    await expect(page.locator('#acquista input[name="variantId"]')).toHaveValue(
+      "var_demo_cover16pro_black",
+    );
+    await page.locator('#acquista button[type="submit"]').click();
+    await expect(page.locator('.cart-line input[name="variantId"]').first()).toHaveValue(
+      "var_demo_cover16pro_black",
+    );
+  });
+});
+
+test("merchant media persists into the real gallery and native thumbnail navigation", async ({
+  browser,
+  page,
+}) => {
+  const staff = await browser.newContext({ storageState: STORAGE_STATE });
+  const editor = await staff.newPage();
+  try {
+    await editor.goto("/admin/prodotti/prod_demo_cover16pro");
+    for (let index = 1; index <= 2; index += 1) {
+      await editor.setInputFiles("#image", {
+        name: `test-gallery-${index}.png`,
+        mimeType: "image/png",
+        buffer: pngFixture(400, 400, index === 1 ? [40, 80, 160] : [160, 180, 210]),
+      });
+      await editor.locator("#alt").fill(`[TEST] gallery view ${index}`);
+      await editor.getByRole("button", { name: /carica foto/i }).click();
+      await expect(editor.locator("#sez-foto li.ac-thumb")).toHaveCount(index);
+    }
+    await page.goto("/prodotti/demo-cover-trasparente-iphone-16-pro");
+    await expect(page.locator(".gallery__slide img")).toHaveCount(2);
+    await expect(page.locator(".gallery__slide img").first()).toHaveAttribute("loading", "eager");
+    await expect(page.locator(".gallery__slide img").first()).toHaveAttribute(
+      "alt",
+      "[TEST] gallery view 1",
+    );
+    await expect
+      .poll(() =>
+        page
+          .locator(".gallery__slide img")
+          .first()
+          .evaluate((img) => (img as HTMLImageElement).naturalWidth),
+      )
+      .toBe(400);
+    await page.locator('.gallery__thumb[href="#vista-2"]').click();
+    await expect
+      .poll(() => page.locator(".gallery__stage").evaluate((node) => node.scrollLeft))
+      .toBeGreaterThan(100);
+    await editor
+      .locator("#sez-foto li.ac-thumb input[name='alt']")
+      .first()
+      .fill("[TEST] updated merchant description");
+    await editor
+      .locator("#sez-foto li.ac-thumb")
+      .first()
+      .getByRole("button", { name: /salva descrizione/i })
+      .click();
+    await editor.reload();
+    await expect(editor.locator("#sez-foto li.ac-thumb input[name='alt']").first()).toHaveValue(
+      "[TEST] updated merchant description",
+    );
+    await page.reload();
+    await expect(page.locator(".gallery__slide img").first()).toHaveAttribute(
+      "alt",
+      "[TEST] updated merchant description",
+    );
+  } finally {
+    await staff.close();
+  }
 });

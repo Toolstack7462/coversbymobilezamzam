@@ -1,5 +1,5 @@
 import storefrontStyles from "~/styles/storefront.css?url";
-import { Outlet, useLocation } from "react-router";
+import { Outlet, useLocation, useNavigation } from "react-router";
 import type { Route } from "./+types/layout";
 import { appContext } from "~/runtime/context";
 import { systemClock } from "~/infrastructure/primitives";
@@ -189,6 +189,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
 export const links = () => [{ rel: "stylesheet", href: storefrontStyles }];
 
 export default function StorefrontLayout({ loaderData }: Route.ComponentProps) {
+  const pending = useNavigation().state !== "idle";
   const { pathname } = useLocation();
   const { locale } = parseLocalePath(pathname);
   const t = translator(locale);
@@ -216,7 +217,10 @@ export default function StorefrontLayout({ loaderData }: Route.ComponentProps) {
         navigation={loaderData.navigation}
         extraNav={loaderData.extraNav.filter((i) => i.menu === "header_extra")}
       />
-      <main id="main">
+      <div className="route-pending" role="status" aria-live="polite">
+        {pending ? <span>{t("common.loading")}</span> : null}
+      </div>
+      <main id="main" aria-busy={pending}>
         <Outlet />
       </main>
       <SiteFooter

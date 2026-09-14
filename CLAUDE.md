@@ -271,6 +271,14 @@ Rules that exist because each was broken once. Every one names the defect.
   `out_of_stock`. Always `<StatusBadge kind="…" value={…} />`, or
   `statusLabel()` inside a sentence. A state with no Italian label belongs in
   `status-badge.tsx`.
+- **Every password input is `PasswordField`.** There is one, in
+  `app/components/admin/password-field.tsx`, and a unit test fails any raw
+  `type="password"` elsewhere — the mistake is made by copying a nearby form,
+  so the guard is a source scan. It never fetches a stored password, never
+  persists the value or its visibility, and re-masks on hide, reload and submit.
+  A generic reveal must NOT be applied to a saved secret such as the payment
+  account identifier: that field is stored encrypted and rendered masked, and a
+  Show/Hide on it would expose an IBAN to anyone who can open Settings.
 - `DataTable` owns list layout: views, search, sorting, pagination, bulk
   actions, the mobile card collapse. A hand-rolled `<table>` in a route will
   not collapse on a phone.
@@ -314,6 +322,18 @@ Rules that exist because each was broken once. Every one names the defect.
 - The visual survey is its own Playwright project. Do not add heavy specs to
   `desktop`/`mobile`: one shared `wrangler dev` and one SQLite file stop
   answering, and the run reports "passed" for tests that never executed.
+- **A skipped test reads as a verified one.** Guard on a precondition only where
+  it is genuinely optional; otherwise ASSERT it. A signed-in spec missing its
+  file-level `test.use({ storageState })` redirects to the login page, the
+  fields vanish, and locator-count guards report a tidy "skipped" for tests that
+  never ran.
+- **Any test that writes a shared fixture row must be scoped to one project**
+  (`test.skip(testInfo.project.name === "mobile", "writes shared rows")`). Two
+  projects editing one demo product means a save refused by a conflict guard,
+  surfacing as a stale value that looks like a broken save.
+- Write the failing test first and watch it fail for the RIGHT reason. If a full
+  run fails, re-run the spec alone before believing it: two workers over one
+  `wrangler dev` produce wandering failures that vanish on a clean re-run.
 
 ### The MariaDB runtime is a different runtime
 
@@ -377,8 +397,17 @@ Rules that exist because each was broken once. Every one names the defect.
 ### Performance budgets
 
 - Admin assets never reach the customer bundle. `admin.css` is loaded by the
-  admin layout route alone.
-- Current: CSS 12.6 KB of a 45 KB budget; average admin chunk 1.6 KB of 3 KB
-  across 51 screens. `npm run budgets` enforces both.
+  admin layout route alone; `admin-forms.css` is loaded by that layout AND by the
+  three pre-auth routes (login, setup, invitation acceptance), which sit outside
+  it and so get no admin CSS otherwise.
+- Current: storefront JS 132.0 KB of 136 KB; admin JS 86.9 KB of 120 KB; CSS
+  13.6 KB of 45 KB; average admin chunk 1.6 KB of 3 KB across 55 screens.
+  `npm run budgets` enforces all four.
+- A chunk is charged to the admin if it is named after a file under
+  `app/routes/admin/` or `app/components/admin/`, read from those directories
+  rather than listed by hand. **Never raise a budget to make a check pass.** If
+  the storefront figure jumps after an admin-only change, the classification is
+  wrong, not the limit — that is exactly what happened when PasswordField was
+  extracted.
 - No charting library, no dashboard framework, no polling loop that runs in a
   hidden tab.

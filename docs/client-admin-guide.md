@@ -25,6 +25,29 @@ non entrerebbe comunque.
 Se perdete il telefono, usate uno dei **codici di recupero** salvati durante
 l'attivazione. Ogni codice funziona una volta sola.
 
+### Vedere quello che state scrivendo
+
+Accanto a ogni campo password c'è un pulsante **Mostra password**. Serve quando
+la password è lunga o generata da un gestore di password: invece di riprovare
+alla cieca dopo un rifiuto, potete guardare cosa avete scritto davvero.
+
+Tre cose che vale la pena sapere:
+
+- il campo torna sempre coperto da solo — quando cambiate scheda, quando
+  ricaricate la pagina e dopo ogni tentativo;
+- premere il pulsante non invia niente a nessuno: sta solo scoprendo quello che
+  avete appena digitato sul vostro schermo;
+- se **Bloc Maiusc** è attivo il pannello ve lo dice, perché è di gran lunga il
+  motivo più frequente per cui una password giusta viene rifiutata.
+
+Il pannello non può mostrarvi una password già salvata — né la vostra né quella
+di un collega. Nessuno le conserva in chiaro, e questo è voluto.
+
+**Non esiste un "password dimenticata".** Se non riuscite più a entrare, un
+altro amministratore deve invitarvi di nuovo. È una mancanza nota, non una
+dimenticanza: verrà aggiunta quando il sito avrà un servizio di posta
+configurato.
+
 ---
 
 ## 2. La Panoramica: cosa guardare per prima cosa
@@ -236,6 +259,18 @@ fatto l'accesso, e resta scritta con il vostro nome e l'ora.
 
 Se l'importo non corrisponde, il pannello ha stati diversi per _pagato in parte_
 e _pagato in eccesso_: non forzate un "verificato" su un importo sbagliato.
+
+### L'importo si scrive in euro
+
+Nel campo **Importo ricevuto** scrivete la cifra come la scrivereste ovunque
+altrove: `34,90`. Con la virgola, in euro.
+
+Il campo arriva già compilato con l'importo atteso. Cambiatelo soltanto se avete
+ricevuto una cifra diversa — ed è proprio lì che conta scriverla bene: se avete
+incassato dieci euro scrivete `10,00`.
+
+Se scrivete qualcosa che il pannello non riesce a leggere, ve lo dice e non
+salva niente. Non prova a indovinare.
 
 ---
 

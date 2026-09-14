@@ -405,6 +405,50 @@ describe("driver value semantics", () => {
    * what stops that being deleted as "a default nobody needs". It asserts the
    * SESSION mode rather than the server's, because the server's is not ours.
    */
+  /*
+   * ── A BOUND PARAMETER COMPARED TO A LITERAL ─────────────────────────────
+   *
+   * This is the shape that took the storefront down on its first deploy:
+   *
+   *     Illegal mix of collations (utf8mb4_general_ci,COERCIBLE)
+   *     and (utf8mb4_unicode_ci,COERCIBLE) for operation '='
+   *
+   * MariaDB gives a PREPARED statement's parameter the collation implied by
+   * `character_set_client`, while a literal in the same statement takes
+   * `collation_connection`. Where those differ, two COERCIBLE operands meet
+   * and the server refuses to pick a winner.
+   *
+   * Nothing caught it: every test that compares a parameter does so against a
+   * COLUMN, and a column's collation is IMPLICIT, which outranks COERCIBLE and
+   * settles the question. It needs a parameter against a LITERAL, which is what
+   * the storefront's legal-documents query does — and what this does.
+   *
+   * The health check passed throughout, because it runs no comparison at all.
+   * The shop answered "ok" on /api/health and 500 on every page.
+   */
+  it("compares a bound parameter with a string literal", async () => {
+    const row = await db
+      .prepare("SELECT CASE WHEN ?1 = 'en' THEN 'english' ELSE 'italian' END AS which")
+      .bind("it")
+      .first<{ which: string }>();
+
+    expect(row?.which).toBe("italian");
+  });
+
+  it("uses the schema's own collation, not the driver's default", async () => {
+    /*
+     * utf8mb4_unicode_ci, not utf8mb4_general_ci — and for an Italian shop the
+     * difference is not academic. The two sort accented characters
+     * differently, so a connection in general_ci would order a product list
+     * differently from the index the database keeps for it.
+     */
+    const row = await db
+      .prepare("SELECT @@session.collation_connection AS collation")
+      .first<{ collation: string }>();
+
+    expect(row?.collation).toBe("utf8mb4_unicode_ci");
+  });
+
   it("sets a strict sql_mode on its own connections, whatever the server's default", async () => {
     const row = await db.prepare("SELECT @@session.sql_mode AS mode").first<{ mode: string }>();
 

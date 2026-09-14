@@ -75,7 +75,8 @@
     "test:e2e:mariadb": "playwright test --config playwright.mariadb.config.ts",
     "seed:mariadb": "node scripts/hostinger/seed-mariadb.mjs",
     "hostinger:deploy": "node scripts/hostinger/deploy.mjs",
-    "hostinger:configure": "node scripts/hostinger/configure.mjs"
+    "hostinger:configure": "node scripts/hostinger/configure.mjs",
+    "hostinger:media": "node scripts/hostinger/migrate-media.mjs"
   },
   "dependencies": {
     "@react-router/express": "8.3.1",

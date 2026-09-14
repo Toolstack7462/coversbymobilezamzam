@@ -47,7 +47,6 @@
 
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 
 import { withSsh, mustRun } from "./lib/ssh.mjs";
@@ -170,7 +169,18 @@ async function main() {
    * per file. A single compressed upload is the difference between a deploy
    * that takes seconds and one that takes minutes over a domestic connection.
    */
-  const tarball = path.join(os.tmpdir(), `zamzam-${RELEASE}.tar.gz`);
+  /*
+   * A RELATIVE path, in the repository's own scratch directory.
+   *
+   * Not the system temp directory: on Windows that is an absolute path
+   * beginning "C:", and GNU tar reads everything before a colon as a REMOTE
+   * HOSTNAME. It fails with "Cannot connect to C: resolve failed", which says
+   * nothing about paths at all. `--force-local` fixes it for GNU tar and is
+   * rejected by the bsdtar that ships with Windows, so the portable answer is
+   * to never hand tar a path with a colon in it.
+   */
+  fs.mkdirSync(".local", { recursive: true });
+  const tarball = path.posix.join(".local", `zamzam-${RELEASE}.tar.gz`);
   say("packing", path.basename(tarball));
   if (!DRY) execFileSync("tar", ["-czf", tarball, ...PAYLOAD], { stdio: "pipe" });
   const size = DRY ? 0 : fs.statSync(tarball).size;
@@ -211,9 +221,36 @@ async function main() {
     );
 
     // ── 4. Dependencies, from the lockfile, on the server ──────────────────
-    say("installing", "npm ci --omit=dev");
+    /*
+     * ── TWO THINGS THAT ARE NOT OBVIOUS ────────────────────────────────────
+     *
+     * PATH. The npm launcher is a shell script, and a package's install script
+     * runs `node` by NAME. There is no `node` on the default PATH of this
+     * account — the runtimes live under /opt/alt — so any package with a
+     * postinstall fails with `sh: node: command not found`, which says nothing
+     * about PATH and sounds like Node is missing entirely.
+     *
+     * --ignore-scripts. Every production dependency here is plain JavaScript:
+     * mysql2, express, react, react-router, better-auth, drizzle-orm,
+     * nodemailer, compression, isbot, uqr, zod. Not one needs a postinstall to
+     * work, so running them buys nothing — and it means a compromised
+     * transitive package cannot execute code on the merchant's host at deploy
+     * time. The failure above was esbuild's postinstall, belonging to a package
+     * nothing in this application calls:
+     *
+     *     better-auth declares drizzle-kit as an OPTIONAL PEER dependency, so
+     *     npm resolves it into the production tree even though package.json
+     *     lists drizzle-kit under devDependencies. `--omit=dev` does not drop
+     *     it, because as far as npm is concerned it is not a dev dependency.
+     *
+     * It is still installed, and that is accepted rather than fought: dropping
+     * it needs `--omit=peer`, which also drops peers that packages genuinely
+     * need at runtime. Disk is cheap; a missing runtime peer is a 500.
+     */
+    say("installing", "npm ci --omit=dev --ignore-scripts");
     const install = await ssh.run(
-      `cd ${RELEASES}/${RELEASE} && ${NPM_BIN} ci --omit=dev --no-audit --no-fund 2>&1 | tail -5`,
+      `cd ${RELEASES}/${RELEASE} && PATH="${path.posix.dirname(NODE_BIN)}:$PATH" ` +
+        `${NPM_BIN} ci --omit=dev --ignore-scripts --no-audit --no-fund 2>&1 | tail -5`,
     );
     if (install.code !== 0) {
       throw new Error(`npm ci failed:\n${install.out}`);

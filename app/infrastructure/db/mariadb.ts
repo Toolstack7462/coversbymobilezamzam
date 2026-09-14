@@ -371,6 +371,43 @@ export class MariaDbDatabase implements InteractiveSqlDatabase {
         query: (sql: string, callback: (error: unknown) => void) => void;
       };
 
+      /*
+       * ── THE COLLATION, DECLARED RATHER THAN INHERITED ───────────────────
+       *
+       * Without this, every query that compares a BOUND PARAMETER to a STRING
+       * LITERAL fails on the merchant's server:
+       *
+       *     Illegal mix of collations (utf8mb4_general_ci,COERCIBLE)
+       *     and (utf8mb4_unicode_ci,COERCIBLE) for operation '='
+       *
+       * The cause is specific to PREPARED statements, which is why it never
+       * appeared in any test that used a literal query. MariaDB gives a
+       * parameter the collation implied by `character_set_client` —
+       * utf8mb4_general_ci — while a literal in the same statement takes
+       * `collation_connection`, which the server had as utf8mb4_unicode_ci.
+       * Two operands, both COERCIBLE, different collations: the server refuses
+       * to choose, and it is right to.
+       *
+       * It took the storefront down completely on the first deploy. The health
+       * check passed — it runs no such comparison — so the shop answered "ok"
+       * on /api/health and 500 on every page.
+       *
+       * `SET NAMES … COLLATE …` sets the parameter's collation as well as the
+       * connection's, so the two agree. Pinning mysql2's `charset` option does
+       * NOT fix it; that was tried first and the error is unchanged.
+       *
+       * utf8mb4_unicode_ci rather than general_ci because it is what the schema
+       * uses, and the difference is not academic for an ITALIAN shop: the two
+       * sort and compare accented characters differently, so a connection in
+       * general_ci would order città, cavo and caricatore differently from the
+       * index the database keeps.
+       */
+      core.query("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci", (error: unknown) => {
+        if (error) {
+          console.error("[mariadb] could not set the connection collation:", error);
+        }
+      });
+
       core.query(
         "SET SESSION sql_mode = 'STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'",
         (error: unknown) => {

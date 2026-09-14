@@ -248,14 +248,49 @@ async function main() {
      * need at runtime. Disk is cheap; a missing runtime peer is a 500.
      */
     say("installing", "npm ci --omit=dev --ignore-scripts");
+
+    /*
+     * NOT piped into `tail`.
+     *
+     * `npm ci … | tail -5` reports TAIL's exit status, not npm's — so a failed
+     * install looks like a successful one and the deploy carries on to switch
+     * the symlink. It cost a confusing failure here: npm could not fork under a
+     * saturated process limit, installed nothing, "succeeded", and the only
+     * thing that noticed was the module check two steps later.
+     *
+     * The whole output is captured and only the tail is PRINTED, which is what
+     * the pipe was for in the first place.
+     */
     const install = await ssh.run(
       `cd ${RELEASES}/${RELEASE} && PATH="${path.posix.dirname(NODE_BIN)}:$PATH" ` +
-        `${NPM_BIN} ci --omit=dev --ignore-scripts --no-audit --no-fund 2>&1 | tail -5`,
+        `${NPM_BIN} ci --omit=dev --ignore-scripts --no-audit --no-fund 2>&1`,
     );
+
     if (install.code !== 0) {
-      throw new Error(`npm ci failed:\n${install.out}`);
+      throw new Error(
+        `npm ci exited ${install.code}:\n${install.out.trim().split("\n").slice(-15).join("\n")}`,
+      );
     }
-    say("", install.out.trim().split("\n").pop() ?? "");
+
+    /*
+     * And an exit code of 0 is still not proof.
+     *
+     * npm can report success having installed nothing at all. The release is
+     * about to be served, so the question worth asking is whether the
+     * dependencies are THERE — checked against the one package whose absence
+     * would take the whole site down.
+     */
+    const installed = await ssh.run(
+      `test -d ${RELEASES}/${RELEASE}/node_modules/mysql2 && echo present || echo missing`,
+    );
+    if (!installed.out.includes("present")) {
+      throw new Error(
+        `npm ci reported success but node_modules/mysql2 is not there.\n` +
+          install.out.trim().split("\n").slice(-15).join("\n"),
+      );
+    }
+
+    say("", install.out.trim().split("\n").filter(Boolean).pop() ?? "");
 
     // ── 5. Prove the release can start BEFORE it serves anything ───────────
     //

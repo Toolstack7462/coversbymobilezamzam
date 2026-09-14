@@ -1,3 +1,8 @@
+import adminStyles from "~/styles/admin.css?url";
+import { AdminLanguageSwitcher } from "~/components/admin/language-switcher";
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, redirect } from "react-router";
 import type { LinksFunction } from "react-router";
 import type { Route } from "./+types/login";
@@ -15,9 +20,10 @@ import { getSession, loadStaffActor } from "~/infrastructure/auth/session.server
  * session cannot host the form that creates one.
  */
 
-export function meta() {
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
   // Never indexed.
-  return [{ title: "Accesso staff" }, { name: "robots", content: "noindex, nofollow" }];
+  return [{ title: t("Accesso staff") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -117,18 +123,29 @@ export async function action({ request, context }: Route.ActionArgs) {
  * only stylesheet the screen needs: everything else it uses is in the root
  * stylesheet already.
  */
-export const links: LinksFunction = () => [{ rel: "stylesheet", href: adminFormStyles }];
+export const links: LinksFunction = () => [
+  { rel: "stylesheet", href: adminFormStyles },
+  // admin.css too: this screen is outside the admin layout, and the language
+  // switcher it now carries is styled there.
+  { rel: "stylesheet", href: adminStyles },
+];
 
 export default function AdminLogin({ actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   return (
     <main id="main" className="admin-auth">
       <div className="panel stack admin-auth__panel">
-        <h1>Accesso staff</h1>
-        <p className="muted small">Area riservata. Accesso solo per il personale autorizzato.</p>
+        <div className="admin-auth__language">
+          <AdminLanguageSwitcher />
+        </div>
+        <h1>{t("Accesso staff")}</h1>
+        <p className="muted small">
+          {t("Area riservata. Accesso solo per il personale autorizzato.")}
+        </p>
 
         {actionData?.error ? (
           <p className="notice notice--danger" role="alert">
-            {actionData.error}
+            {t(actionData.error)}
           </p>
         ) : null}
 
@@ -157,13 +174,14 @@ export default function AdminLogin({ actionData }: Route.ComponentProps) {
           />
 
           <button type="submit" className="btn btn--primary">
-            Accedi
+            {t("Accedi")}
           </button>
         </Form>
 
         <p className="caption muted">
-          Non esiste registrazione pubblica per l&apos;area amministrativa. Un account viene creato
-          solo da un amministratore esistente.
+          {t(
+            "Non esiste registrazione pubblica per l'area amministrativa. Un account viene creato solo da un amministratore esistente.",
+          )}
         </p>
       </div>
     </main>

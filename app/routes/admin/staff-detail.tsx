@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, Link } from "react-router";
 import { data } from "react-router";
 import type { Route } from "./+types/staff-detail";
@@ -26,8 +29,9 @@ import { statusLabel } from "~/components/admin/status-badge";
  * is a courtesy; the action refusing is the control.
  */
 
-export function meta() {
-  return [{ title: "Personale" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Personale") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 /** Everyone's status and roles — the input the last-super-admin guard needs. */
@@ -324,6 +328,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
 }
 
 export default function StaffDetail({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const {
     member,
     roles,
@@ -338,40 +343,41 @@ export default function StaffDetail({ loaderData, actionData }: Route.ComponentP
   return (
     <div className="stack" style={{ maxWidth: "52rem" }}>
       <p className="small">
-        <Link to="/admin/personale">← Personale</Link>
+        <Link to="/admin/personale">{t("← Personale")}</Link>
       </p>
       <h1>{member.display_name}</h1>
       <p className="small muted">
-        {member.email} · {statusLabel("staff", member.status)} · {member.active_sessions} sessioni
-        attive
+        {member.email} · {t(statusLabel("staff", member.status))} · {member.active_sessions}{" "}
+        {t(" sessioni attive")}
       </p>
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
       {actionData && "success" in actionData && actionData.success ? (
         <p className="notice notice--info" role="status">
-          {actionData.success}
+          {t(actionData.success)}
         </p>
       ) : null}
 
       {!member.totpEnrolled ? (
         <p className="notice notice--warning small">
-          Questa persona non ha attivato l&apos;autenticazione a due fattori. Se il suo ruolo la
-          richiede, non può accedere alle sezioni operative finché non la attiva.
+          {t(
+            "Questa persona non ha attivato l'autenticazione a due fattori. Se il suo ruolo la richiede, non può accedere alle sezioni operative finché non la attiva.",
+          )}
         </p>
       ) : null}
 
       <section className="panel stack">
-        <h2>Stato</h2>
+        <h2>{t("Stato")}</h2>
         {canWrite && allowedStatuses.length > 0 && !isSelf ? (
           <Form method="post" className="stack">
             <input type="hidden" name="intent" value="set-status" />
             <div className="field">
               <label className="field__label" htmlFor="status">
-                Nuovo stato
+                {t("Nuovo stato")}
               </label>
               <select id="status" name="status" className="input">
                 {allowedStatuses.map((s) => (
@@ -383,25 +389,25 @@ export default function StaffDetail({ loaderData, actionData }: Route.ComponentP
             </div>
             <div className="field">
               <label className="field__label" htmlFor="reason">
-                Motivo (per la sospensione)
+                {t("Motivo (per la sospensione)")}
               </label>
               <input id="reason" name="reason" className="input" />
             </div>
             <button type="submit" className="btn btn--secondary">
-              Aggiorna stato
+              {t("Aggiorna stato")}
             </button>
           </Form>
         ) : (
           <p className="small muted">
             {isSelf
-              ? "Non puoi sospendere, disattivare o archiviare il tuo stesso account."
-              : "Nessun cambio di stato disponibile."}
+              ? t("Non puoi sospendere, disattivare o archiviare il tuo stesso account.")
+              : t("Nessun cambio di stato disponibile.")}
           </p>
         )}
       </section>
 
       <section className="panel stack">
-        <h2>Ruoli</h2>
+        <h2>{t("Ruoli")}</h2>
         {canManageRoles ? (
           stepUpActive ? (
             <Form method="post" className="stack">
@@ -418,19 +424,19 @@ export default function StaffDetail({ loaderData, actionData }: Route.ComponentP
                   <span>
                     {r.name_it} <code className="caption">{r.code}</code>
                     {!r.grantable && !r.assigned ? (
-                      <span className="caption muted"> — non assegnabile da te</span>
+                      <span className="caption muted"> {t(" — non assegnabile da te")}</span>
                     ) : null}
                   </span>
                 </label>
               ))}
               <button type="submit" className="btn btn--primary">
-                Salva ruoli
+                {t("Salva ruoli")}
               </button>
             </Form>
           ) : (
             <p className="small muted">
-              Conferma la tua identità nella pagina <Link to="/admin/personale">Personale</Link> per
-              modificare i ruoli.
+              {t("Conferma la tua identità nella pagina ")}
+              <Link to="/admin/personale">{t("Personale")}</Link> {t(" per modificare i ruoli.")}
             </p>
           )
         ) : (
@@ -445,13 +451,15 @@ export default function StaffDetail({ loaderData, actionData }: Route.ComponentP
       </section>
 
       <section className="panel stack">
-        <h2>Sessioni</h2>
-        <p className="small muted">{member.active_sessions} sessioni attive.</p>
+        <h2>{t("Sessioni")}</h2>
+        <p className="small muted">
+          {member.active_sessions} {t(" sessioni attive.")}
+        </p>
         {canWrite ? (
           <Form method="post">
             <input type="hidden" name="intent" value="revoke-sessions" />
             <button type="submit" className="btn btn--secondary">
-              Chiudi tutte le sessioni
+              {t("Chiudi tutte le sessioni")}
             </button>
           </Form>
         ) : null}
@@ -459,11 +467,11 @@ export default function StaffDetail({ loaderData, actionData }: Route.ComponentP
 
       {history.length > 0 ? (
         <section className="stack">
-          <h2>Cronologia</h2>
+          <h2>{t("Cronologia")}</h2>
           <ul className="small stack">
             {history.map((h, i) => (
               <li key={i}>
-                <span className="muted">{formatDateTime(h.created_at, "it")}</span> · {h.action}
+                <span className="muted">{formatDateTime(h.created_at, t.locale)}</span> · {h.action}
                 {h.actor_label ? ` · ${h.actor_label}` : ""}
               </li>
             ))}

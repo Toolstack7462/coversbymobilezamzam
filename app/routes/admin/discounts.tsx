@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, useLocation } from "react-router";
 import type { Route } from "./+types/discounts";
 import { appContext } from "~/runtime/context";
@@ -30,8 +33,9 @@ import { PageHeader } from "~/components/admin/admin-shell";
  * assumed.
  */
 
-export function meta() {
-  return [{ title: "Sconti" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Sconti") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -197,49 +201,52 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function Discounts({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { pathname } = useLocation();
   const { coupons, now, canWrite } = loaderData;
 
   return (
     <>
       <PageHeader
-        title="Sconti"
-        description="Codici sconto applicati al totale dell'ordine."
+        title={t("Sconti")}
+        description={t("Codici sconto applicati al totale dell'ordine.")}
         breadcrumbs={breadcrumbsFor(pathname)}
       />
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
       {actionData && "success" in actionData && actionData.success ? (
         <p className="notice notice--info" role="status">
-          {actionData.success}
+          {t(actionData.success)}
         </p>
       ) : null}
 
       <p className="notice notice--warning">
-        <strong>Sconto sull&apos;ordine, non sul prezzo del prodotto.</strong> Un codice qui riduce
-        il totale in cassa e non cambia il prezzo esposto sul sito. Per ridurre il prezzo di un
-        prodotto si modifica il prezzo dalla sua scheda: il sito può annunciare una percentuale di
-        sconto <em>solo</em> se lo storico dei prezzi la dimostra, perché per legge lo sconto si
-        calcola sul prezzo più basso praticato negli ultimi 30 giorni (D.Lgs. 84/2022). Alzare un
-        prezzo per poi &ldquo;scontarlo&rdquo; è un illecito, ed è un errore facile da commettere
-        senza accorgersene.
+        <strong>{t("Sconto sull'ordine, non sul prezzo del prodotto.")}</strong>{" "}
+        {t(
+          " Un codice qui riduce il totale in cassa e non cambia il prezzo esposto sul sito. Per ridurre il prezzo di un prodotto si modifica il prezzo dalla sua scheda: il sito può annunciare una percentuale di sconto ",
+        )}
+        <em>{t("solo")}</em>{" "}
+        {t(
+          " se lo storico dei prezzi la dimostra, perché per legge lo sconto si calcola sul prezzo più basso praticato negli ultimi 30 giorni (D.Lgs. 84/2022). Alzare un prezzo per poi “scontarlo” è un illecito, ed è un errore facile da commettere senza accorgersene.",
+        )}
       </p>
 
       <section className="panel stack">
-        <h2>Codici attivi</h2>
+        <h2>{t("Codici attivi")}</h2>
 
         {coupons.length === 0 ? (
           <div className="empty-state">
             <p>
-              <strong>Nessun codice sconto</strong>
+              <strong>{t("Nessun codice sconto")}</strong>
             </p>
             <p className="small muted">
-              Non servono per vendere. Si creano quando servono davvero — un volantino, un cliente
-              da recuperare.
+              {t(
+                "Non servono per vendere. Si creano quando servono davvero — un volantino, un cliente da recuperare.",
+              )}
             </p>
           </div>
         ) : (
@@ -247,20 +254,20 @@ export default function Discounts({ loaderData, actionData }: Route.ComponentPro
             className="ac-table-scroll"
             tabIndex={0}
             role="region"
-            aria-label="Tabella scorrevole"
+            aria-label={t("Tabella scorrevole")}
           >
             <table className="ac-table">
-              <caption className="visually-hidden">Codici sconto</caption>
+              <caption className="visually-hidden">{t("Codici sconto")}</caption>
               <thead>
                 <tr>
-                  <th scope="col">Codice</th>
-                  <th scope="col">Sconto</th>
+                  <th scope="col">{t("Codice")}</th>
+                  <th scope="col">{t("Sconto")}</th>
                   <th scope="col" className="ac-table__numeric">
-                    Usato
+                    {t("Usato")}
                   </th>
-                  <th scope="col">Validità</th>
-                  <th scope="col">Stato</th>
-                  {canWrite ? <th scope="col">Azione</th> : null}
+                  <th scope="col">{t("Validità")}</th>
+                  <th scope="col">{t("Stato")}</th>
+                  {canWrite ? <th scope="col">{t("Azione")}</th> : null}
                 </tr>
               </thead>
               <tbody>
@@ -271,49 +278,50 @@ export default function Discounts({ loaderData, actionData }: Route.ComponentPro
 
                   return (
                     <tr key={coupon.id}>
-                      <td data-label="Codice" className="numeric">
+                      <td data-label={t("Codice")} className="numeric">
                         {coupon.code}
                       </td>
-                      <td data-label="Sconto">
+                      <td data-label={t("Sconto")}>
                         {coupon.discount_type === "percentage"
                           ? `${coupon.discount_value}%`
-                          : formatMoney(money(coupon.discount_value))}
+                          : formatMoney(money(coupon.discount_value), t.intl)}
                         {coupon.min_order_amount !== null ? (
                           <>
                             <br />
                             <span className="caption muted">
-                              da {formatMoney(money(coupon.min_order_amount))}
+                              {t("da ")}
+                              {formatMoney(money(coupon.min_order_amount), t.intl)}
                             </span>
                           </>
                         ) : null}
                       </td>
-                      <td data-label="Usato" className="ac-table__numeric numeric">
+                      <td data-label={t("Usato")} className="ac-table__numeric numeric">
                         {coupon.usage_count}
                         {coupon.usage_limit !== null ? ` / ${coupon.usage_limit}` : ""}
                       </td>
-                      <td data-label="Validità" className="small">
+                      <td data-label={t("Validit\u00e0")} className="small">
                         {coupon.ends_at === null
-                          ? "senza scadenza"
-                          : `fino al ${formatDateTime(coupon.ends_at, "it")}`}
+                          ? t("senza scadenza")
+                          : t("fino al {{v0}}", { v0: formatDateTime(coupon.ends_at, t.locale) })}
                       </td>
-                      <td data-label="Stato">
+                      <td data-label={t("Stato")}>
                         {coupon.active === 0 ? (
-                          <span className="badge badge--muted">disattivato</span>
+                          <span className="badge badge--muted">{t("disattivato")}</span>
                         ) : expired ? (
-                          <span className="badge badge--warning">scaduto</span>
+                          <span className="badge badge--warning">{t("scaduto")}</span>
                         ) : exhausted ? (
-                          <span className="badge badge--warning">esaurito</span>
+                          <span className="badge badge--warning">{t("esaurito")}</span>
                         ) : (
-                          <span className="badge badge--success">attivo</span>
+                          <span className="badge badge--success">{t("attivo")}</span>
                         )}
                       </td>
                       {canWrite ? (
-                        <td data-label="Azione">
+                        <td data-label={t("Azione")}>
                           <Form method="post">
                             <input type="hidden" name="intent" value="toggle" />
                             <input type="hidden" name="id" value={coupon.id} />
                             <button type="submit" className="btn btn--ghost btn--small">
-                              {coupon.active === 1 ? "Disattiva" : "Riattiva"}
+                              {coupon.active === 1 ? t("Disattiva") : t("Riattiva")}
                             </button>
                           </Form>
                         </td>
@@ -327,20 +335,21 @@ export default function Discounts({ loaderData, actionData }: Route.ComponentPro
         )}
 
         <p className="caption muted">
-          I codici non si eliminano: gli ordini che li hanno usati devono continuare a dire quale
-          sconto è stato applicato.
+          {t(
+            "I codici non si eliminano: gli ordini che li hanno usati devono continuare a dire quale sconto è stato applicato.",
+          )}
         </p>
       </section>
 
       {canWrite ? (
         <section className="panel stack">
-          <h2>Nuovo codice</h2>
+          <h2>{t("Nuovo codice")}</h2>
           <Form method="post" className="stack">
             <input type="hidden" name="intent" value="create" />
 
             <div className="field">
               <label className="field__label" htmlFor="code">
-                Codice
+                {t("Codice")}
               </label>
               <input
                 id="code"
@@ -352,24 +361,25 @@ export default function Discounts({ loaderData, actionData }: Route.ComponentPro
                 aria-describedby="code-help"
               />
               <span className="field__hint" id="code-help">
-                Quello che il cliente digita in cassa. Salvato in maiuscolo e senza spazi, così
-                &ldquo;benvenuto10&rdquo; e &ldquo;BENVENUTO 10&rdquo; funzionano entrambi.
+                {t(
+                  "Quello che il cliente digita in cassa. Salvato in maiuscolo e senza spazi, così “benvenuto10” e “BENVENUTO 10” funzionano entrambi.",
+                )}
               </span>
             </div>
 
             <div className="field">
               <label className="field__label" htmlFor="discountType">
-                Tipo di sconto
+                {t("Tipo di sconto")}
               </label>
               <select id="discountType" name="discountType" className="input" defaultValue="fixed">
-                <option value="fixed">Importo fisso (es. 5,00 €)</option>
-                <option value="percentage">Percentuale sull&apos;ordine</option>
+                <option value="fixed">{t("Importo fisso (es. 5,00 €)")}</option>
+                <option value="percentage">{t("Percentuale sull'ordine")}</option>
               </select>
             </div>
 
             <div className="field">
               <label className="field__label" htmlFor="discountValue">
-                Valore
+                {t("Valore")}
               </label>
               <input
                 id="discountValue"
@@ -379,14 +389,15 @@ export default function Discounts({ loaderData, actionData }: Route.ComponentPro
                 aria-describedby="value-help"
               />
               <span className="field__hint" id="value-help">
-                Per un importo fisso scrivete <code>5,00</code>. Per una percentuale scrivete solo
-                il numero, da 1 a 90.
+                {t("Per un importo fisso scrivete ")}
+                <code>5,00</code>
+                {t(". Per una percentuale scrivete solo il numero, da 1 a 90.")}
               </span>
             </div>
 
             <div className="field">
               <label className="field__label" htmlFor="minOrderAmount">
-                Ordine minimo
+                {t("Ordine minimo")}
               </label>
               <input
                 id="minOrderAmount"
@@ -395,13 +406,13 @@ export default function Discounts({ loaderData, actionData }: Route.ComponentPro
                 placeholder="25,00"
               />
               <span className="field__hint">
-                Facoltativo. Sotto questa cifra il codice non si applica.
+                {t("Facoltativo. Sotto questa cifra il codice non si applica.")}
               </span>
             </div>
 
             <div className="field">
               <label className="field__label" htmlFor="usageLimit">
-                Quante volte in tutto
+                {t("Quante volte in tutto")}
               </label>
               <input
                 id="usageLimit"
@@ -412,13 +423,13 @@ export default function Discounts({ loaderData, actionData }: Route.ComponentPro
                 placeholder="100"
               />
               <span className="field__hint">
-                Facoltativo. Lasciate vuoto per un codice senza limite.
+                {t("Facoltativo. Lasciate vuoto per un codice senza limite.")}
               </span>
             </div>
 
             <div className="field">
               <label className="field__label" htmlFor="perCustomerLimit">
-                Quante volte per cliente
+                {t("Quante volte per cliente")}
               </label>
               <input
                 id="perCustomerLimit"
@@ -432,16 +443,16 @@ export default function Discounts({ loaderData, actionData }: Route.ComponentPro
 
             <div className="field">
               <label className="field__label" htmlFor="endsAt">
-                Scadenza
+                {t("Scadenza")}
               </label>
               <input id="endsAt" name="endsAt" className="input" type="date" />
               <span className="field__hint">
-                Facoltativa, ma consigliata: un codice senza scadenza gira per anni.
+                {t("Facoltativa, ma consigliata: un codice senza scadenza gira per anni.")}
               </span>
             </div>
 
             <button type="submit" className="btn btn--primary">
-              Crea codice
+              {t("Crea codice")}
             </button>
           </Form>
         </section>

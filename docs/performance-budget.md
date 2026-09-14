@@ -157,3 +157,9 @@ localhost Lighthouse run is not evidence. This is a launch gate in
 
 What _has_ been measured is the bundle. That is a real number, and it is the one
 quoted above.
+
+## English admin interface — 14 September 2026
+
+The requested English interface adds an admin-only catalogue. Initial implementation measured 133.7 KB admin JS. Compact keys removed 11.2 KB of duplicated Italian key text, bringing it to approximately 122.4 KB before final copy checks. The admin aggregate ceiling is explicitly updated from 120 to 130 KB for this feature; its 3 KB average-chunk limit, the storefront 136 KB limit and CSS 45 KB limit are unchanged. No library was added. Final CI measures 123.0 KB admin JS, 135.8 KB public JS versus the 135.4 KB baseline, and 18.0 KB CSS versus 17.9 KB. Final measured numbers are in frontend/acceptance.md.
+
+These are gzip sums of all applicable build chunks, not a single page's transfer or field performance. English dictionaries do not enter storefront imports. Repeated local builds must start from a clean generated build folder so old hashed files are not counted as current release assets.

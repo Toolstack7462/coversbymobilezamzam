@@ -17,11 +17,12 @@ import {
 
 const VAT_BASIS_POINTS = 2200;
 
-export function meta({ matches }: Route.MetaArgs) {
+export function meta({ matches, location }: Route.MetaArgs) {
+  const t = translator(parseLocalePath(location.pathname).locale);
   // noindex: a cart page is per-visitor and has nothing to offer a search
   // engine, and an indexed one leaks nothing useful but wastes crawl budget.
   return [
-    { title: storefrontTitle("Carrello", matches) },
+    { title: storefrontTitle(t("meta.cart"), matches) },
     { name: "robots", content: "noindex, follow" },
   ];
 }
@@ -36,7 +37,11 @@ export async function loader({ context, request }: Route.LoaderArgs) {
     .first<{ id: string }>();
   if (!cart) return { lines: [], totals: null };
 
-  const lines = await readCartLines(env.DB, cart.id);
+  const lines = await readCartLines(
+    env.DB,
+    cart.id,
+    parseLocalePath(new URL(request.url).pathname).locale,
+  );
   if (lines.length === 0) return { lines: [], totals: null };
 
   // Prices are re-read here, every render. A change is shown to the customer

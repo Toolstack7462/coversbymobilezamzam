@@ -12,9 +12,10 @@ import { canOfferPickup, canOfferShipping, type SettingsMap } from "~/domain/con
 
 const VAT_BASIS_POINTS = 2200;
 
-export function meta({ matches }: Route.MetaArgs) {
+export function meta({ matches, location }: Route.MetaArgs) {
+  const t = translator(parseLocalePath(location.pathname).locale);
   return [
-    { title: storefrontTitle("Completa l'ordine", matches) },
+    { title: storefrontTitle(t("meta.checkout"), matches) },
     { name: "robots", content: "noindex, nofollow" },
   ];
 }
@@ -28,7 +29,9 @@ export async function loader({ context, request }: Route.LoaderArgs) {
         .bind(token)
         .first<{ id: string }>()
     : null;
-  const lines = cart ? await readCartLines(env.DB, cart.id) : [];
+  const lines = cart
+    ? await readCartLines(env.DB, cart.id, parseLocalePath(new URL(request.url).pathname).locale)
+    : [];
 
   const [methods, settingsResult, location] = await Promise.all([
     // ONLY active methods. A method whose merchant data is missing is never
@@ -99,7 +102,11 @@ export async function action({ context, request }: Route.ActionArgs) {
     .first<{ id: string }>();
   if (!cart) return { error: "generic" as const };
 
-  const lines = await readCartLines(env.DB, cart.id);
+  const lines = await readCartLines(
+    env.DB,
+    cart.id,
+    parseLocalePath(new URL(request.url).pathname).locale,
+  );
   if (lines.length === 0) return { error: "generic" as const };
 
   const location = await env.DB.prepare(
@@ -333,11 +340,17 @@ export default function Checkout({ loaderData, actionData }: Route.ComponentProp
                 required
               />
               <span>
-                {locale === "it" ? method.name_it : method.name_en}
-                {(locale === "it" ? method.description_it : method.description_en) ? (
+                {locale === "it" ? method.name_it : method.name_en || method.name_it}
+                {(
+                  locale === "it"
+                    ? method.description_it
+                    : method.description_en || method.description_it
+                ) ? (
                   <span className="small muted">
                     {". "}
-                    {locale === "it" ? method.description_it : method.description_en}
+                    {locale === "it"
+                      ? method.description_it
+                      : method.description_en || method.description_it}
                   </span>
                 ) : null}
               </span>

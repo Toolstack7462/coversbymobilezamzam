@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, Link } from "react-router";
 import type { Route } from "./+types/pickups";
 import { appContext } from "~/runtime/context";
@@ -31,8 +34,9 @@ import { StatusBadge } from "~/components/admin/status-badge";
  * system that can only record "the customer collected it" makes staff either
  * lie or leave it blank.
  */
-export function meta() {
-  return [{ title: "Ritiri in negozio" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Ritiri in negozio") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -182,45 +186,48 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function AdminPickups({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { pickups, awaiting, locations, pickupOffered, canWrite } = loaderData;
   const waiting = pickups.filter((p) => p.collected_at === null);
   const ready = waiting.filter((p) => p.ready_at !== null);
 
   return (
     <>
-      <PageHeader title="Ritiri in negozio" breadcrumbs={breadcrumbsFor("/admin/ritiri")} />
+      <PageHeader title={t("Ritiri in negozio")} breadcrumbs={breadcrumbsFor("/admin/ritiri")} />
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
       {actionData && "success" in actionData && actionData.success ? (
         <p className="notice notice--info" role="status">
-          {actionData.success}
+          {t(actionData.success)}
         </p>
       ) : null}
 
       {!pickupOffered ? (
         <p className="notice notice--warning">
-          <strong>Il ritiro in negozio non è attivo sul sito.</strong> Finché resta spento, nessun
-          cliente può sceglierlo alla cassa e questo elenco resta vuoto. Si accende da{" "}
-          <Link to="/admin/impostazioni">Impostazioni</Link>.
+          <strong>{t("Il ritiro in negozio non è attivo sul sito.")}</strong>{" "}
+          {t(
+            " Finché resta spento, nessun cliente può sceglierlo alla cassa e questo elenco resta vuoto. Si accende da",
+          )}{" "}
+          <Link to="/admin/impostazioni">{t("Impostazioni")}</Link>.
         </p>
       ) : null}
 
       <section className="panel">
         <div className="ac-metrics">
           <div className="ac-metric">
-            <span className="ac-metric__label">Da preparare</span>
+            <span className="ac-metric__label">{t("Da preparare")}</span>
             <span className="ac-metric__value numeric">{awaiting.length}</span>
           </div>
           <div className="ac-metric">
-            <span className="ac-metric__label">Pronti sullo scaffale</span>
+            <span className="ac-metric__label">{t("Pronti sullo scaffale")}</span>
             <span className="ac-metric__value numeric">{ready.length}</span>
           </div>
           <div className="ac-metric">
-            <span className="ac-metric__label">In attesa di ritiro</span>
+            <span className="ac-metric__label">{t("In attesa di ritiro")}</span>
             <span className="ac-metric__value numeric">{waiting.length}</span>
           </div>
         </div>
@@ -228,7 +235,7 @@ export default function AdminPickups({ loaderData, actionData }: Route.Component
 
       {awaiting.length > 0 ? (
         <section className="panel">
-          <h2>Ordini da preparare</h2>
+          <h2>{t("Ordini da preparare")}</h2>
           <ul className="stack">
             {awaiting.map((o) => (
               <li key={o.id} className="cluster">
@@ -252,7 +259,8 @@ export default function AdminPickups({ loaderData, actionData }: Route.Component
                       the thing that distinguishes them.
                     */}
                     <label className="visually-hidden" htmlFor={`pickup-loc-${o.id}`}>
-                      Punto di ritiro per l&apos;ordine {o.order_number}
+                      {t("Punto di ritiro per l'ordine ")}
+                      {o.order_number}
                     </label>
                     <select id={`pickup-loc-${o.id}`} name="locationId" required>
                       {locations.map((l) => (
@@ -262,7 +270,7 @@ export default function AdminPickups({ loaderData, actionData }: Route.Component
                       ))}
                     </select>
                     <button className="btn" type="submit">
-                      Apri ritiro
+                      {t("Apri ritiro")}
                     </button>
                   </Form>
                 ) : null}
@@ -274,9 +282,9 @@ export default function AdminPickups({ loaderData, actionData }: Route.Component
 
       {pickups.length === 0 ? (
         <div className="empty-state">
-          <p>Nessun ritiro.</p>
+          <p>{t("Nessun ritiro.")}</p>
           <p className="small">
-            Compaiono qui gli ordini in cui il cliente ha scelto di passare in negozio.
+            {t("Compaiono qui gli ordini in cui il cliente ha scelto di passare in negozio.")}
           </p>
         </div>
       ) : (
@@ -286,18 +294,18 @@ export default function AdminPickups({ loaderData, actionData }: Route.Component
              take focus is unscrollable without a mouse. */
           tabIndex={0}
           role="region"
-          aria-label="Tabella scorrevole"
+          aria-label={t("Tabella scorrevole")}
         >
           <table className="admin-table">
-            <caption className="visually-hidden">Ritiri in negozio</caption>
+            <caption className="visually-hidden">{t("Ritiri in negozio")}</caption>
             <thead>
               <tr>
-                <th scope="col">Ordine</th>
-                <th scope="col">Cliente</th>
-                <th scope="col">Sede</th>
-                <th scope="col">Pronto</th>
-                <th scope="col">Ritirato</th>
-                {canWrite ? <th scope="col">Azione</th> : null}
+                <th scope="col">{t("Ordine")}</th>
+                <th scope="col">{t("Cliente")}</th>
+                <th scope="col">{t("Sede")}</th>
+                <th scope="col">{t("Pronto")}</th>
+                <th scope="col">{t("Ritirato")}</th>
+                {canWrite ? <th scope="col">{t("Azione")}</th> : null}
               </tr>
             </thead>
             <tbody>
@@ -318,11 +326,13 @@ export default function AdminPickups({ loaderData, actionData }: Route.Component
                     ) : null}
                   </td>
                   <td className="small">{p.location_name ?? "—"}</td>
-                  <td className="small">{p.ready_at ? formatDateTime(p.ready_at, "it") : "—"}</td>
+                  <td className="small">
+                    {p.ready_at ? formatDateTime(p.ready_at, t.locale) : "—"}
+                  </td>
                   <td className="small">
                     {p.collected_at ? (
                       <>
-                        {formatDateTime(p.collected_at, "it")}
+                        {formatDateTime(p.collected_at, t.locale)}
                         <br />
                         <span className="muted">{p.collected_by_name}</span>
                       </>
@@ -333,20 +343,22 @@ export default function AdminPickups({ loaderData, actionData }: Route.Component
                   {canWrite ? (
                     <td>
                       {p.collected_at ? (
-                        <span className="small muted">concluso</span>
+                        <span className="small muted">{t("concluso")}</span>
                       ) : p.ready_at ? (
                         <Form method="post" className="stack">
                           <input type="hidden" name="intent" value="collected" />
                           <input type="hidden" name="pickupId" value={p.id} />
                           <label>
-                            Chi ritira
+                            {t("Chi ritira")}
                             <input name="collected_by_name" required maxLength={80} />
                             <span className="field-help">
-                              Spesso non è chi ha ordinato. Scrivi il nome di chi si presenta.
+                              {t(
+                                "Spesso non è chi ha ordinato. Scrivi il nome di chi si presenta.",
+                              )}
                             </span>
                           </label>
                           <button className="btn" type="submit">
-                            Registra ritiro
+                            {t("Registra ritiro")}
                           </button>
                         </Form>
                       ) : (
@@ -354,7 +366,7 @@ export default function AdminPickups({ loaderData, actionData }: Route.Component
                           <input type="hidden" name="intent" value="ready" />
                           <input type="hidden" name="pickupId" value={p.id} />
                           <button className="btn btn--primary" type="submit">
-                            Segna pronto
+                            {t("Segna pronto")}
                           </button>
                         </Form>
                       )}

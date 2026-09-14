@@ -56,7 +56,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
   const { locale } = parseLocalePath(new URL(request.url).pathname);
 
   const { results: navRows } = await env.DB.prepare(
-    `SELECT c.slug, COALESCE(ct.name, ct_fallback.name) AS name
+    `SELECT c.slug, COALESCE(NULLIF(ct.name, ''), ct_fallback.name) AS name
        FROM categories c
        LEFT JOIN category_translations ct
          ON ct.category_id = c.id AND ct.locale = ?
@@ -77,7 +77,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
    * the moment it is removed, which is what unpublishing has to mean.
    */
   const { results: pageRows } = await env.DB.prepare(
-    `SELECT p.slug, COALESCE(t.title, fallback.title) AS title
+    `SELECT p.slug, COALESCE(NULLIF(t.title, ''), fallback.title) AS title
        FROM pages p
        LEFT JOIN page_translations t        ON t.page_id = p.id AND t.locale = ?1
        LEFT JOIN page_translations fallback ON fallback.page_id = p.id AND fallback.locale = 'it'
@@ -129,7 +129,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
    */
   const { results: legalRows } = await env.DB.prepare(
     `SELECT d.code,
-            CASE WHEN ?1 = 'en' THEN COALESCE(d.name_en, d.name_it) ELSE d.name_it END AS name
+            CASE WHEN ?1 = 'en' THEN COALESCE(NULLIF(d.name_en, ''), d.name_it) ELSE d.name_it END AS name
        FROM legal_documents d
        JOIN legal_document_versions v ON v.id = d.current_version_id
       WHERE v.published_at IS NOT NULL
@@ -143,7 +143,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
     settings,
     legal: legalRows.filter((r) => r.name).map((r) => ({ code: r.code, name: r.name as string })),
     extraNav: extraNav.map((item) => ({
-      label: locale === "en" ? item.label_en : item.label_it,
+      label: locale === "en" ? item.label_en || item.label_it : item.label_it,
       url: item.url,
       menu: item.menu_code,
     })),
@@ -244,7 +244,9 @@ export default function StorefrontLayout({ loaderData }: Route.ComponentProps) {
         A warning about the environment is not content; it belongs after the
         content, quietly.
       */}
-      {loaderData.appEnv !== "production" ? <PreviewBanner env={loaderData.appEnv} /> : null}
+      {loaderData.appEnv !== "production" ? (
+        <PreviewBanner env={loaderData.appEnv} locale={locale} />
+      ) : null}
     </div>
   );
 }
@@ -261,12 +263,13 @@ export default function StorefrontLayout({ loaderData }: Route.ComponentProps) {
  * Deliberately not a floating overlay: this is a shop, and something that
  * covers the product on a phone screen is worse than the problem it solves.
  */
-function PreviewBanner({ env }: { env: string }) {
+function PreviewBanner({ env, locale }: { env: string; locale: "it" | "en" }) {
+  const t = translator(locale);
   return (
     <aside className="preview-banner" role="note">
       <span className="preview-banner__dot" aria-hidden="true" />
       <span>
-        <strong>Ambiente di prova</strong> {"·"} prodotti e prezzi non sono reali
+        <strong>{t("preview.title")}</strong> {"·"} {t("preview.body")}
       </span>
       <span className="preview-banner__env">{env}</span>
     </aside>

@@ -1,3 +1,4 @@
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import {
   ORDER_STATUS_LABELS,
   PAYMENT_STATUS_LABELS,
@@ -182,11 +183,12 @@ export function StatusBadge({
   value: string;
   describedAs?: string;
 }) {
+  const t = useAdminTranslator();
   const { label, tone } = resolve(kind, value);
   return (
     <span className={`badge ${tone}`}>
-      {describedAs ? <span className="visually-hidden">{describedAs}: </span> : null}
-      {label}
+      {describedAs ? <span className="visually-hidden">{t(describedAs)}: </span> : null}
+      {t(label)}
     </span>
   );
 }

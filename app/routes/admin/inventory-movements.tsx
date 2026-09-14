@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Link } from "react-router";
 import type { Route } from "./+types/inventory-movements";
 import { appContext } from "~/runtime/context";
@@ -18,8 +21,9 @@ import { PageHeader } from "~/components/admin/admin-shell";
  * edited is a ledger nobody can rely on. The way to correct a movement is
  * another movement, which is also how a stockroom works.
  */
-export function meta() {
-  return [{ title: "Movimenti di magazzino" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Movimenti di magazzino") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 /**
@@ -107,6 +111,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export default function InventoryMovements({ loaderData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { movements, types, filter, page, perPage, total } = loaderData;
   const pages = Math.max(1, Math.ceil(total / perPage));
 
@@ -121,22 +126,22 @@ export default function InventoryMovements({ loaderData }: Route.ComponentProps)
   return (
     <>
       <PageHeader
-        title="Movimenti di magazzino"
+        title={t("Movimenti di magazzino")}
         breadcrumbs={breadcrumbsFor("/admin/inventario/movimenti")}
       />
 
       <section className="panel">
         <p className="small">
-          Ogni variazione di quantità lascia una riga qui, qualunque cosa l&apos;abbia causata. È il
-          registro che risponde alla domanda &ldquo;la giacenza è sbagliata: quando lo è
-          diventata?&rdquo;. Non si modifica e non si cancella — si corregge con un altro movimento.
+          {t(
+            "Ogni variazione di quantità lascia una riga qui, qualunque cosa l'abbia causata. È il registro che risponde alla domanda “la giacenza è sbagliata: quando lo è diventata?”. Non si modifica e non si cancella — si corregge con un altro movimento.",
+          )}
         </p>
       </section>
 
       {types.length > 0 ? (
-        <nav className="cluster" aria-label="Filtra per tipo">
+        <nav className="cluster" aria-label={t("Filtra per tipo")}>
           <Link className="chip" to={href({ tipo: "" })} aria-current={filter === "" || undefined}>
-            Tutti
+            {t("Tutti")}
           </Link>
           {types.map((type) => (
             <Link
@@ -145,7 +150,7 @@ export default function InventoryMovements({ loaderData }: Route.ComponentProps)
               to={href({ tipo: type })}
               aria-current={filter === type || undefined}
             >
-              {MOVEMENT_LABELS[type] ?? type}
+              {t(MOVEMENT_LABELS[type] ?? type)}
             </Link>
           ))}
         </nav>
@@ -153,9 +158,11 @@ export default function InventoryMovements({ loaderData }: Route.ComponentProps)
 
       {movements.length === 0 ? (
         <div className="empty-state">
-          <p>Nessun movimento registrato.</p>
+          <p>{t("Nessun movimento registrato.")}</p>
           <p className="small">
-            Compaiono qui appena una vendita, una rettifica o un trasferimento cambia una quantità.
+            {t(
+              "Compaiono qui appena una vendita, una rettifica o un trasferimento cambia una quantità.",
+            )}
           </p>
         </div>
       ) : (
@@ -165,29 +172,31 @@ export default function InventoryMovements({ loaderData }: Route.ComponentProps)
              take focus is unscrollable without a mouse. */
           tabIndex={0}
           role="region"
-          aria-label="Tabella scorrevole"
+          aria-label={t("Tabella scorrevole")}
         >
           <table className="admin-table">
-            <caption className="visually-hidden">Movimenti di magazzino, dal più recente</caption>
+            <caption className="visually-hidden">
+              {t("Movimenti di magazzino, dal più recente")}
+            </caption>
             <thead>
               <tr>
-                <th scope="col">Quando</th>
-                <th scope="col">Prodotto</th>
-                <th scope="col">Tipo</th>
+                <th scope="col">{t("Quando")}</th>
+                <th scope="col">{t("Prodotto")}</th>
+                <th scope="col">{t("Tipo")}</th>
                 <th scope="col" className="numeric">
-                  Variazione
+                  {t("Variazione")}
                 </th>
                 <th scope="col" className="numeric">
-                  Da → a
+                  {t("Da → a")}
                 </th>
-                <th scope="col">Sede</th>
-                <th scope="col">Causale</th>
+                <th scope="col">{t("Sede")}</th>
+                <th scope="col">{t("Causale")}</th>
               </tr>
             </thead>
             <tbody>
               {movements.map((m) => (
                 <tr key={m.id}>
-                  <td>{formatDateTime(m.created_at, "it")}</td>
+                  <td>{formatDateTime(m.created_at, t.locale)}</td>
                   <td>
                     <Link to={`/admin/prodotti/${m.product_slug}`}>
                       {m.product_name ?? m.product_slug}
@@ -195,7 +204,7 @@ export default function InventoryMovements({ loaderData }: Route.ComponentProps)
                     <br />
                     <span className="small muted">{m.sku}</span>
                   </td>
-                  <td>{MOVEMENT_LABELS[m.movement_type] ?? m.movement_type}</td>
+                  <td>{t(MOVEMENT_LABELS[m.movement_type] ?? m.movement_type)}</td>
                   {/* Signed, always. A bare "3" does not say whether stock
                       arrived or left, which is the only thing this column is for. */}
                   <td className="numeric">
@@ -222,18 +231,20 @@ export default function InventoryMovements({ loaderData }: Route.ComponentProps)
       )}
 
       {pages > 1 ? (
-        <nav className="cluster" aria-label="Pagine">
+        <nav className="cluster" aria-label={t("Pagine")}>
           {page > 1 ? (
             <Link className="btn" to={href({ pagina: String(page - 1) })} rel="prev">
-              Precedente
+              {t("Precedente")}
             </Link>
           ) : null}
           <span className="small muted">
-            Pagina {page} di {pages} — {total} movimenti
+            {t("Pagina ")}
+            {page} {t(" di ")}
+            {pages} — {total} {t(" movimenti")}
           </span>
           {page < pages ? (
             <Link className="btn" to={href({ pagina: String(page + 1) })} rel="next">
-              Successiva
+              {t("Successiva")}
             </Link>
           ) : null}
         </nav>

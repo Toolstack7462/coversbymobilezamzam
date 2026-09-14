@@ -8,10 +8,11 @@ import { money, format as formatMoney } from "~/domain/pricing/money";
 import { buildWhatsAppMessage, buildWhatsAppUrl } from "~/domain/orders/whatsapp-message";
 import { settingValue, SETTING_KEYS, type SettingsMap } from "~/domain/content/gates";
 
-export function meta({ matches }: Route.MetaArgs) {
+export function meta({ matches, location }: Route.MetaArgs) {
+  const t = translator(parseLocalePath(location.pathname).locale);
   // Never indexed: this page is reached with an order number in the URL.
   return [
-    { title: storefrontTitle("Ordine ricevuto", matches) },
+    { title: storefrontTitle(t("meta.confirmation"), matches) },
     { name: "robots", content: "noindex, nofollow" },
   ];
 }
@@ -162,9 +163,13 @@ export default function OrderConfirmation({ loaderData }: Route.ComponentProps) 
           <span className="muted">{t("order.payment_reference")}: </span>
           <strong className="numeric">{order.order_number}</strong>
         </p>
-        {(locale === "it" ? order.instructions_it : order.instructions_en) ? (
+        {(
+          locale === "it" ? order.instructions_it : order.instructions_en || order.instructions_it
+        ) ? (
           <p style={{ whiteSpace: "pre-line" }}>
-            {locale === "it" ? order.instructions_it : order.instructions_en}
+            {locale === "it"
+              ? order.instructions_it
+              : order.instructions_en || order.instructions_it}
           </p>
         ) : null}
       </section>

@@ -18,13 +18,15 @@ import {
 } from "~/domain/content/gates";
 import { ProductCard, type ProductCardData } from "~/components/storefront/product-card";
 
-export function meta({ matches }: Route.MetaArgs) {
+export function meta({ matches, location }: Route.MetaArgs) {
+  const t = translator(parseLocalePath(location.pathname).locale);
   const shell = matches.find((m) => m?.id?.startsWith("routes/storefront/layout"));
   const brand = (shell?.loaderData as { brand?: { full: string } } | undefined)?.brand;
-  return [{ title: `${brand?.full ?? "Covers by Mobile Zam Zam"} | Accessori smartphone` }];
+  return [{ title: `${brand?.full ?? "Covers by Mobile Zam Zam"} | ${t("meta.home")}` }];
 }
 
-export async function loader({ context }: Route.LoaderArgs) {
+export async function loader({ context, request }: Route.LoaderArgs) {
+  const { locale } = parseLocalePath(new URL(request.url).pathname);
   const { env } = context.get(appContext);
 
   const [settingsResult, newArrivals, featuredRows, guideRows, sectionRows, categories, devices] =
@@ -34,7 +36,7 @@ export async function loader({ context }: Route.LoaderArgs) {
         value: string;
       }>(),
       env.DB.prepare(
-        `SELECT p.id, p.slug, pt.name,
+        `SELECT p.id, p.slug, COALESCE(NULLIF(pt_local.name, ''), pt.name) AS name,
               (SELECT amount FROM variant_prices vp
                  JOIN product_variants v ON v.id = vp.variant_id
                 WHERE v.product_id = p.id ORDER BY vp.amount ASC LIMIT 1) AS price_amount,
@@ -42,6 +44,7 @@ export async function loader({ context }: Route.LoaderArgs) {
                 WHERE pi.product_id = p.id AND ${saleableImagePredicate()}
                 ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS image_key
          FROM products p
+         LEFT JOIN product_translations pt_local ON pt_local.product_id = p.id AND pt_local.locale = '${locale}'
          LEFT JOIN product_translations pt ON pt.product_id = p.id AND pt.locale = 'it'
         WHERE p.status = 'active' AND p.archived_at IS NULL
         ORDER BY p.published_at DESC
@@ -63,18 +66,20 @@ export async function loader({ context }: Route.LoaderArgs) {
        * whatever happened to be newest.
        */
       env.DB.prepare(
-        `SELECT p.slug, pt.name, pt.short_description,
+        `SELECT p.slug, COALESCE(NULLIF(pt_local.name, ''), pt.name) AS name, COALESCE(NULLIF(pt_local.short_description, ''), pt.short_description) AS short_description,
                 (SELECT amount FROM variant_prices vp
                    JOIN product_variants v ON v.id = vp.variant_id
                   WHERE v.product_id = p.id ORDER BY vp.amount ASC LIMIT 1) AS price_amount,
                 (SELECT object_key FROM product_images pi
                   WHERE pi.product_id = p.id AND ${saleableImagePredicate()}
                   ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS image_key,
-                COALESCE(ct.name, c.slug) AS category_name
+                COALESCE(COALESCE(NULLIF(ct_local.name, ''), ct.name), c.slug) AS category_name
            FROM products p
-           LEFT JOIN product_translations pt ON pt.product_id = p.id AND pt.locale = 'it'
+           LEFT JOIN product_translations pt_local ON pt_local.product_id = p.id AND pt_local.locale = '${locale}'
+         LEFT JOIN product_translations pt ON pt.product_id = p.id AND pt.locale = 'it'
            LEFT JOIN categories c ON c.id = p.primary_category_id
-           LEFT JOIN category_translations ct ON ct.category_id = c.id AND ct.locale = 'it'
+           LEFT JOIN category_translations ct_local ON ct_local.category_id = c.id AND ct_local.locale = '${locale}'
+         LEFT JOIN category_translations ct ON ct.category_id = c.id AND ct.locale = 'it'
           WHERE p.status = 'active' AND p.archived_at IS NULL AND p.is_featured = 1
           ORDER BY p.updated_at DESC
           LIMIT 4`,
@@ -101,8 +106,9 @@ export async function loader({ context }: Route.LoaderArgs) {
        * renders no guides section, rather than a heading over three empty cards.
        */
       env.DB.prepare(
-        `SELECT p.slug, p.page_type, COALESCE(t.title, p.slug) AS title, t.excerpt
+        `SELECT p.slug, p.page_type, COALESCE(COALESCE(NULLIF(t_local.title, ''), t.title), p.slug) AS title, COALESCE(NULLIF(t_local.excerpt, ''), t.excerpt) AS excerpt
          FROM pages p
+         LEFT JOIN page_translations t_local ON t_local.page_id = p.id AND t_local.locale = '${locale}'
          LEFT JOIN page_translations t ON t.page_id = p.id AND t.locale = 'it'
         WHERE p.page_type IN ('guide', 'service')
           AND p.status = 'published'
@@ -114,16 +120,18 @@ export async function loader({ context }: Route.LoaderArgs) {
         .bind(Date.now())
         .all<{ slug: string; page_type: string; title: string; excerpt: string | null }>(),
       env.DB.prepare(
-        `SELECT s.section_type, t.heading, t.subheading
+        `SELECT s.section_type, COALESCE(NULLIF(t_local.heading, ''), t.heading) AS heading, COALESCE(NULLIF(t_local.subheading, ''), t.subheading) AS subheading
          FROM homepage_sections s
+         LEFT JOIN homepage_section_translations t_local ON t_local.section_id = s.id AND t_local.locale = '${locale}'
          LEFT JOIN homepage_section_translations t
            ON t.section_id = s.id AND t.locale = 'it'
         WHERE s.visible = 1
         ORDER BY s.sort_order`,
       ).all<{ section_type: string; heading: string | null; subheading: string | null }>(),
       env.DB.prepare(
-        `SELECT c.slug, c.image_key, ct.name
+        `SELECT c.slug, c.image_key, COALESCE(NULLIF(ct_local.name, ''), ct.name) AS name
          FROM categories c
+         LEFT JOIN category_translations ct_local ON ct_local.category_id = c.id AND ct_local.locale = '${locale}'
          LEFT JOIN category_translations ct ON ct.category_id = c.id AND ct.locale = 'it'
         WHERE c.visible = 1 AND c.archived_at IS NULL AND c.depth = 0
         ORDER BY c.sort_order ASC LIMIT 8`,

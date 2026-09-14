@@ -1,3 +1,5 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
 import { redirect } from "react-router";
 import type { Route } from "./+types/logout";
 import { appContext } from "~/runtime/context";
@@ -11,8 +13,9 @@ import { relayCookies } from "~/infrastructure/auth/cookies.server";
  * user visits, which is a nuisance rather than a vulnerability - but it is an
  * avoidable one.
  */
-export function meta() {
-  return [{ title: "Uscita" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Uscita") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 export async function action({ request, context }: Route.ActionArgs) {

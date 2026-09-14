@@ -1,3 +1,8 @@
+import adminStyles from "~/styles/admin.css?url";
+import { AdminLanguageSwitcher } from "~/components/admin/language-switcher";
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, redirect } from "react-router";
 import type { LinksFunction } from "react-router";
 import type { Route } from "./+types/setup";
@@ -26,8 +31,12 @@ import {
  * and never echoed back into the rendered HTML after submission.
  */
 
-export function meta() {
-  return [{ title: "Configurazione iniziale" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [
+    { title: t("Configurazione iniziale") },
+    { name: "robots", content: "noindex, nofollow" },
+  ];
 }
 
 export async function loader({ context }: Route.LoaderArgs) {
@@ -156,39 +165,50 @@ export async function action({ request, context }: Route.ActionArgs) {
  * session cannot wrap a page reached without one — so admin.css never loads
  * here and this stylesheet has to be requested explicitly.
  */
-export const links: LinksFunction = () => [{ rel: "stylesheet", href: adminFormStyles }];
+export const links: LinksFunction = () => [
+  { rel: "stylesheet", href: adminFormStyles },
+  // admin.css too: this screen is outside the admin layout, and the language
+  // switcher it now carries is styled there.
+  { rel: "stylesheet", href: adminStyles },
+];
 
 export default function AdminSetup({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { rolesSeeded, tokenConfigured, turnstileSiteKey } = loaderData;
   const ready = rolesSeeded && tokenConfigured;
 
   return (
     <main id="main" className="admin-auth">
       <div className="panel stack admin-auth__panel">
-        <h1>Configurazione iniziale</h1>
+        <div className="admin-auth__language">
+          <AdminLanguageSwitcher />
+        </div>
+        <h1>{t("Configurazione iniziale")}</h1>
         <p className="small muted">
-          Crea il primo amministratore. Questa pagina si disattiva in modo definitivo appena
-          l&apos;installazione è completata.
+          {t(
+            "Crea il primo amministratore. Questa pagina si disattiva in modo definitivo appena l'installazione è completata.",
+          )}
         </p>
 
         {!rolesSeeded ? (
           <p className="notice notice--warning">
-            I ruoli non sono ancora presenti nel database. Esegui <code>npm run db:seed</code> prima
-            di continuare.
+            {t("I ruoli non sono ancora presenti nel database. Esegui ")}
+            <code>npm run db:seed</code> {t(" prima di continuare.")}
           </p>
         ) : null}
 
         {!tokenConfigured ? (
           <p className="notice notice--warning">
-            <code>INITIAL_ADMIN_SETUP_TOKEN</code> non è configurato, oppure è troppo corto (minimo
-            24 caratteri). Senza token questa pagina si rifiuta di funzionare: non si apre mai senza
-            autorizzazione.
+            <code>INITIAL_ADMIN_SETUP_TOKEN</code>{" "}
+            {t(
+              " non è configurato, oppure è troppo corto (minimo 24 caratteri). Senza token questa pagina si rifiuta di funzionare: non si apre mai senza autorizzazione.",
+            )}
           </p>
         ) : null}
 
         {actionData?.error ? (
           <p className="notice notice--danger" role="alert">
-            {actionData.error}
+            {t(actionData.error)}
           </p>
         ) : null}
 
@@ -212,16 +232,18 @@ export default function AdminSetup({ loaderData, actionData }: Route.ComponentPr
           <PasswordField
             id="setupToken"
             name="setupToken"
-            label="Token di installazione"
+            label={t("Token di installazione")}
             autoComplete="off"
             required
             disabled={!ready}
-            hint="Fornito da chi ha configurato l’ambiente. Non compare mai in un URL o in un log."
+            hint={t(
+              "Fornito da chi ha configurato l’ambiente. Non compare mai in un URL o in un log.",
+            )}
           />
 
           <div className="field">
             <label className="field__label" htmlFor="name">
-              Nome e cognome
+              {t("Nome e cognome")}
             </label>
             <input
               id="name"
@@ -251,18 +273,18 @@ export default function AdminSetup({ loaderData, actionData }: Route.ComponentPr
           <PasswordField
             id="password"
             name="password"
-            label="Password"
+            label={t("Password")}
             autoComplete="new-password"
             required
             minLength={12}
             disabled={!ready}
-            requirements={PASSWORD_REQUIREMENTS}
+            requirements={PASSWORD_REQUIREMENTS.map((rule) => t(rule))}
           />
 
           <PasswordField
             id="confirm"
             name="confirm"
-            label="Ripeti la password"
+            label={t("Ripeti la password")}
             autoComplete="new-password"
             required
             minLength={12}
@@ -274,13 +296,14 @@ export default function AdminSetup({ loaderData, actionData }: Route.ComponentPr
           ) : null}
 
           <button type="submit" className="btn btn--primary" disabled={!ready}>
-            Crea amministratore
+            {t("Crea amministratore")}
           </button>
         </Form>
 
         <p className="caption muted">
-          Subito dopo ti verrà chiesto di attivare l&apos;autenticazione a due fattori: è
-          obbligatoria per gli amministratori.
+          {t(
+            "Subito dopo ti verrà chiesto di attivare l'autenticazione a due fattori: è obbligatoria per gli amministratori.",
+          )}
         </p>
       </div>
     </main>

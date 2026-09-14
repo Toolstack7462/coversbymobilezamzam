@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, redirect } from "react-router";
 import { renderSVG } from "uqr";
 import type { Route } from "./+types/security-2fa-setup";
@@ -27,8 +30,9 @@ import { systemClock, cryptoIds } from "~/infrastructure/primitives";
  * codes for a factor they never proved they can use.
  */
 
-export function meta() {
-  return [{ title: "Attiva 2FA" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Attiva 2FA") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -149,28 +153,30 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function TwoFactorSetup({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const showVerify = actionData && "step" in actionData && actionData.step === "verify";
   const qrSvg = actionData && "qrSvg" in actionData ? actionData.qrSvg : null;
   const manualSecret = actionData && "manualSecret" in actionData ? actionData.manualSecret : null;
 
   return (
     <div className="stack" style={{ maxWidth: "36rem" }}>
-      <h1>Attiva l&apos;autenticazione a due fattori</h1>
+      <h1>{t("Attiva l'autenticazione a due fattori")}</h1>
       {/* Which account is being enrolled - worth stating on a shared computer. */}
       <p className="small muted">{loaderData.email}</p>
 
       {actionData?.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
 
       {!showVerify ? (
         <section className="panel stack">
-          <h2>1. Conferma la password</h2>
+          <h2>{t("1. Conferma la password")}</h2>
           <p className="small muted">
-            Ti serve un&apos;app di autenticazione sul telefono (per esempio Google Authenticator,
-            Aegis o 1Password).
+            {t(
+              "Ti serve un'app di autenticazione sul telefono (per esempio Google Authenticator, Aegis o 1Password).",
+            )}
           </p>
           <Form method="post" className="stack">
             <input type="hidden" name="step" value="start" />
@@ -183,16 +189,17 @@ export default function TwoFactorSetup({ loaderData, actionData }: Route.Compone
               autoFocus
             />
             <button type="submit" className="btn btn--primary">
-              Continua
+              {t("Continua")}
             </button>
           </Form>
         </section>
       ) : (
         <section className="panel stack">
-          <h2>2. Inquadra il codice</h2>
+          <h2>{t("2. Inquadra il codice")}</h2>
           <p className="small muted">
-            Apri l&apos;app di autenticazione e inquadra questo codice. Poi inserisci le sei cifre
-            che compaiono.
+            {t(
+              "Apri l'app di autenticazione e inquadra questo codice. Poi inserisci le sei cifre che compaiono.",
+            )}
           </p>
 
           {qrSvg ? (
@@ -206,8 +213,8 @@ export default function TwoFactorSetup({ loaderData, actionData }: Route.Compone
 
           {manualSecret ? (
             <details>
-              <summary>Non riesci a inquadrare il codice?</summary>
-              <p className="small">Inserisci questa chiave manualmente nell&apos;app:</p>
+              <summary>{t("Non riesci a inquadrare il codice?")}</summary>
+              <p className="small">{t("Inserisci questa chiave manualmente nell'app:")}</p>
               <p className="numeric" style={{ wordBreak: "break-all" }}>
                 <code>{manualSecret}</code>
               </p>
@@ -218,7 +225,7 @@ export default function TwoFactorSetup({ loaderData, actionData }: Route.Compone
             <input type="hidden" name="step" value="verify" />
             <div className="field">
               <label className="field__label" htmlFor="code">
-                Codice a sei cifre
+                {t("Codice a sei cifre")}
               </label>
               <input
                 id="code"
@@ -232,11 +239,11 @@ export default function TwoFactorSetup({ loaderData, actionData }: Route.Compone
                 autoFocus
               />
               <span className="field__hint">
-                La verifica è obbligatoria: fino ad allora la 2FA resta disattivata.
+                {t("La verifica è obbligatoria: fino ad allora la 2FA resta disattivata.")}
               </span>
             </div>
             <button type="submit" className="btn btn--primary">
-              Verifica e attiva
+              {t("Verifica e attiva")}
             </button>
           </Form>
         </section>

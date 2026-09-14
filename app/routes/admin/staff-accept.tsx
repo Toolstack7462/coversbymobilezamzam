@@ -1,3 +1,8 @@
+import adminStyles from "~/styles/admin.css?url";
+import { AdminLanguageSwitcher } from "~/components/admin/language-switcher";
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, redirect } from "react-router";
 import type { LinksFunction } from "react-router";
 import type { Route } from "./+types/staff-accept";
@@ -22,8 +27,9 @@ import {
  * it is single-use, expiring, scoped to one email address, and stored hashed.
  */
 
-export function meta() {
-  return [{ title: "Accetta l'invito" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Accetta l'invito") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 export async function loader({ params, context }: Route.LoaderArgs) {
@@ -113,17 +119,27 @@ export async function action({ request, params, context }: Route.ActionArgs) {
  * Registered outside routes/admin/layout.tsx — an invited colleague has no
  * staff session yet — so admin.css never loads here.
  */
-export const links: LinksFunction = () => [{ rel: "stylesheet", href: adminFormStyles }];
+export const links: LinksFunction = () => [
+  { rel: "stylesheet", href: adminFormStyles },
+  // admin.css too: this screen is outside the admin layout, and the language
+  // switcher it now carries is styled there.
+  { rel: "stylesheet", href: adminStyles },
+];
 
 export default function AcceptInvite({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   if (!loaderData.valid) {
     return (
       <main id="main" className="admin-auth">
         <div className="panel stack admin-auth__panel">
-          <h1>Invito non valido</h1>
+          <div className="admin-auth__language">
+            <AdminLanguageSwitcher />
+          </div>
+          <h1>{t("Invito non valido")}</h1>
           <p className="muted">
-            Questo invito non è valido, è già stato usato o è scaduto. Chiedi a chi ti ha invitato
-            di crearne uno nuovo.
+            {t(
+              "Questo invito non è valido, è già stato usato o è scaduto. Chiedi a chi ti ha invitato di crearne uno nuovo.",
+            )}
           </p>
         </div>
       </main>
@@ -133,22 +149,26 @@ export default function AcceptInvite({ loaderData, actionData }: Route.Component
   return (
     <main id="main" className="admin-auth">
       <div className="panel stack admin-auth__panel">
-        <h1>Accetta l&apos;invito</h1>
+        <div className="admin-auth__language">
+          <AdminLanguageSwitcher />
+        </div>
+        <h1>{t("Accetta l'invito")}</h1>
         <p className="small muted">
-          Stai creando un account per <strong>{loaderData.email}</strong>. Scegli tu la password:
-          nessun altro la conosce.
+          {t("Stai creando un account per ")}
+          <strong>{loaderData.email}</strong>
+          {t(". Scegli tu la password: nessun altro la conosce.")}
         </p>
 
         {actionData?.error ? (
           <p className="notice notice--danger" role="alert">
-            {actionData.error}
+            {t(actionData.error)}
           </p>
         ) : null}
 
         <Form method="post" className="stack">
           <div className="field">
             <label className="field__label" htmlFor="name">
-              Nome e cognome
+              {t("Nome e cognome")}
             </label>
             <input id="name" name="name" className="input" required autoComplete="name" />
           </div>
@@ -156,30 +176,31 @@ export default function AcceptInvite({ loaderData, actionData }: Route.Component
           <PasswordField
             id="password"
             name="password"
-            label="Password"
+            label={t("Password")}
             autoComplete="new-password"
             required
             minLength={MIN_PASSWORD_LENGTH}
-            requirements={PASSWORD_REQUIREMENTS}
+            requirements={PASSWORD_REQUIREMENTS.map((rule) => t(rule))}
           />
 
           <PasswordField
             id="confirm"
             name="confirm"
-            label="Ripeti la password"
+            label={t("Ripeti la password")}
             autoComplete="new-password"
             required
             minLength={MIN_PASSWORD_LENGTH}
           />
 
           <button type="submit" className="btn btn--primary">
-            Crea account
+            {t("Crea account")}
           </button>
         </Form>
 
         <p className="caption muted">
-          Se il tuo ruolo lo richiede, subito dopo ti verrà chiesto di attivare
-          l&apos;autenticazione a due fattori.
+          {t(
+            "Se il tuo ruolo lo richiede, subito dopo ti verrà chiesto di attivare l'autenticazione a due fattori.",
+          )}
         </p>
       </div>
     </main>

@@ -1,3 +1,5 @@
+import type { Locale } from "./i18n";
+import { saleableImagePredicate } from "~/domain/media/storefront-image";
 import { createCookie } from "react-router";
 import type { SqlDatabase } from "~/infrastructure/db/sql";
 
@@ -80,19 +82,24 @@ export async function ensureCart(
  * Every render re-reads, so a price or stock change is visible to the customer
  * before checkout rather than being sprung on them at the end.
  */
-export async function readCartLines(db: SqlDatabase, cartId: string): Promise<CartLine[]> {
+export async function readCartLines(
+  db: SqlDatabase,
+  cartId: string,
+  locale: Locale = "it",
+): Promise<CartLine[]> {
   const { results } = await db
     .prepare(
       `SELECT ci.variant_id, ci.quantity, v.sku, v.variant_label, p.slug,
-              pt.name AS product_name, vp.amount AS unit_price,
+              COALESCE(NULLIF(localised.name, ''), pt.name) AS product_name, vp.amount AS unit_price,
               il.on_hand, il.reserved, v.allow_backorder,
               (SELECT object_key FROM product_images pi
-                WHERE pi.product_id = p.id
+                WHERE pi.product_id = p.id AND ${saleableImagePredicate()}
                 ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS image_key
          FROM cart_items ci
          JOIN product_variants v ON v.id = ci.variant_id
          JOIN products p ON p.id = v.product_id
          LEFT JOIN product_translations pt ON pt.product_id = p.id AND pt.locale = 'it'
+         LEFT JOIN product_translations localised ON localised.product_id = p.id AND localised.locale = ?2
          JOIN variant_prices vp ON vp.variant_id = v.id
          JOIN price_lists pl ON pl.id = vp.price_list_id AND pl.is_default = 1
          LEFT JOIN inventory_levels il ON il.variant_id = v.id
@@ -100,7 +107,7 @@ export async function readCartLines(db: SqlDatabase, cartId: string): Promise<Ca
           AND v.archived_at IS NULL AND p.archived_at IS NULL AND p.status = 'active'
         ORDER BY ci.created_at ASC`,
     )
-    .bind(cartId)
+    .bind(cartId, locale)
     .all<{
       variant_id: string;
       quantity: number;

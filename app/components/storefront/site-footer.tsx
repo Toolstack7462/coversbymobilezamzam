@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import { localePath, DEFAULT_LOCALE, type Locale, type Translator } from "~/lib/i18n";
 import type { StorefrontBrand } from "~/domain/content/brand";
 import { BrandLockup } from "./brand-lockup";
@@ -50,6 +50,7 @@ export function SiteFooter({
   legal,
   brand,
 }: Props) {
+  const location = useLocation();
   const path = (p: string) => localePath(locale, p);
 
   const street = settingValue(settings, SETTING_KEYS.storeStreet);
@@ -209,13 +210,21 @@ export function SiteFooter({
           ).map(([code, short, name]) => (
             <Link
               key={code}
-              to={localePath(code, "/")}
+              to={localePath(code, `${location.pathname}${location.search}`)}
+              reloadDocument
+              onClick={(event) => {
+                // Fragments are never sent to SSR. Preserve them at activation
+                // without producing different server/client hydration markup.
+                event.currentTarget.hash = window.location.hash;
+              }}
               className="lang-switch__option"
               lang={code}
               hrefLang={code}
               aria-current={locale === code ? "true" : undefined}
             >
-              <span className="lang-switch__code">{short}</span>
+              <span className="lang-switch__code" aria-hidden="true">
+                {short}
+              </span>
               <span className="lang-switch__name">{name}</span>
             </Link>
           ))}

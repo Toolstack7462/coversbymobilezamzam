@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { FormField } from "./patterns";
+import { useAdminTranslator } from "./use-admin-translator";
 
 /**
  * The one password input in the admin.
@@ -88,6 +89,15 @@ export function PasswordField({
   minLength,
   disabled,
 }: PasswordFieldProps) {
+  /*
+   * The control speaks the staff language, not a hard-coded one.
+   *
+   * Its own strings used to be Italian literals. Once the admin became
+   * bilingual that made the reveal button the one part of a translated screen
+   * still speaking Italian — and this is a control whose whole job is telling
+   * somebody what pressing it will do.
+   */
+  const t = useAdminTranslator();
   const [visible, setVisible] = useState(false);
   const [capsLock, setCapsLock] = useState(false);
   const input = useRef<HTMLInputElement>(null);
@@ -232,7 +242,7 @@ export function PasswordField({
               aria-controls={field.id}
               aria-pressed={visible}
             >
-              {visible ? "Nascondi password" : "Mostra password"}
+              {visible ? t("Nascondi password") : t("Mostra password")}
             </button>
           </div>
 
@@ -247,7 +257,7 @@ export function PasswordField({
             NOT been verified here against an actual screen reader.
           */}
           <p className="caption muted ac-password__caps" id={capsId} role="status">
-            {capsLock ? "Bloc Maiusc è attivo." : ""}
+            {capsLock ? t("Bloc Maiusc è attivo.") : ""}
           </p>
         </>
       )}

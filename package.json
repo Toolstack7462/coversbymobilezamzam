@@ -34,7 +34,7 @@
     "db:migrate:remote": "wrangler d1 migrations apply ita-commerce --remote",
     "db:seed": "node scripts/import/seed.mjs",
     "db:studio": "drizzle-kit studio",
-    "locales:check": "node scripts/verify/locale-parity.mjs",
+    "locales:check": "node scripts/verify/locale-parity.mjs && node scripts/verify/admin-locales.mjs",
     "migrations:check": "node scripts/verify/migration-check.mjs",
     "budgets": "node scripts/verify/budgets.mjs",
     "secret-scan": "node scripts/secret-scan/scan.mjs",

@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, Link, useLocation } from "react-router";
 import type { Route } from "./+types/security-2fa";
 import { PasswordField } from "~/components/admin/password-field";
@@ -19,9 +22,10 @@ import { systemClock, cryptoIds } from "~/infrastructure/primitives";
  * enrol would be a locked door with the key inside.
  */
 
-export function meta() {
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
   return [
-    { title: "Autenticazione a due fattori" },
+    { title: t("Autenticazione a due fattori") },
     { name: "robots", content: "noindex, nofollow" },
   ];
 }
@@ -116,71 +120,73 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function SecurityTwoFactor({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { search } = useLocation();
   const { enrolled, mandatory, hasBackupCodes } = loaderData;
   const forced = new URLSearchParams(search).get("obbligatorio") === "1";
 
   return (
     <div className="stack" style={{ maxWidth: "42rem" }}>
-      <h1>Autenticazione a due fattori</h1>
+      <h1>{t("Autenticazione a due fattori")}</h1>
 
       {forced && !enrolled ? (
         <p className="notice notice--warning" role="alert">
-          Il tuo ruolo richiede l&apos;autenticazione a due fattori. Fino a quando non la attivi
-          puoi solo configurarla o uscire: le altre sezioni dell&apos;amministrazione non sono
-          accessibili.
+          {t(
+            "Il tuo ruolo richiede l'autenticazione a due fattori. Fino a quando non la attivi puoi solo configurarla o uscire: le altre sezioni dell'amministrazione non sono accessibili.",
+          )}
         </p>
       ) : null}
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
       {actionData && "success" in actionData && actionData.success ? (
         <p className="notice notice--info" role="status">
-          {actionData.success}
+          {t(actionData.success)}
         </p>
       ) : null}
 
       <section className="panel stack">
-        <h2>Stato</h2>
+        <h2>{t("Stato")}</h2>
         <p>
           {enrolled ? (
-            <span className="stock--in_stock">Attiva e verificata</span>
+            <span className="stock--in_stock">{t("Attiva e verificata")}</span>
           ) : (
-            <span className="stock--low_stock">Non attiva</span>
+            <span className="stock--low_stock">{t("Non attiva")}</span>
           )}
           {mandatory ? (
-            <span className="badge badge--warning"> obbligatoria per il tuo ruolo</span>
+            <span className="badge badge--warning"> {t(" obbligatoria per il tuo ruolo")}</span>
           ) : null}
         </p>
 
         {mandatory ? (
           <p className="small muted">
-            È obbligatoria perché il tuo account può verificare pagamenti, modificare i dati di
-            incasso o gestire il personale. Una password sola non basta per queste operazioni.
+            {t(
+              "È obbligatoria perché il tuo account può verificare pagamenti, modificare i dati di incasso o gestire il personale. Una password sola non basta per queste operazioni.",
+            )}
           </p>
         ) : null}
 
         {!enrolled ? (
           <p>
             <Link className="btn btn--primary" to="/admin/sicurezza/2fa/configura">
-              Attiva ora
+              {t("Attiva ora")}
             </Link>
           </p>
         ) : (
           <div className="stack">
             <p className="small">
-              Codici di recupero:{" "}
-              {hasBackupCodes ? "generati" : <strong>non ancora generati</strong>}
+              {t("Codici di recupero:")}{" "}
+              {hasBackupCodes ? "generati" : <strong>{t("non ancora generati")}</strong>}
             </p>
             <p className="cluster">
               <Link className="btn btn--secondary" to="/admin/sicurezza/codici-recupero">
-                Codici di recupero
+                {t("Codici di recupero")}
               </Link>
               <Link className="btn btn--secondary" to="/admin/sicurezza/sessioni">
-                Sessioni attive
+                {t("Sessioni attive")}
               </Link>
             </p>
           </div>
@@ -189,10 +195,11 @@ export default function SecurityTwoFactor({ loaderData, actionData }: Route.Comp
 
       {enrolled && !mandatory ? (
         <section className="panel stack">
-          <h2>Disattiva</h2>
+          <h2>{t("Disattiva")}</h2>
           <p className="small muted">
-            Richiede la password e una conferma recente dell&apos;identità. Tutte le altre sessioni
-            verranno chiuse.
+            {t(
+              "Richiede la password e una conferma recente dell'identità. Tutte le altre sessioni verranno chiuse.",
+            )}
           </p>
           <Form method="post" className="stack">
             <input type="hidden" name="intent" value="disable" />
@@ -204,7 +211,7 @@ export default function SecurityTwoFactor({ loaderData, actionData }: Route.Comp
               required
             />
             <button type="submit" className="btn btn--secondary">
-              Disattiva 2FA
+              {t("Disattiva 2FA")}
             </button>
           </Form>
         </section>

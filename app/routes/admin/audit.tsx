@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Link } from "react-router";
 import type { Route } from "./+types/audit";
 import { appContext } from "~/runtime/context";
@@ -11,8 +14,9 @@ import { formatDateTime } from "~/lib/i18n";
  * can be tidied is not an audit trail, and "who changed this price?" must stay
  * answerable months later.
  */
-export function meta() {
-  return [{ title: "Registro attività" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Registro attività") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -50,17 +54,18 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export default function AdminAudit({ loaderData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { entries, actions, filter } = loaderData;
 
   return (
     <div className="stack">
-      <h1>Registro attività</h1>
+      <h1>{t("Registro attività")}</h1>
       <p className="small muted">
-        Sola lettura. Le voci non possono essere modificate o cancellate.
+        {t("Sola lettura. Le voci non possono essere modificate o cancellate.")}
       </p>
 
       {actions.length > 0 ? (
-        <nav className="cluster" aria-label="Filtra per azione">
+        <nav className="cluster" aria-label={t("Filtra per azione")}>
           <Link
             to="/admin/registro"
             className="chip"
@@ -70,7 +75,7 @@ export default function AdminAudit({ loaderData }: Route.ComponentProps) {
             // claims to be pressed.
             aria-current={filter === "" ? "page" : undefined}
           >
-            Tutte
+            {t("Tutte")}
           </Link>
           {actions.map((action) => (
             <Link
@@ -87,7 +92,7 @@ export default function AdminAudit({ loaderData }: Route.ComponentProps) {
 
       {entries.length === 0 ? (
         <div className="empty-state">
-          <p>Nessuna voce registrata.</p>
+          <p>{t("Nessuna voce registrata.")}</p>
         </div>
       ) : (
         <div
@@ -96,24 +101,24 @@ export default function AdminAudit({ loaderData }: Route.ComponentProps) {
              cannot take focus is unscrollable without a mouse. */
           tabIndex={0}
           role="region"
-          aria-label="Tabella scorrevole"
+          aria-label={t("Tabella scorrevole")}
         >
           <table className="admin-table">
-            <caption className="visually-hidden">Registro attività</caption>
+            <caption className="visually-hidden">{t("Registro attività")}</caption>
             <thead>
               <tr>
-                <th scope="col">Quando</th>
-                <th scope="col">Chi</th>
-                <th scope="col">Azione</th>
-                <th scope="col">Oggetto</th>
-                <th scope="col">Prima</th>
-                <th scope="col">Dopo</th>
+                <th scope="col">{t("Quando")}</th>
+                <th scope="col">{t("Chi")}</th>
+                <th scope="col">{t("Azione")}</th>
+                <th scope="col">{t("Oggetto")}</th>
+                <th scope="col">{t("Prima")}</th>
+                <th scope="col">{t("Dopo")}</th>
               </tr>
             </thead>
             <tbody>
               {entries.map((entry) => (
                 <tr key={entry.id}>
-                  <td className="small">{formatDateTime(entry.created_at, "it")}</td>
+                  <td className="small">{formatDateTime(entry.created_at, t.locale)}</td>
                   <td className="small">{entry.actor_label ?? entry.actor_id}</td>
                   <td className="small">{entry.action}</td>
                   <td className="small">

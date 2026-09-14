@@ -1,3 +1,4 @@
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Link } from "react-router";
 import type { Route } from "./+types/seo";
 import { appContext } from "~/runtime/context";
@@ -108,6 +109,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export default function AdminSeo({ loaderData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { indexable, appEnv, pages, products, categories, duplicates } = loaderData;
 
   const publishedPages = pages.filter((p) => p.status === "published");
@@ -141,62 +143,65 @@ export default function AdminSeo({ loaderData }: Route.ComponentProps) {
           arrive with. */}
       {indexable ? (
         <p className="notice notice--info">
-          Questo ambiente chiede di essere indicizzato e pubblica la mappa del sito.
+          {t("Questo ambiente chiede di essere indicizzato e pubblica la mappa del sito.")}
         </p>
       ) : (
         <p className="notice notice--warning">
           <strong>
-            Questo ambiente ({appEnv}) chiede ai motori di ricerca di NON indicizzarlo, e la mappa
-            del sito è vuota.
+            {t("Questo ambiente (")}
+            {appEnv}
+            {t(") chiede ai motori di ricerca di NON indicizzarlo, e la mappa del sito è vuota.")}
           </strong>{" "}
-          È voluto: una copia di prova che compare su Google al posto del negozio vero è peggio di
-          nessuna copia di prova. Succede da solo quando il sito va in produzione.
+          {t(
+            "È voluto: una copia di prova che compare su Google al posto del negozio vero è peggio di nessuna copia di prova. Succede da solo quando il sito va in produzione.",
+          )}
         </p>
       )}
 
       <section className="panel">
-        <h2>Copertura delle descrizioni</h2>
+        <h2>{t("Copertura delle descrizioni")}</h2>
         <div className="ac-metrics">
           <div className="ac-metric">
-            <span className="ac-metric__label">Pagine pubblicate</span>
+            <span className="ac-metric__label">{t("Pagine pubblicate")}</span>
             <span className="ac-metric__value numeric">
               {publishedPages.length - pagesMissing.length} / {publishedPages.length}
             </span>
-            <span className="ac-metric__note">con descrizione</span>
+            <span className="ac-metric__note">{t("con descrizione")}</span>
           </div>
           <div className="ac-metric">
-            <span className="ac-metric__label">Prodotti attivi</span>
+            <span className="ac-metric__label">{t("Prodotti attivi")}</span>
             <span className="ac-metric__value numeric">
               {products.length - productsMissing.length} / {products.length}
             </span>
-            <span className="ac-metric__note">con descrizione breve</span>
+            <span className="ac-metric__note">{t("con descrizione breve")}</span>
           </div>
           <div className="ac-metric">
-            <span className="ac-metric__label">Categorie</span>
+            <span className="ac-metric__label">{t("Categorie")}</span>
             <span className="ac-metric__value numeric">
               {categories.length - categoriesMissing.length} / {categories.length}
             </span>
-            <span className="ac-metric__note">con descrizione</span>
+            <span className="ac-metric__note">{t("con descrizione")}</span>
           </div>
         </div>
         <p className="small">
-          La descrizione è l&apos;unica riga di testo che il negozio controlla nei risultati di
-          ricerca. Dove manca, il motore se la costruisce da solo con quello che trova nella pagina
-          — e quello che trova non è quasi mai la frase che avresti scelto tu.
+          {t(
+            "La descrizione è l'unica riga di testo che il negozio controlla nei risultati di ricerca. Dove manca, il motore se la costruisce da solo con quello che trova nella pagina — e quello che trova non è quasi mai la frase che avresti scelto tu.",
+          )}
         </p>
         <p className="small">
-          Qui non si generano descrizioni. Una frase su un prodotto scritta da qualcosa che non
-          l&apos;ha mai visto si riconosce, e viene comunque riscritta dal motore.
+          {t(
+            "Qui non si generano descrizioni. Una frase su un prodotto scritta da qualcosa che non l'ha mai visto si riconosce, e viene comunque riscritta dal motore.",
+          )}
         </p>
       </section>
 
       {duplicates.length > 0 ? (
         <section className="panel">
-          <h2>Titoli uguali</h2>
+          <h2>{t("Titoli uguali")}</h2>
           <p className="small">
-            Due prodotti con lo stesso titolo si contendono lo stesso risultato di ricerca, e il
-            motore ne sceglie uno solo. Succede quasi sempre quando una variante diventa un prodotto
-            a sé.
+            {t(
+              "Due prodotti con lo stesso titolo si contendono lo stesso risultato di ricerca, e il motore ne sceglie uno solo. Succede quasi sempre quando una variante diventa un prodotto a sé.",
+            )}
           </p>
           <ul className="stack">
             {duplicates.map((d) => (
@@ -217,7 +222,10 @@ export default function AdminSeo({ loaderData }: Route.ComponentProps) {
 
       {productsMissing.length > 0 ? (
         <section className="panel">
-          <h2>Prodotti senza descrizione breve ({productsMissing.length})</h2>
+          <h2>
+            {t("Prodotti senza descrizione breve (")}
+            {productsMissing.length})
+          </h2>
           <ul className="stack">
             {productsMissing.slice(0, 40).map((p) => (
               <li key={p.slug}>
@@ -226,14 +234,20 @@ export default function AdminSeo({ loaderData }: Route.ComponentProps) {
             ))}
           </ul>
           {productsMissing.length > 40 ? (
-            <p className="small muted">…e altri {productsMissing.length - 40}.</p>
+            <p className="small muted">
+              {t("…e altri ")}
+              {productsMissing.length - 40}.
+            </p>
           ) : null}
         </section>
       ) : null}
 
       {pagesMissing.length > 0 ? (
         <section className="panel">
-          <h2>Pagine senza descrizione ({pagesMissing.length})</h2>
+          <h2>
+            {t("Pagine senza descrizione (")}
+            {pagesMissing.length})
+          </h2>
           <ul className="stack">
             {pagesMissing.map((p) => (
               <li key={p.slug}>
@@ -246,10 +260,14 @@ export default function AdminSeo({ loaderData }: Route.ComponentProps) {
 
       {categoriesMissing.length > 0 ? (
         <section className="panel">
-          <h2>Categorie senza descrizione ({categoriesMissing.length})</h2>
+          <h2>
+            {t("Categorie senza descrizione (")}
+            {categoriesMissing.length})
+          </h2>
           <p className="small">
-            La descrizione di categoria è il testo in cima alla pagina di elenco: è quello che
-            distingue &ldquo;Cover&rdquo; da una griglia di prodotti qualsiasi.
+            {t(
+              "La descrizione di categoria è il testo in cima alla pagina di elenco: è quello che distingue “Cover” da una griglia di prodotti qualsiasi.",
+            )}
           </p>
           <ul className="stack">
             {categoriesMissing.map((c) => (
@@ -263,13 +281,17 @@ export default function AdminSeo({ loaderData }: Route.ComponentProps) {
 
       {tooLong.length > 0 || tooShort.length > 0 ? (
         <section className="panel">
-          <h2>Lunghezze</h2>
+          <h2>{t("Lunghezze")}</h2>
           {tooLong.length > 0 ? (
             <>
               <h3>
-                Oltre {DESCRIPTION_MAX} caratteri ({tooLong.length})
+                {t("Oltre ")}
+                {DESCRIPTION_MAX} {t(" caratteri (")}
+                {tooLong.length})
               </h3>
-              <p className="small">Google taglia: la fine della frase non la legge nessuno.</p>
+              <p className="small">
+                {t("Google taglia: la fine della frase non la legge nessuno.")}
+              </p>
               <ul className="stack">
                 {tooLong.slice(0, 20).map((row) => (
                   <li key={`${row.where}-${row.what}`}>
@@ -283,10 +305,14 @@ export default function AdminSeo({ loaderData }: Route.ComponentProps) {
           {tooShort.length > 0 ? (
             <>
               <h3>
-                Sotto {DESCRIPTION_MIN} caratteri ({tooShort.length})
+                {t("Sotto ")}
+                {DESCRIPTION_MIN} {t(" caratteri (")}
+                {tooShort.length})
               </h3>
               <p className="small">
-                Troppo corta per dire qualcosa: il motore tende a ignorarla e a scriversela da solo.
+                {t(
+                  "Troppo corta per dire qualcosa: il motore tende a ignorarla e a scriversela da solo.",
+                )}
               </p>
               <ul className="stack">
                 {tooShort.slice(0, 20).map((p) => (
@@ -301,20 +327,21 @@ export default function AdminSeo({ loaderData }: Route.ComponentProps) {
       ) : null}
 
       <section className="panel">
-        <h2>File tecnici</h2>
+        <h2>{t("File tecnici")}</h2>
         <ul className="stack small">
           <li>
             <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer">
               /sitemap.xml
             </a>{" "}
-            — generata dal database: pagine pubblicate, prodotti attivi, categorie. Non si aggiorna
-            a mano perché non esiste una copia da aggiornare.
+            {t(
+              "— generata dal database: pagine pubblicate, prodotti attivi, categorie. Non si aggiorna a mano perché non esiste una copia da aggiornare.",
+            )}
           </li>
           <li>
             <a href="/robots.txt" target="_blank" rel="noopener noreferrer">
               /robots.txt
             </a>{" "}
-            — quello che i motori possono visitare.
+            {t("— quello che i motori possono visitare.")}
           </li>
         </ul>
       </section>

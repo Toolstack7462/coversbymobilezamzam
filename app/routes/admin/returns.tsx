@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, Link } from "react-router";
 import type { Route } from "./+types/returns";
 import { appContext } from "~/runtime/context";
@@ -33,8 +36,9 @@ import { PageHeader } from "~/components/admin/admin-shell";
  * refunds live. Stated because "approved" reading as "money sent" is the
  * assumption that costs real money.
  */
-export function meta() {
-  return [{ title: "Resi" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Resi") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 /**
@@ -210,57 +214,62 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function AdminReturns({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { returns, orders, reasons, canWrite } = loaderData;
   const open = returns.filter((r) => r.status === "requested" || r.status === "approved");
 
   return (
     <>
-      <PageHeader title="Resi" breadcrumbs={breadcrumbsFor("/admin/resi")} />
+      <PageHeader title={t("Resi")} breadcrumbs={breadcrumbsFor("/admin/resi")} />
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
       {actionData && "success" in actionData && actionData.success ? (
         <p className="notice notice--info" role="status">
-          {actionData.success}
+          {t(actionData.success)}
         </p>
       ) : null}
 
       <section className="panel">
         <div className="ac-metrics">
           <div className="ac-metric">
-            <span className="ac-metric__label">Aperti</span>
+            <span className="ac-metric__label">{t("Aperti")}</span>
             <span className="ac-metric__value numeric">{open.length}</span>
           </div>
           <div className="ac-metric">
-            <span className="ac-metric__label">Totali</span>
+            <span className="ac-metric__label">{t("Totali")}</span>
             <span className="ac-metric__value numeric">{returns.length}</span>
           </div>
         </div>
         <p className="small">
-          <strong>Recesso e reso non sono la stessa cosa.</strong> Il recesso è un diritto: entro
-          quattordici giorni il cliente restituisce senza dover spiegare perché, e non si può
-          rifiutare. Tutto il resto è un reso che il negozio decide se accettare.
+          <strong>{t("Recesso e reso non sono la stessa cosa.")}</strong>{" "}
+          {t(
+            " Il recesso è un diritto: entro quattordici giorni il cliente restituisce senza dover spiegare perché, e non si può rifiutare. Tutto il resto è un reso che il negozio decide se accettare.",
+          )}
         </p>
         <p className="small">
-          Approvare un reso non è rimborsarlo, e riceverlo non è rimetterlo a scaffale. Il rimborso
-          si fa da <Link to="/admin/pagamenti">Pagamenti</Link>; la giacenza si aggiorna da{" "}
-          <Link to="/admin/inventario">Inventario</Link>, dopo aver guardato il pezzo.
+          {t(
+            "Approvare un reso non è rimborsarlo, e riceverlo non è rimetterlo a scaffale. Il rimborso si fa da ",
+          )}
+          <Link to="/admin/pagamenti">{t("Pagamenti")}</Link>
+          {t("; la giacenza si aggiorna da")} <Link to="/admin/inventario">{t("Inventario")}</Link>
+          {t(", dopo aver guardato il pezzo.")}
         </p>
       </section>
 
       {canWrite && orders.length > 0 ? (
         <section className="panel">
-          <h2>Apri un reso</h2>
+          <h2>{t("Apri un reso")}</h2>
           <Form method="post" className="stack">
             <input type="hidden" name="intent" value="open" />
             <label>
-              Ordine
+              {t("Ordine")}
               <select name="orderId" required defaultValue="">
                 <option value="" disabled>
-                  Scegli…
+                  {t("Scegli…")}
                 </option>
                 {orders.map((o) => (
                   <option key={o.id} value={o.id}>
@@ -270,21 +279,21 @@ export default function AdminReturns({ loaderData, actionData }: Route.Component
               </select>
             </label>
             <label>
-              Motivo
+              {t("Motivo")}
               <select name="reason" defaultValue={reasons[0].code}>
                 {reasons.map((r) => (
                   <option key={r.code} value={r.code}>
-                    {r.label}
+                    {t(r.label)}
                   </option>
                 ))}
               </select>
             </label>
             <label>
-              Note
+              {t("Note")}
               <input name="note" maxLength={200} />
             </label>
             <button className="btn btn--primary" type="submit">
-              Apri reso
+              {t("Apri reso")}
             </button>
           </Form>
         </section>
@@ -292,7 +301,7 @@ export default function AdminReturns({ loaderData, actionData }: Route.Component
 
       {returns.length === 0 ? (
         <div className="empty-state">
-          <p>Nessun reso.</p>
+          <p>{t("Nessun reso.")}</p>
         </div>
       ) : (
         <div
@@ -301,18 +310,18 @@ export default function AdminReturns({ loaderData, actionData }: Route.Component
              take focus is unscrollable without a mouse. */
           tabIndex={0}
           role="region"
-          aria-label="Tabella scorrevole"
+          aria-label={t("Tabella scorrevole")}
         >
           <table className="admin-table">
-            <caption className="visually-hidden">Resi</caption>
+            <caption className="visually-hidden">{t("Resi")}</caption>
             <thead>
               <tr>
-                <th scope="col">Riferimento</th>
-                <th scope="col">Ordine</th>
-                <th scope="col">Motivo</th>
-                <th scope="col">Stato</th>
-                <th scope="col">Aperto</th>
-                {canWrite ? <th scope="col">Azioni</th> : null}
+                <th scope="col">{t("Riferimento")}</th>
+                <th scope="col">{t("Ordine")}</th>
+                <th scope="col">{t("Motivo")}</th>
+                <th scope="col">{t("Stato")}</th>
+                <th scope="col">{t("Aperto")}</th>
+                {canWrite ? <th scope="col">{t("Azioni")}</th> : null}
               </tr>
             </thead>
             <tbody>
@@ -323,7 +332,7 @@ export default function AdminReturns({ loaderData, actionData }: Route.Component
                     {r.is_withdrawal ? (
                       <>
                         <br />
-                        <span className="badge badge--warning">recesso</span>
+                        <span className="badge badge--warning">{t("recesso")}</span>
                       </>
                     ) : null}
                   </td>
@@ -353,10 +362,10 @@ export default function AdminReturns({ loaderData, actionData }: Route.Component
                             : "badge badge--warning"
                       }
                     >
-                      {STATUS_LABELS[r.status] ?? r.status}
+                      {t(STATUS_LABELS[r.status] ?? r.status)}
                     </span>
                   </td>
-                  <td className="small">{formatDateTime(r.created_at, "it")}</td>
+                  <td className="small">{formatDateTime(r.created_at, t.locale)}</td>
                   {canWrite ? (
                     <td>
                       <div className="cluster">
@@ -366,7 +375,7 @@ export default function AdminReturns({ loaderData, actionData }: Route.Component
                               <input type="hidden" name="intent" value="approve" />
                               <input type="hidden" name="returnId" value={r.id} />
                               <button className="btn btn--primary" type="submit">
-                                Approva
+                                {t("Approva")}
                               </button>
                             </Form>
                             {/* Absent for a withdrawal, and refused by the
@@ -376,7 +385,7 @@ export default function AdminReturns({ loaderData, actionData }: Route.Component
                                 <input type="hidden" name="intent" value="reject" />
                                 <input type="hidden" name="returnId" value={r.id} />
                                 <button className="btn btn--danger" type="submit">
-                                  Rifiuta
+                                  {t("Rifiuta")}
                                 </button>
                               </Form>
                             ) : null}
@@ -387,7 +396,7 @@ export default function AdminReturns({ loaderData, actionData }: Route.Component
                             <input type="hidden" name="intent" value="received" />
                             <input type="hidden" name="returnId" value={r.id} />
                             <button className="btn" type="submit">
-                              Merce ricevuta
+                              {t("Merce ricevuta")}
                             </button>
                           </Form>
                         ) : null}

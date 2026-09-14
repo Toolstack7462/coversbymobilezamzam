@@ -1,5 +1,37 @@
 # Acceptance record
 
+## Current language follow-up — 14 September 2026
+
+Review: [PR #16](https://github.com/Toolstack7462/coversbymobilezamzam/pull/16), `feat/admin-english-storefront-locales`. Application revision: `cef3b8d1191a7f49c0b5c08198ec0e0832ee149e`. Main `103fd13`, including the earlier PR #13 work, is integrated. No production merge, deployment or merchant-media mutation was performed.
+
+The admin gains a persistent, native IT/EN menu, including sign-in/setup/2FA screens. Controlled UI, dashboard notes, mobile table labels, validation, status feedback and metadata are translated. Merchant names, SKUs, values, stored status codes and audit records are preserved. The storefront footer keeps the current path/query/fragment; English catalogue, PDP and cart reads use existing translations with per-field Italian fallback. Empty English payment/legal fields fall back too. Page titles follow the URL language. English integer grouping no longer turns `10,000` into `10`.
+
+| Verification                             | Result                                                                                                                                                                   |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Baseline `npm run verify`                | All 11 gates pass                                                                                                                                                        |
+| Final CI Verify                          | Pass: 584 unit tests, 219 worker integration/security tests, locale generation/parity, types, lint, format, migrations, production Worker build, budgets and secret scan |
+| Hostinger production build               | Pass at the application revision above; entry `build/server-node/index.js`                                                                                               |
+| Desktop browser suite                    | Pass: 77 passed, 2 intentional skips                                                                                                                                     |
+| Mobile browser suite                     | Pass: 65 passed, 8 intentional skips                                                                                                                                     |
+| Storefront visual/motion suite           | Pass: 9 tests, four widths and hero recording                                                                                                                            |
+| Admin baseline and updated visual suites | Pass: 58 tests each, 19 screens at three widths                                                                                                                          |
+
+Final CI: [run 34891172528](https://github.com/Toolstack7462/coversbymobilezamzam/actions/runs/34891172528). Six added integration tests invoke actual storefront loaders/cart reads and the language action against migrated D1, including subsequent merchant edits, fallback, stable cart identity/quantity and cookie/origin/redirect validation. Unit coverage includes prefix idempotence, filters/fragments, English number grouping and multiple translated field errors.
+
+The seven language browser scenarios cover 36 actual authenticated admin URLs, direct SSR and client navigation, English product creation with persisted name/SKU/price, native no-JS switching, footer filters/fragments, titles, keyboard/axe and 390/768/1366/1440px screenshots. Existing commerce and media workflow tests remain in the suite. These checks do not imply that every possible form state or production page has been tested.
+
+| Aggregate gzip build totals |   Before |    After |
+| --------------------------- | -------: | -------: |
+| Storefront JavaScript       | 135.4 KB | 135.8 KB |
+| Admin JavaScript            |  85.2 KB | 123.0 KB |
+| All-route CSS               |  17.9 KB |  18.0 KB |
+
+English dictionary compaction saved 11.2 KB during implementation. The admin allowance is explicitly 120 → 130 KB for this feature; the 136 KB storefront and 45 KB CSS limits stay unchanged. No new runtime dependency or image payload was added. These are build/lab totals, not field Core Web Vitals or server CPU measurements.
+
+Earlier CI runs exposed incorrect test assumptions about Secure cookies in APIRequestContext, accessible required labels and the first form on the login page. Browser assertions now inspect the real SSR response and named controls. A separate setup timing failure was fixed by awaiting the enrolment destination and resolving the protected route before checking login state; application authentication was not weakened. Manual image review caught a missing space, untranslated dashboard notes and Italian mobile table labels; these are corrected and covered.
+
+Evidence: [before/after captures and provenance](evidence/admin-languages/README.md). CI uses isolated demonstration data; fixture counts differ between baseline and functional runs and do not describe production stock. There is no isolated hosted preview available in this session. Visual approval and production merge are still outstanding. The 26 missing/unverified merchant photographs and shop-photo requirement remain in [image-mapping.md](image-mapping.md).
+
 ## Current follow-up — PR #13 (14 September 2026)
 
 This section supersedes the earlier branch/publication status below. The pass started at `c6db3cd`; current main `c0be139` was subsequently integrated into the review branch without conflicts. The original storefront is already incorporated into main. The media/footer/admin work is on `feat/media-footer-admin-polish`, draft [PR #13](https://github.com/Toolstack7462/coversbymobilezamzam/pull/13). No merge, production deployment or production media mutation was performed in this pass.

@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, Link } from "react-router";
 import type { Route } from "./+types/promotions";
 import { appContext } from "~/runtime/context";
@@ -32,8 +35,9 @@ import { PageHeader } from "~/components/admin/admin-shell";
  * the previous 30 days, which lives in price_history, and inventing that
  * reference is exactly the kind of number nobody can later defend.
  */
-export function meta() {
-  return [{ title: "Promozioni" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Promozioni") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 const DISCOUNT_TYPES = [
@@ -209,77 +213,85 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function AdminPromotions({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { promotions, categories, canWrite, now } = loaderData;
   const running = promotions.filter((p) => stateOf(p, now) === "in corso").length;
 
   return (
     <>
-      <PageHeader title="Promozioni" breadcrumbs={breadcrumbsFor("/admin/promozioni")} />
+      <PageHeader title={t("Promozioni")} breadcrumbs={breadcrumbsFor("/admin/promozioni")} />
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
       {actionData && "success" in actionData && actionData.success ? (
         <p className="notice notice--info" role="status">
-          {actionData.success}
+          {t(actionData.success)}
         </p>
       ) : null}
 
       <section className="panel">
         <div className="ac-metrics">
           <div className="ac-metric">
-            <span className="ac-metric__label">In corso adesso</span>
+            <span className="ac-metric__label">{t("In corso adesso")}</span>
             <span className="ac-metric__value numeric">{running}</span>
           </div>
           <div className="ac-metric">
-            <span className="ac-metric__label">Totali</span>
+            <span className="ac-metric__label">{t("Totali")}</span>
             <span className="ac-metric__value numeric">{promotions.length}</span>
           </div>
         </div>
         <p className="small">
-          Una promozione si applica da sola a quello che copre. Un codice sconto invece lo digita il
-          cliente: quelli stanno in <Link to="/admin/sconti">Sconti</Link>.
+          {t(
+            "Una promozione si applica da sola a quello che copre. Un codice sconto invece lo digita il cliente: quelli stanno in ",
+          )}
+          <Link to="/admin/sconti">{t("Sconti")}</Link>.
         </p>
         <p className="small">
-          Una promozione in corso non si modifica: si conclude e se ne fa un&apos;altra. Cambiare la
-          percentuale sotto ai piedi di chi ha comprato un&apos;ora fa riscrive quello che gli era
-          stato offerto, e dopo non resta traccia di com&apos;era.
+          {t(
+            "Una promozione in corso non si modifica: si conclude e se ne fa un'altra. Cambiare la percentuale sotto ai piedi di chi ha comprato un'ora fa riscrive quello che gli era stato offerto, e dopo non resta traccia di com'era.",
+          )}
         </p>
       </section>
 
       {canWrite ? (
         <section className="panel">
-          <h2>Nuova promozione</h2>
+          <h2>{t("Nuova promozione")}</h2>
           <Form method="post" className="stack">
             <input type="hidden" name="intent" value="create" />
             <label>
-              Nome
-              <input name="name" required maxLength={80} placeholder="Cover -20% settimana corta" />
-              <span className="field-help">Lo vedi solo tu, serve a riconoscerla.</span>
+              {t("Nome")}
+              <input
+                name="name"
+                required
+                maxLength={80}
+                placeholder={t("Cover -20% settimana corta")}
+              />
+              <span className="field-help">{t("Lo vedi solo tu, serve a riconoscerla.")}</span>
             </label>
             <label>
-              Tipo
+              {t("Tipo")}
               <select name="discount_type" defaultValue="percentage">
                 {DISCOUNT_TYPES.map(([value, label]) => (
                   <option key={value} value={value}>
-                    {label}
+                    {t(label)}
                   </option>
                 ))}
               </select>
             </label>
             <label>
-              Valore
+              {t("Valore")}
               <input name="discount_value" required inputMode="decimal" placeholder="20" />
               <span className="field-help">
-                Percentuale (20 = 20%) oppure euro (5 = 5,00 €), secondo il tipo scelto.
+                {t("Percentuale (20 = 20%) oppure euro (5 = 5,00 €), secondo il tipo scelto.")}
               </span>
             </label>
             <label>
-              Categoria
+              {t("Categoria")}
               <select name="category" defaultValue="">
-                <option value="">Nessuna — la imposti dopo</option>
+                <option value="">{t("Nessuna — la imposti dopo")}</option>
                 {categories.map((c) => (
                   <option key={c.slug} value={c.slug}>
                     {c.name} ({c.products})
@@ -287,45 +299,46 @@ export default function AdminPromotions({ loaderData, actionData }: Route.Compon
                 ))}
               </select>
               <span className="field-help">
-                Copre i prodotti che sono in questa categoria adesso. I prodotti aggiunti domani non
-                entrano da soli — uno sconto che si allarga da solo non lo ha deciso nessuno.
+                {t(
+                  "Copre i prodotti che sono in questa categoria adesso. I prodotti aggiunti domani non entrano da soli — uno sconto che si allarga da solo non lo ha deciso nessuno.",
+                )}
               </span>
             </label>
             <label>
-              Canale
+              {t("Canale")}
               <select name="channel" defaultValue="online">
                 {CHANNELS.map(([value, label]) => (
                   <option key={value} value={value}>
-                    {label}
+                    {t(label)}
                   </option>
                 ))}
               </select>
             </label>
             <label>
-              Inizio
+              {t("Inizio")}
               <input name="starts_at" type="date" />
-              <span className="field-help">Vuoto: parte subito.</span>
+              <span className="field-help">{t("Vuoto: parte subito.")}</span>
             </label>
             <label>
-              Fine
+              {t("Fine")}
               <input name="ends_at" type="date" />
-              <span className="field-help">Vuoto: resta finché non la concludi tu.</span>
+              <span className="field-help">{t("Vuoto: resta finché non la concludi tu.")}</span>
             </label>
             <button className="btn btn--primary" type="submit">
-              Crea promozione
+              {t("Crea promozione")}
             </button>
           </Form>
         </section>
       ) : null}
 
       <section className="panel">
-        <h2>Elenco</h2>
+        <h2>{t("Elenco")}</h2>
         {promotions.length === 0 ? (
           <div className="empty-state">
-            <p>Nessuna promozione.</p>
+            <p>{t("Nessuna promozione.")}</p>
             <p className="small">
-              Per un codice che il cliente digita al carrello, vai a{" "}
-              <Link to="/admin/sconti">Sconti</Link>.
+              {t("Per un codice che il cliente digita al carrello, vai a")}{" "}
+              <Link to="/admin/sconti">{t("Sconti")}</Link>.
             </p>
           </div>
         ) : (
@@ -335,21 +348,21 @@ export default function AdminPromotions({ loaderData, actionData }: Route.Compon
              take focus is unscrollable without a mouse. */
             tabIndex={0}
             role="region"
-            aria-label="Tabella scorrevole"
+            aria-label={t("Tabella scorrevole")}
           >
             <table className="admin-table">
-              <caption className="visually-hidden">Promozioni</caption>
+              <caption className="visually-hidden">{t("Promozioni")}</caption>
               <thead>
                 <tr>
-                  <th scope="col">Nome</th>
-                  <th scope="col">Sconto</th>
-                  <th scope="col">Canale</th>
+                  <th scope="col">{t("Nome")}</th>
+                  <th scope="col">{t("Sconto")}</th>
+                  <th scope="col">{t("Canale")}</th>
                   <th scope="col" className="numeric">
-                    Prodotti
+                    {t("Prodotti")}
                   </th>
-                  <th scope="col">Periodo</th>
-                  <th scope="col">Stato</th>
-                  {canWrite ? <th scope="col">Azione</th> : null}
+                  <th scope="col">{t("Periodo")}</th>
+                  <th scope="col">{t("Stato")}</th>
+                  {canWrite ? <th scope="col">{t("Azione")}</th> : null}
                 </tr>
               </thead>
               <tbody>
@@ -366,9 +379,9 @@ export default function AdminPromotions({ loaderData, actionData }: Route.Compon
                       <td>{CHANNELS.find(([v]) => v === p.channel)?.[1] ?? p.channel}</td>
                       <td className="numeric">{p.products}</td>
                       <td className="small">
-                        {p.starts_at ? formatDateTime(p.starts_at, "it") : "—"}
+                        {p.starts_at ? formatDateTime(p.starts_at, t.locale) : "—"}
                         <br />
-                        {p.ends_at ? formatDateTime(p.ends_at, "it") : "senza scadenza"}
+                        {p.ends_at ? formatDateTime(p.ends_at, t.locale) : t("senza scadenza")}
                       </td>
                       <td>
                         <span
@@ -390,7 +403,7 @@ export default function AdminPromotions({ loaderData, actionData }: Route.Compon
                               <input type="hidden" name="intent" value="end" />
                               <input type="hidden" name="promotionId" value={p.id} />
                               <button className="btn" type="submit">
-                                Concludi
+                                {t("Concludi")}
                               </button>
                             </Form>
                           ) : (

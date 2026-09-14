@@ -7,11 +7,34 @@ import {
   isRouteErrorResponse,
   useLocation,
   useRouteError,
+  useRouteLoaderData,
 } from "react-router";
-import type { LinksFunction } from "react-router";
+import type { LinksFunction, ShouldRevalidateFunctionArgs } from "react-router";
 
 import stylesheet from "~/styles/app.css?url";
 import { parseLocalePath, translator, direction, DEFAULT_LOCALE } from "~/lib/i18n";
+import { adminLocaleFromCookie } from "~/lib/admin-locale";
+import type { Route } from "./+types/root";
+
+export function loader({ request }: Route.LoaderArgs) {
+  // Storefront language stays URL-based and cacheable; staff preference is private.
+  return {
+    adminLocale: /^\/admin(?:\/|$)/.test(new URL(request.url).pathname)
+      ? adminLocaleFromCookie(request.headers.get("Cookie"))
+      : DEFAULT_LOCALE,
+  };
+}
+
+export function shouldRevalidate({
+  currentUrl,
+  nextUrl,
+  defaultShouldRevalidate,
+}: ShouldRevalidateFunctionArgs) {
+  // The root persists across client navigation. Refresh its private preference
+  // when crossing between storefront and admin, even without changed params.
+  const admin = (path: string) => /^\/admin(?:\/|$)/.test(path);
+  return admin(currentUrl.pathname) !== admin(nextUrl.pathname) || defaultShouldRevalidate;
+}
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
@@ -54,7 +77,10 @@ export const links: LinksFunction = () => [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
-  const { locale } = parseLocalePath(pathname);
+  const root = useRouteLoaderData<typeof loader>("root");
+  const locale = /^\/admin(?:\/|$)/.test(pathname)
+    ? (root?.adminLocale ?? DEFAULT_LOCALE)
+    : parseLocalePath(pathname).locale;
   const t = translator(locale);
 
   return (
@@ -93,7 +119,12 @@ export default function App() {
  */
 export function ErrorBoundary() {
   const error = useRouteError();
-  const t = translator(DEFAULT_LOCALE);
+  const { pathname } = useLocation();
+  const root = useRouteLoaderData<typeof loader>("root");
+  const locale = /^\/admin(?:\/|$)/.test(pathname)
+    ? (root?.adminLocale ?? DEFAULT_LOCALE)
+    : parseLocalePath(pathname).locale;
+  const t = translator(locale);
 
   const isNotFound = isRouteErrorResponse(error) && error.status === 404;
   const title = isNotFound ? t("errors.not_found_title") : t("errors.server_title");
@@ -112,7 +143,7 @@ export function ErrorBoundary() {
         React 19 hoists these into <head> from wherever they are rendered, so
         the boundary can supply its own without the route knowing.
       */}
-      <title>{title}</title>
+      <title>{title} | Covers by Mobile Zam Zam</title>
       {/* An error page is never worth indexing, whatever the environment. */}
       <meta name="robots" content="noindex" />
 
@@ -120,7 +151,10 @@ export function ErrorBoundary() {
         <h1>{title}</h1>
         <p className="muted">{body}</p>
         <p>
-          <a className="btn btn--primary" href="/">
+          <a
+            className="btn btn--primary"
+            href={pathname.startsWith("/admin") ? "/admin" : locale === "en" ? "/en/" : "/"}
+          >
             {t("common.home")}
           </a>
         </p>

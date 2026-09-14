@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Link } from "react-router";
 import type { Route } from "./+types/security";
 import { appContext } from "~/runtime/context";
@@ -10,8 +13,9 @@ import {
 import { systemClock } from "~/infrastructure/primitives";
 
 /** Security hub for the signed-in staff member's own account. */
-export function meta() {
-  return [{ title: "Sicurezza" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Sicurezza") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -38,52 +42,54 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export default function Security({ loaderData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const d = loaderData;
 
   return (
     <div className="stack" style={{ maxWidth: "42rem" }}>
-      <h1>Sicurezza</h1>
+      <h1>{t("Sicurezza")}</h1>
       <p className="small muted">
         {d.displayName} · {d.email} · {d.roleCodes.join(", ")}
       </p>
 
       <section className="panel stack">
-        <h2>Autenticazione a due fattori</h2>
+        <h2>{t("Autenticazione a due fattori")}</h2>
         <p>
           {d.enrolled ? (
-            <span className="stock--in_stock">Attiva</span>
+            <span className="stock--in_stock">{t("Attiva")}</span>
           ) : (
-            <span className="stock--low_stock">Non attiva</span>
+            <span className="stock--low_stock">{t("Non attiva")}</span>
           )}
-          {d.mandatory ? <span className="badge badge--warning"> obbligatoria</span> : null}
+          {d.mandatory ? <span className="badge badge--warning"> {t(" obbligatoria")}</span> : null}
         </p>
 
         {d.mandatory && d.triggeringPermissions.length > 0 ? (
           <p className="small muted">
-            Richiesta perché il tuo account ha: <code>{d.triggeringPermissions.join(", ")}</code>
+            {t("Richiesta perché il tuo account ha: ")}
+            <code>{d.triggeringPermissions.join(", ")}</code>
           </p>
         ) : null}
 
         <p className="cluster">
           <Link className="btn btn--primary" to="/admin/sicurezza/2fa">
-            {d.enrolled ? "Gestisci" : "Attiva"}
+            {d.enrolled ? t("Gestisci") : t("Attiva")}
           </Link>
           {d.enrolled ? (
             <Link className="btn btn--secondary" to="/admin/sicurezza/codici-recupero">
-              Codici di recupero
+              {t("Codici di recupero")}
             </Link>
           ) : null}
         </p>
       </section>
 
       <section className="panel stack">
-        <h2>Sessioni</h2>
+        <h2>{t("Sessioni")}</h2>
         <p className="small">
-          {d.activeSessions} {d.activeSessions === 1 ? "sessione attiva" : "sessioni attive"}
+          {d.activeSessions} {d.activeSessions === 1 ? t("sessione attiva") : t("sessioni attive")}
         </p>
         <p>
           <Link className="btn btn--secondary" to="/admin/sicurezza/sessioni">
-            Gestisci sessioni
+            {t("Gestisci sessioni")}
           </Link>
         </p>
       </section>

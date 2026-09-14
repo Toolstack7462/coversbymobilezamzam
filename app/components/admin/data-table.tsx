@@ -1,3 +1,4 @@
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Link, Form } from "react-router";
 import {
   buildTableQuery,
@@ -99,6 +100,7 @@ export function DataTable<Row>({
   emptyState,
   bulkActions,
 }: Props<Row>) {
+  const t = useAdminTranslator();
   const filtered = state.q !== "" || Object.keys(state.filters).length > 0;
 
   return (
@@ -113,27 +115,29 @@ export function DataTable<Row>({
           // your first product" here would be wrong and slightly insulting.
           <div className="empty-state">
             <p>
-              <strong>Nessun risultato</strong>
+              <strong>{t("Nessun risultato")}</strong>
             </p>
             <p className="small muted">
-              Nessuna riga corrisponde ai filtri attivi. Il resto dei dati è ancora al suo posto.
+              {t(
+                "Nessuna riga corrisponde ai filtri attivi. Il resto dei dati è ancora al suo posto.",
+              )}
             </p>
             <p>
               <Link className="btn btn--secondary" to={clearFilters(state, spec)}>
-                Rimuovi i filtri
+                {t("Rimuovi i filtri")}
               </Link>
             </p>
           </div>
         ) : (
           <div className="empty-state">
             <p>
-              <strong>{emptyState.title}</strong>
+              <strong>{t(emptyState.title)}</strong>
             </p>
-            <p className="small muted">{emptyState.body}</p>
+            <p className="small muted">{t(emptyState.body)}</p>
             {emptyState.action ? (
               <p>
                 <Link className="btn btn--primary" to={emptyState.action.to}>
-                  {emptyState.action.label}
+                  {t(emptyState.action.label)}
                 </Link>
               </p>
             ) : null}
@@ -148,7 +152,7 @@ export function DataTable<Row>({
                mouse. */
             tabIndex={0}
             role="region"
-            aria-label="Tabella scorrevole"
+            aria-label={t("Tabella scorrevole")}
           >
             <table className="ac-table">
               {/*
@@ -168,7 +172,7 @@ export function DataTable<Row>({
                 <tr>
                   {bulkActions ? (
                     <th scope="col" className="ac-table__select">
-                      <span className="visually-hidden">Seleziona</span>
+                      <span className="visually-hidden">{t("Seleziona")}</span>
                     </th>
                   ) : null}
                   {columns.map((col) => (
@@ -187,7 +191,7 @@ export function DataTable<Row>({
                     >
                       {spec.sortable.includes(col.key) ? (
                         <Link to={sortLink(state, spec, col.key)} className="ac-table__sort">
-                          {col.header}
+                          {t(col.header)}
                           {/*
                             The arrow is decorative: aria-sort on the cell is
                             what a screen reader announces.
@@ -207,7 +211,7 @@ export function DataTable<Row>({
                   ))}
                   {rowHref ? (
                     <th scope="col">
-                      <span className="visually-hidden">Azioni</span>
+                      <span className="visually-hidden">{t("Azioni")}</span>
                     </th>
                   ) : null}
                 </tr>
@@ -224,14 +228,14 @@ export function DataTable<Row>({
                             type="checkbox"
                             name="ids"
                             value={key}
-                            aria-label={`Seleziona ${key}`}
+                            aria-label={t("Seleziona {{v0}}", { v0: key })}
                           />
                         </td>
                       ) : null}
                       {columns.map((col) => (
                         <td
                           key={col.key}
-                          data-label={col.header}
+                          data-label={t(col.header)}
                           className={[
                             col.numeric ? "ac-table__numeric numeric" : "",
                             col.secondary ? "ac-table__secondary" : "",
@@ -252,7 +256,7 @@ export function DataTable<Row>({
                             cannot be opened in a new tab.
                           */}
                           <Link to={rowHref(row)} className="btn btn--ghost btn--small">
-                            Apri
+                            {t("Apri")}
                           </Link>
                         </td>
                       ) : null}
@@ -289,26 +293,27 @@ function FormOrDiv({
 }
 
 function BulkBar({ bulkActions }: { bulkActions: NonNullable<Props<unknown>["bulkActions"]> }) {
+  const t = useAdminTranslator();
   return (
     <div className="ac-bulk">
       <label htmlFor="bulk-action" className="small">
-        Azione sulle righe selezionate
+        {t("Azione sulle righe selezionate")}
       </label>
       <select id="bulk-action" name="bulkAction" defaultValue="">
         <option value="" disabled>
-          Scegli…
+          {t("Scegli…")}
         </option>
         {bulkActions.options.map((o) => (
           <option key={o.value} value={o.value}>
-            {o.label}
+            {t(o.label)}
           </option>
         ))}
       </select>
       <button type="submit" className="btn btn--secondary">
-        Applica
+        {t("Applica")}
       </button>
       <p className="caption muted">
-        Le azioni in blocco chiedono conferma e vengono registrate nel registro attività.
+        {t("Le azioni in blocco chiedono conferma e vengono registrate nel registro attività.")}
       </p>
     </div>
   );
@@ -323,8 +328,9 @@ function ViewTabs({
   state: TableState;
   spec: TableSpec;
 }) {
+  const t = useAdminTranslator();
   return (
-    <nav className="ac-views" aria-label="Viste salvate">
+    <nav className="ac-views" aria-label={t("Viste salvate")}>
       <ul>
         {views.map((view) => {
           const active = view.slug === state.view;
@@ -335,7 +341,7 @@ function ViewTabs({
                 className={active ? "ac-view ac-view--active" : "ac-view"}
                 aria-current={active ? "page" : undefined}
               >
-                {view.label}
+                {t(view.label)}
                 {/* Omitted rather than shown as zero — see the action centre. */}
                 {view.count !== undefined && view.count > 0 ? (
                   <span className="ac-view__count numeric">{view.count}</span>
@@ -350,6 +356,7 @@ function ViewTabs({
 }
 
 function SearchBox({ state, spec, label }: { state: TableState; spec: TableSpec; label: string }) {
+  const t = useAdminTranslator();
   return (
     // A GET form, so the result is a real URL the merchant can bookmark.
     <form method="get" className="ac-search" role="search">
@@ -363,22 +370,22 @@ function SearchBox({ state, spec, label }: { state: TableState; spec: TableSpec;
       ))}
 
       <label htmlFor="table-search" className="visually-hidden">
-        {label}
+        {t(label)}
       </label>
       <input
         id="table-search"
         type="search"
         name="q"
         defaultValue={state.q}
-        placeholder={label}
+        placeholder={t(label)}
         autoComplete="off"
       />
       <button type="submit" className="btn btn--secondary">
-        Cerca
+        {t("Cerca")}
       </button>
       {state.q ? (
         <Link className="btn btn--ghost" to={buildTableQuery(state, spec, { q: "", page: 1 })}>
-          Annulla
+          {t("Annulla")}
         </Link>
       ) : null}
     </form>
@@ -394,15 +401,17 @@ function Paginator({
   spec: TableSpec;
   pagination: Pagination;
 }) {
+  const t = useAdminTranslator();
   const { page, totalPages, total, firstRow, lastRow, hasPrevious, hasNext } = pagination;
 
   return (
-    <nav className="ac-pagination" aria-label="Paginazione">
+    <nav className="ac-pagination" aria-label={t("Paginazione")}>
       <p className="small muted">
         <span className="numeric">
           {firstRow}–{lastRow}
         </span>{" "}
-        di <span className="numeric">{total}</span>
+        {t("di ")}
+        <span className="numeric">{total}</span>
       </p>
 
       <div className="cluster">
@@ -411,18 +420,19 @@ function Paginator({
             className="btn btn--secondary"
             to={buildTableQuery(state, spec, { page: page - 1 })}
           >
-            Precedente
+            {t("Precedente")}
           </Link>
         ) : (
           // Rendered as inert text rather than a disabled link: a disabled
           // anchor is still focusable and announces as a link that does nothing.
           <span className="btn btn--secondary is-inert" aria-hidden="true">
-            Precedente
+            {t("Precedente")}
           </span>
         )}
 
         <span className="small">
-          Pagina <span className="numeric">{page}</span> di{" "}
+          {t("Pagina ")}
+          <span className="numeric">{page}</span> {t(" di")}{" "}
           <span className="numeric">{totalPages}</span>
         </span>
 
@@ -431,11 +441,11 @@ function Paginator({
             className="btn btn--secondary"
             to={buildTableQuery(state, spec, { page: page + 1 })}
           >
-            Successiva
+            {t("Successiva")}
           </Link>
         ) : (
           <span className="btn btn--secondary is-inert" aria-hidden="true">
-            Successiva
+            {t("Successiva")}
           </span>
         )}
       </div>

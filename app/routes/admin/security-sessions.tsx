@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form } from "react-router";
 import type { Route } from "./+types/security-sessions";
 import { appContext } from "~/runtime/context";
@@ -17,8 +20,9 @@ import { formatDateTime } from "~/lib/i18n";
  * network, not enough to be a location log.
  */
 
-export function meta() {
-  return [{ title: "Sessioni attive" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Sessioni attive") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 /** 203.0.113.42 -> 203.0.113.x — recognisable, not a precise record. */
@@ -154,23 +158,24 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function SecuritySessions({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { sessions } = loaderData;
 
   return (
     <div className="stack" style={{ maxWidth: "48rem" }}>
-      <h1>Sessioni attive</h1>
+      <h1>{t("Sessioni attive")}</h1>
       <p className="small muted">
-        Se non riconosci un accesso, chiudilo e cambia subito la password.
+        {t("Se non riconosci un accesso, chiudilo e cambia subito la password.")}
       </p>
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
       {actionData && "success" in actionData && actionData.success ? (
         <p className="notice notice--info" role="status">
-          {actionData.success}
+          {t(actionData.success)}
         </p>
       ) : null}
 
@@ -180,17 +185,17 @@ export default function SecuritySessions({ loaderData, actionData }: Route.Compo
              cannot take focus is unscrollable without a mouse. */
         tabIndex={0}
         role="region"
-        aria-label="Tabella scorrevole"
+        aria-label={t("Tabella scorrevole")}
       >
         <table className="admin-table">
-          <caption className="visually-hidden">Sessioni attive del tuo account</caption>
+          <caption className="visually-hidden">{t("Sessioni attive del tuo account")}</caption>
           <thead>
             <tr>
-              <th scope="col">Dispositivo</th>
-              <th scope="col">Rete</th>
-              <th scope="col">Ultimo utilizzo</th>
-              <th scope="col">Iniziata</th>
-              <th scope="col">Azione</th>
+              <th scope="col">{t("Dispositivo")}</th>
+              <th scope="col">{t("Rete")}</th>
+              <th scope="col">{t("Ultimo utilizzo")}</th>
+              <th scope="col">{t("Iniziata")}</th>
+              <th scope="col">{t("Azione")}</th>
             </tr>
           </thead>
           <tbody>
@@ -198,11 +203,11 @@ export default function SecuritySessions({ loaderData, actionData }: Route.Compo
               <tr key={s.id}>
                 <td>
                   {s.device}
-                  {s.isCurrent ? <span className="badge"> questa sessione</span> : null}
+                  {s.isCurrent ? <span className="badge"> {t(" questa sessione")}</span> : null}
                 </td>
                 <td className="numeric small">{s.ip}</td>
-                <td className="small">{formatDateTime(s.lastSeenAt, "it")}</td>
-                <td className="small">{formatDateTime(s.createdAt, "it")}</td>
+                <td className="small">{formatDateTime(s.lastSeenAt, t.locale)}</td>
+                <td className="small">{formatDateTime(s.createdAt, t.locale)}</td>
                 <td>
                   {s.isCurrent ? (
                     <span className="muted small">—</span>
@@ -211,7 +216,7 @@ export default function SecuritySessions({ loaderData, actionData }: Route.Compo
                       <input type="hidden" name="intent" value="revoke" />
                       <input type="hidden" name="sessionId" value={s.id} />
                       <button type="submit" className="btn btn--ghost">
-                        Chiudi
+                        {t("Chiudi")}
                       </button>
                     </Form>
                   )}
@@ -226,7 +231,7 @@ export default function SecuritySessions({ loaderData, actionData }: Route.Compo
         <Form method="post">
           <input type="hidden" name="intent" value="revoke-others" />
           <button type="submit" className="btn btn--secondary">
-            Chiudi tutte le altre sessioni
+            {t("Chiudi tutte le altre sessioni")}
           </button>
         </Form>
       ) : null}

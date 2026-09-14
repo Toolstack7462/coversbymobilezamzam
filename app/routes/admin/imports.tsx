@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, useLocation } from "react-router";
 import type { Route } from "./+types/imports";
 import { appContext, type AppEnv } from "~/runtime/context";
@@ -37,8 +40,9 @@ import type { SqlStatement } from "~/infrastructure/db/sql";
  * everything.
  */
 
-export function meta() {
-  return [{ title: "Importa ed esporta" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Importa ed esporta") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 /** The columns an export writes and an import understands. */
@@ -393,6 +397,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function Imports({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { pathname } = useLocation();
   const { recent, productCount, canImport } = loaderData;
 
@@ -402,19 +407,19 @@ export default function Imports({ loaderData, actionData }: Route.ComponentProps
   return (
     <>
       <PageHeader
-        title="Importa ed esporta"
-        description="Per aggiornare molti prodotti in una volta, con un foglio di calcolo."
+        title={t("Importa ed esporta")}
+        description={t("Per aggiornare molti prodotti in una volta, con un foglio di calcolo.")}
         breadcrumbs={breadcrumbsFor(pathname)}
       />
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
       {actionData && "success" in actionData && actionData.success ? (
         <p className="notice notice--success" role="status">
-          {actionData.success}
+          {t(actionData.success)}
         </p>
       ) : null}
       {actionData && "stockNote" in actionData && actionData.stockNote ? (
@@ -425,14 +430,17 @@ export default function Imports({ loaderData, actionData }: Route.ComponentProps
 
       {/* ── Export ────────────────────────────────────────────────────────── */}
       <section className="panel stack">
-        <h2>Esporta il catalogo</h2>
+        <h2>{t("Esporta il catalogo")}</h2>
         <p className="small muted">
-          Scarica <strong className="numeric">{productCount}</strong> prodotti in un file per Excel.
-          Modificatelo e ricaricatelo qui: le righe si riconoscono dal codice SKU.
+          {t("Scarica ")}
+          <strong className="numeric">{productCount}</strong>{" "}
+          {t(
+            " prodotti in un file per Excel. Modificatelo e ricaricatelo qui: le righe si riconoscono dal codice SKU.",
+          )}
         </p>
         <Form method="post">
           <button type="submit" name="intent" value="export" className="btn btn--secondary">
-            Scarica CSV
+            {t("Scarica CSV")}
           </button>
         </Form>
       </section>
@@ -440,18 +448,20 @@ export default function Imports({ loaderData, actionData }: Route.ComponentProps
       {/* ── Import, step one ──────────────────────────────────────────────── */}
       {canImport ? (
         <section className="panel stack">
-          <h2>Importa un file</h2>
+          <h2>{t("Importa un file")}</h2>
           <p className="small muted">
-            Il file viene <strong>analizzato prima</strong>: vedrete esattamente quante righe
-            creano, aggiornano o non cambiano nulla, e solo dopo deciderete se applicarle. Nessuna
-            modifica avviene al caricamento.
+            {t("Il file viene ")}
+            <strong>{t("analizzato prima")}</strong>
+            {t(
+              ": vedrete esattamente quante righe creano, aggiornano o non cambiano nulla, e solo dopo deciderete se applicarle. Nessuna modifica avviene al caricamento.",
+            )}
           </p>
 
           <Form method="post" encType="multipart/form-data" className="stack">
             <input type="hidden" name="intent" value="analyse" />
             <div className="field">
               <label className="field__label" htmlFor="file">
-                File CSV
+                {t("File CSV")}
               </label>
               <input
                 id="file"
@@ -463,67 +473,78 @@ export default function Imports({ loaderData, actionData }: Route.ComponentProps
                 aria-describedby="file-help"
               />
               <span className="field__hint" id="file-help">
-                Colonne riconosciute: <code>sku</code>, <code>nome</code>, <code>prezzo</code>,{" "}
-                <code>giacenza</code>, <code>descrizione</code>, <code>marchio</code>. Vanno bene
-                sia i file separati da punto e virgola (quelli di Excel italiano) sia da virgola.
+                {t("Colonne riconosciute: ")}
+                <code>sku</code>, <code>{t("nome")}</code>, <code>{t("prezzo")}</code>,{" "}
+                <code>{t("giacenza")}</code>, <code>{t("descrizione")}</code>,{" "}
+                <code>{t("marchio")}</code>
+                {t(
+                  ". Vanno bene sia i file separati da punto e virgola (quelli di Excel italiano) sia da virgola.",
+                )}
               </span>
             </div>
             <button type="submit" className="btn btn--secondary">
-              Analizza il file
+              {t("Analizza il file")}
             </button>
           </Form>
         </section>
       ) : (
         <p className="notice notice--warning small">
-          Serve il permesso <code>import.run</code> per importare.
+          {t("Serve il permesso ")}
+          <code>import.run</code> {t(" per importare.")}
         </p>
       )}
 
       {/* ── Import, step two ──────────────────────────────────────────────── */}
       {plan ? (
         <section className="panel stack">
-          <h2>Cosa succederà</h2>
+          <h2>{t("Cosa succederà")}</h2>
 
           <div className="ac-metrics">
             <div className="ac-metric">
-              <span className="ac-metric__label">Da creare</span>
+              <span className="ac-metric__label">{t("Da creare")}</span>
               <span className="ac-metric__value numeric">{plan.counts.create}</span>
             </div>
             <div className="ac-metric">
-              <span className="ac-metric__label">Da aggiornare</span>
+              <span className="ac-metric__label">{t("Da aggiornare")}</span>
               <span className="ac-metric__value numeric">{plan.counts.update}</span>
             </div>
             <div className="ac-metric">
-              <span className="ac-metric__label">Invariate</span>
+              <span className="ac-metric__label">{t("Invariate")}</span>
               <span className="ac-metric__value numeric">{plan.counts.unchanged}</span>
             </div>
             <div className="ac-metric">
-              <span className="ac-metric__label">Con errori</span>
+              <span className="ac-metric__label">{t("Con errori")}</span>
               <span className="ac-metric__value numeric">{plan.counts.error}</span>
-              <span className="ac-metric__note">Saltate, non applicate</span>
+              <span className="ac-metric__note">{t("Saltate, non applicate")}</span>
             </div>
           </div>
 
           {plan.missingColumns.length > 0 ? (
             <p className="notice notice--danger small">
-              Manca la colonna <code>{plan.missingColumns.join(", ")}</code>. Senza il codice SKU
-              non si può sapere a quale prodotto si riferisce ogni riga.
+              {t("Manca la colonna ")}
+              <code>{plan.missingColumns.join(", ")}</code>
+              {t(
+                ". Senza il codice SKU non si può sapere a quale prodotto si riferisce ogni riga.",
+              )}
             </p>
           ) : null}
 
           {plan.unknownColumns.length > 0 ? (
             <p className="notice notice--warning small">
-              Colonne non riconosciute, che verranno ignorate:{" "}
-              <code>{plan.unknownColumns.join(", ")}</code>. Se una di queste conteneva dati
-              importanti, rinominatela prima di procedere.
+              {t("Colonne non riconosciute, che verranno ignorate:")}{" "}
+              <code>{plan.unknownColumns.join(", ")}</code>
+              {t(". Se una di queste conteneva dati importanti, rinominatela prima di procedere.")}
             </p>
           ) : null}
 
           {malformed.length > 0 ? (
             <p className="notice notice--warning small">
-              {malformed.length} righe hanno un numero di colonne diverso dall&apos;intestazione e
-              sono state saltate (righe {malformed.map((m) => m.rowNumber).join(", ")}). Una riga
-              disallineata metterebbe il prezzo nella descrizione.
+              {malformed.length}{" "}
+              {t(
+                " righe hanno un numero di colonne diverso dall'intestazione e sono state saltate (righe ",
+              )}
+              {malformed.map((m) => m.rowNumber).join(", ")}
+              {t("). Una riga disallineata metterebbe il prezzo nella descrizione.")}
             </p>
           ) : null}
 
@@ -532,15 +553,15 @@ export default function Imports({ loaderData, actionData }: Route.ComponentProps
               className="ac-table-scroll"
               tabIndex={0}
               role="region"
-              aria-label="Righe da controllare"
+              aria-label={t("Righe da controllare")}
             >
               <table className="ac-table">
-                <caption className="visually-hidden">Righe con errori o avvisi</caption>
+                <caption className="visually-hidden">{t("Righe con errori o avvisi")}</caption>
                 <thead>
                   <tr>
-                    <th scope="col">Riga</th>
+                    <th scope="col">{t("Riga")}</th>
                     <th scope="col">SKU</th>
-                    <th scope="col">Cosa succede</th>
+                    <th scope="col">{t("Cosa succede")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -549,17 +570,17 @@ export default function Imports({ loaderData, actionData }: Route.ComponentProps
                     .slice(0, 50)
                     .map((row) => (
                       <tr key={row.rowNumber}>
-                        <td data-label="Riga" className="numeric">
+                        <td data-label={t("Riga")} className="numeric">
                           {row.rowNumber}
                         </td>
-                        <td data-label="SKU" className="numeric">
+                        <td data-label={t("SKU")} className="numeric">
                           {row.sku || "—"}
                         </td>
-                        <td data-label="Cosa succede">
+                        <td data-label={t("Cosa succede")}>
                           {row.outcome === "error" ? (
-                            <span className="badge badge--sale">saltata</span>
+                            <span className="badge badge--sale">{t("saltata")}</span>
                           ) : (
-                            <span className="badge badge--warning">da controllare</span>
+                            <span className="badge badge--warning">{t("da controllare")}</span>
                           )}{" "}
                           {row.message ?? row.warning}
                         </td>
@@ -584,16 +605,19 @@ export default function Imports({ loaderData, actionData }: Route.ComponentProps
                 value={actionData && "filename" in actionData ? actionData.filename : ""}
               />
               <p className="notice notice--warning small">
-                Le giacenze eventualmente presenti nel file <strong>non</strong> verranno applicate:
-                una rettifica di magazzino richiede un motivo e si fa dall&apos;inventario, dove
-                resta registrata.
+                {t("Le giacenze eventualmente presenti nel file ")}
+                <strong>{t("non")}</strong>{" "}
+                {t(
+                  " verranno applicate: una rettifica di magazzino richiede un motivo e si fa dall'inventario, dove resta registrata.",
+                )}
               </p>
               <button type="submit" className="btn btn--primary">
-                Applica {plan.counts.create + plan.counts.update} modifiche
+                {t("Applica ")}
+                {plan.counts.create + plan.counts.update} {t(" modifiche")}
               </button>
             </Form>
           ) : (
-            <p className="small muted">Non c&apos;è nulla da applicare.</p>
+            <p className="small muted">{t("Non c'è nulla da applicare.")}</p>
           )}
         </section>
       ) : null}
@@ -601,12 +625,13 @@ export default function Imports({ loaderData, actionData }: Route.ComponentProps
       {/* ── History ───────────────────────────────────────────────────────── */}
       {recent.length > 0 ? (
         <section className="panel stack">
-          <h2>Importazioni precedenti</h2>
+          <h2>{t("Importazioni precedenti")}</h2>
           <ul className="stack small">
             {recent.map((job) => (
               <li key={job.id}>
-                <strong>{job.filename}</strong> — {job.rows_to_create} creati, {job.rows_to_update}{" "}
-                aggiornati, {job.rows_with_errors} con errori
+                <strong>{job.filename}</strong> — {job.rows_to_create} {t(" creati, ")}
+                {job.rows_to_update} {t("aggiornati, ")}
+                {job.rows_with_errors} {t(" con errori")}
               </li>
             ))}
           </ul>

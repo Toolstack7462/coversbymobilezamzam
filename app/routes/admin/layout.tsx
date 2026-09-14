@@ -1,3 +1,4 @@
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { storefrontBrand } from "~/domain/content/brand";
 import { Outlet, isRouteErrorResponse, useRouteError, Link } from "react-router";
 import type { LinksFunction } from "react-router";
@@ -130,20 +131,22 @@ export default function AdminLayout({ loaderData }: Route.ComponentProps) {
  * credentials at any obstacle.
  */
 export function ErrorBoundary() {
+  const t = useAdminTranslator();
   const error = useRouteError();
 
   if (isRouteErrorResponse(error) && error.status === 403) {
     return (
       <main id="main" className="page section">
         <div className="panel stack" style={{ maxWidth: "34rem" }}>
-          <h1>Accesso non consentito</h1>
+          <h1>{t("Accesso non consentito")}</h1>
           <p className="muted">
-            Il tuo account non ha i permessi necessari per questa sezione. Se pensi che sia un
-            errore, chiedi a un amministratore.
+            {t(
+              "Il tuo account non ha i permessi necessari per questa sezione. Se pensi che sia un errore, chiedi a un amministratore.",
+            )}
           </p>
           <p>
             <Link className="btn btn--secondary" to="/admin">
-              Torna alla panoramica
+              {t("Torna alla panoramica")}
             </Link>
           </p>
         </div>
@@ -155,11 +158,11 @@ export function ErrorBoundary() {
     return (
       <main id="main" className="page section">
         <div className="panel stack" style={{ maxWidth: "34rem" }}>
-          <h1>Pagina non trovata</h1>
-          <p className="muted">Questa pagina non esiste o l&apos;elemento è stato rimosso.</p>
+          <h1>{t("Pagina non trovata")}</h1>
+          <p className="muted">{t("Questa pagina non esiste o l'elemento è stato rimosso.")}</p>
           <p>
             <Link className="btn btn--secondary" to="/admin">
-              Torna alla panoramica
+              {t("Torna alla panoramica")}
             </Link>
           </p>
         </div>
@@ -170,8 +173,10 @@ export function ErrorBoundary() {
   return (
     <main id="main" className="page section">
       <div className="panel stack" style={{ maxWidth: "34rem" }}>
-        <h1>Si è verificato un errore</h1>
-        <p className="muted">Riprova tra qualche istante. Se il problema persiste, contattaci.</p>
+        <h1>{t("Si è verificato un errore")}</h1>
+        <p className="muted">
+          {t("Riprova tra qualche istante. Se il problema persiste, contattaci.")}
+        </p>
       </div>
     </main>
   );

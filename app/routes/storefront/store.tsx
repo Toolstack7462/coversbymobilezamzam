@@ -22,9 +22,10 @@ import {
  * shop name, hours and contact details do not exist yet and therefore render
  * nothing at all.
  */
-export function meta({ matches }: Route.MetaArgs) {
+export function meta({ matches, location }: Route.MetaArgs) {
+  const t = translator(parseLocalePath(location.pathname).locale);
   return [
-    { title: storefrontTitle("Il negozio", matches) },
+    { title: storefrontTitle(t("meta.store"), matches) },
     {
       name: "description",
       content: "Dove siamo, quando siamo aperti e come ritirare un ordine in negozio.",

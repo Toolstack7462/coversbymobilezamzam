@@ -37,6 +37,10 @@ setup("install the shop and sign in", async ({ page }) => {
   // shell refuses everything operational until enrolment is complete.
   await passTwoFactor(page);
 
+  // Resolve the protected route before inspecting the URL. Enrolment revokes
+  // the old session; its client redirect can arrive after networkidle.
+  await page.goto("/admin");
+
   // Enrolment deliberately ends the session: a factor that was just added has
   // to be proved before it protects anything. So the merchant signs in once
   // more and answers a challenge — and so does this.

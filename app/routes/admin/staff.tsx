@@ -1,3 +1,6 @@
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, Link } from "react-router";
 import type { Route } from "./+types/staff";
 import { PasswordField } from "~/components/admin/password-field";
@@ -21,8 +24,9 @@ import { StatusBadge } from "~/components/admin/status-badge";
  * colleague's credentials.
  */
 
-export function meta() {
-  return [{ title: "Personale" }, { name: "robots", content: "noindex, nofollow" }];
+export function meta({ matches }: Route.MetaArgs) {
+  const t = adminTranslator(adminLocaleFromMatches(matches));
+  return [{ title: t("Personale") }, { name: "robots", content: "noindex, nofollow" }];
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -200,6 +204,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function AdminStaff({ loaderData, actionData }: Route.ComponentProps) {
+  const t = useAdminTranslator();
   const { staff, invitations, roles, canManageRoles, hasStepUp, activeSuperAdminCount, now } =
     loaderData;
 
@@ -208,41 +213,45 @@ export default function AdminStaff({ loaderData, actionData }: Route.ComponentPr
 
   return (
     <div className="stack">
-      <h1>Personale</h1>
+      <h1>{t("Personale")}</h1>
 
       {actionData && "error" in actionData && actionData.error ? (
         <p className="notice notice--danger" role="alert">
-          {actionData.error}
+          {t(actionData.error)}
         </p>
       ) : null}
       {actionData && "success" in actionData && actionData.success ? (
         <p className="notice notice--info" role="status">
-          {actionData.success}
+          {t(actionData.success)}
         </p>
       ) : null}
 
       {activeSuperAdminCount === 1 ? (
         <p className="notice notice--warning small">
-          C&apos;è un solo amministratore attivo. Se perde l&apos;accesso, nessuno può più entrare
-          nell&apos;area amministrativa. Invitane un secondo.
+          {t(
+            "C'è un solo amministratore attivo. Se perde l'accesso, nessuno può più entrare nell'area amministrativa. Invitane un secondo.",
+          )}
         </p>
       ) : null}
 
       {invitationUrl ? (
         <section className="panel stack">
-          <h2>Invito creato</h2>
+          <h2>{t("Invito creato")}</h2>
           <p className="notice notice--warning">
-            <strong>Copia questo link adesso.</strong> Non verrà mostrato di nuovo: nel database è
-            salvato solo un hash, quindi non è recuperabile. Trattalo come una password.
+            <strong>{t("Copia questo link adesso.")}</strong>{" "}
+            {t(
+              " Non verrà mostrato di nuovo: nel database è salvato solo un hash, quindi non è recuperabile. Trattalo come una password.",
+            )}
           </p>
           <p className="numeric" style={{ wordBreak: "break-all" }}>
             <code>{invitationUrl}</code>
           </p>
           <p className="small muted">
-            Per {actionData && "invitationEmail" in actionData ? actionData.invitationEmail : ""} ·
-            scade il{" "}
+            {t("Per ")}
+            {actionData && "invitationEmail" in actionData ? actionData.invitationEmail : ""}{" "}
+            {t(" · scade il")}{" "}
             {actionData && "expiresAt" in actionData
-              ? formatDateTime(actionData.expiresAt, "it")
+              ? formatDateTime(actionData.expiresAt, t.locale)
               : ""}
           </p>
         </section>
@@ -254,18 +263,18 @@ export default function AdminStaff({ loaderData, actionData }: Route.ComponentPr
              take focus is unscrollable without a mouse. */
         tabIndex={0}
         role="region"
-        aria-label="Tabella scorrevole"
+        aria-label={t("Tabella scorrevole")}
       >
         <table className="admin-table">
-          <caption className="visually-hidden">Personale</caption>
+          <caption className="visually-hidden">{t("Personale")}</caption>
           <thead>
             <tr>
-              <th scope="col">Nome</th>
+              <th scope="col">{t("Nome")}</th>
               <th scope="col">Email</th>
-              <th scope="col">Ruoli</th>
-              <th scope="col">Stato</th>
+              <th scope="col">{t("Ruoli")}</th>
+              <th scope="col">{t("Stato")}</th>
               <th scope="col">2FA</th>
-              <th scope="col">Sessioni</th>
+              <th scope="col">{t("Sessioni")}</th>
               <th scope="col"></th>
             </tr>
           </thead>
@@ -280,15 +289,15 @@ export default function AdminStaff({ loaderData, actionData }: Route.ComponentPr
                 </td>
                 <td className="small">
                   {s.totpEnrolled ? (
-                    <span className="stock--in_stock">attiva</span>
+                    <span className="stock--in_stock">{t("attiva")}</span>
                   ) : (
-                    <span className="stock--low_stock">non attiva</span>
+                    <span className="stock--low_stock">{t("non attiva")}</span>
                   )}
                 </td>
                 <td className="numeric">{s.active_sessions}</td>
                 <td>
                   <Link className="btn btn--ghost" to={`/admin/personale/${s.id}`}>
-                    Gestisci
+                    {t("Gestisci")}
                   </Link>
                 </td>
               </tr>
@@ -299,7 +308,7 @@ export default function AdminStaff({ loaderData, actionData }: Route.ComponentPr
 
       {canManageRoles ? (
         <section className="panel stack">
-          <h2>Invita una persona</h2>
+          <h2>{t("Invita una persona")}</h2>
 
           {!hasStepUp ? (
             <Form method="post" className="cluster">
@@ -307,12 +316,12 @@ export default function AdminStaff({ loaderData, actionData }: Route.ComponentPr
               <PasswordField
                 id="stepup"
                 name="password"
-                label="Conferma la password per gestire il personale"
+                label={t("Conferma la password per gestire il personale")}
                 autoComplete="current-password"
                 required
               />
               <button type="submit" className="btn btn--primary">
-                Conferma
+                {t("Conferma")}
               </button>
             </Form>
           ) : (
@@ -324,12 +333,12 @@ export default function AdminStaff({ loaderData, actionData }: Route.ComponentPr
                 </label>
                 <input id="email" name="email" type="email" className="input" required />
                 <span className="field__hint">
-                  L&apos;invito vale solo per questo indirizzo e scade dopo 7 giorni.
+                  {t("L'invito vale solo per questo indirizzo e scade dopo 7 giorni.")}
                 </span>
               </div>
 
               <fieldset className="stack">
-                <legend className="field__label">Ruoli</legend>
+                <legend className="field__label">{t("Ruoli")}</legend>
                 {roles.map((role) => (
                   <label key={role.id} className="cluster">
                     <input type="checkbox" name="roleIds" value={role.id} />
@@ -339,12 +348,12 @@ export default function AdminStaff({ loaderData, actionData }: Route.ComponentPr
                   </label>
                 ))}
                 <span className="field__hint">
-                  Puoi assegnare solo ruoli i cui permessi possiedi già.
+                  {t("Puoi assegnare solo ruoli i cui permessi possiedi già.")}
                 </span>
               </fieldset>
 
               <button type="submit" className="btn btn--primary">
-                Crea invito
+                {t("Crea invito")}
               </button>
             </Form>
           )}
@@ -353,22 +362,22 @@ export default function AdminStaff({ loaderData, actionData }: Route.ComponentPr
 
       {invitations.length > 0 ? (
         <section className="stack">
-          <h2>Inviti in sospeso</h2>
+          <h2>{t("Inviti in sospeso")}</h2>
           <div
             className="admin-table-wrap"
             /* Focusable and labelled: a region that scrolls sideways and cannot
              take focus is unscrollable without a mouse. */
             tabIndex={0}
             role="region"
-            aria-label="Tabella scorrevole"
+            aria-label={t("Tabella scorrevole")}
           >
             <table className="admin-table">
-              <caption className="visually-hidden">Inviti in sospeso</caption>
+              <caption className="visually-hidden">{t("Inviti in sospeso")}</caption>
               <thead>
                 <tr>
                   <th scope="col">Email</th>
-                  <th scope="col">Invitato da</th>
-                  <th scope="col">Scade</th>
+                  <th scope="col">{t("Invitato da")}</th>
+                  <th scope="col">{t("Scade")}</th>
                   <th scope="col"></th>
                 </tr>
               </thead>
@@ -379,9 +388,9 @@ export default function AdminStaff({ loaderData, actionData }: Route.ComponentPr
                     <td className="small">{i.invited_by_name ?? "—"}</td>
                     <td className="small">
                       {i.expires_at < now ? (
-                        <span className="stock--low_stock">scaduto</span>
+                        <span className="stock--low_stock">{t("scaduto")}</span>
                       ) : (
-                        formatDateTime(i.expires_at, "it")
+                        formatDateTime(i.expires_at, t.locale)
                       )}
                     </td>
                     <td>
@@ -390,7 +399,7 @@ export default function AdminStaff({ loaderData, actionData }: Route.ComponentPr
                           <input type="hidden" name="intent" value="revoke-invitation" />
                           <input type="hidden" name="invitationId" value={i.id} />
                           <button type="submit" className="btn btn--ghost">
-                            Revoca
+                            {t("Revoca")}
                           </button>
                         </Form>
                       ) : null}

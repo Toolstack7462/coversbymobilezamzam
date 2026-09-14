@@ -69,3 +69,7 @@ the existing file already has.
 
 Removing a language is deleting a locale file and a route prefix. No data loss:
 merchant translations remain in the database.
+
+## Staff-interface exception — 14 September 2026
+
+Authenticated admin URLs remain stable (`/admin/...`) and are already private/no-store and noindex. Their language is therefore an HttpOnly preference cookie scoped to `/admin`, not a second set of translated operational routes. This exception does not apply to public pages, shared storefront URLs, canonical tags or public caches. Italian remains the admin copy source and fallback; a separate English catalogue is checked for placeholder parity and generated-key collisions. Merchant translation tables and order snapshots are unchanged.

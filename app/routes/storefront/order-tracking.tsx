@@ -13,10 +13,11 @@ import { money, format as formatMoney } from "~/domain/pricing/money";
  * carries its own date and is therefore partly guessable, so it never grants
  * access on its own (docs/security-threat-model.md).
  */
-export function meta({ matches }: Route.MetaArgs) {
+export function meta({ matches, location }: Route.MetaArgs) {
+  const t = translator(parseLocalePath(location.pathname).locale);
   // The URL carries a tracking token. Indexing it would publish the token.
   return [
-    { title: storefrontTitle("Stato dell'ordine", matches) },
+    { title: storefrontTitle(t("meta.tracking"), matches) },
     { name: "robots", content: "noindex, nofollow" },
   ];
 }

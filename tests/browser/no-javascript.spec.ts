@@ -55,12 +55,13 @@ test.describe("the admin shell without JavaScript", () => {
   test("the login page renders and its form is submittable", async ({ page }) => {
     await page.goto("/admin/accedi");
 
-    await expect(page.locator("form").first()).toBeVisible();
+    const loginForm = page.locator("form").filter({ has: page.locator('input[type="password"]') });
+    await expect(loginForm).toBeVisible();
     await expect(page.locator('input[type="password"]')).toBeVisible();
 
     // A submit button, not a div with a click handler — the difference between
     // a form that works here and one that does nothing.
-    const submit = page.locator('button[type="submit"], input[type="submit"]').first();
+    const submit = loginForm.locator('button[type="submit"], input[type="submit"]');
     await expect(submit).toBeVisible();
   });
 

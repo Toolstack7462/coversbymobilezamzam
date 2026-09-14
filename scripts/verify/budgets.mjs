@@ -93,7 +93,10 @@ const ADMIN_COMPONENTS_DIR = "app/components/admin";
  * limit it replaces, because that one let admin weight eat the customer's
  * allowance.
  *
- * Admin 120 KB TOTAL, plus a per-screen average — and the second number is the
+ * Admin 130 KB TOTAL (2026-09-14: the requested English admin UI).
+ * Compact translation keys remove 11.2 KB of duplicated Italian strings.
+ * The measured admin total is 122.4 KB; the storefront limit is unchanged.
+ * Previously 120 KB TOTAL, plus a per-screen average — and the second number is the
  * one that matters.
  *
  * A flat total punishes BREADTH rather than BLOAT. The admin sits at ~55 KB
@@ -119,7 +122,7 @@ const BUDGETS = {
     label: "storefront JavaScript (shared + customer routes)",
   },
   adminJs: {
-    limit: 120 * 1024,
+    limit: 130 * 1024,
     label: "admin JavaScript (staff-only routes)",
   },
   css: { limit: 45 * 1024, label: "CSS (all routes)" },
@@ -200,13 +203,48 @@ function matchStem(file, stems) {
  * page can pull one of these chunks in. If that ever stops being true, the
  * component belongs somewhere else.
  */
-const ADMIN_ONLY_MODULES = ["admin-nav"];
+/*
+ * Admin-only modules that do NOT live in app/components/admin/.
+ *
+ * Everything inside that directory is found by reading it (below), so only the
+ * strays need naming: both of these sit in app/lib/.
+ */
+const ADMIN_ONLY_MODULES = [
+  "admin-nav",
+  "admin-i18n",
+  /*
+   * Reached from admin routes ONLY, on the client.
+   *
+   * `password-policy` lives in app/domain/users/ because the server reads the
+   * same constants — but that import is in auth.server.ts and never enters the
+   * client bundle. The only client-side importers are the first-run setup and
+   * the invitation-acceptance screens, both admin.
+   *
+   * `admin-forms` is the module Vite emits for admin-forms.css, requested by
+   * the three admin screens that sit outside the admin layout.
+   *
+   * Listed rather than moved: putting a domain constant under
+   * app/components/admin/ to satisfy a measurement would be the wrong file in
+   * the wrong layer. Verify the claim with:
+   *   grep -rn "password-policy" app/ --include=*.tsx
+   */
+  "password-policy",
+  "admin-forms",
+];
 
+/*
+ * Module names in a directory, for BOTH .ts and .tsx.
+ *
+ * Routes are always .tsx, but a component directory is not: the admin
+ * translator hook is `use-admin-translator.ts`. A .tsx-only scan silently
+ * missed it and charged an admin-only chunk to the customer, which is the
+ * exact failure this scan replaced a hand-written list to avoid.
+ */
 const routeStems = (dir) =>
   existsSync(dir)
     ? readdirSync(dir)
-        .filter((f) => f.endsWith(".tsx"))
-        .map((f) => basename(f, ".tsx"))
+        .filter((f) => f.endsWith(".ts") || f.endsWith(".tsx"))
+        .map((f) => basename(f, f.endsWith(".tsx") ? ".tsx" : ".ts"))
     : [];
 
 const adminStems = new Set([

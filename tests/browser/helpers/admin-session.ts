@@ -175,6 +175,7 @@ export async function passTwoFactor(page: Page): Promise<void> {
   await codeForm.locator('input[name="code"]').fill(code);
   await codeForm.locator('button[type="submit"]').first().click();
   await settle(page);
+  await page.waitForURL(/\/admin\/(?:accedi|sicurezza\/codici-recupero)(?:[/?]|$)/);
 }
 
 /**

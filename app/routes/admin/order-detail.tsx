@@ -1,5 +1,5 @@
 import { adminTranslator } from "~/lib/admin-i18n";
-import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { adminLocaleFromMatches, adminLocaleFromCookie } from "~/lib/admin-locale";
 import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, Link, useLocation } from "react-router";
 import type { Route } from "./+types/order-detail";
@@ -232,7 +232,10 @@ export async function action({ request, params, context }: Route.ActionArgs) {
       ),
     ]);
 
-    return { success: `Ordine spostato in "${ORDER_STATUS_LABELS[to]}".` };
+    const t = adminTranslator(adminLocaleFromCookie(request.headers.get("Cookie")));
+    return {
+      success: t('Ordine spostato in "{{v0}}".', { v0: t(ORDER_STATUS_LABELS[to]) }),
+    };
   }
 
   if (intent === "add-note") {

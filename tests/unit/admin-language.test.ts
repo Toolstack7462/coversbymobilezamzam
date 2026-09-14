@@ -4,7 +4,7 @@ import {
   adminLanguageReturnTo,
   adminLocaleFromMatches,
 } from "~/lib/admin-locale";
-import { adminTranslator } from "~/lib/admin-i18n";
+import { adminTranslator, translateAdminFieldErrors } from "~/lib/admin-i18n";
 import { localePath } from "~/lib/i18n";
 import english from "~/locales/admin/en.json";
 import { parseSpecValues } from "~/domain/catalogue/product-types";
@@ -53,6 +53,20 @@ describe("admin language preference", () => {
     expect(t('Variante "Blu / SKU-42" aggiunta.')).toBe("Variant “Blu / SKU-42” added.");
     expect(t("Merchant's untouched product name")).toBe("Merchant's untouched product name");
     expect(adminTranslator("it")(" Salva ")).toBe(" Salva ");
+  });
+  it("translates multiple field errors without translating merchant labels", () => {
+    const t = adminTranslator("en");
+    const errors = [
+      "Capacità: inserire un numero intero.",
+      "Capacità: il minimo è 1.",
+      "Merchant label: massimo 20 caratteri.",
+    ];
+    expect(translateAdminFieldErrors(t, errors, ["Capacità"])).toBe(
+      "Capacity: enter a whole number. Capacity: minimum 1. Merchant label: maximum 20 characters.",
+    );
+    expect(translateAdminFieldErrors(adminTranslator("it"), errors, ["Capacità"])).toBe(
+      errors.join(" "),
+    );
   });
   it("retains every interpolation token in the English catalogue", () => {
     const tokens = (text: string) => [...text.matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1]).sort();

@@ -1,4 +1,4 @@
-import { adminTranslator } from "~/lib/admin-i18n";
+import { adminTranslator, translateAdminFieldErrors } from "~/lib/admin-i18n";
 import { adminLocaleFromMatches, adminLocaleFromCookie } from "~/lib/admin-locale";
 import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { saleableImageKey } from "~/domain/media/storefront-image";
@@ -428,7 +428,16 @@ export async function action({ request, params, context }: Route.ActionArgs) {
       adminLocaleFromCookie(request.headers.get("Cookie")),
     );
 
-    if (parsed.errors.length > 0) return { error: parsed.errors.join(" ") };
+    if (parsed.errors.length > 0) {
+      const t = adminTranslator(adminLocaleFromCookie(request.headers.get("Cookie")));
+      return {
+        error: translateAdminFieldErrors(
+          t,
+          parsed.errors,
+          specFieldsFor(accessoryType).map((field) => field.label),
+        ),
+      };
+    }
 
     const columns = Object.keys(parsed.values) as SpecColumn[];
     if (columns.length === 0) return { error: "Nessuna specifica da salvare per questo tipo." };

@@ -58,3 +58,20 @@ export function adminTranslator(locale: Locale): AdminTranslator {
     { locale, intl: locale === "en" ? ("en-GB" as const) : ("it-IT" as const) },
   );
 }
+
+/** Translate each validation message before joining, and only known UI labels. */
+export function translateAdminFieldErrors(
+  t: AdminTranslator,
+  errors: readonly string[],
+  labels: readonly string[],
+): string {
+  return errors
+    .map((error) => {
+      const label = labels.find((value) => error.startsWith(`${value}: `));
+      const translated = t(error);
+      return label && translated.startsWith(`${label}: `)
+        ? `${t(label)}${translated.slice(label.length)}`
+        : translated;
+    })
+    .join(" ");
+}

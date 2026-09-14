@@ -2,7 +2,7 @@
 
 ## English / Italian audit — 14 September 2026
 
-The language pass starts at `2a238d8` on `feat/admin-english-storefront-locales`, retaining the earlier footer/admin work. Remote main was rechecked at `c0be139`; no production ref or hosting setting is changed.
+The language pass starts at `2a238d8` on `feat/admin-english-storefront-locales`, retaining the earlier footer/admin work. Remote main was initially checked at `c0be139`, then rechecked and merged into this feature branch at `103fd13` (the existing browser concurrency guard). PR #13 is now incorporated into main. No production ref or hosting setting is changed by this pass.
 
 Confirmed defects: the footer sent visitors to the language homepage instead of their current page; already-prefixed URLs could become `/en/en/...`; admin UI was Italian-only; several English catalogue/PDP/cart queries still read Italian rows; empty English payment and legal fields did not consistently fall back; page titles remained Italian. English integer grouping also needed an explicit parser rule to prevent `10,000` becoming `10` in a specification.
 

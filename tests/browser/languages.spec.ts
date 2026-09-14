@@ -19,9 +19,11 @@ test("staff sign-in language is server rendered and independent of public URLs",
     await switchAdmin(page, "English");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Staff sign in");
     await expect(page.getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
-    const response = await context.request.get("/admin/accedi");
-    const html = await response.text();
-    expect(html).toContain('lang="en"');
+    // Use Chromium's actual navigation: its loopback Secure-cookie handling
+    // differs from APIRequestContext. The production cookie must stay Secure.
+    const response = await page.reload();
+    const html = await response!.text();
+    expect(html).toMatch(/<html[^>]*lang="en"/);
     expect(html).toContain("Staff sign in");
     await page.goto("/");
     await expect(page.locator("html")).toHaveAttribute("lang", "it");
@@ -36,6 +38,30 @@ test("staff sign-in language is server rendered and independent of public URLs",
 test.describe("authenticated English interface", () => {
   test.use({ storageState: STORAGE_STATE });
 
+  test("English product creation preserves merchant text, SKU and price", async ({
+    page,
+  }, testInfo) => {
+    await page.goto("/admin/prodotti/nuovo");
+    await switchAdmin(page, "English");
+    const name = `Language test — merchant text ${testInfo.project.name} ${testInfo.retry}`;
+    const sku = `LANG-${testInfo.project.name}-${Date.now()}`;
+    await page.locator('input[name="name"]').fill(name);
+    await page.locator('input[name="sku"]').fill(sku);
+    await page.locator('input[name="price"]').fill("39.90");
+    await page.locator('input[name="onHand"]').fill("3");
+    await page.getByRole("button", { name: "Create product", exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/prodotti\/[^/?]+\?creato=1$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    await expect(page.getByRole("status").filter({ hasText: "Product created" })).toBeVisible();
+    await page.reload();
+    await expect(page.locator('input[name="name"]')).toHaveValue(name);
+    await expect(page.locator('input[name="amount"]').first()).toHaveValue(/39[,.]90/);
+    await expect(page.locator("main")).toContainText(sku.toUpperCase());
+    await switchAdmin(page, "Italiano");
+    await expect(page.locator('input[name="name"]')).toHaveValue(name);
+  });
+
   test("keeps filters, fragments and language on SSR reloads and client navigation", async ({
     page,
   }) => {
@@ -49,7 +75,9 @@ test.describe("authenticated English interface", () => {
     await page.getByRole("link", { name: "Add product", exact: true }).click();
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(/product/i);
-    await expect(page.getByLabel("Product name", { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("textbox", { name: "Product name required", exact: true }),
+    ).toBeVisible();
     await switchAdmin(page, "Italiano");
     await expect(page).toHaveURL(/\/admin\/prodotti\/nuovo$/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(/prodotto/i);
@@ -63,7 +91,7 @@ test.describe("authenticated English interface", () => {
       ["/admin/prodotti", /Products/],
       ["/admin/ordini", /Orders/],
       ["/admin/ordini/ord_demo_review", /DEMO-0003/],
-      ["/admin/pagamenti", /Payments/],
+      ["/admin/pagamenti", /Payment verification/],
       ["/admin/ritiri", /pickup/i],
       ["/admin/spedizioni", /Shipments/],
       ["/admin/resi", /Returns/],

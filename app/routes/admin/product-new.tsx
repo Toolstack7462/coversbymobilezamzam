@@ -226,7 +226,7 @@ export default function NewProduct({ loaderData, actionData }: Route.ComponentPr
           />
           <span className="field__hint" id="onhand-help">
             {t("Quanti pezzi avete adesso")}
-            {locationName ? t("in {{v0}}", { v0: locationName }) : ""}
+            {locationName ? t(" in {{v0}}", { v0: locationName }) : ""}
             {t(". Si corregge in qualsiasi momento dall'inventario, indicando un motivo.")}
           </span>
         </div>

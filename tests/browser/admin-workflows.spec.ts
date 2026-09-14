@@ -366,7 +366,21 @@ test.describe("the product editor", () => {
    */
   test("refuses a save from a form that was open while somebody else saved", async ({
     browser,
-  }) => {
+  }, testInfo) => {
+    /*
+     * Desktop only, because it WRITES the Cavo USB-C product.
+     *
+     * Running on both projects meant two copies of this test saving that row
+     * while the product-type template test, over in the desktop project, had
+     * the same product open — so that test would intermittently have its save
+     * refused by the very conflict guard this one is proving works, and fail
+     * with a stale value that reads like a broken save. It failed exactly that
+     * way on the full run of this release, and passed alone.
+     *
+     * Nothing here varies by viewport: it asserts what the SERVER does with a
+     * form rendered from an older version.
+     */
+    test.skip(testInfo.project.name === "mobile", "writes shared rows");
     /*
      * Longer than the default.
      *

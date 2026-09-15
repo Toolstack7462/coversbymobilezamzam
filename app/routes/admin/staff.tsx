@@ -5,7 +5,13 @@ import { Form, Link } from "react-router";
 import type { Route } from "./+types/staff";
 import { PasswordField } from "~/components/admin/password-field";
 import { appContext } from "~/runtime/context";
-import { requireStaff, hasStepUp } from "~/infrastructure/auth/session.server";
+import { createAuth } from "~/infrastructure/auth/auth.server";
+import {
+  requireStaff,
+  hasStepUp,
+  grantStepUp,
+  getSession,
+} from "~/infrastructure/auth/session.server";
 import { systemClock, cryptoIds } from "~/infrastructure/primitives";
 import { formatDateTime } from "~/lib/i18n";
 import {
@@ -175,8 +181,6 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   if (intent === "step-up") {
     const actor = await requireStaff(request, env, "staff.roles");
-    const { createAuth } = await import("~/infrastructure/auth/auth.server");
-    const { grantStepUp, getSession } = await import("~/infrastructure/auth/session.server");
     const auth = createAuth(env);
     try {
       const response = await auth.api.signInEmail({

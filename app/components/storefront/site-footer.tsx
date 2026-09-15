@@ -63,6 +63,7 @@ export function SiteFooter({
   const whatsapp = settingValue(settings, SETTING_KEYS.whatsappNumber);
   const directions = settingValue(settings, SETTING_KEYS.storeDirectionsUrl);
   const tagline = settingValue(settings, SETTING_KEYS.tagline);
+  const hasAddress = Boolean(street && postcode && city);
 
   return (
     <footer className="site-footer">
@@ -70,7 +71,6 @@ export function SiteFooter({
         <section className="site-footer__column site-footer__brand">
           <BrandLockup brand={brand} locale={locale} variant="footer" />
           {tagline ? <p className="site-footer__tagline">{tagline}</p> : null}
-          {gates.store ? <Link to={path("/negozio")}>{t("home.visit_store")}</Link> : null}
         </section>
         <nav className="site-footer__column" aria-label={t("footer.shop")}>
           <h2 className="site-footer__heading">{t("footer.shop")}</h2>
@@ -93,10 +93,15 @@ export function SiteFooter({
             ))}
           </ul>
         </nav>
-        {pages.length > 0 || legal.length > 0 ? (
+        {gates.store || hasAddress || pages.length > 0 || legal.length > 0 ? (
           <nav className="site-footer__column" aria-label={t("footer.information")}>
             <h2 className="site-footer__heading">{t("footer.information")}</h2>
             <ul>
+              {gates.store || hasAddress ? (
+                <li>
+                  <Link to={path("/negozio")}>{t("home.visit_store")}</Link>
+                </li>
+              ) : null}
               {pages.map((item) => (
                 <li key={item.slug}>
                   <Link to={path(`/pagine/${item.slug}`)}>{item.title}</Link>

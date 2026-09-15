@@ -2,18 +2,14 @@ import { PhotoPlaceholder } from "~/components/storefront/photo-placeholder";
 import { saleableImagePredicate } from "~/domain/media/storefront-image";
 import { storefrontTitle } from "~/lib/storefront-meta";
 import { saleableImageKey } from "~/domain/media/storefront-image";
-import { Link, Form, useLocation } from "react-router";
+import { Link, Form, useLocation, useNavigation } from "react-router";
 import { data } from "react-router";
 import type { Route } from "./+types/product";
 import { appContext } from "~/runtime/context";
 import { parseLocalePath, translator, localePath } from "~/lib/i18n";
 import { money, format as formatMoney } from "~/domain/pricing/money";
 import { discountDisplay } from "~/domain/pricing/resolve";
-import {
-  resolveCompatibility,
-  type CompatibilityRecord,
-  type CompatibilityLevel,
-} from "~/domain/compatibility/resolve";
+import { resolveCompatibility, type CompatibilityLevel } from "~/domain/compatibility/resolve";
 import { availabilityState, availabilityLabelKey } from "~/domain/inventory/availability";
 import { CompatibilityBadge } from "~/components/storefront/compatibility-badge";
 import { ProductCard, type ProductCardData } from "~/components/storefront/product-card";
@@ -285,25 +281,43 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
   const settings: SettingsMap = Object.fromEntries(
     settingsResult.results.map((r) => [r.key, r.value]),
   );
+  const compatibilityRecords = compatibility.results.map((r) => ({
+    deviceModelId: r.device_model_id,
+    variantId: r.variant_id,
+    level: r.compatibility_level as CompatibilityLevel,
+    verified: r.verified === 1,
+    note: r.note,
+  }));
+
+  const selectedVariantId = new URL(request.url).searchParams.get("variante");
+  const variant =
+    variants.results.find((item) => item.id === selectedVariantId) ?? variants.results[0];
+  const stock = variant
+    ? availabilityState({
+        variantId: variant.id,
+        locationId: "",
+        onHand: variant.on_hand ?? 0,
+        reserved: variant.reserved ?? 0,
+        incoming: 0,
+        reorderThreshold: variant.reorder_threshold,
+        allowBackorder: variant.allow_backorder === 1,
+      })
+    : "not_tracked";
 
   return {
     product,
+    stock,
     images: images.results.filter((image) => saleableImageKey(image.object_key)),
     mediaBaseUrl: env.PUBLIC_MEDIA_BASE_URL?.replace(/\/$/, "") ?? "/media",
     variants: variants.results,
-    /**
-     * The server emits the FACTS. The browser resolves them against the device
-     * held in localStorage, because SSR pages are cacheable and baking one
-     * visitor's device into the HTML would serve it to the next
-     * (docs/device-compatibility.md).
-     */
-    compatibilityRecords: compatibility.results.map((r) => ({
-      deviceModelId: r.device_model_id,
-      variantId: r.variant_id,
-      level: r.compatibility_level as CompatibilityLevel,
-      verified: r.verified === 1,
-      note: r.note,
-    })),
+    compatibilityRecords,
+    // This page has no persisted device context yet. Resolve the existing
+    // non-personalised prompt once on the server, using the same domain rules.
+    // Keep the records in the contract for future device-context integration.
+    compatibility: resolveCompatibility({
+      records: compatibilityRecords,
+      selectedDeviceModelId: null,
+    }),
     deviceNames: Object.fromEntries(devices.results.map((d) => [d.id, d.name])),
     compatibleDevices: compatibility.results
       .filter((r) => r.compatibility_level !== "incompatible")
@@ -339,41 +353,19 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
 }
 
 export default function ProductPage({ loaderData }: Route.ComponentProps) {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
+  const navigation = useNavigation();
   const { locale } = parseLocalePath(pathname);
   const t = translator(locale);
-  const {
-    product,
-    images,
-    mediaBaseUrl,
-    variants,
-    compatibilityRecords,
-    specs,
-    compatibleDevices,
-  } = loaderData;
+  const { product, images, mediaBaseUrl, variants, compatibility, specs, compatibleDevices } =
+    loaderData;
 
-  const variant = variants[0];
+  const selection = new URLSearchParams(search);
+  const variant = variants.find((item) => item.id === selection.get("variante")) ?? variants[0];
+  const adding = navigation.state !== "idle" && navigation.formData?.get("intent") === "add";
   const intl = locale === "it" ? "it-IT" : "en-GB";
 
-  // Rendered server-side with no device selected, so it shows the honest
-  // "check compatibility" state until the browser resolves a stored device.
-  const compatibility = resolveCompatibility({
-    records: compatibilityRecords as CompatibilityRecord[],
-    selectedDeviceModelId: null,
-    variantId: variant?.id ?? null,
-  });
-
-  const stock = variant
-    ? availabilityState({
-        variantId: variant.id,
-        locationId: "",
-        onHand: variant.on_hand ?? 0,
-        reserved: variant.reserved ?? 0,
-        incoming: 0,
-        reorderThreshold: variant.reorder_threshold,
-        allowBackorder: variant.allow_backorder === 1,
-      })
-    : "not_tracked";
+  const stock = loaderData.stock;
 
   const discount = variant
     ? discountDisplay({
@@ -465,6 +457,29 @@ export default function ProductPage({ loaderData }: Route.ComponentProps) {
           <h1>{product.name}</h1>
           {product.short_description ? <p className="muted">{product.short_description}</p> : null}
 
+          {variants.length > 1 ? (
+            <fieldset className="variant-picker">
+              <legend>{t("product.choose_variant")}</legend>
+              <div className="cluster">
+                {variants.map((option) => {
+                  const params = new URLSearchParams(selection);
+                  params.set("variante", option.id);
+                  return (
+                    <Link
+                      key={option.id}
+                      className="chip"
+                      preventScrollReset
+                      to={`?${params.toString()}`}
+                      aria-current={option.id === variant?.id ? "true" : undefined}
+                    >
+                      {option.variant_label || option.sku}
+                    </Link>
+                  );
+                })}
+              </div>
+            </fieldset>
+          ) : null}
+
           {variant ? (
             <>
               <p className="product-page__price">
@@ -493,20 +508,13 @@ export default function ProductPage({ loaderData }: Route.ComponentProps) {
           */}
           <CompatibilityBadge state={compatibility.state} deviceName={null} t={t} />
 
-          {compatibility.state === "mismatch" ? (
-            <p>
-              <Link className="btn btn--secondary" to={localePath(locale, "/shop")}>
-                {t("compatibility.see_alternatives")}
-              </Link>
-            </p>
-          ) : null}
-
           {/* A real POST form. Adding to the cart works without JavaScript. */}
           <Form
             id="acquista"
             method="post"
             action={localePath(locale, "/carrello")}
             className="purchase-form"
+            aria-busy={adding}
           >
             <input type="hidden" name="intent" value="add" />
             <input type="hidden" name="variantId" value={variant?.id ?? ""} />
@@ -528,9 +536,13 @@ export default function ProductPage({ loaderData }: Route.ComponentProps) {
             <button
               type="submit"
               className="btn btn--primary"
-              disabled={!variant || stock === "out_of_stock"}
+              disabled={adding || !variant || stock === "out_of_stock"}
             >
-              {stock === "out_of_stock" ? t("product.sold_out") : t("product.add_to_cart")}
+              {adding
+                ? t("common.loading")
+                : stock === "out_of_stock"
+                  ? t("product.sold_out")
+                  : t("product.add_to_cart")}
             </button>
           </Form>
 

@@ -342,7 +342,7 @@ export default function Collection({ loaderData }: Route.ComponentProps) {
   };
 
   return (
-    <div className="page section stack">
+    <div className="page section stack collection-page">
       <nav aria-label="breadcrumb" className="small muted">
         <Link to={path("/")}>{t("common.home")}</Link> / <span>{t("common.shop")}</span>
       </nav>
@@ -378,7 +378,9 @@ export default function Collection({ loaderData }: Route.ComponentProps) {
                describing the photograph again would make a screen reader read
                the department twice. */
             aria-hidden="true"
-            fetchPriority="high"
+            width={1200}
+            height={600}
+            loading="lazy"
           />
         ) : null}
 

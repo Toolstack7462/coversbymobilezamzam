@@ -1,0 +1,162 @@
+/* Login-only presentation, requested separately from the protected admin UI. */
+/* This route has no fixed storefront navigation requiring bottom clearance. */
+body:has(.admin-login) {
+  padding-block-end: 0;
+}
+
+.admin-login {
+  --login-canvas: #edf3fa;
+  --login-ink: #0b1220;
+  --login-muted: #475569;
+  --login-line: #c4d2e5;
+  --login-surface: #fff;
+  --login-blue: #2457ff;
+  --login-shadow: rgb(28 52 89 / 0.17);
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: clamp(1.25rem, 4vw, 4rem);
+  color: var(--login-ink);
+  background: linear-gradient(125deg, #dfe9fb, #eaf2f7 55%, #ede9e2);
+}
+.admin-login__layout {
+  width: min(100%, 1060px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 440px);
+  gap: clamp(2rem, 6vw, 6rem);
+  align-items: center;
+}
+.admin-login__identity {
+  min-width: 0;
+}
+.admin-login__brand {
+  display: inline-flex;
+  max-width: 100%;
+  padding: 0.5rem 0;
+}
+.admin-login__brand img {
+  width: min(100%, 310px);
+  height: auto;
+}
+.admin-login__art {
+  position: relative;
+  height: 340px;
+  margin-top: 2rem;
+  perspective: 1100px;
+}
+.admin-login__art::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 70px;
+  background: radial-gradient(ellipse, var(--login-shadow), transparent 70%);
+}
+.admin-login__plate {
+  position: absolute;
+  width: 190px;
+  height: 275px;
+  border-radius: 35px;
+  border: 2px solid var(--login-surface);
+  box-shadow: 20px 30px 40px -20px var(--login-shadow);
+}
+.admin-login__plate--back {
+  left: 14%;
+  top: 25px;
+  background: linear-gradient(130deg, var(--login-surface), #c1d0e6);
+  transform: rotate(-18deg) rotateY(20deg);
+}
+.admin-login__plate--front {
+  display: grid;
+  place-items: center;
+  left: 38%;
+  top: 5px;
+  background: linear-gradient(135deg, #6487ff, var(--login-blue) 55%, #1743d3);
+  transform: rotate(12deg) rotateY(-18deg);
+}
+.admin-login__plate--front::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1px solid rgb(255 255 255 / 0.5);
+  border-radius: 27px;
+}
+.admin-login__plate img {
+  width: 90px;
+  height: 90px;
+  border-radius: 20px;
+  filter: brightness(0) invert(1);
+}
+.admin-login .admin-auth__panel {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+  border: 1px solid var(--login-line);
+  border-radius: 1.25rem;
+  box-shadow: 0 24px 64px -25px var(--login-shadow);
+  background: var(--login-surface);
+}
+.admin-login .admin-auth__panel > h1 {
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  letter-spacing: -0.035em;
+}
+.admin-login .muted {
+  color: var(--login-muted);
+}
+.admin-login .input {
+  min-height: 50px;
+  background: var(--login-canvas);
+  border-color: var(--login-line);
+  border-radius: 0.6rem;
+}
+.admin-login .btn {
+  width: 100%;
+  min-height: 50px;
+  border-radius: 0.6rem;
+}
+.admin-login .btn:disabled {
+  cursor: progress;
+}
+.admin-login .admin-auth__language {
+  margin-bottom: 1.5rem;
+}
+@keyframes login-enter {
+  from {
+    translate: 0 16px;
+  }
+  to {
+    translate: 0;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .admin-login__plate {
+    animation: login-enter 900ms cubic-bezier(0.2, 0.75, 0.25, 1);
+  }
+}
+@media (max-width: 47.99rem) {
+  .admin-login {
+    padding: 1.5rem 1rem;
+  }
+  .admin-login__layout {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 440px;
+    gap: 1.25rem;
+  }
+  .admin-login__identity {
+    text-align: center;
+  }
+  .admin-login__brand img {
+    width: 255px;
+  }
+  .admin-login__art {
+    display: none;
+  }
+  .admin-login .admin-auth__panel {
+    padding: 1.5rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-login__plate {
+    animation: none;
+  }
+}

@@ -239,25 +239,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
    * not rendered — an absent reassurance is honest, a false one is not.
    */
   const trust = [
-    {
-      key: "compatibility",
-      title: t("home.trust_compatibility"),
-      body: t("home.trust_compatibility_body"),
-      show: true,
-    },
-    {
-      key: "pickup",
-      title: t("home.trust_pickup"),
-      body: t("home.trust_pickup_body"),
-      show: loaderData.canPickUp,
-    },
-    {
-      key: "help",
-      title: t("home.trust_help"),
-      body: t("home.trust_help_body"),
-      show: loaderData.canHelp,
-    },
-  ].filter((item) => item.show);
+    ["compatibility", true],
+    ["pickup", loaderData.canPickUp],
+    ["help", loaderData.canHelp],
+  ] as const;
 
   /*
    * The homepage, assembled from named sections.
@@ -295,12 +280,14 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         {trust.length > 0 ? (
           <section className="trust-band">
             <ul className="page trust-band__inner">
-              {trust.map((item) => (
-                <li key={item.key} className="trust">
-                  <h2 className="trust__title">{item.title}</h2>
-                  <p className="trust__body">{item.body}</p>
-                </li>
-              ))}
+              {trust
+                .filter(([, show]) => show)
+                .map(([key]) => (
+                  <li key={key} className="trust">
+                    <h2 className="trust__title">{t(`home.trust_${key}`)}</h2>
+                    <p className="trust__body">{t(`home.trust_${key}_body`)}</p>
+                  </li>
+                ))}
             </ul>
           </section>
         ) : null}
@@ -353,6 +340,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                         className="category-tile__image"
                         src={`${loaderData.mediaBaseUrl}/${category.image_key}`}
                         alt=""
+                        width={640}
+                        height={480}
                         loading="lazy"
                         decoding="async"
                       />
@@ -438,6 +427,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                         <img
                           src={`${loaderData.mediaBaseUrl}/${item.image_key}`}
                           alt=""
+                          width={960}
+                          height={720}
                           loading="lazy"
                           decoding="async"
                         />

@@ -88,9 +88,12 @@ export default function DeviceFinder({ loaderData }: Route.ComponentProps) {
     `${path("/trova-dispositivo")}?${new URLSearchParams(params).toString()}`;
 
   return (
-    <div className="page section stack">
-      <h1>{t("device.finder_title")}</h1>
-      <p className="muted">{t("device.finder_intro")}</p>
+    <div className="page section finder-page">
+      <header className="finder-page__head">
+        <p className="eyebrow">{t("home.shop_by_device")}</p>
+        <h1>{t("device.finder_title")}</h1>
+        <p className="muted">{t("device.finder_intro")}</p>
+      </header>
 
       {brands.length === 0 ? (
         /* No device data yet. Say so plainly rather than showing an empty box
@@ -102,24 +105,12 @@ export default function DeviceFinder({ loaderData }: Route.ComponentProps) {
           </Link>
         </div>
       ) : (
-        <>
-          {popular.length > 0 && !selected.brand ? (
-            <section className="stack">
-              <h2>{t("device.popular_devices")}</h2>
-              <ul className="cluster">
-                {popular.map((model) => (
-                  <li key={model.handle}>
-                    <Link className="chip" to={`${path("/shop")}?dispositivo=${model.handle}`}>
-                      {model.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
-          <section className="stack">
-            <h2>{t("device.select_brand")}</h2>
+        <div className="finder-steps">
+          <section className="finder-step" data-complete={Boolean(selected.brand)}>
+            <h2>
+              <span aria-hidden="true">01</span>
+              {t("device.select_brand")}
+            </h2>
             <ul className="cluster">
               {brands.map((brand) => (
                 <li key={brand.handle}>
@@ -136,8 +127,11 @@ export default function DeviceFinder({ loaderData }: Route.ComponentProps) {
           </section>
 
           {families ? (
-            <section className="stack">
-              <h2>{t("device.select_family")}</h2>
+            <section className="finder-step" data-complete={Boolean(selected.family)}>
+              <h2>
+                <span aria-hidden="true">02</span>
+                {t("device.select_family")}
+              </h2>
               {families.length === 0 ? (
                 <p className="muted">{t("device.no_device_results")}</p>
               ) : (
@@ -159,8 +153,11 @@ export default function DeviceFinder({ loaderData }: Route.ComponentProps) {
           ) : null}
 
           {models ? (
-            <section className="stack">
-              <h2>{t("device.select_model")}</h2>
+            <section className="finder-step finder-step--models">
+              <h2>
+                <span aria-hidden="true">03</span>
+                {t("device.select_model")}
+              </h2>
               {models.length === 0 ? (
                 <p className="muted">{t("device.no_device_results")}</p>
               ) : (
@@ -178,12 +175,28 @@ export default function DeviceFinder({ loaderData }: Route.ComponentProps) {
               )}
             </section>
           ) : null}
-        </>
+        </div>
       )}
 
+      {popular.length > 0 && !selected.brand ? (
+        <section className="finder-popular">
+          <h2>{t("device.popular_devices")}</h2>
+          <ul className="cluster">
+            {popular.slice(0, 6).map((model) => (
+              <li key={model.handle}>
+                <Link className="chip" to={`${path("/shop")}?dispositivo=${model.handle}`}>
+                  {model.name}
+                  <span aria-hidden="true"> ↗</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       {/* Search by alias, so "iphone16pro" or "16 pro" finds the model. */}
-      <Form method="get" action={path("/shop")} className="cluster" role="search">
-        <div className="field" style={{ flex: 1, minWidth: "16rem" }}>
+      <Form method="get" action={path("/shop")} className="finder-search" role="search">
+        <div className="field">
           <label className="field__label" htmlFor="device-q">
             {t("device.search_device")}
           </label>
@@ -193,8 +206,6 @@ export default function DeviceFinder({ loaderData }: Route.ComponentProps) {
           {t("common.search")}
         </button>
       </Form>
-
-      <p className="caption muted">{t("device.saved_locally")}</p>
     </div>
   );
 }

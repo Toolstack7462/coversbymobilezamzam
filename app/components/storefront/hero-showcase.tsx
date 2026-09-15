@@ -25,11 +25,7 @@ export function HeroShowcase({
     t("home.hero_statement_2"),
     t("home.hero_statement_3"),
   ];
-  const advice = [
-    t("home.showcase_advice_protect"),
-    t("home.showcase_advice_charge"),
-    t("home.showcase_advice_connect"),
-  ];
+  const advice = ["protect", "charge", "connect"].map((key) => t(`home.showcase_advice_${key}`));
   return (
     <section className="showcase">
       <div className="page showcase__layout">
@@ -77,15 +73,35 @@ export function HeroShowcase({
               decoding="async"
             />
           ) : (
-            <div className="showcase__stage" aria-hidden="true">
+            <div
+              className="showcase__stage"
+              aria-hidden="true"
+              onPointerMove={(event) => {
+                if (
+                  event.pointerType !== "mouse" ||
+                  !window.matchMedia("(hover: hover) and (prefers-reduced-motion: no-preference)")
+                    .matches
+                )
+                  return;
+                // Event-driven, bounded depth. No animation loop, React render,
+                // layout mutation or retained GPU layer; touch stays stationary.
+                const bounds = event.currentTarget.getBoundingClientRect();
+                const x = (event.clientX - bounds.left) / bounds.width - 0.5;
+                const y = (event.clientY - bounds.top) / bounds.height - 0.5;
+                event.currentTarget.style.setProperty("--scene-x", `${x * 6}deg`);
+                event.currentTarget.style.setProperty("--scene-y", `${-y * 4}deg`);
+              }}
+              onPointerLeave={(event) => {
+                event.currentTarget.style.removeProperty("--scene-x");
+                event.currentTarget.style.removeProperty("--scene-y");
+              }}
+            >
               <BrandSymbol className="showcase__watermark" />
               <div className="showcase__objects">
                 <div className="showcase__orbit" />
                 <div className="showcase__case showcase__case--back">
-                  <span className="showcase__camera">
-                    <i />
-                    <i />
-                    <i />
+                  <span className="showcase__screen">
+                    <BrandSymbol />
                   </span>
                 </div>
                 <div className="showcase__case showcase__case--front">

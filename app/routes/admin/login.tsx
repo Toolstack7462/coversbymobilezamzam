@@ -3,10 +3,11 @@ import { AdminLanguageSwitcher } from "~/components/admin/language-switcher";
 import { adminTranslator } from "~/lib/admin-i18n";
 import { adminLocaleFromMatches } from "~/lib/admin-locale";
 import { useAdminTranslator } from "~/components/admin/use-admin-translator";
-import { Form, redirect } from "react-router";
+import { Form, redirect, useNavigation } from "react-router";
 import type { LinksFunction } from "react-router";
 import type { Route } from "./+types/login";
 import { PasswordField } from "~/components/admin/password-field";
+import loginStyles from "~/styles/admin-login.css?url";
 import adminFormStyles from "~/styles/admin-forms.css?url";
 import { appContext } from "~/runtime/context";
 import { createAuth } from "~/infrastructure/auth/auth.server";
@@ -128,61 +129,77 @@ export const links: LinksFunction = () => [
   // admin.css too: this screen is outside the admin layout, and the language
   // switcher it now carries is styled there.
   { rel: "stylesheet", href: adminStyles },
+  // The branded login presentation, scoped to this screen.
+  { rel: "stylesheet", href: loginStyles },
 ];
 
 export default function AdminLogin({ actionData }: Route.ComponentProps) {
   const t = useAdminTranslator();
+  const pending = useNavigation().state !== "idle";
   return (
-    <main id="main" className="admin-auth">
-      <div className="panel stack admin-auth__panel">
-        <div className="admin-auth__language">
-          <AdminLanguageSwitcher />
-        </div>
-        <h1>{t("Accesso staff")}</h1>
-        <p className="muted small">
-          {t("Area riservata. Accesso solo per il personale autorizzato.")}
-        </p>
-
-        {actionData?.error ? (
-          <p className="notice notice--danger" role="alert">
-            {t(actionData.error)}
-          </p>
-        ) : null}
-
-        <Form method="post" className="stack">
-          <div className="field">
-            <label className="field__label" htmlFor="email">
-              Email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              className="input"
-              required
-              autoComplete="username"
-              autoFocus
-            />
+    <main id="main" className="admin-auth admin-login">
+      <div className="admin-login__layout">
+        <div className="admin-login__identity">
+          <a href="/" className="admin-login__brand">
+            <img src="/brand/logo.svg" width="310" height="64" alt="Covers by Mobile Zam Zam" />
+          </a>
+          <div className="admin-login__art" aria-hidden="true">
+            <div className="admin-login__plate admin-login__plate--back" />
+            <div className="admin-login__plate admin-login__plate--front">
+              <img src="/favicon.svg" width="100" height="100" alt="" />
+            </div>
           </div>
+        </div>
+        <div className="panel stack admin-auth__panel">
+          <div className="admin-auth__language">
+            <AdminLanguageSwitcher />
+          </div>
+          <h1>{t("Accesso staff")}</h1>
+          <p className="muted small">
+            {t("Area riservata. Accesso solo per il personale autorizzato.")}
+          </p>
 
-          <PasswordField
-            id="password"
-            name="password"
-            label="Password"
-            autoComplete="current-password"
-            required
-          />
+          {actionData?.error ? (
+            <p className="notice notice--danger" role="alert">
+              {t(actionData.error)}
+            </p>
+          ) : null}
 
-          <button type="submit" className="btn btn--primary">
-            {t("Accedi")}
-          </button>
-        </Form>
+          <Form method="post" className="stack" aria-busy={pending}>
+            <div className="field">
+              <label className="field__label" htmlFor="email">
+                Email
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                className="input"
+                required
+                autoComplete="username"
+                autoFocus
+              />
+            </div>
 
-        <p className="caption muted">
-          {t(
-            "Non esiste registrazione pubblica per l'area amministrativa. Un account viene creato solo da un amministratore esistente.",
-          )}
-        </p>
+            <PasswordField
+              id="password"
+              name="password"
+              label={t("Password")}
+              autoComplete="current-password"
+              required
+            />
+
+            <button type="submit" className="btn btn--primary" disabled={pending}>
+              {pending ? t("Caricamento") : t("Accedi")}
+            </button>
+          </Form>
+
+          <p className="caption muted">
+            {t(
+              "Non esiste registrazione pubblica per l'area amministrativa. Un account viene creato solo da un amministratore esistente.",
+            )}
+          </p>
+        </div>
       </div>
     </main>
   );

@@ -1,0 +1,9 @@
+{
+  "commit": "48edc8fa59a3de96b21e95f42d3b387bd47c3ef6",
+  "observationMs": 1500,
+  "frames": 91,
+  "medianFrameGapMs": 16.699999999999818,
+  "p95FrameGapMs": 16.700000000000273,
+  "over32ms": 0,
+  "environment": "Unthrottled Chromium CI with video enabled; after-only browser rendering sample, not server CPU or field CWV"
+}

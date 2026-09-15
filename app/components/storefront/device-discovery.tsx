@@ -60,7 +60,7 @@ export function DeviceDiscovery({
         </button>
       </Form>
       <ul className="discovery__shortcuts">
-        {models.map((device) => (
+        {models.slice(0, 6).map((device) => (
           <li key={device.handle}>
             <Link className="chip" to={localePath(locale, `/shop?dispositivo=${device.handle}`)}>
               {device.name} <span className="muted">({device.product_count})</span>

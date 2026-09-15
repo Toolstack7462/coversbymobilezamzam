@@ -29,64 +29,39 @@ export function MobileNav({ t, locale }: Props) {
   const path = (p: string) => localePath(locale, p);
 
   const items = [
-    { key: "home", to: "/", label: t("common.home"), match: (p: string) => p === "/" },
-    {
-      key: "shop",
-      to: "/shop",
-      label: t("common.shop"),
-      match: (p: string) => p.startsWith("/shop") || p.startsWith("/prodotti"),
-    },
-    {
-      // "Trova per Dispositivo" wraps to two lines in a fifth of a 390px
-      // screen. A bottom-bar label has room for one word.
-      key: "device",
-      to: "/trova-dispositivo",
-      label: t("nav.device_short"),
-      match: (p: string) => p.startsWith("/trova-dispositivo"),
-    },
-    {
-      /*
-       * Search jumps to the header's field rather than being a route of its
-       * own. That field is already full-width on a phone, so a separate search
-       * page would be a second way to do the same thing — and `#q` focuses it
-       * with no JavaScript, because the target is an input.
-       */
-      key: "search",
-      href: "#q",
-      label: t("nav.search_short"),
-      match: () => false,
-    },
-    {
-      key: "cart",
-      to: "/carrello",
-      label: t("common.cart"),
-      match: (p: string) => p.startsWith("/carrello"),
-    },
+    ["/", "common.home"],
+    ["/shop", "common.shop"],
+    ["/trova-dispositivo", "nav.device_short"],
+    ["#q", "nav.search_short"],
+    ["/carrello", "common.cart"],
   ];
 
   return (
     <nav className="mobile-nav" aria-label={t("common.menu")}>
       <ul className="mobile-nav__list">
-        {items.map((item) => {
-          const current = item.match(pathname || "/");
-          // The current page is announced, not just coloured — colour alone is
-          // not an accessible way to say "you are here".
-          const ariaCurrent = current ? ("page" as const) : undefined;
-
-          return (
-            <li key={item.key}>
-              {item.href ? (
-                <a className="mobile-nav__link" href={item.href}>
-                  {item.label}
-                </a>
-              ) : (
-                <Link className="mobile-nav__link" to={path(item.to!)} aria-current={ariaCurrent}>
-                  {item.label}
-                </Link>
-              )}
-            </li>
-          );
-        })}
+        {items.map(([to, label]) => (
+          <li key={to}>
+            {to === "#q" ? (
+              <a className="mobile-nav__link" href={to}>
+                {t(label!)}
+              </a>
+            ) : (
+              <Link
+                className="mobile-nav__link"
+                to={path(to!)}
+                aria-current={
+                  pathname === to ||
+                  (to !== "/" && pathname.startsWith(to!)) ||
+                  (to === "/shop" && pathname.startsWith("/prodotti"))
+                    ? "page"
+                    : undefined
+                }
+              >
+                {t(label!)}
+              </Link>
+            )}
+          </li>
+        ))}
       </ul>
     </nav>
   );

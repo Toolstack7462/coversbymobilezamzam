@@ -10,7 +10,7 @@ import AxeBuilder from "@axe-core/playwright";
  *
  * Two jobs, and the second is the one that earns its keep:
  *
- *   1. It captures every admin screen at three widths, so a refinement can be
+ *   1. It captures every admin screen at four widths, so a refinement can be
  *      argued from before-and-after images rather than from adjectives.
  *   2. It ASSERTS the things a screenshot cannot show. A page that renders a
  *      500 still produces a perfectly good PNG, and a page whose content
@@ -21,11 +21,11 @@ import AxeBuilder from "@axe-core/playwright";
  * 200, show exactly one `h1`, and fit its viewport horizontally — and the run
  * reports which screens fail rather than stopping at the first.
  *
- * ── WHY 390 / 768 / 1440 ────────────────────────────────────────────────────
+ * ── WHY 390 / 768 / 1366 / 1440 ─────────────────────────────────────────────
  *
  * 390 is the phone the merchant actually holds behind the counter, 768 is the
- * tablet width where a sidebar has to decide what it is, and 1440 is the shop
- * computer. The default Playwright projects use 1280 and a Pixel 7; these are
+ * tablet width where a sidebar has to decide what it is, 1366 is a compact
+ * laptop, and 1440 is the shop computer. Default projects use 1280 and a Pixel 7; these are
  * the widths the design brief names, so the survey sets them explicitly rather
  * than inheriting whatever the project happens to use.
  */
@@ -99,6 +99,7 @@ async function horizontalOverflow(page: Page): Promise<number> {
 }
 
 test.describe("branded admin workspace", () => {
+  test.setTimeout(30_000);
   test.use({ viewport: { width: 1366, height: 768 } });
 
   test("finite depth stays readable, then stops for reduced motion", async ({ page }) => {
@@ -186,7 +187,9 @@ test.describe("branded admin workspace", () => {
 
   test("English and Italian survive navigation with the complete brand", async ({ page }) => {
     await page.goto("/admin");
-    await page.getByRole("button", { name: "Lingua pannello: Italiano" }).click();
+    const language = page.locator(".ac__language > summary");
+    await expect(language).toHaveAttribute("aria-label", "Lingua pannello: Italiano");
+    await language.click();
     await page.getByRole("button", { name: "English", exact: true }).click();
     await expect(page.locator("h1")).toContainText("Hello");
     await expect(page.locator(".ac__brand")).toContainText("Covers by Mobile Zam Zam");
@@ -194,7 +197,8 @@ test.describe("branded admin workspace", () => {
     expect((await new AxeBuilder({ page }).include(".ac").analyze()).violations).toEqual([]);
     await page.reload();
     await expect(page.locator("h1")).toContainText("Hello");
-    await page.getByRole("button", { name: "Admin language: English" }).click();
+    await expect(language).toHaveAttribute("aria-label", "Admin language: English");
+    await language.click();
     await page.getByRole("button", { name: "Italiano", exact: true }).click();
     await expect(page.locator("h1")).toContainText("Ciao");
   });
@@ -226,6 +230,7 @@ test.describe("branded admin workspace", () => {
 });
 
 test.describe("admin depth without JavaScript", () => {
+  test.setTimeout(30_000);
   test.use({ javaScriptEnabled: false, viewport: { width: 1366, height: 768 } });
   test("brand, metrics and native catalogue navigation are complete", async ({ page }) => {
     await page.goto("/admin");

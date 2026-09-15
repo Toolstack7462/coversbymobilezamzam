@@ -110,9 +110,13 @@ body:has(.admin-login) {
   border-radius: 0.6rem;
 }
 .admin-login .btn {
-  width: 100%;
   min-height: 50px;
   border-radius: 0.6rem;
+}
+/* Only the primary submit spans the form; the sibling reveal button must
+   leave usable typing space in the shared PasswordField. */
+.admin-login .btn[type="submit"] {
+  width: 100%;
 }
 .admin-login .btn:disabled {
   cursor: progress;

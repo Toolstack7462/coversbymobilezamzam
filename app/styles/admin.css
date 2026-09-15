@@ -2436,14 +2436,6 @@ body:has(.ac--depth) {
     transform: rotateY(12deg) rotateZ(-14deg);
   }
 }
-@keyframes ac-menu-enter {
-  from {
-    transform: translateY(-5px);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
 @keyframes ac-loading {
   from {
     transform: translateX(-100%);
@@ -2459,18 +2451,13 @@ body:has(.ac--depth) {
   .ac--depth .ac-brand-scene__plate--back {
     animation: ac-brand-back-enter var(--ac-art-duration) var(--ac-art-ease);
   }
-  .ac--depth .ac__menu[open] > .ac__menu-panel,
-  .ac--depth .ac__nav-group[open] > .ac__nav-list {
-    animation: ac-menu-enter var(--duration-base) var(--ease);
-  }
   .ac--depth .ac__pending-line {
     animation: ac-loading 1200ms ease-in-out infinite;
   }
 }
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
   .ac--depth .ac-brand-scene__plate,
-  .ac--depth .ac-metric--link,
-  .ac--depth .ac__nav-link {
+  .ac--depth .ac-metric--link {
     transition: transform var(--duration-slow) var(--ease);
   }
   .ac--depth .ac-brand-scene:hover .ac-brand-scene__plate--front {
@@ -2481,9 +2468,6 @@ body:has(.ac--depth) {
   }
   .ac--depth .ac-metric--link:hover {
     transform: translateY(-2px);
-  }
-  .ac--depth .ac__nav-link:hover {
-    transform: translateX(2px);
   }
 }
 @media (max-width: 75rem) {

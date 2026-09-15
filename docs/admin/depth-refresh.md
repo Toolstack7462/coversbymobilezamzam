@@ -6,14 +6,16 @@ The user's latest request explicitly expands the earlier storefront ownership bo
 
 ## What changed
 
-| File                                   | Purpose                                                                                                                                                         |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `app/styles/admin.css`                 | Admin-scoped palette, gradient surfaces, blue navigation, raised logo, compact welcome, restrained metric and menu motion, reduced-motion handling              |
-| `app/components/admin/admin-shell.tsx` | Original cover/double-Z SVG on CSS perspective planes, scoped theme modifier and actual router loading status; existing navigation and locale controls retained |
-| `app/routes/admin/dashboard.tsx`       | Existing greeting/actions plus compact brand composition; all metrics, ordering and business conditions unchanged                                               |
-| `tests/browser/admin-visual.spec.ts`   | Adds 1366px coverage, mid-animation/contrast checks, reduced motion, delayed navigation, locale persistence, keyboard drawer and no-JS navigation               |
+| File                                      | Purpose                                                                                                                                                         |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app/styles/admin.css`                    | Admin-scoped palette, gradient surfaces, blue navigation, raised logo, compact welcome, restrained metric motion, reduced-motion handling                       |
+| `app/components/admin/admin-shell.tsx`    | Original cover/double-Z SVG on CSS perspective planes, scoped theme modifier and actual router loading status; existing navigation and locale controls retained |
+| `app/routes/admin/dashboard.tsx`          | Existing greeting/actions plus compact brand composition; all metrics, ordering and business conditions unchanged                                               |
+| `tests/browser/admin-visual.spec.ts`      | Adds 1366px coverage, mid-animation/contrast checks, reduced motion, delayed navigation, locale persistence, keyboard drawer and no-JS navigation               |
+| `app/styles/admin-login.css`              | Limits the full-width button rule to submit, repairing the desktop password input squeezed by the sibling reveal button                                         |
+| `tests/browser/storefront-design.spec.ts` | Verifies usable password typing width with both reveal labels at all four login widths                                                                          |
 
-The existing login already contains the full approved logo, blue/stone gradient and finite 3D plate entrance. Its presentation and the newly integrated `PasswordField` are preserved. Shared root styles, locale dictionaries, authentication, 2FA, role checks, payment/inventory actions, CMS fields, dependencies, deployment and database configuration are unchanged.
+The existing login already contains the full approved logo, blue/stone gradient and finite 3D plate entrance. Current-commit Chromium screenshots exposed a merge-related layout conflict: the login's full-width button style also targeted the newly integrated password reveal button, squeezing the desktop password input to 34px. The full-width rule now applies only to submit; the shared `PasswordField` behavior is preserved. Shared root styles, locale dictionaries, authentication, 2FA, role checks, payment/inventory actions, CMS fields, dependencies, deployment and database configuration are unchanged.
 
 The theme uses the existing admin stylesheet and the scene shares the existing admin shell module. This avoids a second stylesheet request and a redundant direct brand-module import in the dashboard. No budget script or limit changes.
 
@@ -23,7 +25,7 @@ The theme uses the existing admin stylesheet and the scene shares the existing a
 - Dark navigation has `#EDF3FC` text and `#C1D0E3` secondary text. At its lightest gradient endpoint these are 9.13:1 and 6.50:1. Blue active-state text on ice is 6.23:1; secondary text on ice is 6.25:1. Existing status fill/text tokens remain paired; colour is accompanied by the original count and task wording.
 - Trusted existing `BrandSymbol` is reused in the topbar and decorative composition. Merchant-configured complete brand text remains authoritative. No uploaded SVG is inlined.
 - Brand planes enter once in 900ms, using transforms. Suitable-pointer hover changes their perspective slightly; linked metrics lift 2px. Text, real figures, links and forms stay opaque and usable from the server-rendered first view.
-- Menu motion uses the existing short duration tokens. No perpetual decorative loop, scroll handler, canvas, engine or new animation dependency. Only the real router's pending indicator loops while a navigation is outstanding; it unmounts when navigation finishes and never claims a percentage.
+- Native menus and navigation targets stay stationary. The first browser pass exposed no-JavaScript navigation timeouts with transformed disclosure contents; those optional transforms were removed while retaining the original native controls and their existing tests. No perpetual decorative loop, scroll handler, canvas, engine or new animation dependency. Only the real router's pending indicator loops while a navigation is outstanding; it unmounts when navigation finishes and never claims a percentage.
 - Reduced motion removes new transitions/animations and decorative hover transforms. The complete static illustration and real controls remain.
 - The compact scene is omitted below 768px; the complete topbar logo remains. The existing native mobile drawer and desktop collapse continue to work without JavaScript. A login/storefront bottom-clearance rule no longer adds unused space to the protected staff workspace.
 

@@ -201,7 +201,16 @@ test("branded staff login fits all four widths and keeps its accessible form", a
   );
   for (const viewport of widths) {
     await page.setViewportSize(viewport);
-    await expect(page.locator('input[autocomplete="current-password"]')).toBeVisible();
+    const password = page.locator('input[autocomplete="current-password"]');
+    await expect(password).toBeVisible();
+    // A full-width rule for the submit once squeezed the sibling password
+    // input to 34px on desktop. Check both reveal labels retain typing space.
+    const reveal = page.locator(".ac-password__toggle");
+    for (const pressed of [true, false]) {
+      await reveal.click();
+      await expect(reveal).toHaveAttribute("aria-pressed", String(pressed));
+      expect((await password.boundingBox())?.width ?? 0).toBeGreaterThanOrEqual(160);
+    }
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth - innerWidth),
     ).toBeLessThanOrEqual(1);

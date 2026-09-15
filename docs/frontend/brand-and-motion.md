@@ -2,7 +2,7 @@
 
 ## Language controls — 14 September 2026
 
-The full Covers by Mobile Zam Zam identity, original SVG assets and hero motion are retained. Choose IT/EN in the admin top bar, then English or Italiano; the selection survives reloads and sign-in. The admin IT/EN menu is a native disclosure with 44px controls and a real POST/303 flow. It works before hydration and with JavaScript disabled; a Secure, HttpOnly, SameSite=Lax preference cookie scoped to `/admin` survives reloads. It grants no permissions and stores no identity. The endpoint validates origin, language and return URL.
+The full Covers by Mobile Zam Zam identity, original SVG assets and hero motion are retained. Choose the labelled Lingua / Language control in the admin top bar, then English or Italiano; the selection survives reloads and sign-in. The admin language menu is a native disclosure with 44px controls and a real POST/303 flow. It works before hydration and with JavaScript disabled; a Secure, HttpOnly, SameSite=Lax preference cookie scoped to `/admin` survives reloads. It grants no permissions and stores no identity. The endpoint validates origin, language and return URL.
 
 Storefront language links keep their current path and query. Client activation preserves the fragment without introducing an SSR/hydration href mismatch. Public pages never derive locale from the staff cookie. Root revalidation refreshes staff preference when client navigation crosses into the admin.
 
@@ -28,7 +28,7 @@ Static exported assets use the audited token colours baked into the file; applic
 
 All refinement rules live in the storefront route's stylesheet under `.storefront` or uniquely named showcase/discovery selectors. Shared admin controls and styles are not overridden. Container: 1344px, responsive 16–32px gutters. Hero heading: 44–60px. Existing Manrope/Inter fonts, navy/cobalt/ivory tokens and focus rules are retained.
 
-The default hero is explicitly labelled brand illustration, not a saleable product. Merchant replacement artwork renders eagerly with high fetch priority and fixed dimensions. Heading, lead and both navigation actions exist on the initial server render. Essential text never fades.
+The default hero is decorative brand artwork, isolated from saleable product media and hidden from assistive technology. Its visible illustration caption was removed at the merchant’s request on 15 September 2026. Merchant replacement artwork renders eagerly with high fetch priority and fixed dimensions. Heading, lead and both navigation actions exist on the initial server render. Essential text never fades.
 
 ## Motion
 

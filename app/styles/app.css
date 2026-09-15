@@ -3231,11 +3231,18 @@ a.chip:hover {
  */
 .lang-switch {
   display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
   padding: 3px;
   gap: 2px;
   border: var(--border-width) solid var(--color-on-deep-border);
   border-radius: var(--radius-chip);
   background: rgb(255 255 255 / 0.04);
+}
+
+.lang-switch__label {
+  padding-inline: 0.65rem;
+  font-weight: var(--weight-semibold);
 }
 
 .lang-switch__option {
@@ -3335,11 +3342,29 @@ a.chip:hover {
  * two lines together stay under the height of a single control.
  */
 .brand-lockup {
-  display: inline-grid;
-  gap: 1px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  max-width: 100%;
   text-decoration: none;
   color: inherit;
   line-height: 1;
+}
+
+.brand-lockup__symbol {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 42px;
+  color: var(--color-primary);
+}
+
+.brand-lockup__words {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+  text-align: start;
+  overflow-wrap: anywhere;
 }
 
 .brand-lockup__primary {

@@ -64,6 +64,12 @@ export const SETTING_GROUPS: readonly SettingGroup[] = [
         required: true,
       },
       {
+        key: SETTING_KEYS.brandSecondary,
+        label: "Seconda riga del marchio",
+        help: "Facoltativa. Compare sotto il nome pubblico sul sito, nel pannello e nella pagina di accesso.",
+        type: "text",
+      },
+      {
         key: SETTING_KEYS.shopName,
         label: "Nome del negozio fisico",
         help: "Se l'insegna del negozio è diversa dal nome pubblico, scrivetela qui. Altrimenti ripetete lo stesso nome.",

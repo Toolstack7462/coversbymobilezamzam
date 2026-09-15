@@ -1870,22 +1870,23 @@ a.ac-pick:hover {
 }
 
 /* Compact identity and workspace navigation. Native disclosures need no hydration. */
-.ac__brand-mark {
-  width: 28px;
-  height: 34px;
+.ac__brand .brand-lockup__symbol {
+  width: 24px;
+  height: 28px;
   flex: 0 0 auto;
   color: var(--color-primary);
 }
-.ac__brand-copy {
+.ac__brand .brand-lockup__words {
   display: grid;
   gap: 3px;
   min-width: 0;
   line-height: 1.2;
 }
-.ac__brand-copy > span {
-  font-size: 0.6875rem;
+.ac__brand .brand-lockup__secondary {
+  font-size: 0.75rem;
   color: var(--color-text-secondary-on-sunken);
-  font-weight: 400;
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.08em;
 }
 .ac__mobile-search {
   display: none;
@@ -2070,9 +2071,9 @@ a.ac-pick:hover {
     font-size: 0.75rem;
     gap: var(--space-2);
   }
-  .ac__brand-mark {
+  .ac__brand .brand-lockup__symbol {
     width: 24px;
-    height: 30px;
+    height: 28px;
   }
   .ac__topbar {
     gap: var(--space-2);
@@ -2108,10 +2109,42 @@ a.ac-pick:hover {
     justify-self: start;
   }
 }
+.ac__language {
+  flex: 0 0 auto;
+}
 .ac__language > summary {
-  font-size: 0.75rem;
-  font-weight: 750;
-  letter-spacing: 0.04em;
+  gap: 0.6rem;
+  padding: 0.4rem 0.65rem;
+  border-color: var(--color-border);
+  background: var(--color-primary-surface);
+  color: var(--color-ink);
+  font-size: 0.8125rem;
+  line-height: 1.2;
+  font-weight: var(--weight-semibold);
+}
+.ac__language > summary:hover,
+.ac__language[open] > summary {
+  border-color: var(--color-primary);
+}
+.ac__language-copy {
+  display: grid;
+  gap: 2px;
+  text-align: start;
+}
+.ac__language-label {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary-on-sunken);
+}
+.ac__language-chevron {
+  margin-left: 0.25rem;
+}
+.ac__language[open] .ac__language-chevron {
+  transform: rotate(180deg);
+}
+.ac__brand .brand-lockup__primary {
+  font-size: 0.9375rem;
+  line-height: 1.2;
 }
 
 .ac__language .ac__menu-panel {
@@ -2120,7 +2153,10 @@ a.ac-pick:hover {
 }
 
 .ac__language button {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
   width: 100%;
   min-height: 44px;
   padding: 0.6rem 0.8rem;
@@ -2130,6 +2166,15 @@ a.ac-pick:hover {
   color: var(--color-ink);
   text-align: left;
   cursor: pointer;
+}
+
+.ac__language button[aria-pressed="true"]::after {
+  content: "";
+  width: 6px;
+  height: 10px;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
 }
 
 .ac__language button[aria-pressed="true"],
@@ -2143,12 +2188,51 @@ a.ac-pick:hover {
   justify-content: flex-end;
 }
 
-@media (max-width: 600px) {
-  .ac__topbar {
-    gap: 0.35rem;
+/* Two stable rows keep the full name, language and account visible on phones. */
+@media (max-width: 40rem) {
+  .ac {
+    --ac-topbar: 118px;
   }
-  .ac__brand-copy > span {
-    display: none;
+  .ac__topbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px 44px;
+    height: auto;
+    min-height: var(--ac-topbar);
+    gap: 0.35rem;
+    padding-block: 0.5rem;
+  }
+  .ac__topbar > .ac__brand {
+    grid-column: 1 / 3;
+    grid-row: 1;
+    max-width: none;
+  }
+  .ac__env {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .ac__topbar > .ac__language {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: start;
+  }
+  .ac__language .ac__menu-panel {
+    inset-inline-start: 0;
+    inset-inline-end: auto;
+  }
+  .admin-auth__language .ac__menu-panel {
+    inset-inline-start: auto;
+    inset-inline-end: 0;
+  }
+  .ac__mobile-search {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .ac__topbar > .ac__menu:not(.ac__language) {
+    grid-column: 3;
+    grid-row: 2;
   }
 }
 
@@ -2189,10 +2273,10 @@ body:has(.ac--depth) {
 .ac--depth .ac__brand {
   max-width: 22rem;
 }
-.ac--depth .ac__brand-mark {
+.ac--depth .ac__brand .brand-lockup__symbol {
   box-sizing: content-box;
-  width: 25px;
-  height: 31px;
+  width: 24px;
+  height: 28px;
   padding: 5px;
   border-radius: 10px;
   background: linear-gradient(145deg, var(--color-primary), var(--color-primary-hover));
@@ -2201,7 +2285,7 @@ body:has(.ac--depth) {
     3px 5px 0 -2px var(--ac-line),
     0 8px 15px -10px var(--ac-navy);
 }
-.ac--depth .ac__brand-copy > span,
+.ac--depth .ac__brand .brand-lockup__secondary,
 .ac--depth .ac__crumbs,
 .ac--depth .ac__main .muted {
   color: var(--ac-muted);
@@ -2490,8 +2574,8 @@ body:has(.ac--depth) {
   .ac--depth .ac-brand-scene {
     display: none;
   }
-  .ac--depth .ac__brand-mark {
-    width: 22px;
+  .ac--depth .ac__brand .brand-lockup__symbol {
+    width: 24px;
     height: 28px;
     padding: 4px;
   }

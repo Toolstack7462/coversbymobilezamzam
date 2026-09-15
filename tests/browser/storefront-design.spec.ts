@@ -103,6 +103,10 @@ for (const viewport of widths) {
       }
       if (name === "home") {
         await expect(page.locator(".site-footer__inner > *")).toHaveCount(4);
+        await expect(page.locator(".showcase__caption")).toHaveCount(0);
+        await expect(page.locator(".showcase")).not.toContainText(
+          /brand illustration|illustrazione del brand/i,
+        );
       }
       await page.evaluate(() => document.fonts.ready);
       const overflow = await page.evaluate(
@@ -195,12 +199,15 @@ test("branded staff login fits all four widths and keeps its accessible form", a
   page,
 }, testInfo) => {
   await page.goto("/admin/accedi");
-  await expect(page.locator(".admin-login__brand img")).toHaveAttribute(
-    "alt",
+  await expect(page.locator(".brand-lockup--login")).toHaveAttribute(
+    "aria-label",
     "Covers by Mobile Zam Zam",
   );
+  await expect(page).toHaveTitle("Accesso staff | Covers by Mobile Zam Zam");
   for (const viewport of widths) {
     await page.setViewportSize(viewport);
+    await expect(page.locator(".ac__language-label")).toHaveText("Lingua");
+    await expect(page.locator(".brand-lockup__secondary")).toBeVisible();
     const password = page.locator('input[autocomplete="current-password"]');
     await expect(password).toBeVisible();
     // A full-width rule for the submit once squeezed the sibling password
@@ -221,6 +228,57 @@ test("branded staff login fits all four widths and keeps its accessible form", a
     });
   }
   expect((await new AxeBuilder({ page }).include(".admin-login").analyze()).violations).toEqual([]);
+});
+
+test("merchant brand updates persist across staff and public identity surfaces", async ({
+  browser,
+  baseURL,
+  page,
+}) => {
+  const staff = await browser.newContext({ baseURL: baseURL!, storageState: STORAGE_STATE });
+  const editor = await staff.newPage();
+  const primary = editor.locator('input[name="setting:business.brand_name"]');
+  const secondary = editor.locator('input[name="setting:business.brand_secondary"]');
+  await editor.goto("/admin/impostazioni");
+  const original = { primary: await primary.inputValue(), secondary: await secondary.inputValue() };
+  const brand = "[TEST] Mobile & Accessori";
+  const identity = "Store identity";
+  const full = `${brand} ${identity}`;
+  const save = async (name: string, line: string) => {
+    await primary.fill(name);
+    await secondary.fill(line);
+    await editor.getByRole("button", { name: "Salva impostazioni", exact: true }).click();
+    await expect(editor.locator('[role="status"]')).toBeVisible();
+  };
+  try {
+    await save(brand, identity);
+    await expect(editor.locator(".ac__brand")).toHaveAttribute("aria-label", full);
+    await editor.reload();
+    await expect(secondary).toHaveValue(identity);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+    await expect(page.locator(".brand-lockup--header")).toHaveAttribute("aria-label", full);
+    await expect(page.locator(".brand-lockup--footer")).toHaveAttribute("aria-label", full);
+    await expect(page).toHaveTitle(`${full} | Accessori smartphone`);
+    const symbol = await page.locator(".brand-lockup--header svg").innerHTML();
+    expect(await page.locator(".brand-lockup--footer svg").innerHTML()).toBe(symbol);
+    expect(await editor.locator(".ac__brand svg").innerHTML()).toBe(symbol);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth - innerWidth),
+    ).toBeLessThanOrEqual(1);
+    await page.goto("/admin/accedi");
+    await expect(page.locator(".brand-lockup--login")).toHaveAttribute("aria-label", full);
+    expect(await page.locator(".brand-lockup--login svg").innerHTML()).toBe(symbol);
+    await expect(page).toHaveTitle(`Accesso staff | ${full}`);
+    const response = await page.reload();
+    expect(await response!.text()).toContain(
+      `aria-label="${brand.replace("&", "&amp;")} ${identity}"`,
+    );
+  } finally {
+    await editor.goto("/admin/impostazioni");
+    await save(original.primary, original.secondary);
+    await staff.close();
+  }
 });
 
 test("reduced motion keeps the illustration stationary", async ({ page }) => {

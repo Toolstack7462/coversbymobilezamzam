@@ -115,20 +115,10 @@
   gap: 0.75rem;
   color: var(--color-ink);
 }
-.storefront .brand-lockup__words {
-  display: grid;
-  gap: 0.2rem;
-}
-.storefront .brand-lockup__symbol {
-  width: 36px;
-  height: 42px;
-  flex-shrink: 0;
-  color: var(--color-primary);
-}
 .storefront .brand-lockup__primary {
   font-size: 1.08rem;
   line-height: 1.2;
-  white-space: nowrap;
+  white-space: normal;
 }
 .storefront .brand-lockup__secondary {
   font-size: 0.85rem;
@@ -460,13 +450,6 @@
   width: 100%;
   height: 390px;
   object-fit: contain;
-}
-.showcase__caption {
-  text-align: center;
-  color: var(--color-text-secondary);
-  font-size: 0.75rem;
-  line-height: 1.5;
-  padding: 0.65rem 0 0.5rem;
 }
 .showcase__controls {
   position: relative;
@@ -1369,9 +1352,6 @@
   }
   .showcase__photo {
     height: 280px;
-  }
-  .showcase__caption {
-    font-size: 0.6875rem;
   }
   .storefront .trust-band__inner {
     gap: 0.75rem;

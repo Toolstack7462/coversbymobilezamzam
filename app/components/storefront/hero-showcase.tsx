@@ -126,9 +126,6 @@ export function HeroShowcase({
             </div>
           )}
           {!imageKey ? (
-            <p className="showcase__caption">{t("home.showcase_illustration")}</p>
-          ) : null}
-          {!imageKey ? (
             <div
               className="showcase__controls"
               role="group"

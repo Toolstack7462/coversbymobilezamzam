@@ -207,6 +207,7 @@ export function SiteFooter({
           each so a screen reader announces "English" in English.
         */}
         <nav className="lang-switch" aria-label={t("footer.language")}>
+          <span className="lang-switch__label">{t("footer.language")}</span>
           {(
             [
               [DEFAULT_LOCALE, "IT", "Italiano"],

@@ -1,7 +1,7 @@
 import adminStyles from "~/styles/admin.css?url";
 import { AdminLanguageSwitcher } from "~/components/admin/language-switcher";
 import { adminTranslator } from "~/lib/admin-i18n";
-import { adminLocaleFromMatches } from "~/lib/admin-locale";
+import { adminLocaleFromCookie, adminLocaleFromMatches } from "~/lib/admin-locale";
 import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { Form, redirect, useNavigation } from "react-router";
 import type { LinksFunction } from "react-router";
@@ -13,6 +13,9 @@ import { appContext } from "~/runtime/context";
 import { createAuth } from "~/infrastructure/auth/auth.server";
 import { relayCookies, cookieHeaderFrom } from "~/infrastructure/auth/cookies.server";
 import { getSession, loadStaffActor } from "~/infrastructure/auth/session.server";
+import { loadStoreBrand } from "~/infrastructure/brand.server";
+import { BrandLockup } from "~/components/storefront/brand-lockup";
+import { BrandSymbol } from "~/components/storefront/brand-symbol";
 
 /**
  * Staff login.
@@ -21,10 +24,13 @@ import { getSession, loadStaffActor } from "~/infrastructure/auth/session.server
  * session cannot host the form that creates one.
  */
 
-export function meta({ matches }: Route.MetaArgs) {
+export function meta({ matches, loaderData }: Route.MetaArgs) {
   const t = adminTranslator(adminLocaleFromMatches(matches));
   // Never indexed.
-  return [{ title: t("Accesso staff") }, { name: "robots", content: "noindex, nofollow" }];
+  return [
+    { title: [t("Accesso staff"), loaderData?.brand.full].filter(Boolean).join(" | ") },
+    { name: "robots", content: "noindex, nofollow" },
+  ];
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -37,7 +43,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     if (actor) throw redirect("/admin");
   }
 
-  return null;
+  const t = adminTranslator(adminLocaleFromCookie(request.headers.get("Cookie")));
+  return { brand: await loadStoreBrand(env.DB, t("Centro di controllo")) };
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -133,20 +140,18 @@ export const links: LinksFunction = () => [
   { rel: "stylesheet", href: loginStyles },
 ];
 
-export default function AdminLogin({ actionData }: Route.ComponentProps) {
+export default function AdminLogin({ actionData, loaderData }: Route.ComponentProps) {
   const t = useAdminTranslator();
   const pending = useNavigation().state !== "idle";
   return (
     <main id="main" className="admin-auth admin-login">
       <div className="admin-login__layout">
         <div className="admin-login__identity">
-          <a href="/" className="admin-login__brand">
-            <img src="/brand/logo.svg" width="310" height="64" alt="Covers by Mobile Zam Zam" />
-          </a>
+          <BrandLockup brand={loaderData.brand} locale={t.locale} variant="login" />
           <div className="admin-login__art" aria-hidden="true">
             <div className="admin-login__plate admin-login__plate--back" />
             <div className="admin-login__plate admin-login__plate--front">
-              <img src="/favicon.svg" width="100" height="100" alt="" />
+              <BrandSymbol />
             </div>
           </div>
         </div>

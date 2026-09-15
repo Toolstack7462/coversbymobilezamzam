@@ -6,6 +6,10 @@ async function switchAdmin(page: Page, language: "English" | "Italiano") {
   await page.locator(".ac__language > summary").click();
   await page.locator(".ac__language").getByRole("button", { name: language, exact: true }).click();
   await expect(page.locator("html")).toHaveAttribute("lang", language === "English" ? "en" : "it");
+  await expect(page.locator(".ac__language-label")).toHaveText(
+    language === "English" ? "Language" : "Lingua",
+  );
+  await expect(page.locator(".ac__language-copy [lang]")).toHaveText(language);
 }
 
 test("staff sign-in language is server rendered and independent of public URLs", async ({
@@ -153,6 +157,28 @@ test.describe("authenticated English interface", () => {
     for (const width of [390, 768, 1366, 1440]) {
       await page.setViewportSize({ width, height: width === 1366 ? 768 : 900 });
       const summary = page.locator(".ac__language > summary");
+      await expect(page.locator(".ac__language-label")).toBeVisible();
+      await expect(page.locator(".ac__brand .brand-lockup__secondary")).toBeVisible();
+      const chrome = await page
+        .locator(
+          ".ac__brand, .ac__language > summary, .ac__mobile-search:visible, .ac__topbar > .ac__menu:not(.ac__language) > summary",
+        )
+        .evaluateAll((nodes) =>
+          nodes.map((node) => {
+            const { left, right, top, bottom } = node.getBoundingClientRect();
+            return { left, right, top, bottom };
+          }),
+        );
+      for (let i = 0; i < chrome.length; i++) {
+        for (let j = i + 1; j < chrome.length; j++) {
+          const a = chrome[i]!;
+          const b = chrome[j]!;
+          const area =
+            Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) *
+            Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+          expect(area, `header controls overlap at ${width}px`).toBeLessThanOrEqual(1);
+        }
+      }
       await summary.focus();
       await page.keyboard.press("Enter");
       await expect(page.locator(".ac__language")).toHaveAttribute("open", "");
@@ -160,6 +186,9 @@ test.describe("authenticated English interface", () => {
       const box = await summary.boundingBox();
       expect(box?.width).toBeGreaterThanOrEqual(44);
       expect(box?.height).toBeGreaterThanOrEqual(44);
+      const menu = await page.locator(".ac__language .ac__menu-panel").boundingBox();
+      expect(menu!.x).toBeGreaterThanOrEqual(0);
+      expect(menu!.x + menu!.width).toBeLessThanOrEqual(width);
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth - innerWidth),
       ).toBeLessThanOrEqual(1);
@@ -195,9 +224,11 @@ test("admin language switching also works without JavaScript", async ({ browser,
 
 test("footer language switches retain the current page and search filters", async ({ page }) => {
   await page.goto("/shop?q=cover&pagina=1#main");
+  await expect(page.locator("footer .lang-switch__label")).toHaveText("Lingua");
   await page.locator("footer").getByRole("link", { name: "English", exact: true }).click();
   await expect(page).toHaveURL(/\/en\/shop\?q=cover&pagina=1#main$/);
   await expect(page).toHaveTitle(/Search: cover/);
+  await expect(page.locator("footer .lang-switch__label")).toHaveText("Language");
   await page.locator("footer").getByRole("link", { name: "Italiano", exact: true }).click();
   await expect(page).toHaveURL(/\/shop\?q=cover&pagina=1#main$/);
   await page.goto("/en/carrello");

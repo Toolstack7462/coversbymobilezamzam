@@ -1,6 +1,8 @@
 import { AdminLanguageSwitcher } from "./language-switcher";
 import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { BrandSymbol } from "~/components/storefront/brand-symbol";
+import { BrandLockup } from "~/components/storefront/brand-lockup";
+import type { StorefrontBrand } from "~/domain/content/brand";
 import { NavLink, Link, Form, useLocation, useNavigation } from "react-router";
 import type { NavGroup } from "~/lib/admin-nav";
 
@@ -26,19 +28,8 @@ interface Props {
   badges: ShellBadges;
   actor: { displayName: string; roleCodes: readonly string[] };
   environment: string;
-  /**
-   * The shop's own name, from the merchant's settings.
-   *
-   * The bar used to read "Centro di controllo", which is what the tool is and
-   * not whose shop it is. A merchant who runs one shop does not need telling
-   * they are in an admin panel; they need to know WHICH shop they are about to
-   * change the prices of — and anyone who ever manages a second one needs it
-   * badly.
-   *
-   * Null when nothing is configured. It falls back to the tool's name rather
-   * than inventing a shop name, which is the same rule the storefront follows.
-   */
-  brand: string | null;
+  /** The same resolved merchant identity used on the storefront and sign-in. */
+  brand: StorefrontBrand;
   /** Whether this actor may use the global search at all. */
   canSearch: boolean;
   /** Rendered when a privileged account has not yet enrolled in TOTP. */
@@ -75,13 +66,7 @@ export function AdminShell({
           <IconMenu />
         </label>
 
-        <Link to="/admin" className="ac__brand">
-          <BrandSymbol className="ac__brand-mark" />
-          <span className="ac__brand-copy">
-            <strong>{brand ?? t("Centro di controllo")}</strong>
-            <span>{t("Gestione negozio")}</span>
-          </span>
-        </Link>
+        <BrandLockup brand={brand} locale={t.locale} variant="admin" />
 
         {/*
           Environment badge. On production it is deliberately absent: a badge

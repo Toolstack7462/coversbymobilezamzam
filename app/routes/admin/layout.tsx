@@ -1,5 +1,7 @@
 import { useAdminTranslator } from "~/components/admin/use-admin-translator";
-import { storefrontBrand } from "~/domain/content/brand";
+import { loadStoreBrand } from "~/infrastructure/brand.server";
+import { adminTranslator } from "~/lib/admin-i18n";
+import { adminLocaleFromCookie } from "~/lib/admin-locale";
 import { Outlet, isRouteErrorResponse, useRouteError, Link } from "react-router";
 import type { LinksFunction } from "react-router";
 import type { Route } from "./+types/layout";
@@ -9,7 +11,6 @@ import { visibleNav } from "~/lib/admin-nav";
 import { AdminShell } from "~/components/admin/admin-shell";
 import adminStyles from "~/styles/admin.css?url";
 import adminFormStyles from "~/styles/admin-forms.css?url";
-import { SETTING_KEYS, type SettingsMap } from "~/domain/content/gates";
 
 /**
  * The admin shell route.
@@ -47,29 +48,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const canSeePayments = actor.permissions.includes("payment.read");
   const canSeeInventory = actor.permissions.includes("inventory.read");
 
-  /*
-   * The shop's name, for the top bar.
-   *
-   * Read from the same settings the storefront reads, through the same
-   * resolver, so the admin and the public site can never disagree about what
-   * the shop is called. `null` rather than a fallback here: the shell decides
-   * what to show when nothing is configured, and it must not be a guess.
-   */
-  const brandRows = await env.DB.prepare(
-    `SELECT key, value FROM store_settings WHERE key IN (?1, ?2, ?3)`,
-  )
-    .bind(SETTING_KEYS.brandName, SETTING_KEYS.shopName, SETTING_KEYS.brandSecondary)
-    .all<{ key: string; value: string | null }>();
-
-  // A setting row with a NULL value is one the merchant has not filled in, and
-  // `SettingsMap` holds present values only — an explicit null in the map would
-  // read as "set to nothing" rather than "not set".
-  const settings: SettingsMap = Object.fromEntries(
-    brandRows.results
-      .filter((r): r is { key: string; value: string } => r.value !== null)
-      .map((r) => [r.key, r.value]),
-  );
-  const configuredBrand = storefrontBrand(settings, "Centro di controllo").full;
+  const t = adminTranslator(adminLocaleFromCookie(request.headers.get("Cookie")));
+  const configuredBrand = await loadStoreBrand(env.DB, t("Centro di controllo"));
 
   const counts = await env.DB.prepare(
     `SELECT

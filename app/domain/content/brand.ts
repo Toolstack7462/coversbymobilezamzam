@@ -60,14 +60,18 @@ export function storefrontBrand(settings: SettingsMap, fallback: string): Storef
   const secondaryRaw = settingValue(settings, SETTING_KEYS.brandSecondary);
 
   /*
-   * A secondary line identical to the primary is dropped.
+   * Drop a secondary line already present at the end of the primary name.
    *
    * It is an easy thing for a merchant to do — filling in both fields with the
    * same words — and the result would be the shop's name printed twice, once
    * quietly. Better to render the single line they meant.
    */
-  const secondary =
-    secondaryRaw && secondaryRaw.toLowerCase() !== primary.toLowerCase() ? secondaryRaw : null;
+  const normalizedPrimary = primary.toLowerCase().replace(/\s+/g, " ");
+  const normalizedSecondary = secondaryRaw?.toLowerCase().replace(/\s+/g, " ");
+  const repeatsIdentity =
+    normalizedPrimary === normalizedSecondary ||
+    (normalizedSecondary && normalizedPrimary.endsWith(` ${normalizedSecondary}`));
+  const secondary = secondaryRaw && !repeatsIdentity ? secondaryRaw : null;
 
   return {
     primary,

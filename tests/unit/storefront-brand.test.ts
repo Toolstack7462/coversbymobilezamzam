@@ -70,4 +70,16 @@ describe("storefrontBrand", () => {
     );
     expect(brand.secondary).toBeNull();
   });
+
+  it("does not append the store identity twice when the full name is configured", () => {
+    const brand = storefrontBrand(
+      settings({
+        [SETTING_KEYS.brandName]: "Covers by Mobile Zam Zam",
+        [SETTING_KEYS.brandSecondary]: "ZAM ZAM",
+      }),
+      "Shop",
+    );
+    expect(brand.full).toBe("Covers by Mobile Zam Zam");
+    expect(brand.secondary).toBeNull();
+  });
 });

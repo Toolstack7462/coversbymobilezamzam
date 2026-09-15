@@ -23,13 +23,13 @@ export function BrandLockup({
 }: {
   brand: StorefrontBrand;
   locale: Locale;
-  /** `header` is the wordmark; `footer` is the masthead, one step larger. */
-  variant: "header" | "footer";
+  /** The same identity in public and staff navigation. */
+  variant: "header" | "footer" | "admin" | "login";
 }) {
   return (
     <Link
-      to={localePath(locale, "/")}
-      className={`brand-lockup brand-lockup--${variant}`}
+      to={variant === "admin" ? "/admin" : localePath(locale, "/")}
+      className={`brand-lockup brand-lockup--${variant}${variant === "admin" ? " ac__brand" : ""}`}
       // The accessible name is both lines, so it does not depend on how the
       // two spans happen to be concatenated by a given screen reader.
       aria-label={brand.full}
@@ -38,9 +38,13 @@ export function BrandLockup({
       <span className="brand-lockup__words">
         <span className="brand-lockup__primary">{brand.primary}</span>
         {brand.secondary ? (
-          <span className="brand-lockup__secondary" aria-hidden="true">
-            {brand.secondary}
-          </span>
+          // Keep a real word boundary in copied text and text-only renderers.
+          <>
+            {" "}
+            <span className="brand-lockup__secondary" aria-hidden="true">
+              {brand.secondary}
+            </span>
+          </>
         ) : null}
       </span>
     </Link>

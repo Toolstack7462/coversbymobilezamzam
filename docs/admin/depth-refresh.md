@@ -1,5 +1,21 @@
 # Branded admin depth refresh
 
+## Language and identity follow-up — 15 September 2026
+
+This follow-up builds on verified feature commit `465243e` and integrates main `9a6a8120654d3dfbc2ded80195d59e0561e9090a`, whose sole change raises the established storefront budget to 142 KiB. The prior feature's passing CI and screenshots are the before evidence for this request. Main's updated budget policy is preserved; this follow-up does not change it.
+
+Audit findings and repairs:
+
+- The admin disclosure exposed only IT/EN. It now shows a globe, a translated Lingua / Language label, the current language's full native name and a chevron. Selected options have a visual check and `aria-pressed`. The existing POST, cookie, safe return URL and no-JavaScript behaviour remain. Menus are stationary; narrow headers use two stable rows so the full identity, language, search and account fit.
+- Staff sign-in hardcoded `/brand/logo.svg`, while public/admin headers resolved merchant settings separately. All four wordmarks now use `BrandLockup` and `BrandSymbol`, with one geometry and complete accessible names. Login and the protected shell read only the three public identity fields through a shared server helper, preserving access checks. Login's decorative cover also uses the same trusted inline symbol, without a filtered favicon image. Its home link respects the staff language.
+- The existing `business.brand_secondary` setting was relegated to technical fields. It now has a translated **Second brand line / Seconda riga del marchio** control in `/admin/impostazioni`, under store identity. No schema change or new field is needed. Primary and secondary names remain editable without deploying code. A repeated trailing identity is suppressed when the primary already contains the full shop name.
+- The public footer now visibly labels its existing language links. Routes, filters, fragment preservation and public URL-based locale selection remain authoritative.
+- The hero's visible “brand illustration” caption and unused dictionary/CSS entries are removed. The decorative composition and interactions remain; merchant hero media/text still override them from the homepage editor.
+
+Hardcoding boundary: merchant identity, products, prices, counts, media, contact/store facts and published content continue to come from existing loaders/settings/editors. Static route identifiers, translated interface dictionaries, design tokens and trusted vector geometry remain code. Downloadable approved brand SVGs/favicon and emergency metadata fallbacks retain the confirmed public identity; no arbitrary uploaded SVG is inlined. This is a targeted identity/language audit, not a claim that every literal or every production route has been audited.
+
+Verification added to the existing suites: visible labels and current language; 44px targets; header overlap and dropdown bounds at 390/768/1366/1440px; complete secondary wordmark visibility; shared SVG geometry across public header/footer/admin/login; CMS save/reload propagation and restoration in the isolated fixture; login SSR branding/title; absent hero caption. Existing language persistence, no-JavaScript, accessibility, password, motion and commerce checks remain required. Final results and current evidence are recorded in PR #18 after CI completes.
+
 Starting release: `03960bf395d6ffafb5a89a2e1ff7bf7317035a2a` on current main, fetched 2026-09-15. PR #17 is merged in that release, together with the shared password control and admin validation repairs. This work uses a separate checkout and `feat/admin-depth-refresh`; it neither rewrites that work nor deploys production.
 
 During review, main advanced to `23d6f303bf2a0991792de7ba1d15c37714d92664`, which independently repairs the shared password reveal control. That release is integrated into this branch; its control styling, behavior and regression test are retained. Final CI compares against this newer base.

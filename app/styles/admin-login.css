@@ -29,14 +29,20 @@ body:has(.admin-login) {
 .admin-login__identity {
   min-width: 0;
 }
-.admin-login__brand {
-  display: inline-flex;
-  max-width: 100%;
-  padding: 0.5rem 0;
+.admin-login .brand-lockup--login {
+  padding-block: 0.5rem;
 }
-.admin-login__brand img {
-  width: min(100%, 310px);
-  height: auto;
+.brand-lockup--login .brand-lockup__symbol {
+  width: 48px;
+  height: 56px;
+}
+.brand-lockup--login .brand-lockup__primary {
+  font-size: clamp(1.2rem, 2vw, 1.5rem);
+}
+.brand-lockup--login .brand-lockup__secondary {
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  color: inherit;
 }
 .admin-login__art {
   position: relative;
@@ -80,11 +86,10 @@ body:has(.admin-login) {
   border: 1px solid rgb(255 255 255 / 0.5);
   border-radius: 27px;
 }
-.admin-login__plate img {
-  width: 90px;
-  height: 90px;
-  border-radius: 20px;
-  filter: brightness(0) invert(1);
+.admin-login__plate svg {
+  width: 72px;
+  height: 84px;
+  color: var(--login-surface);
 }
 .admin-login .admin-auth__panel {
   width: 100%;
@@ -148,9 +153,6 @@ body:has(.admin-login) {
   }
   .admin-login__identity {
     text-align: center;
-  }
-  .admin-login__brand img {
-    width: 255px;
   }
   .admin-login__art {
     display: none;

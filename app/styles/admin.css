@@ -2195,7 +2195,7 @@ a.ac-pick:hover {
   }
   .ac__topbar {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 44px 44px;
+    grid-template-columns: minmax(0, 1fr) 44px max-content;
     height: auto;
     min-height: var(--ac-topbar);
     gap: 0.35rem;
@@ -2210,8 +2210,7 @@ a.ac-pick:hover {
     grid-column: 3;
     grid-row: 1;
     justify-self: end;
-    max-width: 100%;
-    overflow-wrap: anywhere;
+    white-space: nowrap;
   }
   .ac__topbar > .ac__language {
     grid-column: 1;
@@ -2233,6 +2232,7 @@ a.ac-pick:hover {
   .ac__topbar > .ac__menu:not(.ac__language) {
     grid-column: 3;
     grid-row: 2;
+    justify-self: end;
   }
 }
 

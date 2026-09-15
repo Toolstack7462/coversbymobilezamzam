@@ -125,6 +125,50 @@ test.describe("signed out", () => {
     await expect(page.locator("#password")).toHaveAttribute("type", "password");
   });
 
+  /**
+   * The reveal button must not eat the input.
+   *
+   * It carried "btn btn--ghost", which made it a target for any page-level
+   * button rule — and the login screen has one, `.admin-login .btn { width:
+   * 100% }`, written for the full-width submit button. The toggle took the
+   * whole row and the password input rendered as a 34px sliver you could not
+   * type a password into.
+   *
+   * Every other test here passed while that was live: they assert behaviour
+   * and accessible names, and a 34px input toggles its type perfectly well.
+   * Only a measurement catches it.
+   */
+  test("leaves the input the room to be typed in", async ({ page }) => {
+    await page.goto("/admin/accedi");
+
+    const size = await page.evaluate(() => {
+      const box = (selector: string) => {
+        const element = document.querySelector(selector);
+        return element ? Math.round(element.getBoundingClientRect().width) : 0;
+      };
+      return {
+        row: box(".ac-password"),
+        input: box(".ac-password__input"),
+        toggle: box(".ac-password__toggle"),
+      };
+    });
+
+    /*
+     * The input is never NARROWER than the toggle.
+     *
+     * Not "wider": below 28rem the control stacks and both span the row, which
+     * is correct. Written as "greater than" first, this passed on desktop and
+     * failed on the phone at 330px against 330px — an assertion that was really
+     * about the desktop layout, wearing the clothes of an invariant.
+     */
+    expect(
+      size.input,
+      `input ${size.input}px, toggle ${size.toggle}px, row ${size.row}px`,
+    ).toBeGreaterThanOrEqual(size.toggle);
+    // And an absolute floor, so a proportional pass on a tiny row still fails.
+    expect(size.input).toBeGreaterThan(120);
+  });
+
   /** `aria-controls` has to name the input, or the relationship is decorative. */
   test("announces which field it controls", async ({ page }) => {
     await page.goto("/admin/accedi");

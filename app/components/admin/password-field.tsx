@@ -236,7 +236,7 @@ export function PasswordField({
             />
             <button
               type="button"
-              className="btn btn--ghost ac-password__toggle"
+              className="ac-password__toggle"
               onClick={toggle}
               {...(disabled ? { disabled: true } : {})}
               aria-controls={field.id}

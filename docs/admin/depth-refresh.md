@@ -2,6 +2,8 @@
 
 Starting release: `03960bf395d6ffafb5a89a2e1ff7bf7317035a2a` on current main, fetched 2026-09-15. PR #17 is merged in that release, together with the shared password control and admin validation repairs. This work uses a separate checkout and `feat/admin-depth-refresh`; it neither rewrites that work nor deploys production.
 
+During review, main advanced to `23d6f303bf2a0991792de7ba1d15c37714d92664`, which independently repairs the shared password reveal control. That release is integrated into this branch; its control styling, behavior and regression test are retained. Final CI compares against this newer base.
+
 The user's latest request explicitly expands the earlier storefront ownership boundary to the admin dashboard. Existing light-only/no-gradient design prose is superseded by this request for restrained depth and a balanced light/dark gradient treatment. English and Italian remain supported. The installed commerce, motion and accessibility guidance informs contrast, focus, finite motion and functional controls; browser animation is not treated as server CPU work.
 
 ## What changed

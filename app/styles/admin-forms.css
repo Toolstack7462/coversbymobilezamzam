@@ -60,13 +60,43 @@
   min-width: 0;
 }
 
+/* The toggle styles ITSELF rather than borrowing .btn.
+
+   It used to carry "btn btn--ghost". That made it a target for any page-level
+   button rule, and the login screen has one: `.admin-login .btn { width: 100% }`,
+   written for the full-width submit button. The toggle took the whole row and
+   squeezed the password input to 34 pixels — a working control rendered as an
+   unusable sliver, on the sign-in screen.
+
+   The fix is not a more specific selector. A shared control that inherits a
+   page.s button sizing will be broken again by the next page that styles its
+   buttons; this one owns its appearance and cannot be stretched from outside. */
 .ac-password__toggle {
   flex: 0 0 auto;
+  /* Explicit, so a stray width:100% elsewhere cannot claim the row. */
+  width: auto;
   white-space: nowrap;
   /* The label changes between "Mostra password" and "Nascondi password", which
      are different widths; without a floor the control moves under the pointer
      as it is clicked. 44px is the tap-target minimum. */
   min-height: 44px;
+  padding-inline: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font: inherit;
+  font-size: var(--text-ui);
+  cursor: pointer;
+}
+
+.ac-password__toggle:hover {
+  background: var(--color-surface-sunken);
+}
+
+.ac-password__toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 @media (max-width: 28rem) {

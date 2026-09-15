@@ -248,7 +248,8 @@ test("merchant brand updates persist across staff and public identity surfaces",
     await primary.fill(name);
     await secondary.fill(line);
     await editor.getByRole("button", { name: "Salva impostazioni", exact: true }).click();
-    await expect(editor.locator('[role="status"]')).toBeVisible();
+    // Wait for the settings action's result, not the router's pending status.
+    await expect(editor.locator('.notice[role="status"]')).toHaveText(/^Impostazioni aggiornate/);
   };
   try {
     await save(brand, identity);
@@ -277,6 +278,9 @@ test("merchant brand updates persist across staff and public identity surfaces",
   } finally {
     await editor.goto("/admin/impostazioni");
     await save(original.primary, original.secondary);
+    await editor.reload();
+    await expect(primary).toHaveValue(original.primary);
+    await expect(secondary).toHaveValue(original.secondary);
     await staff.close();
   }
 });

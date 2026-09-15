@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 import { STORAGE_STATE } from "./helpers/admin-session";
+import AxeBuilder from "@axe-core/playwright";
 
 /**
  * Visual survey of the merchant control centre.
@@ -32,6 +33,7 @@ import { STORAGE_STATE } from "./helpers/admin-session";
 const WIDTHS = [
   { name: "390", width: 390, height: 844 },
   { name: "768", width: 768, height: 1024 },
+  { name: "1366", width: 1366, height: 768 },
   { name: "1440", width: 1440, height: 900 },
 ] as const;
 
@@ -95,6 +97,147 @@ async function horizontalOverflow(page: Page): Promise<number> {
     return el.scrollWidth - el.clientWidth;
   });
 }
+
+test.describe("branded admin workspace", () => {
+  test.use({ viewport: { width: 1366, height: 768 } });
+
+  test("finite depth stays readable, then stops for reduced motion", async ({ page }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    page.on("console", (message) => {
+      if (/content security policy/i.test(message.text())) errors.push(message.text());
+    });
+    await page.goto("/admin", { waitUntil: "domcontentloaded" });
+    await expect(page.locator(".ac__brand")).toContainText("Covers by Mobile Zam Zam");
+    const scene = page.locator(".ac-brand-scene");
+    await scene.evaluate((node) => {
+      for (const animation of node.getAnimations({ subtree: true })) {
+        animation.pause();
+        animation.currentTime = 250;
+      }
+    });
+    await expect(page.locator("h1")).toHaveCSS("opacity", "1");
+    await expect(page.getByRole("link", { name: "Aggiungi prodotto", exact: true })).toBeVisible();
+    const timings = await scene.locator(".ac-brand-scene__plate").evaluateAll((nodes) =>
+      nodes.map((node) => {
+        const style = getComputedStyle(node);
+        return {
+          duration: Number.parseFloat(style.animationDuration),
+          count: style.animationIterationCount,
+        };
+      }),
+    );
+    expect(
+      timings.every(
+        (timing) => timing.duration > 0 && timing.duration <= 1.2 && timing.count === "1",
+      ),
+    ).toBe(true);
+    await page.screenshot({ path: `${OUT}/depth-midpoint-1366.png` });
+    expect((await new AxeBuilder({ page }).include(".ac").analyze()).violations).toEqual([]);
+    await scene.evaluate(async (node) => {
+      const animations = node.getAnimations({ subtree: true });
+      animations.forEach((animation) => animation.play());
+      await Promise.all(animations.map((animation) => animation.finished));
+    });
+    const front = scene.locator(".ac-brand-scene__plate--front");
+    const settled = await front.evaluate((node) => getComputedStyle(node).transform);
+    await scene.hover();
+    await expect
+      .poll(() => front.evaluate((node) => getComputedStyle(node).transform))
+      .not.toBe(settled);
+    await page.mouse.move(0, 0);
+    await expect
+      .poll(() => front.evaluate((node) => getComputedStyle(node).transform))
+      .toBe(settled);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await expect(front).toHaveCSS("animation-name", "none");
+    await expect(front).toHaveCSS("transition-property", "none");
+    const reduced = await front.evaluate((node) => getComputedStyle(node).transform);
+    await scene.hover();
+    expect(await front.evaluate((node) => getComputedStyle(node).transform)).toBe(reduced);
+    expect(errors).toEqual([]);
+  });
+
+  test("real route loading feedback keeps the current work visible", async ({ page }) => {
+    await page.goto("/admin");
+    const desktopNav = page.locator(".ac__nav-desktop");
+    await desktopNav.getByText("Catalogo", { exact: true }).click();
+    let release: (() => void) | undefined;
+    await page.route("**/admin/prodotti.data*", async (route) => {
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await route.continue();
+    });
+    try {
+      await desktopNav.getByRole("link", { name: "Prodotti", exact: true }).click();
+      await expect(page.locator(".ac__pending")).toBeVisible();
+      await expect(page.locator("main")).toHaveAttribute("aria-busy", "true");
+      await expect(page.locator("h1")).toContainText("Ciao");
+      await expect(page.locator(".ac-headline")).toBeVisible();
+    } finally {
+      release?.();
+    }
+    await expect(page).toHaveURL(/\/admin\/prodotti$/);
+    await expect(page.locator("h1")).toHaveText("Prodotti");
+    await expect(page.locator(".ac__pending")).toHaveCount(0);
+    await expect(page.locator("main")).toHaveAttribute("aria-busy", "false");
+  });
+
+  test("English and Italian survive navigation with the complete brand", async ({ page }) => {
+    await page.goto("/admin");
+    await page.getByRole("button", { name: "Lingua pannello: Italiano" }).click();
+    await page.getByRole("button", { name: "English", exact: true }).click();
+    await expect(page.locator("h1")).toContainText("Hello");
+    await expect(page.locator(".ac__brand")).toContainText("Covers by Mobile Zam Zam");
+    await page.screenshot({ path: `${OUT}/overview-en-1366.png`, fullPage: true });
+    expect((await new AxeBuilder({ page }).include(".ac").analyze()).violations).toEqual([]);
+    await page.reload();
+    await expect(page.locator("h1")).toContainText("Hello");
+    await page.getByRole("button", { name: "Admin language: English" }).click();
+    await page.getByRole("button", { name: "Italiano", exact: true }).click();
+    await expect(page.locator("h1")).toContainText("Ciao");
+  });
+
+  for (const width of [390, 768]) {
+    test(`keyboard drawer stays usable at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: width === 390 ? 844 : 1024 });
+      await page.goto("/admin");
+      const drawer = page.locator(".ac__drawer");
+      await drawer.locator(":scope > summary").focus();
+      await page.keyboard.press("Enter");
+      await expect(drawer).toHaveAttribute("open", "");
+      await drawer
+        .locator("summary")
+        .filter({ hasText: /^Catalogo$/ })
+        .focus();
+      await page.keyboard.press("Enter");
+      const products = drawer.getByRole("link", { name: "Prodotti", exact: true });
+      await expect(products).toBeVisible();
+      await products.focus();
+      await expect(products).toBeFocused();
+      await page.screenshot({ path: `${OUT}/drawer-${width}.png`, fullPage: true });
+      expect((await new AxeBuilder({ page }).include(".ac").analyze()).violations).toEqual([]);
+      await page.keyboard.press("Enter");
+      await expect(page.locator("h1")).toHaveText("Prodotti");
+      expect(await horizontalOverflow(page)).toBeLessThanOrEqual(2);
+    });
+  }
+});
+
+test.describe("admin depth without JavaScript", () => {
+  test.use({ javaScriptEnabled: false, viewport: { width: 1366, height: 768 } });
+  test("brand, metrics and native catalogue navigation are complete", async ({ page }) => {
+    await page.goto("/admin");
+    await expect(page.locator(".ac__brand")).toContainText("Covers by Mobile Zam Zam");
+    await expect(page.locator(".ac-headline")).toBeVisible();
+    const nav = page.locator(".ac__nav-desktop");
+    await nav.getByText("Catalogo", { exact: true }).click();
+    await nav.getByRole("link", { name: "Prodotti", exact: true }).click();
+    await expect(page.locator("h1")).toHaveText("Prodotti");
+    await expect(page.locator(".ac__pending")).toHaveCount(0);
+  });
+});
 
 for (const size of WIDTHS) {
   test.describe(`admin at ${size.name}px`, () => {

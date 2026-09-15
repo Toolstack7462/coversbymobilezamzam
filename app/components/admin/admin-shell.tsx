@@ -1,17 +1,18 @@
 import { AdminLanguageSwitcher } from "./language-switcher";
 import { useAdminTranslator } from "~/components/admin/use-admin-translator";
 import { BrandSymbol } from "~/components/storefront/brand-symbol";
-import { NavLink, Link, Form, useLocation } from "react-router";
+import { NavLink, Link, Form, useLocation, useNavigation } from "react-router";
 import type { NavGroup } from "~/lib/admin-nav";
 
 /**
  * The admin shell: sidebar, top bar, page header.
  *
- * Deliberately server-rendered with no client state. The sidebar collapse is a
+ * Deliberately server-rendered. The sidebar collapse is a
  * checkbox and CSS, and the mobile drawer is a `<details>` — both work before
  * any script loads and cost nothing in the bundle. A dashboard that needs
  * JavaScript to show its own navigation is a dashboard that is blank on a slow
- * connection.
+ * connection. The router's pending indicator progressively adds feedback after
+ * hydration; it does not control navigation visibility or require local state.
  */
 
 export interface ShellBadges {
@@ -56,8 +57,15 @@ export function AdminShell({
   children,
 }: Props) {
   const t = useAdminTranslator();
+  const pending = useNavigation().state !== "idle";
   return (
-    <div className="ac">
+    <div className="ac ac--depth">
+      {pending ? (
+        <div className="ac__pending" role="status">
+          <span className="visually-hidden">{t("Caricamento")}</span>
+          <span className="ac__pending-line" aria-hidden="true" />
+        </div>
+      ) : null}
       {/* The toggle is a real checkbox so collapse survives without script. */}
       <input type="checkbox" id="ac-collapse" className="ac__collapse-input" />
 
@@ -180,7 +188,7 @@ export function AdminShell({
           </div>
         </nav>
 
-        <main id="main" className="ac__main">
+        <main id="main" className="ac__main" aria-busy={pending}>
           {children}
         </main>
       </div>
@@ -357,5 +365,19 @@ function IconUser() {
       <circle cx="12" cy="8" r="4" />
       <path d="M4 21a8 8 0 0 1 16 0" />
     </svg>
+  );
+}
+
+/** Decorative, trusted brand artwork. No merchant SVG or client motion engine. */
+export function AdminBrandScene() {
+  return (
+    <div className="ac-brand-scene" aria-hidden="true">
+      <span className="ac-brand-scene__ring" />
+      <span className="ac-brand-scene__shadow" />
+      <div className="ac-brand-scene__plate ac-brand-scene__plate--back" />
+      <div className="ac-brand-scene__plate ac-brand-scene__plate--front">
+        <BrandSymbol className="ac-brand-scene__mark" />
+      </div>
+    </div>
   );
 }

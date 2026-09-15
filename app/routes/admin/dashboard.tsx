@@ -19,7 +19,7 @@ import { ORDER_VIEWS, PAYMENT_VIEWS, ORDER_DELIVERY_FACET, type ListView } from 
 import { INVENTORY_VIEWS } from "~/lib/inventory-views";
 import { viewClause } from "~/lib/order-views";
 import { breadcrumbsFor } from "~/lib/admin-nav";
-import { PageHeader } from "~/components/admin/admin-shell";
+import { PageHeader, AdminBrandScene } from "~/components/admin/admin-shell";
 import { loadSetupSnapshot } from "./setup-centre";
 
 /**
@@ -256,14 +256,17 @@ export default function AdminDashboard({ loaderData }: Route.ComponentProps) {
 
   return (
     <>
-      <PageHeader
-        title={t("Ciao, {{v0}}", { v0: displayName })}
-        description={t("Ordini, pagamenti e catalogo: il lavoro di oggi.")}
-        breadcrumbs={breadcrumbsFor(pathname)}
-        {...(canManageProducts
-          ? { primaryAction: { label: "Aggiungi prodotto", to: "/admin/prodotti/nuovo" } }
-          : {})}
-      />
+      <div className="ac-dashboard__welcome">
+        <PageHeader
+          title={t("Ciao, {{v0}}", { v0: displayName })}
+          description={t("Ordini, pagamenti e catalogo: il lavoro di oggi.")}
+          breadcrumbs={breadcrumbsFor(pathname)}
+          {...(canManageProducts
+            ? { primaryAction: { label: "Aggiungi prodotto", to: "/admin/prodotti/nuovo" } }
+            : {})}
+        />
+        <AdminBrandScene />
+      </div>
       <div className="ac-dashboard">
         <section className="ac-dashboard__overview" aria-labelledby="riepilogo">
           <div className="ac-dashboard__section-head">

@@ -2151,3 +2151,373 @@ a.ac-pick:hover {
     display: none;
   }
 }
+
+/* Admin-only art direction. Public pages and authentication styles are separate. */
+.ac.ac--depth {
+  --ac-canvas: #edf2f8;
+  --ac-canvas-warm: #f6f3ed;
+  --ac-surface: #fff;
+  --ac-ice: #e0eafb;
+  --ac-stone: #e8e7e2;
+  --ac-ink: #0b1220;
+  --ac-muted: #475569;
+  --ac-line: #cbd7e5;
+  --ac-navy: #18283d;
+  --ac-navy-raised: #29435f;
+  --ac-nav-ink: #edf3fc;
+  --ac-nav-muted: #c1d0e3;
+  --ac-elevation: rgb(23 48 85 / 0.12);
+  --ac-soft-shadow: 0 12px 30px -24px var(--ac-elevation);
+  --ac-art-duration: 900ms;
+  --ac-art-ease: cubic-bezier(0.2, 0.75, 0.25, 1);
+  color: var(--ac-ink);
+  background:
+    radial-gradient(ellipse at 85% 0, var(--ac-ice), transparent 48%),
+    linear-gradient(135deg, var(--ac-canvas), var(--ac-canvas-warm));
+}
+
+/* The storefront's fixed bottom navigation is absent from the staff workspace. */
+body:has(.ac--depth) {
+  padding-block-end: 0;
+}
+
+.ac--depth .ac__topbar {
+  background: linear-gradient(100deg, var(--ac-surface), var(--ac-canvas) 75%, var(--ac-stone));
+  border-color: var(--ac-line);
+  box-shadow: 0 4px 20px -18px var(--ac-navy);
+}
+.ac--depth .ac__brand {
+  max-width: 22rem;
+}
+.ac--depth .ac__brand-mark {
+  box-sizing: content-box;
+  width: 25px;
+  height: 31px;
+  padding: 5px;
+  border-radius: 10px;
+  background: linear-gradient(145deg, var(--color-primary), var(--color-primary-hover));
+  color: var(--ac-surface);
+  box-shadow:
+    3px 5px 0 -2px var(--ac-line),
+    0 8px 15px -10px var(--ac-navy);
+}
+.ac--depth .ac__brand-copy > span,
+.ac--depth .ac__crumbs,
+.ac--depth .ac__main .muted {
+  color: var(--ac-muted);
+}
+.ac--depth .ac__search input {
+  background: var(--ac-surface);
+  border-color: var(--ac-line);
+}
+.ac--depth .ac__menu-panel {
+  border-color: var(--ac-line);
+  box-shadow: 0 16px 40px -18px var(--ac-elevation);
+}
+
+/* Deep navigation, light working surfaces; active state remains a labelled link. */
+.ac--depth .ac__sidebar {
+  --ac-chrome: var(--ac-navy);
+  --ac-chrome-raised: var(--ac-navy-raised);
+  --ac-chrome-ink: var(--ac-nav-ink);
+  --ac-chrome-ink-muted: var(--ac-nav-muted);
+  --ac-chrome-border: var(--ac-navy-raised);
+  background: linear-gradient(165deg, var(--ac-navy), var(--ac-navy-raised));
+  border-color: var(--ac-navy-raised);
+  scrollbar-color: var(--ac-nav-muted) transparent;
+}
+.ac--depth .ac__sidebar :focus-visible {
+  outline-color: var(--ac-nav-ink);
+  outline-offset: 3px;
+}
+.ac--depth .ac__nav-link--active,
+.ac--depth .ac__nav-link--active:hover {
+  background: var(--ac-ice);
+  color: var(--color-primary-hover);
+  box-shadow: inset 3px 0 0 var(--color-primary);
+}
+.ac--depth .ac__nav-heading {
+  font-weight: 650;
+}
+.ac--depth .ac__nav-chevron {
+  border-color: currentColor;
+}
+.ac--depth .ac__drawer-toggle {
+  color: var(--ac-nav-ink);
+}
+.ac--depth .ac__main {
+  width: 100%;
+  margin-inline: auto;
+}
+.ac--depth .ac__page-header {
+  border-color: var(--ac-line);
+}
+
+/* A compact greeting, not another full-screen hero above the work. */
+.ac--depth .ac-dashboard__welcome {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 170px;
+  align-items: center;
+  gap: var(--space-5);
+  min-height: 150px;
+  margin-bottom: var(--space-5);
+  padding: var(--space-5);
+  border: 1px solid var(--ac-line);
+  border-radius: 16px;
+  background: linear-gradient(110deg, var(--ac-ice), var(--ac-canvas) 68%, var(--ac-stone));
+}
+.ac--depth .ac-dashboard__welcome .ac__page-header {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.ac--depth .ac-dashboard__welcome .ac__page-title-row {
+  align-items: center;
+}
+.ac--depth .ac-dashboard__welcome .ac__crumbs {
+  display: none;
+}
+
+/* Original cover/double-Z artwork on separated CSS perspective planes. */
+.ac--depth .ac-brand-scene {
+  position: relative;
+  width: 170px;
+  height: 120px;
+  perspective: 650px;
+  isolation: isolate;
+}
+.ac--depth .ac-brand-scene__ring {
+  position: absolute;
+  inset: 9px 7px;
+  border: 1px solid var(--ac-line);
+  border-radius: 50%;
+  transform: rotate(-24deg);
+}
+.ac--depth .ac-brand-scene__shadow {
+  position: absolute;
+  inset: auto 6px -3px;
+  height: 30px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, var(--ac-elevation), transparent 70%);
+}
+.ac--depth .ac-brand-scene__plate {
+  position: absolute;
+  width: 72px;
+  height: 106px;
+  top: 2px;
+  border-radius: 17px;
+  border: 1px solid var(--ac-surface);
+  box-shadow: 10px 14px 18px -14px var(--ac-navy);
+  transform-style: preserve-3d;
+}
+.ac--depth .ac-brand-scene__plate--back {
+  left: 27px;
+  background: linear-gradient(135deg, var(--ac-surface), var(--ac-line));
+  transform: rotateY(12deg) rotateZ(-14deg);
+}
+.ac--depth .ac-brand-scene__plate--front {
+  display: grid;
+  place-items: center;
+  left: 72px;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
+  transform: rotateY(-18deg) rotateZ(10deg) translateZ(12px);
+}
+.ac--depth .ac-brand-scene__plate--front::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgb(255 255 255 / 0.4);
+  border-radius: 12px;
+}
+.ac--depth .ac-brand-scene__mark {
+  width: 38px;
+  height: 48px;
+  color: var(--ac-surface);
+  transform: translateZ(8px);
+}
+
+.ac--depth .ac-panel,
+.ac--depth .ac-metric,
+.ac--depth .ac-table-wrap {
+  border-color: var(--ac-line);
+  background-color: var(--ac-surface);
+  box-shadow: var(--ac-soft-shadow);
+}
+.ac--depth .ac-dashboard .ac-metric--headline {
+  border-top: 1px solid var(--ac-line);
+  background: linear-gradient(125deg, var(--ac-surface), var(--ac-canvas));
+}
+.ac--depth .ac-dashboard .ac-metric--headline:first-child {
+  border-color: var(--ac-navy-raised);
+  color: var(--ac-nav-ink);
+  background: linear-gradient(125deg, var(--ac-navy), var(--ac-navy-raised));
+}
+.ac--depth .ac-dashboard .ac-metric--headline:first-child .ac-metric__label {
+  color: var(--ac-nav-ink);
+}
+.ac--depth .ac-dashboard .ac-metric__label,
+.ac--depth .ac-dashboard .ac-metric__note {
+  color: var(--ac-muted);
+}
+.ac--depth .ac-dashboard__photos {
+  background: linear-gradient(130deg, var(--ac-ice), var(--ac-canvas));
+}
+.ac--depth .ac-dashboard .ac-action {
+  border-color: var(--ac-line);
+}
+.ac--depth .ac-dashboard .ac-action--blocking .ac-action__count {
+  color: var(--color-danger-text);
+  background: var(--color-danger-surface);
+}
+.ac--depth .ac-dashboard .ac-action--warning .ac-action__count {
+  color: var(--color-warning-text);
+  background: var(--color-warning-surface);
+}
+.ac--depth .ac-dashboard .ac-action__count {
+  display: grid;
+  place-items: center;
+  min-height: 36px;
+  border-radius: 9px;
+}
+.ac--depth .ac-dashboard .ac-action__detail {
+  color: var(--ac-muted);
+}
+.ac--depth .ac-dashboard__count {
+  color: var(--color-primary-hover);
+  background: var(--ac-ice);
+}
+.ac--depth .ac-dashboard__progress {
+  display: block;
+  border: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--ac-canvas);
+}
+.ac--depth .ac-dashboard__progress::-webkit-progress-bar {
+  background: var(--ac-canvas);
+}
+.ac--depth .ac-dashboard__progress::-webkit-progress-value {
+  background: var(--color-primary);
+}
+.ac--depth .ac-dashboard__progress::-moz-progress-bar {
+  background: var(--color-primary);
+}
+
+/* Real router pending state only; never a fake loading percentage or overlay. */
+.ac--depth .ac__pending {
+  position: fixed;
+  inset: 0 0 auto;
+  height: 3px;
+  z-index: 60;
+  pointer-events: none;
+  overflow: hidden;
+  background: var(--ac-ice);
+}
+.ac--depth .ac__pending-line {
+  display: block;
+  width: 40%;
+  height: 100%;
+  background: var(--color-primary);
+}
+
+@keyframes ac-brand-front-enter {
+  from {
+    transform: rotateY(-30deg) rotateZ(15deg) translate3d(10px, 12px, 12px);
+  }
+  to {
+    transform: rotateY(-18deg) rotateZ(10deg) translateZ(12px);
+  }
+}
+@keyframes ac-brand-back-enter {
+  from {
+    transform: rotateY(22deg) rotateZ(-24deg) translateY(12px);
+  }
+  to {
+    transform: rotateY(12deg) rotateZ(-14deg);
+  }
+}
+@keyframes ac-menu-enter {
+  from {
+    transform: translateY(-5px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes ac-loading {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(350%);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ac--depth .ac-brand-scene__plate--front {
+    animation: ac-brand-front-enter var(--ac-art-duration) var(--ac-art-ease);
+  }
+  .ac--depth .ac-brand-scene__plate--back {
+    animation: ac-brand-back-enter var(--ac-art-duration) var(--ac-art-ease);
+  }
+  .ac--depth .ac__menu[open] > .ac__menu-panel,
+  .ac--depth .ac__nav-group[open] > .ac__nav-list {
+    animation: ac-menu-enter var(--duration-base) var(--ease);
+  }
+  .ac--depth .ac__pending-line {
+    animation: ac-loading 1200ms ease-in-out infinite;
+  }
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .ac--depth .ac-brand-scene__plate,
+  .ac--depth .ac-metric--link,
+  .ac--depth .ac__nav-link {
+    transition: transform var(--duration-slow) var(--ease);
+  }
+  .ac--depth .ac-brand-scene:hover .ac-brand-scene__plate--front {
+    transform: rotateY(-26deg) rotateZ(7deg) translate3d(0, -3px, 18px);
+  }
+  .ac--depth .ac-brand-scene:hover .ac-brand-scene__plate--back {
+    transform: rotateY(20deg) rotateZ(-18deg) translateY(-2px);
+  }
+  .ac--depth .ac-metric--link:hover {
+    transform: translateY(-2px);
+  }
+  .ac--depth .ac__nav-link:hover {
+    transform: translateX(2px);
+  }
+}
+@media (max-width: 75rem) {
+  .ac--depth .ac-dashboard__welcome {
+    grid-template-columns: minmax(0, 1fr) 130px;
+  }
+  .ac--depth .ac-brand-scene {
+    justify-self: end;
+    transform: scale(0.8);
+    transform-origin: right center;
+    margin-left: -40px;
+  }
+}
+@media (max-width: 47.99rem) {
+  .ac--depth .ac-dashboard__welcome {
+    display: block;
+    min-height: 0;
+    padding: var(--space-4);
+  }
+  .ac--depth .ac-brand-scene {
+    display: none;
+  }
+  .ac--depth .ac__brand-mark {
+    width: 22px;
+    height: 28px;
+    padding: 4px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ac--depth *,
+  .ac--depth *::before,
+  .ac--depth *::after {
+    animation: none;
+    transition: none;
+    scroll-behavior: auto;
+  }
+}

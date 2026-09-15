@@ -46,22 +46,41 @@ const ADMIN_COMPONENTS_DIR = "app/components/admin";
 /**
  * The limits, and why they are these numbers.
  *
- * Storefront 136 KB, raised from 130 KB on 2026-09-02 — deliberately, and
- * recorded here rather than nudged.
+ * Storefront 142 KB, raised from 136 KB on 2026-09-15 — deliberately, measured,
+ * and recorded here rather than nudged. 136 was itself raised from 130 on
+ * 2026-09-02 for the same reason and by the same increment.
  *
- * The original 130 was set when the storefront was a hero, a category rail and
- * a product grid. It has since gained an editorial band, a services section,
- * buying guides, a content-page route, a legal-document route, a brand lockup
- * and a language switcher, all of them customer-facing and asked for. Feature
- * code crossed the line at 130.2 KB: 0.2 KB over, which is a real breach and
- * not noise, but it is the budget that is out of date rather than the code that
- * is bloated.
+ * The storefront reached EXACTLY 136.0 KB of 136.0 KB: passing, with nothing
+ * left. The next customer-facing line of code would have failed the gate.
  *
- * Roughly 102 KB of the total is React, the router, the error boundaries and
- * the locale bundle — weight that does not come down by writing less feature
- * code. The headroom for features is what this number is really about, and 136
- * restores it to about the same tightness 130 had before those sections
- * existed.
+ * WHERE THE 136 ACTUALLY WENT, measured rather than assumed:
+ *
+ *   99.6 KB  React, React Router, the error boundaries and the shared lib
+ *    3.3 KB  the client route manifest
+ *    7.7 KB  both locale dictionaries
+ *   25.3 KB  every storefront route and component this shop actually has
+ *
+ * 110.6 KB of the 136 — 81% — is weight that does not move when feature code is
+ * written more carefully. The budget was never really 136 KB for the
+ * storefront; it was 25 KB, and the storefront has spent it.
+ *
+ * THE ROUTE MANIFEST IS THE CUSTOMER PAYING FOR THE ADMIN.
+ *
+ * manifest-*.js is 48 KB raw, 3.3 KB gzipped, and contains 143 `/admin/`
+ * paths. Every customer downloads the routing table for all 61 staff screens.
+ * It is charged to the customer because the customer genuinely downloads it —
+ * moving it to the admin column would flatter the number without saving anyone
+ * a byte. But it means ADMIN GROWTH CONSUMES THE CUSTOMER BUDGET, roughly
+ * 0.05 KB per new admin screen, and that is worth knowing before blaming the
+ * storefront for the next breach.
+ *
+ * WHAT THIS NUMBER IS NOT.
+ *
+ * No visitor downloads 136 KB. The gate sums EVERY storefront chunk, which the
+ * note below calls a deliberate over-count: a customer on the homepage gets the
+ * framework, the manifest, the locales and one route chunk — about 114 KB. The
+ * limit is a pessimistic proxy, so raising it by 6 KB does not make any page
+ * 6 KB slower. It gives feature code about 6 KB of room back.
  *
  * THE LEVER THAT LOOKED OBVIOUS, AND THE MEASUREMENT THAT KILLED IT.
  *
@@ -84,6 +103,14 @@ const ADMIN_COMPONENTS_DIR = "app/components/admin";
  * A file check confirmed there is no cheaper version of the win: all sixteen
  * groups in the locale files are storefront strings, so there is no admin
  * dictionary hiding in the customer's bundle to split out.
+ *
+ * RE-MEASURED 2026-09-15, because the locale files grew when the admin became
+ * bilingual and the old arithmetic might have stopped holding. It still holds:
+ * it.json is 4.50 KB gzipped, en.json 4.10 KB, and the built chunk 7.72 KB — so
+ * an Italian visitor carries roughly 3.2 KB they never read. The saving is
+ * still small, the fourteen synchronous `translator()` call sites are still
+ * there, and both escape routes still cost more than they save. The conclusion
+ * below is unchanged; only the numbers have been refreshed.
  *
  * The right time to revisit is when a third locale is added — at that point the
  * static import ships three dictionaries to read one, and the arithmetic
@@ -118,7 +145,7 @@ const ADMIN_COMPONENTS_DIR = "app/components/admin";
  */
 const BUDGETS = {
   storefrontJs: {
-    limit: 136 * 1024,
+    limit: 142 * 1024,
     label: "storefront JavaScript (shared + customer routes)",
   },
   adminJs: {
